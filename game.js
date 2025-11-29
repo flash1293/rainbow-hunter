@@ -125,35 +125,60 @@ const maxAmmo = 100;
 // Player (Girl on Bicycle) - 3D
 const playerGroup = new THREE.Group();
 
-// Bicycle wheels
+// Bicycle wheels - positioned front to back (along Z axis)
 const wheelGeometry = new THREE.TorusGeometry(0.3, 0.1, 8, 16);
 const wheelMaterial = new THREE.MeshLambertMaterial({ color: 0x333333 });
+
+// Front wheel (forward direction)
 const frontWheel = new THREE.Mesh(wheelGeometry, wheelMaterial);
 frontWheel.rotation.y = Math.PI / 2;
-frontWheel.position.set(0.6, 0.3, 0);
+frontWheel.position.set(0, 0.3, -0.7);
 frontWheel.castShadow = true;
 playerGroup.add(frontWheel);
 
+// Back wheel
 const backWheel = new THREE.Mesh(wheelGeometry, wheelMaterial);
 backWheel.rotation.y = Math.PI / 2;
-backWheel.position.set(-0.6, 0.3, 0);
+backWheel.position.set(0, 0.3, 0.5);
 backWheel.castShadow = true;
 playerGroup.add(backWheel);
 
-// Bicycle frame
-const frameGeometry = new THREE.CylinderGeometry(0.05, 0.05, 1.2, 8);
+// Bicycle frame connecting wheels
+const frameGeometry = new THREE.CylinderGeometry(0.05, 0.05, 1.3, 8);
 const frameMaterial = new THREE.MeshLambertMaterial({ color: 0xFF6B9D });
 const frame1 = new THREE.Mesh(frameGeometry, frameMaterial);
-frame1.rotation.z = Math.PI / 4;
-frame1.position.set(0, 0.8, 0);
+frame1.rotation.x = Math.PI / 2;
+frame1.position.set(0, 0.5, -0.1);
 frame1.castShadow = true;
 playerGroup.add(frame1);
 
+// Seat post
+const seatPostGeometry = new THREE.CylinderGeometry(0.04, 0.04, 0.5, 8);
+const seatPost = new THREE.Mesh(seatPostGeometry, frameMaterial);
+seatPost.position.set(0, 0.75, 0.2);
+seatPost.castShadow = true;
+playerGroup.add(seatPost);
+
+// Handlebar post
+const handlebarPostGeometry = new THREE.CylinderGeometry(0.04, 0.04, 0.4, 8);
+const handlebarPost = new THREE.Mesh(handlebarPostGeometry, frameMaterial);
+handlebarPost.position.set(0, 0.7, -0.5);
+handlebarPost.castShadow = true;
+playerGroup.add(handlebarPost);
+
+// Handlebar (horizontal)
+const handlebarGeometry = new THREE.CylinderGeometry(0.03, 0.03, 0.5, 8);
+const handlebar = new THREE.Mesh(handlebarGeometry, frameMaterial);
+handlebar.rotation.z = Math.PI / 2;
+handlebar.position.set(0, 0.9, -0.5);
+handlebar.castShadow = true;
+playerGroup.add(handlebar);
+
 // Girl body
-const bodyGeometry = new THREE.BoxGeometry(0.4, 0.6, 0.3);
+const bodyGeometry = new THREE.BoxGeometry(0.35, 0.6, 0.25);
 const bodyMaterial = new THREE.MeshLambertMaterial({ color: 0xFF69B4 });
 const body = new THREE.Mesh(bodyGeometry, bodyMaterial);
-body.position.set(0, 1.3, 0);
+body.position.set(0, 1.3, 0.1);
 body.castShadow = true;
 playerGroup.add(body);
 
@@ -173,13 +198,23 @@ hair.position.set(0, 1.95, 0);
 hair.castShadow = true;
 playerGroup.add(hair);
 
+// Direction indicator - a cone pointing forward
+const coneGeometry = new THREE.ConeGeometry(0.15, 0.4, 8);
+const coneMaterial = new THREE.MeshLambertMaterial({ color: 0xFFFF00 });
+const directionCone = new THREE.Mesh(coneGeometry, coneMaterial);
+directionCone.rotation.x = Math.PI / 2;
+directionCone.position.set(0, 0.5, -1.0);
+directionCone.castShadow = true;
+playerGroup.add(directionCone);
+
 playerGroup.position.set(0, 0, 40);
 scene.add(playerGroup);
 
 const player = {
     mesh: playerGroup,
-    speed: 0.15,
-    direction: new THREE.Vector3(0, 0, -1)
+    speed: 0.08,
+    rotation: 0,
+    rotationSpeed: 0.025
 };
 
 // Keyboard input
@@ -423,10 +458,60 @@ scene.add(goblinGroup);
 
 const goblin = {
     mesh: goblinGroup,
-    speed: 0.04,
+    speed: 0.02,
     direction: 1,
     patrolLeft: 15,
     patrolRight: 35,
+    alive: true,
+    radius: 1.5
+};
+
+// Bridge Goblin (second goblin guarding the bridge)
+const bridgeGoblinGroup = new THREE.Group();
+
+// Bridge goblin body
+const bridgeGoblinBody = new THREE.Mesh(goblinBodyGeometry, goblinBodyMaterial);
+bridgeGoblinBody.position.y = 0.8;
+bridgeGoblinBody.castShadow = true;
+bridgeGoblinGroup.add(bridgeGoblinBody);
+
+// Bridge goblin head
+const bridgeGoblinHead = new THREE.Mesh(goblinHeadGeometry, goblinHeadMaterial);
+bridgeGoblinHead.position.y = 1.5;
+bridgeGoblinHead.castShadow = true;
+bridgeGoblinGroup.add(bridgeGoblinHead);
+
+// Bridge goblin eyes
+const bridgeEye1 = new THREE.Mesh(eyeGeometry, eyeMaterial);
+bridgeEye1.position.set(-0.15, 1.5, 0.35);
+bridgeGoblinGroup.add(bridgeEye1);
+
+const bridgeEye2 = new THREE.Mesh(eyeGeometry, eyeMaterial);
+bridgeEye2.position.set(0.15, 1.5, 0.35);
+bridgeGoblinGroup.add(bridgeEye2);
+
+// Bridge goblin ears
+const bridgeEar1 = new THREE.Mesh(earGeometry, earMaterial);
+bridgeEar1.rotation.z = Math.PI / 2;
+bridgeEar1.position.set(-0.5, 1.5, 0);
+bridgeEar1.castShadow = true;
+bridgeGoblinGroup.add(bridgeEar1);
+
+const bridgeEar2 = new THREE.Mesh(earGeometry, earMaterial);
+bridgeEar2.rotation.z = -Math.PI / 2;
+bridgeEar2.position.set(0.5, 1.5, 0);
+bridgeEar2.castShadow = true;
+bridgeGoblinGroup.add(bridgeEar2);
+
+bridgeGoblinGroup.position.set(0, 0.5, 0);
+scene.add(bridgeGoblinGroup);
+
+const bridgeGoblin = {
+    mesh: bridgeGoblinGroup,
+    speed: 0.015,
+    direction: 1,
+    patrolLeft: -2,
+    patrolRight: 2,
     alive: true,
     radius: 1.5
 };
@@ -492,9 +577,16 @@ function shootBullet() {
     bulletMesh.castShadow = true;
     scene.add(bulletMesh);
     
+    // Shoot in the direction player is facing
+    const direction = new THREE.Vector3(
+        Math.sin(player.rotation),
+        0,
+        Math.cos(player.rotation)
+    );
+    
     const bullet = {
         mesh: bulletMesh,
-        velocity: player.direction.clone().multiplyScalar(0.5),
+        velocity: direction.multiplyScalar(0.5),
         radius: 0.2
     };
     bullets.push(bullet);
@@ -507,21 +599,25 @@ function updatePlayer() {
     
     const prevPos = playerGroup.position.clone();
     
-    if (keys.ArrowUp) {
-        playerGroup.position.z -= player.speed;
-        player.direction.set(0, 0, -1);
-    }
-    if (keys.ArrowDown) {
-        playerGroup.position.z += player.speed;
-        player.direction.set(0, 0, 1);
-    }
+    // Rotation with left/right arrows
     if (keys.ArrowLeft) {
-        playerGroup.position.x -= player.speed;
-        player.direction.set(-1, 0, 0);
+        player.rotation += player.rotationSpeed;
     }
     if (keys.ArrowRight) {
-        playerGroup.position.x += player.speed;
-        player.direction.set(1, 0, 0);
+        player.rotation -= player.rotationSpeed;
+    }
+    
+    // Set player mesh rotation
+    playerGroup.rotation.y = player.rotation;
+    
+    // Forward/backward movement based on rotation
+    if (keys.ArrowUp) {
+        playerGroup.position.x += Math.sin(player.rotation) * player.speed;
+        playerGroup.position.z += Math.cos(player.rotation) * player.speed;
+    }
+    if (keys.ArrowDown) {
+        playerGroup.position.x -= Math.sin(player.rotation) * player.speed;
+        playerGroup.position.z -= Math.cos(player.rotation) * player.speed;
     }
     
     // Boundary check
@@ -536,10 +632,18 @@ function updatePlayer() {
     const terrainHeight = getTerrainHeight(playerGroup.position.x, playerGroup.position.z);
     playerGroup.position.y = terrainHeight;
     
-    // Camera follow
-    camera.position.x = playerGroup.position.x;
-    camera.position.z = playerGroup.position.z + 20;
-    camera.lookAt(playerGroup.position.x, 0, playerGroup.position.z);
+    // Camera follow with rotation
+    const cameraDistance = 20;
+    const cameraHeight = 15;
+    
+    // Calculate camera offset based on player rotation (behind the player)
+    const cameraOffsetX = -Math.sin(player.rotation) * cameraDistance;
+    const cameraOffsetZ = -Math.cos(player.rotation) * cameraDistance;
+    
+    camera.position.x = playerGroup.position.x + cameraOffsetX;
+    camera.position.y = playerGroup.position.y + cameraHeight;
+    camera.position.z = playerGroup.position.z + cameraOffsetZ;
+    camera.lookAt(playerGroup.position.x, playerGroup.position.y, playerGroup.position.z);
 }
 
 function updateBullets() {
@@ -560,6 +664,18 @@ function updateBullets() {
             if (dist < goblin.radius + bullet.radius) {
                 goblin.alive = false;
                 goblinGroup.visible = false;
+                scene.remove(bullet.mesh);
+                bullets.splice(i, 1);
+                continue;
+            }
+        }
+        
+        // Check collision with bridge goblin
+        if (bridgeGoblin.alive) {
+            const dist = bullet.mesh.position.distanceTo(bridgeGoblinGroup.position);
+            if (dist < bridgeGoblin.radius + bullet.radius) {
+                bridgeGoblin.alive = false;
+                bridgeGoblinGroup.visible = false;
                 scene.remove(bullet.mesh);
                 bullets.splice(i, 1);
             }
@@ -603,6 +719,43 @@ function updateGoblin() {
     
     // Check collision with player
     const dist = playerGroup.position.distanceTo(goblinGroup.position);
+    if (dist < 1.5) {
+        resetGame();
+    }
+}
+
+function updateBridgeGoblin() {
+    if (!bridgeGoblin.alive || gameWon) return;
+    
+    // Check distance to player
+    const distToPlayer = Math.sqrt(
+        Math.pow(playerGroup.position.x - bridgeGoblinGroup.position.x, 2) + 
+        Math.pow(playerGroup.position.z - bridgeGoblinGroup.position.z, 2)
+    );
+    
+    // If player is within 15 units, chase them
+    if (distToPlayer < 15) {
+        const directionX = playerGroup.position.x - bridgeGoblinGroup.position.x;
+        const directionZ = playerGroup.position.z - bridgeGoblinGroup.position.z;
+        const length = Math.sqrt(directionX * directionX + directionZ * directionZ);
+        
+        if (length > 0) {
+            bridgeGoblinGroup.position.x += (directionX / length) * bridgeGoblin.speed;
+            bridgeGoblinGroup.position.z += (directionZ / length) * bridgeGoblin.speed;
+        }
+    } else {
+        // Otherwise patrol the bridge (only x-axis)
+        bridgeGoblinGroup.position.x += bridgeGoblin.speed * bridgeGoblin.direction;
+        
+        if (bridgeGoblinGroup.position.x <= bridgeGoblin.patrolLeft) {
+            bridgeGoblin.direction = 1;
+        } else if (bridgeGoblinGroup.position.x >= bridgeGoblin.patrolRight) {
+            bridgeGoblin.direction = -1;
+        }
+    }
+    
+    // Check collision with player
+    const dist = playerGroup.position.distanceTo(bridgeGoblinGroup.position);
     if (dist < 1.5) {
         resetGame();
     }
@@ -655,7 +808,7 @@ function checkCollisions(prevPos) {
     });
     
     // Treasure
-    if (!goblin.alive) {
+    if (!goblin.alive && !bridgeGoblin.alive) {
         const dist = playerGroup.position.distanceTo(treasureGroup.position);
         if (dist < treasure.radius + 0.8) {
             gameWon = true;
@@ -665,12 +818,17 @@ function checkCollisions(prevPos) {
 
 function resetGame() {
     playerGroup.position.set(0, getTerrainHeight(0, 40), 40);
-    player.direction.set(0, 0, -1);
+    player.rotation = 0;
+    playerGroup.rotation.y = 0;
     goblin.alive = true;
     goblinGroup.visible = true;
     const goblinTerrainHeight = getTerrainHeight(25, -50);
     goblinGroup.position.set(25, goblinTerrainHeight, -50);
     goblin.direction = 1;
+    bridgeGoblin.alive = true;
+    bridgeGoblinGroup.visible = true;
+    bridgeGoblinGroup.position.set(0, 0.5, 0);
+    bridgeGoblin.direction = 1;
     bullets.forEach(b => scene.remove(b.mesh));
     bullets.length = 0;
     ammo = maxAmmo;
@@ -719,6 +877,7 @@ function animate() {
     updatePlayer();
     updateBullets();
     updateGoblin();
+    updateBridgeGoblin();
     drawHUD();
     
     renderer.render(scene, camera);
