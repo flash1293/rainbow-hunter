@@ -1,0 +1,215 @@
+    function playRepairSound() {
+        const oscillator = audioContext.createOscillator();
+        const gainNode = audioContext.createGain();
+        
+        oscillator.connect(gainNode);
+        gainNode.connect(audioContext.destination);
+        
+        oscillator.frequency.setValueAtTime(400, audioContext.currentTime);
+        oscillator.frequency.exponentialRampToValueAtTime(800, audioContext.currentTime + 0.3);
+        
+        gainNode.gain.setValueAtTime(0.4, audioContext.currentTime);
+        gainNode.gain.exponentialRampToValueAtTime(0.01, audioContext.currentTime + 0.3);
+        
+        oscillator.start(audioContext.currentTime);
+        oscillator.stop(audioContext.currentTime + 0.3);
+        oscillator.stop(audioContext.currentTime + 0.3);
+    }
+    function playEmptyGunSound() {
+        const oscillator = audioContext.createOscillator();
+        const gainNode = audioContext.createGain();
+        
+        oscillator.connect(gainNode);
+        gainNode.connect(audioContext.destination);
+        
+        oscillator.frequency.setValueAtTime(150, audioContext.currentTime);
+        oscillator.frequency.setValueAtTime(100, audioContext.currentTime + 0.05);
+        
+        gainNode.gain.setValueAtTime(0.2, audioContext.currentTime);
+        gainNode.gain.exponentialRampToValueAtTime(0.01, audioContext.currentTime + 0.1);
+        
+        oscillator.start(audioContext.currentTime);
+        oscillator.stop(audioContext.currentTime + 0.1);
+        oscillator.stop(audioContext.currentTime + 0.1);
+    }
+    function playStuckSound() {
+        const oscillator = audioContext.createOscillator();
+        const gainNode = audioContext.createGain();
+        
+        oscillator.connect(gainNode);
+        gainNode.connect(audioContext.destination);
+        
+        oscillator.type = 'triangle';
+        oscillator.frequency.setValueAtTime(200, audioContext.currentTime);
+        oscillator.frequency.exponentialRampToValueAtTime(150, audioContext.currentTime + 0.15);
+        
+        gainNode.gain.setValueAtTime(0.3, audioContext.currentTime);
+        gainNode.gain.exponentialRampToValueAtTime(0.01, audioContext.currentTime + 0.15);
+        
+        oscillator.start(audioContext.currentTime);
+        oscillator.stop(audioContext.currentTime + 0.15);
+        oscillator.stop(audioContext.currentTime + 0.15);
+    }
+    function playBulletImpactSound() {
+        const oscillator = audioContext.createOscillator();
+        const gainNode = audioContext.createGain();
+        const filter = audioContext.createBiquadFilter();
+        
+        oscillator.connect(filter);
+        filter.connect(gainNode);
+        gainNode.connect(audioContext.destination);
+        
+        oscillator.type = 'square';
+        filter.type = 'lowpass';
+        filter.frequency.setValueAtTime(400, audioContext.currentTime);
+        
+        oscillator.frequency.setValueAtTime(300, audioContext.currentTime);
+        oscillator.frequency.exponentialRampToValueAtTime(100, audioContext.currentTime + 0.08);
+        
+        gainNode.gain.setValueAtTime(0.2, audioContext.currentTime);
+        gainNode.gain.exponentialRampToValueAtTime(0.01, audioContext.currentTime + 0.08);
+        
+        oscillator.start(audioContext.currentTime);
+        oscillator.stop(audioContext.currentTime + 0.08);
+        oscillator.stop(audioContext.currentTime + 0.08);
+    }
+    function playGoblinDeathSound() {
+        const oscillator = audioContext.createOscillator();
+        const gainNode = audioContext.createGain();
+        
+        oscillator.connect(gainNode);
+        gainNode.connect(audioContext.destination);
+        
+        oscillator.type = 'sawtooth';
+        oscillator.frequency.setValueAtTime(300, audioContext.currentTime);
+        oscillator.frequency.exponentialRampToValueAtTime(100, audioContext.currentTime + 0.4);
+        
+        gainNode.gain.setValueAtTime(0.3, audioContext.currentTime);
+        gainNode.gain.exponentialRampToValueAtTime(0.01, audioContext.currentTime + 0.4);
+        
+        oscillator.start(audioContext.currentTime);
+        oscillator.stop(audioContext.currentTime + 0.4);
+        oscillator.stop(audioContext.currentTime + 0.4);
+    }
+    function playWinSound() {
+        const notes = [523, 587, 659, 784, 880];
+        notes.forEach((freq, i) => {
+            const oscillator = audioContext.createOscillator();
+            const gainNode = audioContext.createGain();
+            
+            oscillator.connect(gainNode);
+            gainNode.connect(audioContext.destination);
+            
+            oscillator.frequency.setValueAtTime(freq, audioContext.currentTime + i * 0.1);
+            
+            gainNode.gain.setValueAtTime(0.3, audioContext.currentTime + i * 0.1);
+            gainNode.gain.exponentialRampToValueAtTime(0.01, audioContext.currentTime + i * 0.1 + 0.3);
+            
+            oscillator.start(audioContext.currentTime + i * 0.1);
+            oscillator.stop(audioContext.currentTime + i * 0.1 + 0.3);
+    });
+        });
+    }
+    function startBackgroundMusic() {
+        const melody = [
+            { freq: 523, duration: 0.3 }, { freq: 587, duration: 0.3 }, { freq: 659, duration: 0.3 },
+            { freq: 784, duration: 0.6 }, { freq: 659, duration: 0.3 }, { freq: 587, duration: 0.3 },
+            { freq: 523, duration: 0.9 }, { freq: 587, duration: 0.3 }, { freq: 659, duration: 0.3 },
+            { freq: 784, duration: 0.3 }, { freq: 880, duration: 0.6 }, { freq: 784, duration: 0.3 },
+            { freq: 659, duration: 0.9 }, { freq: 659, duration: 0.3 }, { freq: 784, duration: 0.3 },
+            { freq: 880, duration: 0.3 }, { freq: 987, duration: 0.6 }, { freq: 880, duration: 0.3 },
+            { freq: 784, duration: 0.9 }, { freq: 659, duration: 0.3 }, { freq: 587, duration: 0.3 },
+            { freq: 523, duration: 0.6 }, { freq: 587, duration: 0.3 }, { freq: 659, duration: 0.9 },
+            { freq: 587, duration: 0.3 }, { freq: 523, duration: 0.3 }, { freq: 440, duration: 0.6 },
+            { freq: 494, duration: 0.3 }, { freq: 523, duration: 0.9 }, { freq: 659, duration: 0.3 },
+            { freq: 784, duration: 0.3 }, { freq: 659, duration: 0.3 }, { freq: 523, duration: 0.6 },
+            { freq: 587, duration: 0.3 }, { freq: 659, duration: 0.9 }, { freq: 784, duration: 0.3 },
+            { freq: 880, duration: 0.3 }, { freq: 987, duration: 0.6 }, { freq: 880, duration: 0.3 },
+            { freq: 784, duration: 0.9 }
+        ];
+        
+        let currentTime = audioContext.currentTime;
+        
+        melody.forEach(note => {
+            const oscillator = audioContext.createOscillator();
+            const gainNode = audioContext.createGain();
+            
+            oscillator.connect(gainNode);
+            gainNode.connect(audioContext.destination);
+            
+            oscillator.frequency.setValueAtTime(note.freq, currentTime);
+            gainNode.gain.setValueAtTime(0.04, currentTime);
+            gainNode.gain.exponentialRampToValueAtTime(0.001, currentTime + note.duration);
+            
+            oscillator.start(currentTime);
+            oscillator.stop(currentTime + note.duration);
+            
+            backgroundMusicOscillators.push(oscillator);
+            backgroundMusicGains.push(gainNode);
+            
+            currentTime += note.duration;
+    });
+        });
+        
+        const totalDuration = currentTime - audioContext.currentTime;
+        const timeout = setTimeout(() => startBackgroundMusic(), totalDuration * 1000);
+        backgroundMusicTimeouts.push(timeout);
+    }
+    function stopBackgroundMusic() {
+        backgroundMusicOscillators.forEach(osc => {
+            try {
+                osc.frequency.cancelScheduledValues(audioContext.currentTime);
+                osc.stop(audioContext.currentTime);
+            } catch (e) {
+                // Oscillator may already be stopped
+            }
+    });
+        });
+        
+        backgroundMusicGains.forEach(gain => {
+            try {
+                gain.gain.cancelScheduledValues(audioContext.currentTime);
+            } catch (e) {
+                // May already be cancelled
+            }
+    });
+        });
+        
+        backgroundMusicTimeouts.forEach(timeout => clearTimeout(timeout));
+        
+        backgroundMusicOscillators = [];
+        backgroundMusicGains = [];
+        backgroundMusicTimeouts = [];
+    }
+    function startBikeSound() {
+        if (bikeOscillator) return;
+        
+        bikeOscillator = audioContext.createOscillator();
+        bikeGainNode = audioContext.createGain();
+        bikeFilterNode = audioContext.createBiquadFilter();
+        
+        bikeOscillator.type = 'white';
+        bikeFilterNode.type = 'bandpass';
+        bikeFilterNode.frequency.setValueAtTime(800, audioContext.currentTime);
+        bikeFilterNode.Q.setValueAtTime(0.5, audioContext.currentTime);
+        
+        bikeOscillator.connect(bikeFilterNode);
+        bikeFilterNode.connect(bikeGainNode);
+        bikeGainNode.connect(audioContext.destination);
+        
+        bikeGainNode.gain.setValueAtTime(0.08, audioContext.currentTime);
+        
+        bikeOscillator.start(audioContext.currentTime);
+    }
+    function stopBikeSound() {
+        if (bikeOscillator) {
+            try {
+                bikeOscillator.stop(audioContext.currentTime);
+            } catch (e) {
+                // May already be stopped
+            }
+            bikeOscillator = null;
+            bikeGainNode = null;
+            bikeFilterNode = null;
+    }
+
