@@ -1,3 +1,20 @@
+// Difficulty selection
+let difficulty = null; // 'easy' or 'hard'
+let speedMultiplier = 1; // Speed multiplier based on difficulty
+
+function startGame(selectedDifficulty) {
+    difficulty = selectedDifficulty;
+    speedMultiplier = difficulty === 'hard' ? 1.5 : 1; // 50% faster on hard
+    document.getElementById('difficulty-menu').style.display = 'none';
+    document.getElementById('game-container').style.display = 'block';
+    initGame();
+}
+
+// Add event listeners for difficulty buttons
+document.getElementById('easy-btn').addEventListener('click', () => startGame('easy'));
+document.getElementById('hard-btn').addEventListener('click', () => startGame('hard'));
+
+function initGame() {
 // Three.js Setup
 const container = document.getElementById('gameCanvas');
 const scene = new THREE.Scene();
@@ -1245,7 +1262,7 @@ scene.add(goblinGroup);
 
 const goblin = {
     mesh: goblinGroup,
-    speed: 0.015,
+    speed: 0.015 * speedMultiplier,
     direction: 1,
     patrolLeft: 15,
     patrolRight: 35,
@@ -1298,7 +1315,7 @@ scene.add(bridgeGoblinGroup);
 
 const bridgeGoblin = {
     mesh: bridgeGoblinGroup,
-    speed: 0.012,
+    speed: 0.012 * speedMultiplier,
     direction: 1,
     patrolLeft: -2,
     patrolRight: 2,
@@ -1354,7 +1371,7 @@ function createGoblin(x, z, patrolLeft, patrolRight, speed = 0.013) {
     
     return {
         mesh: goblinGrp,
-        speed: speed,
+        speed: speed * speedMultiplier,
         direction: 1,
         patrolLeft: patrolLeft,
         patrolRight: patrolRight,
@@ -1367,60 +1384,68 @@ function createGoblin(x, z, patrolLeft, patrolRight, speed = 0.013) {
 }
 
 // Create 53 additional goblins at different locations (55 total with main goblin and bridge goblin)
-additionalGoblins.push(createGoblin(-40, -20, -45, -35, 0.012));
-additionalGoblins.push(createGoblin(50, 10, 45, 55, 0.014));
-additionalGoblins.push(createGoblin(-30, 30, -35, -25, 0.013));
-additionalGoblins.push(createGoblin(40, -40, 35, 45, 0.016));
-additionalGoblins.push(createGoblin(10, -30, 5, 15, 0.013));
-additionalGoblins.push(createGoblin(-70, 50, -75, -65, 0.013));
-additionalGoblins.push(createGoblin(80, -30, 75, 85, 0.014));
-additionalGoblins.push(createGoblin(-50, -70, -55, -45, 0.015));
-additionalGoblins.push(createGoblin(20, 60, 15, 25, 0.013));
-additionalGoblins.push(createGoblin(60, -70, 55, 65, 0.016));
-additionalGoblins.push(createGoblin(-80, -40, -85, -75, 0.013));
-additionalGoblins.push(createGoblin(90, 40, 85, 95, 0.014));
-additionalGoblins.push(createGoblin(-15, -25, -20, -10, 0.013));
-additionalGoblins.push(createGoblin(45, 15, 40, 50, 0.014));
-additionalGoblins.push(createGoblin(-25, 50, -30, -20, 0.012));
-additionalGoblins.push(createGoblin(55, -45, 50, 60, 0.015));
-additionalGoblins.push(createGoblin(-65, 35, -70, -60, 0.013));
-additionalGoblins.push(createGoblin(75, -10, 70, 80, 0.014));
-additionalGoblins.push(createGoblin(-55, 65, -60, -50, 0.014));
-additionalGoblins.push(createGoblin(70, 55, 65, 75, 0.015));
-additionalGoblins.push(createGoblin(-45, -55, -50, -40, 0.013));
-additionalGoblins.push(createGoblin(60, -60, 55, 65, 0.014));
-additionalGoblins.push(createGoblin(-85, 25, -90, -80, 0.013));
-additionalGoblins.push(createGoblin(95, -20, 90, 100, 0.016));
-additionalGoblins.push(createGoblin(5, -70, 0, 10, 0.014));
-additionalGoblins.push(createGoblin(-35, 75, -40, -30, 0.013));
-additionalGoblins.push(createGoblin(48, 70, 43, 53, 0.015));
-additionalGoblins.push(createGoblin(-75, -55, -80, -70, 0.013));
-additionalGoblins.push(createGoblin(85, -65, 80, 90, 0.014));
-additionalGoblins.push(createGoblin(-20, -65, -25, -15, 0.014));
-additionalGoblins.push(createGoblin(32, 80, 27, 37, 0.013));
-additionalGoblins.push(createGoblin(-90, -25, -95, -85, 0.013));
-additionalGoblins.push(createGoblin(100, 30, 95, 105, 0.016));
-// 20 additional goblins
-additionalGoblins.push(createGoblin(-10, -80, -15, -5, 0.014));
-additionalGoblins.push(createGoblin(25, -75, 20, 30, 0.014));
-additionalGoblins.push(createGoblin(-95, 10, -100, -90, 0.013));
-additionalGoblins.push(createGoblin(105, -10, 100, 110, 0.016));
-additionalGoblins.push(createGoblin(-60, -30, -65, -55, 0.014));
-additionalGoblins.push(createGoblin(65, 25, 60, 70, 0.014));
-additionalGoblins.push(createGoblin(-38, -45, -43, -33, 0.013));
-additionalGoblins.push(createGoblin(52, -55, 47, 57, 0.015));
-additionalGoblins.push(createGoblin(-72, 65, -77, -67, 0.014));
-additionalGoblins.push(createGoblin(82, 70, 77, 87, 0.016));
-additionalGoblins.push(createGoblin(-28, -85, -33, -23, 0.014));
-additionalGoblins.push(createGoblin(38, 85, 33, 43, 0.014));
-additionalGoblins.push(createGoblin(-100, -15, -105, -95, 0.013));
-additionalGoblins.push(createGoblin(110, 15, 105, 115, 0.016));
-additionalGoblins.push(createGoblin(-12, 55, -17, -7, 0.014));
-additionalGoblins.push(createGoblin(28, -50, 23, 33, 0.014));
-additionalGoblins.push(createGoblin(-82, -65, -87, -77, 0.013));
-additionalGoblins.push(createGoblin(92, -75, 87, 97, 0.016));
-additionalGoblins.push(createGoblin(-48, 82, -53, -43, 0.014));
-additionalGoblins.push(createGoblin(58, -82, 53, 63, 0.016));
+// On easy mode, only create first 20
+const goblinPositions = [
+    [-40, -20, -45, -35, 0.012],
+    [50, 10, 45, 55, 0.014],
+    [-30, 30, -35, -25, 0.013],
+    [40, -40, 35, 45, 0.016],
+    [10, -30, 5, 15, 0.013],
+    [-70, 50, -75, -65, 0.013],
+    [80, -30, 75, 85, 0.014],
+    [-50, -70, -55, -45, 0.015],
+    [20, 60, 15, 25, 0.013],
+    [60, -70, 55, 65, 0.016],
+    [-80, -40, -85, -75, 0.013],
+    [90, 40, 85, 95, 0.014],
+    [-15, -25, -20, -10, 0.013],
+    [45, 15, 40, 50, 0.014],
+    [-25, 50, -30, -20, 0.012],
+    [55, -45, 50, 60, 0.015],
+    [-65, 35, -70, -60, 0.013],
+    [75, -10, 70, 80, 0.014],
+    [-55, 65, -60, -50, 0.014],
+    [70, 55, 65, 75, 0.015],
+    [-45, -55, -50, -40, 0.013],
+    [60, -60, 55, 65, 0.014],
+    [-85, 25, -90, -80, 0.013],
+    [95, -20, 90, 100, 0.016],
+    [5, -70, 0, 10, 0.014],
+    [-35, 75, -40, -30, 0.013],
+    [48, 70, 43, 53, 0.015],
+    [-75, -55, -80, -70, 0.013],
+    [85, -65, 80, 90, 0.014],
+    [-20, -65, -25, -15, 0.014],
+    [32, 80, 27, 37, 0.013],
+    [-90, -25, -95, -85, 0.013],
+    [100, 30, 95, 105, 0.016],
+    [-10, -80, -15, -5, 0.014],
+    [25, -75, 20, 30, 0.014],
+    [-95, 10, -100, -90, 0.013],
+    [105, -10, 100, 110, 0.016],
+    [-60, -30, -65, -55, 0.014],
+    [65, 25, 60, 70, 0.014],
+    [-38, -45, -43, -33, 0.013],
+    [52, -55, 47, 57, 0.015],
+    [-72, 65, -77, -67, 0.014],
+    [82, 70, 77, 87, 0.016],
+    [-28, -85, -33, -23, 0.014],
+    [38, 85, 33, 43, 0.014],
+    [-100, -15, -105, -95, 0.013],
+    [110, 15, 105, 115, 0.016],
+    [-12, 55, -17, -7, 0.014],
+    [28, -50, 23, 33, 0.014],
+    [-82, -65, -87, -77, 0.013],
+    [92, -75, 87, 97, 0.016],
+    [-48, 82, -53, -43, 0.014],
+    [58, -82, 53, 63, 0.016]
+];
+
+const maxGoblins = difficulty === 'easy' ? 20 : 53;
+for (let i = 0; i < maxGoblins; i++) {
+    const pos = goblinPositions[i];
+    additionalGoblins.push(createGoblin(pos[0], pos[1], pos[2], pos[3], pos[4]));
+}
 
 // Elite Guardian Goblins - protect the treasure
 // These goblins are bigger, darker, and tougher
@@ -1477,7 +1502,7 @@ function createGuardianGoblin(x, z, patrolLeft, patrolRight, speed = 0.014) {
     
     return {
         mesh: goblinGrp,
-        speed: speed,
+        speed: speed * speedMultiplier,
         direction: 1,
         patrolLeft: patrolLeft,
         patrolRight: patrolRight,
@@ -1492,15 +1517,18 @@ function createGuardianGoblin(x, z, patrolLeft, patrolRight, speed = 0.014) {
 }
 
 // Create 12 guardian goblins in a protective ring around treasure at (30, -57)
-const treasureX = 30;
-const treasureZ = -57;
-const guardRadius = 8;
-for (let i = 0; i < 12; i++) {
-    const angle = (i / 12) * Math.PI * 2;
-    const x = treasureX + Math.cos(angle) * guardRadius;
-    const z = treasureZ + Math.sin(angle) * guardRadius;
-    const patrolRange = 3;
-    additionalGoblins.push(createGuardianGoblin(x, z, x - patrolRange, x + patrolRange, 0.014));
+// Only on hard difficulty
+if (difficulty === 'hard') {
+    const treasureX = 30;
+    const treasureZ = -57;
+    const guardRadius = 8;
+    for (let i = 0; i < 12; i++) {
+        const angle = (i / 12) * Math.PI * 2;
+        const x = treasureX + Math.cos(angle) * guardRadius;
+        const z = treasureZ + Math.sin(angle) * guardRadius;
+        const patrolRange = 3;
+        additionalGoblins.push(createGuardianGoblin(x, z, x - patrolRange, x + patrolRange, 0.014));
+    }
 }
 
 // Rainbow
@@ -2113,7 +2141,7 @@ function updateAdditionalGoblins() {
                 
                 guardianArrows.push({
                     mesh: arrowMesh,
-                    velocity: direction.multiplyScalar(0.1), // Even slower arrow speed
+                    velocity: direction.multiplyScalar(0.1 * speedMultiplier), // Faster arrows on hard
                     radius: 0.3
                 });
             }
@@ -2374,16 +2402,22 @@ function resetGame() {
 
 // HUD
 const hudCanvas = document.createElement('canvas');
-hudCanvas.width = 800;
-hudCanvas.height = 600;
+hudCanvas.width = window.innerWidth;
+hudCanvas.height = window.innerHeight;
 hudCanvas.style.position = 'absolute';
 hudCanvas.style.top = '0';
 hudCanvas.style.left = '0';
-hudCanvas.style.width = '800px';
-hudCanvas.style.height = '600px';
+hudCanvas.style.width = '100%';
+hudCanvas.style.height = '100%';
 hudCanvas.style.pointerEvents = 'none';
 container.appendChild(hudCanvas);
 const hudCtx = hudCanvas.getContext('2d');
+
+// Update HUD canvas size on window resize
+window.addEventListener('resize', () => {
+    hudCanvas.width = window.innerWidth;
+    hudCanvas.height = window.innerHeight;
+});
 
 function drawHUD() {
     hudCtx.clearRect(0, 0, hudCanvas.width, hudCanvas.height);
@@ -2461,3 +2495,5 @@ function animate() {
 }
 
 animate();
+
+} // End of initGame function

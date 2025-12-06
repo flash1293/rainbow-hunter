@@ -8,7 +8,13 @@
     <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
 </head>
 <body>
-    <div id="game-container">
+    <div id="difficulty-menu">
+        <h1>Fahrrad-Abenteuer</h1>
+        <h2>Wähle Schwierigkeit:</h2>
+        <button id="easy-btn" class="difficulty-btn">Leicht</button>
+        <button id="hard-btn" class="difficulty-btn">Schwierig</button>
+    </div>
+    <div id="game-container" style="display: none;">
         <div id="gameCanvas"></div>
         <div id="controls">
             <p>Steuerung: Pfeiltasten zum Bewegen | LEERTASTE zum Schießen</p>
