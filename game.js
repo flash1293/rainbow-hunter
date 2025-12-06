@@ -3,21 +3,28 @@ const container = document.getElementById('gameCanvas');
 const scene = new THREE.Scene();
 scene.background = new THREE.Color(0x87CEEB);
 
-const camera = new THREE.PerspectiveCamera(75, 800 / 600, 0.1, 2000);
+const camera = new THREE.PerspectiveCamera(75, window.innerWidth / window.innerHeight, 0.1, 2000);
 camera.position.set(0, 15, 20);
 camera.lookAt(0, 0, 0);
 
 const renderer = new THREE.WebGLRenderer({ antialias: true });
-renderer.setSize(800, 600);
+renderer.setSize(window.innerWidth, window.innerHeight);
 renderer.shadowMap.enabled = true;
 renderer.shadowMap.type = THREE.PCFSoftShadowMap;
 container.appendChild(renderer.domElement);
 
 // Make container position relative so HUD can be positioned absolutely within it
 container.style.position = 'relative';
-container.style.width = '800px';
-container.style.height = '600px';
-container.style.display = 'inline-block';
+container.style.width = '100%';
+container.style.height = '100%';
+container.style.display = 'block';
+
+// Handle window resize
+window.addEventListener('resize', () => {
+    camera.aspect = window.innerWidth / window.innerHeight;
+    camera.updateProjectionMatrix();
+    renderer.setSize(window.innerWidth, window.innerHeight);
+});
 
 // Audio Context for sound effects
 const audioContext = new (window.AudioContext || window.webkitAudioContext)();
@@ -190,6 +197,24 @@ function playBulletImpactSound() {
     
     oscillator.start(audioContext.currentTime);
     oscillator.stop(audioContext.currentTime + 0.08);
+}
+
+function playGoblinDeathSound() {
+    const oscillator = audioContext.createOscillator();
+    const gainNode = audioContext.createGain();
+    
+    oscillator.connect(gainNode);
+    gainNode.connect(audioContext.destination);
+    
+    oscillator.type = 'sawtooth';
+    oscillator.frequency.setValueAtTime(400, audioContext.currentTime);
+    oscillator.frequency.exponentialRampToValueAtTime(50, audioContext.currentTime + 0.4);
+    
+    gainNode.gain.setValueAtTime(0.3, audioContext.currentTime);
+    gainNode.gain.exponentialRampToValueAtTime(0.01, audioContext.currentTime + 0.4);
+    
+    oscillator.start(audioContext.currentTime);
+    oscillator.stop(audioContext.currentTime + 0.4);
 }
 
 // Background music
@@ -1220,7 +1245,7 @@ scene.add(goblinGroup);
 
 const goblin = {
     mesh: goblinGroup,
-    speed: 0.02,
+    speed: 0.015,
     direction: 1,
     patrolLeft: 15,
     patrolRight: 35,
@@ -1272,7 +1297,7 @@ scene.add(bridgeGoblinGroup);
 
 const bridgeGoblin = {
     mesh: bridgeGoblinGroup,
-    speed: 0.015,
+    speed: 0.012,
     direction: 1,
     patrolLeft: -2,
     patrolRight: 2,
@@ -1286,7 +1311,7 @@ const bridgeGoblin = {
 const additionalGoblins = [];
 
 // Helper function to create a goblin
-function createGoblin(x, z, patrolLeft, patrolRight, speed = 0.02) {
+function createGoblin(x, z, patrolLeft, patrolRight, speed = 0.013) {
     const goblinGrp = new THREE.Group();
     
     const body = new THREE.Mesh(goblinBodyGeometry, goblinBodyMaterial);
@@ -1338,40 +1363,140 @@ function createGoblin(x, z, patrolLeft, patrolRight, speed = 0.02) {
     };
 }
 
-// Create 33 additional goblins at different locations (35 total with main goblin and bridge goblin)
-additionalGoblins.push(createGoblin(-40, -20, -45, -35, 0.018));
-additionalGoblins.push(createGoblin(50, 10, 45, 55, 0.022));
-additionalGoblins.push(createGoblin(-30, 30, -35, -25, 0.02));
-additionalGoblins.push(createGoblin(40, -40, 35, 45, 0.025));
-additionalGoblins.push(createGoblin(10, -30, 5, 15, 0.02));
-additionalGoblins.push(createGoblin(-70, 50, -75, -65, 0.019));
-additionalGoblins.push(createGoblin(80, -30, 75, 85, 0.021));
-additionalGoblins.push(createGoblin(-50, -70, -55, -45, 0.023));
-additionalGoblins.push(createGoblin(20, 60, 15, 25, 0.02));
-additionalGoblins.push(createGoblin(60, -70, 55, 65, 0.024));
-additionalGoblins.push(createGoblin(-80, -40, -85, -75, 0.02));
-additionalGoblins.push(createGoblin(90, 40, 85, 95, 0.022));
-additionalGoblins.push(createGoblin(-15, -25, -20, -10, 0.02));
-additionalGoblins.push(createGoblin(45, 15, 40, 50, 0.022));
-additionalGoblins.push(createGoblin(-25, 50, -30, -20, 0.018));
-additionalGoblins.push(createGoblin(55, -45, 50, 60, 0.023));
-additionalGoblins.push(createGoblin(-65, 35, -70, -60, 0.02));
-additionalGoblins.push(createGoblin(75, -10, 70, 80, 0.022));
-additionalGoblins.push(createGoblin(-55, 65, -60, -50, 0.021));
-additionalGoblins.push(createGoblin(70, 55, 65, 75, 0.023));
-additionalGoblins.push(createGoblin(-45, -55, -50, -40, 0.019));
-additionalGoblins.push(createGoblin(60, -60, 55, 65, 0.022));
-additionalGoblins.push(createGoblin(-85, 25, -90, -80, 0.02));
-additionalGoblins.push(createGoblin(95, -20, 90, 100, 0.024));
-additionalGoblins.push(createGoblin(5, -70, 0, 10, 0.021));
-additionalGoblins.push(createGoblin(-35, 75, -40, -30, 0.019));
-additionalGoblins.push(createGoblin(48, 70, 43, 53, 0.023));
-additionalGoblins.push(createGoblin(-75, -55, -80, -70, 0.02));
-additionalGoblins.push(createGoblin(85, -65, 80, 90, 0.022));
-additionalGoblins.push(createGoblin(-20, -65, -25, -15, 0.021));
-additionalGoblins.push(createGoblin(32, 80, 27, 37, 0.02));
-additionalGoblins.push(createGoblin(-90, -25, -95, -85, 0.019));
-additionalGoblins.push(createGoblin(100, 30, 95, 105, 0.025));
+// Create 53 additional goblins at different locations (55 total with main goblin and bridge goblin)
+additionalGoblins.push(createGoblin(-40, -20, -45, -35, 0.012));
+additionalGoblins.push(createGoblin(50, 10, 45, 55, 0.014));
+additionalGoblins.push(createGoblin(-30, 30, -35, -25, 0.013));
+additionalGoblins.push(createGoblin(40, -40, 35, 45, 0.016));
+additionalGoblins.push(createGoblin(10, -30, 5, 15, 0.013));
+additionalGoblins.push(createGoblin(-70, 50, -75, -65, 0.013));
+additionalGoblins.push(createGoblin(80, -30, 75, 85, 0.014));
+additionalGoblins.push(createGoblin(-50, -70, -55, -45, 0.015));
+additionalGoblins.push(createGoblin(20, 60, 15, 25, 0.013));
+additionalGoblins.push(createGoblin(60, -70, 55, 65, 0.016));
+additionalGoblins.push(createGoblin(-80, -40, -85, -75, 0.013));
+additionalGoblins.push(createGoblin(90, 40, 85, 95, 0.014));
+additionalGoblins.push(createGoblin(-15, -25, -20, -10, 0.013));
+additionalGoblins.push(createGoblin(45, 15, 40, 50, 0.014));
+additionalGoblins.push(createGoblin(-25, 50, -30, -20, 0.012));
+additionalGoblins.push(createGoblin(55, -45, 50, 60, 0.015));
+additionalGoblins.push(createGoblin(-65, 35, -70, -60, 0.013));
+additionalGoblins.push(createGoblin(75, -10, 70, 80, 0.014));
+additionalGoblins.push(createGoblin(-55, 65, -60, -50, 0.014));
+additionalGoblins.push(createGoblin(70, 55, 65, 75, 0.015));
+additionalGoblins.push(createGoblin(-45, -55, -50, -40, 0.013));
+additionalGoblins.push(createGoblin(60, -60, 55, 65, 0.014));
+additionalGoblins.push(createGoblin(-85, 25, -90, -80, 0.013));
+additionalGoblins.push(createGoblin(95, -20, 90, 100, 0.016));
+additionalGoblins.push(createGoblin(5, -70, 0, 10, 0.014));
+additionalGoblins.push(createGoblin(-35, 75, -40, -30, 0.013));
+additionalGoblins.push(createGoblin(48, 70, 43, 53, 0.015));
+additionalGoblins.push(createGoblin(-75, -55, -80, -70, 0.013));
+additionalGoblins.push(createGoblin(85, -65, 80, 90, 0.014));
+additionalGoblins.push(createGoblin(-20, -65, -25, -15, 0.014));
+additionalGoblins.push(createGoblin(32, 80, 27, 37, 0.013));
+additionalGoblins.push(createGoblin(-90, -25, -95, -85, 0.013));
+additionalGoblins.push(createGoblin(100, 30, 95, 105, 0.016));
+// 20 additional goblins
+additionalGoblins.push(createGoblin(-10, -80, -15, -5, 0.014));
+additionalGoblins.push(createGoblin(25, -75, 20, 30, 0.014));
+additionalGoblins.push(createGoblin(-95, 10, -100, -90, 0.013));
+additionalGoblins.push(createGoblin(105, -10, 100, 110, 0.016));
+additionalGoblins.push(createGoblin(-60, -30, -65, -55, 0.014));
+additionalGoblins.push(createGoblin(65, 25, 60, 70, 0.014));
+additionalGoblins.push(createGoblin(-38, -45, -43, -33, 0.013));
+additionalGoblins.push(createGoblin(52, -55, 47, 57, 0.015));
+additionalGoblins.push(createGoblin(-72, 65, -77, -67, 0.014));
+additionalGoblins.push(createGoblin(82, 70, 77, 87, 0.016));
+additionalGoblins.push(createGoblin(-28, -85, -33, -23, 0.014));
+additionalGoblins.push(createGoblin(38, 85, 33, 43, 0.014));
+additionalGoblins.push(createGoblin(-100, -15, -105, -95, 0.013));
+additionalGoblins.push(createGoblin(110, 15, 105, 115, 0.016));
+additionalGoblins.push(createGoblin(-12, 55, -17, -7, 0.014));
+additionalGoblins.push(createGoblin(28, -50, 23, 33, 0.014));
+additionalGoblins.push(createGoblin(-82, -65, -87, -77, 0.013));
+additionalGoblins.push(createGoblin(92, -75, 87, 97, 0.016));
+additionalGoblins.push(createGoblin(-48, 82, -53, -43, 0.014));
+additionalGoblins.push(createGoblin(58, -82, 53, 63, 0.016));
+
+// Elite Guardian Goblins - protect the treasure
+// These goblins are bigger, darker, and tougher
+function createGuardianGoblin(x, z, patrolLeft, patrolRight, speed = 0.014) {
+    const goblinGrp = new THREE.Group();
+    
+    // Larger, darker body
+    const bodyGeometry = new THREE.BoxGeometry(0.8, 1.0, 0.5);
+    const bodyMaterial = new THREE.MeshLambertMaterial({ color: 0x0a0a0a });
+    const body = new THREE.Mesh(bodyGeometry, bodyMaterial);
+    body.position.y = 1.0;
+    body.castShadow = true;
+    goblinGrp.add(body);
+    
+    // Larger head
+    const headGeometry = new THREE.SphereGeometry(0.5, 16, 16);
+    const headMaterial = new THREE.MeshLambertMaterial({ color: 0x1a2a1a });
+    const head = new THREE.Mesh(headGeometry, headMaterial);
+    head.position.y = 1.8;
+    head.castShadow = true;
+    goblinGrp.add(head);
+    
+    // Glowing yellow eyes (elite)
+    const eyeGeometry = new THREE.SphereGeometry(0.1, 8, 8);
+    const eyeMaterial = new THREE.MeshBasicMaterial({ color: 0xffff00 });
+    const e1 = new THREE.Mesh(eyeGeometry, eyeMaterial);
+    e1.position.set(-0.18, 1.8, 0.42);
+    goblinGrp.add(e1);
+    
+    const e2 = new THREE.Mesh(eyeGeometry, eyeMaterial);
+    e2.position.set(0.18, 1.8, 0.42);
+    goblinGrp.add(e2);
+    
+    // Larger ears
+    const earGeometry = new THREE.ConeGeometry(0.18, 0.5, 4);
+    const earMaterial = new THREE.MeshLambertMaterial({ color: 0x1a2a1a });
+    const er1 = new THREE.Mesh(earGeometry, earMaterial);
+    er1.rotation.z = Math.PI / 2;
+    er1.position.set(-0.6, 1.8, 0);
+    er1.castShadow = true;
+    goblinGrp.add(er1);
+    
+    const er2 = new THREE.Mesh(earGeometry, earMaterial);
+    er2.rotation.z = -Math.PI / 2;
+    er2.position.set(0.6, 1.8, 0);
+    er2.castShadow = true;
+    goblinGrp.add(er2);
+    
+    goblinGrp.position.set(x, getTerrainHeight(x, z), z);
+    scene.add(goblinGrp);
+    
+    // Higher health - takes 5 hits
+    const health = 5;
+    
+    return {
+        mesh: goblinGrp,
+        speed: speed,
+        direction: 1,
+        patrolLeft: patrolLeft,
+        patrolRight: patrolRight,
+        alive: true,
+        radius: 1.8,
+        health: health,
+        maxHealth: health,
+        isGuardian: true
+    };
+}
+
+// Create 12 guardian goblins in a protective ring around treasure at (30, -57)
+const treasureX = 30;
+const treasureZ = -57;
+const guardRadius = 8;
+for (let i = 0; i < 12; i++) {
+    const angle = (i / 12) * Math.PI * 2;
+    const x = treasureX + Math.cos(angle) * guardRadius;
+    const z = treasureZ + Math.sin(angle) * guardRadius;
+    const patrolRange = 3;
+    additionalGoblins.push(createGuardianGoblin(x, z, x - patrolRange, x + patrolRange, 0.014));
+}
 
 // Rainbow
 const rainbowGroup = new THREE.Group();
@@ -1611,6 +1736,7 @@ function updateBullets() {
                 createExplosion(goblinGroup.position.x, goblinGroup.position.y + 1, goblinGroup.position.z);
                 if (goblin.health <= 0) {
                     goblin.alive = false;
+                    playGoblinDeathSound();
                     // Make goblin lie down instead of disappearing
                     goblinGroup.rotation.z = Math.PI / 2;
                     goblinGroup.position.y = getTerrainHeight(goblinGroup.position.x, goblinGroup.position.z) + 0.5;
@@ -1627,6 +1753,7 @@ function updateBullets() {
                 createExplosion(bridgeGoblinGroup.position.x, bridgeGoblinGroup.position.y + 1, bridgeGoblinGroup.position.z);
                 if (bridgeGoblin.health <= 0) {
                     bridgeGoblin.alive = false;
+                    playGoblinDeathSound();
                     bridgeGoblinGroup.rotation.z = Math.PI / 2;
                     bridgeGoblinGroup.position.y = 1.0;
                 }
@@ -1645,6 +1772,7 @@ function updateBullets() {
                         createExplosion(addGob.mesh.position.x, addGob.mesh.position.y + 1, addGob.mesh.position.z);
                         if (addGob.health <= 0) {
                             addGob.alive = false;
+                            playGoblinDeathSound();
                             addGob.mesh.rotation.z = Math.PI / 2;
                             const terrainH = getTerrainHeight(addGob.mesh.position.x, addGob.mesh.position.z);
                             addGob.mesh.position.y = terrainH + 0.5;
@@ -1922,6 +2050,18 @@ function updateAdditionalGoblins() {
 function checkCollisions(prevPos) {
     let isStuck = false;
     
+    // Mountains (world boundaries)
+    mountainPositions.forEach(mtn => {
+        const dist = new THREE.Vector2(
+            playerGroup.position.x - mtn.x,
+            playerGroup.position.z - mtn.z
+        ).length();
+        if (dist < mtn.width/2 + 1.5) {
+            playerGroup.position.copy(prevPos);
+            isStuck = true;
+        }
+    });
+    
     // Rocks
     rocks.forEach(rock => {
         const dist = new THREE.Vector2(
@@ -2021,15 +2161,11 @@ function checkCollisions(prevPos) {
         }
     }
     
-    // Treasure
-    const allGoblinsDead = !goblin.alive && !bridgeGoblin.alive && 
-                          additionalGoblins.every(g => !g.alive);
-    if (allGoblinsDead) {
-        const dist = playerGroup.position.distanceTo(treasureGroup.position);
-        if (dist < treasure.radius + 0.8) {
-            gameWon = true;
-            playWinSound();
-        }
+    // Treasure - can be collected anytime
+    const dist = playerGroup.position.distanceTo(treasureGroup.position);
+    if (dist < treasure.radius + 0.8) {
+        gameWon = true;
+        playWinSound();
     }
     
     return isStuck;
