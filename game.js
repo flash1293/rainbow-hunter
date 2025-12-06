@@ -674,7 +674,7 @@ function getTerrainHeight(x, z) {
 let gameWon = false;
 let gameDead = false;
 let ammo = 10;
-const maxAmmo = 100;
+const maxAmmo = 1000;
 let bridgeRepaired = false;
 let materialsCollected = 0;
 const materialsNeeded = 3;
@@ -1252,7 +1252,8 @@ const goblin = {
     alive: true,
     radius: 1.5,
     health: 3,
-    maxHealth: 3
+    maxHealth: 3,
+    isChasing: false
 };
 
 // Bridge Goblin (second goblin guarding the bridge)
@@ -1304,7 +1305,8 @@ const bridgeGoblin = {
     alive: true,
     radius: 1.5,
     health: 1,
-    maxHealth: 1
+    maxHealth: 1,
+    isChasing: false
 };
 
 // Additional Goblins
@@ -1359,7 +1361,8 @@ function createGoblin(x, z, patrolLeft, patrolRight, speed = 0.013) {
         alive: true,
         radius: 1.5,
         health: health,
-        maxHealth: health
+        maxHealth: health,
+        isChasing: false
     };
 }
 
@@ -1482,7 +1485,9 @@ function createGuardianGoblin(x, z, patrolLeft, patrolRight, speed = 0.014) {
         radius: 1.8,
         health: health,
         maxHealth: health,
-        isGuardian: true
+        isGuardian: true,
+        lastFireTime: Date.now() - Math.random() * 4000, // Random initial offset
+        isChasing: false // Track if guardian has started chasing
     };
 }
 
@@ -1625,6 +1630,9 @@ function updateExplosions() {
 // Bullets
 const bullets = [];
 
+// Guardian goblin arrows
+const guardianArrows = [];
+
 function shootBullet() {
     if (gameWon) return;
     
@@ -1733,6 +1741,7 @@ function updateBullets() {
             const dist = bullet.mesh.position.distanceTo(goblinGroup.position);
             if (dist < goblin.radius + bullet.radius) {
                 goblin.health--;
+                goblin.isChasing = true; // Start permanent chase when hit
                 createExplosion(goblinGroup.position.x, goblinGroup.position.y + 1, goblinGroup.position.z);
                 if (goblin.health <= 0) {
                     goblin.alive = false;
@@ -1750,6 +1759,7 @@ function updateBullets() {
             const dist = bullet.mesh.position.distanceTo(bridgeGoblinGroup.position);
             if (dist < bridgeGoblin.radius + bullet.radius) {
                 bridgeGoblin.health--;
+                bridgeGoblin.isChasing = true; // Start permanent chase when hit
                 createExplosion(bridgeGoblinGroup.position.x, bridgeGoblinGroup.position.y + 1, bridgeGoblinGroup.position.z);
                 if (bridgeGoblin.health <= 0) {
                     bridgeGoblin.alive = false;
@@ -1769,6 +1779,7 @@ function updateBullets() {
                     const dist = bullet.mesh.position.distanceTo(addGob.mesh.position);
                     if (dist < addGob.radius + bullet.radius) {
                         addGob.health--;
+                        addGob.isChasing = true; // Start permanent chase when hit
                         createExplosion(addGob.mesh.position.x, addGob.mesh.position.y + 1, addGob.mesh.position.z);
                         if (addGob.health <= 0) {
                             addGob.alive = false;
@@ -1874,8 +1885,13 @@ function updateGoblin() {
         Math.pow(playerGroup.position.z - goblinGroup.position.z, 2)
     );
     
-    // If player is within 30 units, chase them
+    // Once hit, goblin permanently chases
     if (distToPlayer < 30) {
+        goblin.isChasing = true;
+    }
+    
+    // If player is within 30 units or goblin is permanently chasing, chase them
+    if (distToPlayer < 30 || goblin.isChasing) {
         const directionX = playerGroup.position.x - goblinGroup.position.x;
         const directionZ = playerGroup.position.z - goblinGroup.position.z;
         const length = Math.sqrt(directionX * directionX + directionZ * directionZ);
@@ -1935,8 +1951,13 @@ function updateBridgeGoblin() {
         Math.pow(playerGroup.position.z - bridgeGoblinGroup.position.z, 2)
     );
     
-    // If player is within 25 units, chase them
+    // Once hit, bridge goblin permanently chases
     if (distToPlayer < 25) {
+        bridgeGoblin.isChasing = true;
+    }
+    
+    // If player is within 25 units or goblin is permanently chasing, chase them
+    if (distToPlayer < 25 || bridgeGoblin.isChasing) {
         const directionX = playerGroup.position.x - bridgeGoblinGroup.position.x;
         const directionZ = playerGroup.position.z - bridgeGoblinGroup.position.z;
         const length = Math.sqrt(directionX * directionX + directionZ * directionZ);
@@ -1994,8 +2015,13 @@ function updateAdditionalGoblins() {
             Math.pow(playerGroup.position.z - gob.mesh.position.z, 2)
         );
         
-        // If player is within 25 units, chase them
-        if (distToPlayer < 25) {
+        // Guardian goblins: once they see player, they never stop chasing
+        if (gob.isGuardian && distToPlayer < 25) {
+            gob.isChasing = true;
+        }
+        
+        // If player is within 25 units (or guardian is permanently chasing), chase them
+        if (distToPlayer < 25 || (gob.isGuardian && gob.isChasing)) {
             const directionX = playerGroup.position.x - gob.mesh.position.x;
             const directionZ = playerGroup.position.z - gob.mesh.position.z;
             const length = Math.sqrt(directionX * directionX + directionZ * directionZ);
@@ -2044,7 +2070,118 @@ function updateAdditionalGoblins() {
             stopBackgroundMusic();
             playDeathSound();
         }
+        
+        // Guardian goblins shoot arrows at player (low frequency, slow arrows)
+        if (gob.isGuardian && distToPlayer < 25) {
+            const now = Date.now();
+            // Fire every 4-6 seconds (random interval for variety)
+            const fireInterval = 4000 + Math.random() * 2000;
+            if (now - gob.lastFireTime > fireInterval) {
+                gob.lastFireTime = now;
+                
+                // Create arrow
+                const arrowGeometry = new THREE.CylinderGeometry(0.05, 0.05, 0.8, 8);
+                const arrowMaterial = new THREE.MeshLambertMaterial({ color: 0x8B4513 });
+                const arrowMesh = new THREE.Mesh(arrowGeometry, arrowMaterial);
+                arrowMesh.position.copy(gob.mesh.position);
+                arrowMesh.position.y += 1.5; // Fire from goblin head height
+                scene.add(arrowMesh);
+                
+                // Arrow tip (small cone)
+                const tipGeometry = new THREE.ConeGeometry(0.1, 0.2, 8);
+                const tipMaterial = new THREE.MeshLambertMaterial({ color: 0x696969 });
+                const tipMesh = new THREE.Mesh(tipGeometry, tipMaterial);
+                tipMesh.position.y = 0.5;
+                arrowMesh.add(tipMesh);
+                
+                // Calculate direction to player
+                const dirX = playerGroup.position.x - gob.mesh.position.x;
+                const dirZ = playerGroup.position.z - gob.mesh.position.z;
+                const length = Math.sqrt(dirX * dirX + dirZ * dirZ);
+                
+                const direction = new THREE.Vector3(
+                    dirX / length,
+                    0,
+                    dirZ / length
+                );
+                
+                // Rotate arrow to face direction properly
+                // Cylinder Y-axis points along its length, so we need to align Y with the movement direction
+                const angle = Math.atan2(dirX, dirZ);
+                arrowMesh.rotation.x = Math.PI / 2; // Tip cylinder on its side
+                arrowMesh.rotation.z = -angle; // Rotate around Z to point in movement direction
+                
+                guardianArrows.push({
+                    mesh: arrowMesh,
+                    velocity: direction.multiplyScalar(0.1), // Even slower arrow speed
+                    radius: 0.3
+                });
+            }
+        }
     });
+}
+
+// Update guardian arrows
+function updateGuardianArrows() {
+    for (let i = guardianArrows.length - 1; i >= 0; i--) {
+        const arrow = guardianArrows[i];
+        arrow.mesh.position.x += arrow.velocity.x;
+        arrow.mesh.position.z += arrow.velocity.z;
+        
+        // Check collision with player
+        const dist = new THREE.Vector2(
+            playerGroup.position.x - arrow.mesh.position.x,
+            playerGroup.position.z - arrow.mesh.position.z
+        ).length();
+        
+        if (dist < 1.0) {
+            gameDead = true;
+            stopBackgroundMusic();
+            playDeathSound();
+            scene.remove(arrow.mesh);
+            guardianArrows.splice(i, 1);
+            continue;
+        }
+        
+        // Check collision with trees
+        let hitObstacle = false;
+        trees.forEach(tree => {
+            const distToTree = new THREE.Vector2(
+                arrow.mesh.position.x - tree.mesh.position.x,
+                arrow.mesh.position.z - tree.mesh.position.z
+            ).length();
+            if (distToTree < tree.radius) {
+                hitObstacle = true;
+            }
+        });
+        
+        // Check collision with hills
+        HILLS.forEach(hill => {
+            const distToHill = new THREE.Vector2(
+                arrow.mesh.position.x - hill.x,
+                arrow.mesh.position.z - hill.z
+            ).length();
+            if (distToHill < hill.radius) {
+                hitObstacle = true;
+            }
+        });
+        
+        if (hitObstacle) {
+            scene.remove(arrow.mesh);
+            guardianArrows.splice(i, 1);
+            continue;
+        }
+        
+        // Remove arrows that travel too far (100 units)
+        const distFromOrigin = Math.sqrt(
+            arrow.mesh.position.x * arrow.mesh.position.x +
+            arrow.mesh.position.z * arrow.mesh.position.z
+        );
+        if (distFromOrigin > 100) {
+            scene.remove(arrow.mesh);
+            guardianArrows.splice(i, 1);
+        }
+    }
 }
 
 function checkCollisions(prevPos) {
@@ -2314,6 +2451,7 @@ function animate() {
         updateGoblin();
         updateBridgeGoblin();
         updateAdditionalGoblins();
+        updateGuardianArrows();
         updateGoblinProximitySound();
     }
     
