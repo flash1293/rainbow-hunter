@@ -6,6 +6,44 @@ let speedMultiplier = 1;
 let gameDead = false;
 let gameWon = false;
 
+// Multiplayer
+let multiplayerManager = null;
+let otherPlayerMesh = null;
+let otherPlayerVelocity = { x: 0, z: 0 }; // For optimistic position updates
+let otherPlayerLastPos = { x: 0, z: 0 };
+let otherPlayerIsGliding = false;
+let otherPlayerGlideLiftProgress = 0;
+
+// Initialize multiplayer on page load
+window.addEventListener('DOMContentLoaded', () => {
+    multiplayerManager = new MultiplayerManager();
+    
+    // Setup join button
+    const joinBtn = document.getElementById('join-btn');
+    const joinInput = document.getElementById('join-room-code');
+    
+    joinBtn.addEventListener('click', () => {
+        const roomCode = joinInput.value.trim();
+        multiplayerManager.joinRoom(roomCode);
+    });
+    
+    // Allow Enter key in input
+    joinInput.addEventListener('keypress', (e) => {
+        if (e.key === 'Enter') {
+            const roomCode = joinInput.value.trim();
+            multiplayerManager.joinRoom(roomCode);
+        }
+    });
+    
+    // Handle multiplayer callbacks
+    multiplayerManager.onUpdate((type, data) => {
+        if (type === 'gameStart') {
+            // Client receives game start from host
+            startGame(data.difficulty);
+        }
+    });
+});
+
 // Difficulty selection
 document.getElementById('easy-btn').addEventListener('click', () => startGame('easy'));
 document.getElementById('hard-btn').addEventListener('click', () => startGame('hard'));
@@ -15,6 +53,12 @@ function startGame(selectedDifficulty) {
     speedMultiplier = difficulty === 'hard' ? GAME_CONFIG.HARD_SPEED_MULTIPLIER : GAME_CONFIG.EASY_SPEED_MULTIPLIER;
     document.getElementById('difficulty-menu').style.display = 'none';
     document.getElementById('game-container').style.display = 'block';
+    
+    // Host sends game start to client
+    if (multiplayerManager && multiplayerManager.isHost && multiplayerManager.isConnected()) {
+        multiplayerManager.sendGameStart(selectedDifficulty);
+    }
+    
     initGame();
 }
 
@@ -135,15 +179,17 @@ function initGame() {
     handlebar.castShadow = true;
     playerGroup.add(handlebar);
 
-    // Girl body
+    // Player body - Girl for host, Boy for client
+    const isHost = !multiplayerManager || multiplayerManager.isHost;
+    
     const bodyGeometry = new THREE.BoxGeometry(0.35, 0.6, 0.25);
-    const bodyMaterial = new THREE.MeshLambertMaterial({ color: 0xFF69B4 });
+    const bodyMaterial = new THREE.MeshLambertMaterial({ color: isHost ? 0xFF69B4 : 0x4169E1 }); // Pink for girl, Blue for boy
     const body = new THREE.Mesh(bodyGeometry, bodyMaterial);
     body.position.set(0, 1.3, 0.1);
     body.castShadow = true;
     playerGroup.add(body);
 
-    // Girl head
+    // Head
     const headGeometry = new THREE.SphereGeometry(0.25, 16, 16);
     const headMaterial = new THREE.MeshLambertMaterial({ color: 0xFFE4C4 });
     const head = new THREE.Mesh(headGeometry, headMaterial);
@@ -153,7 +199,7 @@ function initGame() {
 
     // Hair
     const hairGeometry = new THREE.SphereGeometry(0.28, 16, 16, 0, Math.PI * 2, 0, Math.PI / 2);
-    const hairMaterial = new THREE.MeshLambertMaterial({ color: 0x8B4513 });
+    const hairMaterial = new THREE.MeshLambertMaterial({ color: isHost ? 0x8B4513 : 0x000000 }); // Brown for girl, Black for boy
     const hair = new THREE.Mesh(hairGeometry, hairMaterial);
     hair.position.set(0, 1.95, 0);
     hair.castShadow = true;
@@ -188,9 +234,330 @@ function initGame() {
     kiteGroup.visible = false;
     playerGroup.add(kiteGroup);
 
-    playerGroup.position.set(0, 0, 40);
+    // Different starting positions for host and client
+    const startX = isHost ? -2 : 2;
+    playerGroup.position.set(startX, 0, 40);
     playerGroup.rotation.y = Math.PI;
     scene.add(playerGroup);
+
+    // Create other player mesh (for multiplayer)
+    function createOtherPlayerMesh() {
+        const otherPlayerGroup = new THREE.Group();
+        
+        // Opposite gender of main player
+        const otherIsGirl = !isHost; // If we're host (girl), other is boy. If we're client (boy), other is girl.
+        
+        // Bicycle wheels (same as main player but different color)
+        const wheelGeometry = new THREE.TorusGeometry(0.3, 0.1, 8, 16);
+        const wheelMaterial = new THREE.MeshLambertMaterial({ color: 0x333333 });
+
+        const frontWheel = new THREE.Mesh(wheelGeometry, wheelMaterial);
+        frontWheel.rotation.y = Math.PI / 2;
+        frontWheel.position.set(0, 0.3, -0.7);
+        frontWheel.castShadow = true;
+        otherPlayerGroup.add(frontWheel);
+
+        const backWheel = new THREE.Mesh(wheelGeometry, wheelMaterial);
+        backWheel.rotation.y = Math.PI / 2;
+        backWheel.position.set(0, 0.3, 0.5);
+        backWheel.castShadow = true;
+        otherPlayerGroup.add(backWheel);
+
+        // Frame (different color)
+        const frameGeometry = new THREE.CylinderGeometry(0.05, 0.05, 1.3, 8);
+        const frameMaterial = new THREE.MeshLambertMaterial({ color: otherIsGirl ? 0xFF6B9D : 0x4169E1 });
+        const frame1 = new THREE.Mesh(frameGeometry, frameMaterial);
+        frame1.rotation.x = Math.PI / 2;
+        frame1.position.set(0, 0.5, -0.1);
+        frame1.castShadow = true;
+        otherPlayerGroup.add(frame1);
+
+        const seatPostGeometry = new THREE.CylinderGeometry(0.04, 0.04, 0.5, 8);
+        const seatPost = new THREE.Mesh(seatPostGeometry, frameMaterial);
+        seatPost.position.set(0, 0.75, 0.2);
+        seatPost.castShadow = true;
+        otherPlayerGroup.add(seatPost);
+
+        const handlebarPostGeometry = new THREE.CylinderGeometry(0.04, 0.04, 0.4, 8);
+        const handlebarPost = new THREE.Mesh(handlebarPostGeometry, frameMaterial);
+        handlebarPost.position.set(0, 0.7, -0.5);
+        handlebarPost.castShadow = true;
+        otherPlayerGroup.add(handlebarPost);
+
+        const handlebarGeometry = new THREE.CylinderGeometry(0.03, 0.03, 0.5, 8);
+        const handlebar = new THREE.Mesh(handlebarGeometry, frameMaterial);
+        handlebar.rotation.z = Math.PI / 2;
+        handlebar.position.set(0, 0.9, -0.5);
+        handlebar.castShadow = true;
+        otherPlayerGroup.add(handlebar);
+
+        // Body (opposite gender color)
+        const bodyGeometry = new THREE.BoxGeometry(0.35, 0.6, 0.25);
+        const bodyMaterial = new THREE.MeshLambertMaterial({ color: otherIsGirl ? 0xFF69B4 : 0x4169E1 });
+        const body = new THREE.Mesh(bodyGeometry, bodyMaterial);
+        body.position.set(0, 1.3, 0.1);
+        body.castShadow = true;
+        otherPlayerGroup.add(body);
+
+        // Head
+        const headGeometry = new THREE.SphereGeometry(0.25, 16, 16);
+        const headMaterial = new THREE.MeshLambertMaterial({ color: 0xFFE4C4 });
+        const head = new THREE.Mesh(headGeometry, headMaterial);
+        head.position.set(0, 1.85, 0);
+        head.castShadow = true;
+        otherPlayerGroup.add(head);
+
+        // Hair (opposite gender)
+        const hairGeometry = new THREE.SphereGeometry(0.28, 16, 16, 0, Math.PI * 2, 0, Math.PI / 2);
+        const hairMaterial = new THREE.MeshLambertMaterial({ color: otherIsGirl ? 0x8B4513 : 0x000000 });
+        const hair = new THREE.Mesh(hairGeometry, hairMaterial);
+        hair.position.set(0, 1.95, 0);
+        hair.castShadow = true;
+        otherPlayerGroup.add(hair);
+
+        // Direction indicator
+        const coneGeometry = new THREE.ConeGeometry(0.15, 0.4, 8);
+        const coneMaterial = new THREE.MeshLambertMaterial({ color: otherIsGirl ? 0xFFFF00 : 0x00FFFF });
+        const directionCone = new THREE.Mesh(coneGeometry, coneMaterial);
+        directionCone.rotation.x = Math.PI / 2;
+        directionCone.position.set(0, 0.5, -1.0);
+        directionCone.castShadow = true;
+        otherPlayerGroup.add(directionCone);
+
+        // Kite for other player
+        const otherKiteGroup = new THREE.Group();
+        const otherKiteGeometry = new THREE.ConeGeometry(0.8, 1.2, 4);
+        const otherKiteMaterial = new THREE.MeshLambertMaterial({ color: otherIsGirl ? 0xFF1493 : 0x00BFFF });
+        const otherKite = new THREE.Mesh(otherKiteGeometry, otherKiteMaterial);
+        otherKite.rotation.x = Math.PI;
+        otherKite.castShadow = true;
+        otherKiteGroup.add(otherKite);
+        
+        const otherTailGeometry = new THREE.CylinderGeometry(0.02, 0.02, 1.5, 4);
+        const otherTailMaterial = new THREE.MeshLambertMaterial({ color: 0xFFFF00 });
+        const otherTail = new THREE.Mesh(otherTailGeometry, otherTailMaterial);
+        otherTail.position.y = -1.2;
+        otherKiteGroup.add(otherTail);
+        
+        otherKiteGroup.position.set(0, 3, 0.5);
+        otherKiteGroup.visible = false;
+        otherPlayerGroup.add(otherKiteGroup);
+        otherPlayerGroup.kiteGroup = otherKiteGroup; // Store reference
+
+        otherPlayerGroup.visible = false;
+        scene.add(otherPlayerGroup);
+        return otherPlayerGroup;
+    }
+    
+    otherPlayerMesh = createOtherPlayerMesh();
+    
+    // Setup multiplayer callbacks
+    if (multiplayerManager) {
+        multiplayerManager.onUpdate((type, data) => {
+            if (type === 'fullSync') {
+                // Client receives full game state from host
+                if (!multiplayerManager.isHost) {
+                    applyFullGameSync(data);
+                }
+            } else if (type === 'playerState') {
+                // Host receives client player position (client to host)
+                if (multiplayerManager.isHost) {
+                    // Calculate velocity for optimistic updates
+                    otherPlayerVelocity.x = data.position.x - otherPlayerLastPos.x;
+                    otherPlayerVelocity.z = data.position.z - otherPlayerLastPos.z;
+                    otherPlayerLastPos.x = data.position.x;
+                    otherPlayerLastPos.z = data.position.z;
+                    
+                    // Store gliding state for optimistic updates
+                    otherPlayerIsGliding = data.isGliding === true;
+                    otherPlayerGlideLiftProgress = data.glideLiftProgress || 0;
+                    
+                    otherPlayerMesh.position.set(data.position.x, data.position.y, data.position.z);
+                    otherPlayerMesh.rotation.y = data.rotation;
+                    otherPlayerMesh.visible = true;
+                    // Update kite visibility based on gliding state
+                    if (otherPlayerMesh.kiteGroup) {
+                        otherPlayerMesh.kiteGroup.visible = data.isGliding === true;
+                    }
+                }
+            } else if (type === 'bullet') {
+                // Create bullet from other player
+                createRemoteBullet(data);
+            } else if (type === 'gameEvent') {
+                // Handle game events from other player
+                handleRemoteGameEvent(data);
+            }
+        });
+        
+        // If we're host and connected, start syncing game state
+        if (multiplayerManager.isHost && multiplayerManager.isConnected()) {
+            multiplayerManager.startHostSync(() => getFullGameSyncData());
+        }
+    }
+    
+    // Function to gather all game state for host to send
+    function getFullGameSyncData() {
+        return {
+            hostPlayer: {
+                x: playerGroup.position.x,
+                y: playerGroup.position.y,
+                z: playerGroup.position.z,
+                rotation: player.rotation,
+                isGliding: player.isGliding,
+                glideLiftProgress: player.glideLiftProgress,
+                hasKite: player.hasKite
+            },
+            goblins: goblins.map(g => ({
+                x: g.mesh.position.x,
+                y: g.mesh.position.y,
+                z: g.mesh.position.z,
+                rotation: g.mesh.rotation.y,
+                alive: g.alive,
+                health: g.health,
+                isChasing: g.isChasing,
+                vx: g.velocity ? g.velocity.x : 0,
+                vz: g.velocity ? g.velocity.z : 0
+            })),
+            guardianArrows: guardianArrows.map(a => ({
+                x: a.mesh.position.x,
+                y: a.mesh.position.y,
+                z: a.mesh.position.z
+            })),
+            bullets: bullets.filter(b => !b.isRemote).map(b => ({
+                x: b.mesh.position.x,
+                y: b.mesh.position.y,
+                z: b.mesh.position.z,
+                vx: b.velocity.x,
+                vy: b.velocity.y,
+                vz: b.velocity.z
+            })),
+            items: {
+                materials: materials.map(m => m.collected),
+                ammoPickups: ammoPickups.map(a => a.collected),
+                healthPickups: healthPickups.map(h => h.collected),
+                kiteCollected: worldKiteCollected
+            },
+            gameState: {
+                bridgeRepaired: bridgeRepaired,
+                materialsCollected: materialsCollected,
+                gameWon: gameWon
+                // Note: gameDead is NOT synced - each player has their own death state
+            }
+        };
+    }
+    
+    // Function for client to apply full game state from host
+    function applyFullGameSync(data) {
+        // Update host player (shown as other player for client)
+        if (data.hostPlayer) {
+            // Calculate velocity for optimistic updates
+            otherPlayerVelocity.x = data.hostPlayer.x - otherPlayerLastPos.x;
+            otherPlayerVelocity.z = data.hostPlayer.z - otherPlayerLastPos.z;
+            otherPlayerLastPos.x = data.hostPlayer.x;
+            otherPlayerLastPos.z = data.hostPlayer.z;
+            
+            // Store gliding state for optimistic updates
+            otherPlayerIsGliding = data.hostPlayer.isGliding === true;
+            otherPlayerGlideLiftProgress = data.hostPlayer.glideLiftProgress || 0;
+            
+            otherPlayerMesh.position.set(data.hostPlayer.x, data.hostPlayer.y, data.hostPlayer.z);
+            otherPlayerMesh.rotation.y = data.hostPlayer.rotation;
+            otherPlayerMesh.visible = true;
+            // Update kite visibility based on gliding state
+            if (otherPlayerMesh.kiteGroup) {
+                otherPlayerMesh.kiteGroup.visible = data.hostPlayer.isGliding === true;
+            }
+        }
+        
+        // Update goblins
+        if (data.goblins) {
+            data.goblins.forEach((gobData, i) => {
+                if (i < goblins.length) {
+                    const gob = goblins[i];
+                    gob.mesh.position.set(gobData.x, gobData.y, gobData.z);
+                    gob.mesh.rotation.y = gobData.rotation;
+                    gob.alive = gobData.alive;
+                    gob.health = gobData.health;
+                    gob.isChasing = gobData.isChasing;
+                    
+                    // Store velocity for optimistic updates
+                    if (!gob.velocity) {
+                        gob.velocity = { x: 0, z: 0 };
+                    }
+                    gob.velocity.x = gobData.vx || 0;
+                    gob.velocity.z = gobData.vz || 0;
+                    
+                    if (!gobData.alive && gob.mesh.rotation.z !== Math.PI / 2) {
+                        gob.mesh.rotation.z = Math.PI / 2;
+                    }
+                }
+            });
+        }
+        
+        // Update guardian arrows
+        if (data.guardianArrows && guardianArrows) {
+            // Remove old arrows that don't exist anymore
+            while (guardianArrows.length > data.guardianArrows.length) {
+                const arrow = guardianArrows.pop();
+                scene.remove(arrow.mesh);
+            }
+            
+            // Update existing arrows
+            data.guardianArrows.forEach((arrowData, i) => {
+                if (i < guardianArrows.length) {
+                    guardianArrows[i].mesh.position.set(arrowData.x, arrowData.y, arrowData.z);
+                }
+            });
+        }
+        
+        // Update game state
+        if (data.gameState) {
+            // gameDead is NOT synced - each player manages their own death
+            gameWon = data.gameState.gameWon;
+            bridgeRepaired = data.gameState.bridgeRepaired;
+            materialsCollected = data.gameState.materialsCollected;
+            
+            // Update bridge visibility
+            if (bridgeRepaired) {
+                brokenBridgeGroup.visible = false;
+                bridgeObj.mesh.visible = true;
+            }
+        }
+        
+        // Update item collection states
+        if (data.items) {
+            if (data.items.materials) {
+                data.items.materials.forEach((collected, i) => {
+                    if (materials[i] && collected && !materials[i].collected) {
+                        materials[i].collected = true;
+                        materials[i].mesh.visible = false;
+                    }
+                });
+            }
+            if (data.items.ammoPickups) {
+                data.items.ammoPickups.forEach((collected, i) => {
+                    if (ammoPickups[i] && collected && !ammoPickups[i].collected) {
+                        ammoPickups[i].collected = true;
+                        ammoPickups[i].mesh.visible = false;
+                    }
+                });
+            }
+            if (data.items.healthPickups) {
+                data.items.healthPickups.forEach((collected, i) => {
+                    if (healthPickups[i] && collected && !healthPickups[i].collected) {
+                        healthPickups[i].collected = true;
+                        healthPickups[i].mesh.visible = false;
+                    }
+                });
+            }
+            
+            // Update kite state
+            if (data.items.kiteCollected && !worldKiteCollected) {
+                worldKiteCollected = true;
+                scene.remove(worldKiteGroup);
+            }
+        }
+    }
 
     const player = {
         mesh: playerGroup,
@@ -291,7 +658,9 @@ function initGame() {
         }
         
         // Triangle (button 2) for kite
-        if (gamepad.buttons[2]?.pressed && player.hasKite && !player.isGliding && 
+        // Check if either player has collected the kite
+        const anyoneHasKite = player.hasKite || worldKiteCollected;
+        if (gamepad.buttons[2]?.pressed && anyoneHasKite && !player.isGliding && 
             player.glideCharge >= 20 && !gameWon && !gameDead && now - lastKiteActivationTime > kiteActivationCooldown) {
             player.isGliding = true;
             player.glideState = 'takeoff';
@@ -316,9 +685,18 @@ function initGame() {
             e.preventDefault();
         }
         if ((e.key === 'r' || e.key === 'R') && (gameWon || gameDead)) {
-            resetGame();
+            // Only host can restart the game
+            if (!multiplayerManager || multiplayerManager.isHost) {
+                resetGame();
+                // Notify client to restart
+                if (multiplayerManager && multiplayerManager.isConnected()) {
+                    multiplayerManager.sendGameEvent('gameRestart', {});
+                }
+            }
         }
-        if ((e.key === 'f' || e.key === 'F') && player.hasKite && !player.isGliding && player.glideCharge >= 20 && !gameWon && !gameDead) {
+        // Check if either player has collected the kite
+        const anyoneHasKite = player.hasKite || worldKiteCollected;
+        if ((e.key === 'f' || e.key === 'F') && anyoneHasKite && !player.isGliding && player.glideCharge >= 20 && !gameWon && !gameDead) {
             player.isGliding = true;
             player.glideState = 'takeoff';
             player.glideLiftProgress = 0;
@@ -942,6 +1320,71 @@ function initGame() {
         };
         bullets.push(bullet);
         ammo--;
+        
+        // Sync bullet to other player
+        if (multiplayerManager && multiplayerManager.isConnected()) {
+            multiplayerManager.sendBullet({
+                position: { x: bulletMesh.position.x, y: bulletMesh.position.y, z: bulletMesh.position.z },
+                velocity: { x: bullet.velocity.x, y: bullet.velocity.y, z: bullet.velocity.z },
+                startPos: bullet.startPos
+            });
+        }
+    }
+
+    // Create bullet from remote player
+    function createRemoteBullet(bulletData) {
+        // Play shooting sound
+        Audio.playShootSound();
+        
+        const bulletGeometry = new THREE.SphereGeometry(0.2, 8, 8);
+        const bulletMaterial = new THREE.MeshLambertMaterial({ color: 0x00FFFF }); // Different color for remote bullets
+        const bulletMesh = new THREE.Mesh(bulletGeometry, bulletMaterial);
+        bulletMesh.position.set(bulletData.position.x, bulletData.position.y, bulletData.position.z);
+        bulletMesh.castShadow = true;
+        scene.add(bulletMesh);
+        
+        const bullet = {
+            mesh: bulletMesh,
+            velocity: new THREE.Vector3(bulletData.velocity.x, bulletData.velocity.y, bulletData.velocity.z),
+            radius: 0.2,
+            startPos: bulletData.startPos,
+            isRemote: true // Mark as remote to differentiate
+        };
+        bullets.push(bullet);
+    }
+    
+    // Handle game events from remote player
+    function handleRemoteGameEvent(eventData) {
+        const { eventType, data } = eventData;
+        
+        if (eventType === 'itemCollected') {
+            // Other player collected an item
+            if (data.type === 'material' && materials[data.index]) {
+                materials[data.index].collected = true;
+                materials[data.index].mesh.visible = false;
+                materialsCollected++;
+            } else if (data.type === 'ammo' && ammoPickups[data.index]) {
+                ammoPickups[data.index].collected = true;
+                ammoPickups[data.index].mesh.visible = false;
+            } else if (data.type === 'health' && healthPickups[data.index]) {
+                healthPickups[data.index].collected = true;
+                healthPickups[data.index].mesh.visible = false;
+            }
+        } else if (eventType === 'gameRestart') {
+            // Host requested game restart
+            resetGame();
+        } else if (eventType === 'playerWin') {
+            // Client reached treasure, host decides if game is won
+            if (multiplayerManager && multiplayerManager.isHost) {
+                gameWon = true;
+                Audio.playWinSound();
+            }
+        } else if (eventType === 'playerDeath') {
+            // Other player died, game over for both
+            gameDead = true;
+            Audio.stopBackgroundMusic();
+            Audio.playDeathSound();
+        }
     }
 
     // Update functions
@@ -1040,6 +1483,17 @@ function initGame() {
         camera.position.y = playerGroup.position.y + cameraHeight;
         camera.position.z = playerGroup.position.z + cameraOffsetZ;
         camera.lookAt(playerGroup.position.x, playerGroup.position.y, playerGroup.position.z);
+        
+        // Client syncs their player state to host (host handles full sync separately)
+        if (multiplayerManager && multiplayerManager.isClient && multiplayerManager.isConnected()) {
+            multiplayerManager.sendPlayerState({
+                position: playerGroup.position,
+                rotation: player.rotation,
+                health: playerHealth,
+                isGliding: player.isGliding,
+                glideLiftProgress: player.glideLiftProgress
+            });
+        }
     }
 
     function updateBullets() {
@@ -1064,20 +1518,26 @@ function initGame() {
             let bulletHit = false;
             
             // Check collision with goblins
+            // Visual feedback happens on both, but only host applies damage
             for (let j = 0; j < goblins.length; j++) {
                 const gob = goblins[j];
                 if (gob.alive) {
                     const dist = bullet.mesh.position.distanceTo(gob.mesh.position);
                     if (dist < gob.radius + bullet.radius) {
-                        gob.health--;
-                        gob.isChasing = true;
+                        // Visual feedback on both host and client
                         createExplosion(gob.mesh.position.x, gob.mesh.position.y + 1, gob.mesh.position.z);
-                        if (gob.health <= 0) {
-                            gob.alive = false;
-                            Audio.playGoblinDeathSound();
-                            gob.mesh.rotation.z = Math.PI / 2;
-                            const terrainH = getTerrainHeight(gob.mesh.position.x, gob.mesh.position.z);
-                            gob.mesh.position.y = terrainH + 0.5;
+                        
+                        // Only host applies actual damage
+                        if (!multiplayerManager || multiplayerManager.isHost) {
+                            gob.health--;
+                            gob.isChasing = true;
+                            if (gob.health <= 0) {
+                                gob.alive = false;
+                                Audio.playGoblinDeathSound();
+                                gob.mesh.rotation.z = Math.PI / 2;
+                                const terrainH = getTerrainHeight(gob.mesh.position.x, gob.mesh.position.z);
+                                gob.mesh.position.y = terrainH + 0.5;
+                            }
                         }
                         bulletHit = true;
                         break;
@@ -1085,7 +1545,7 @@ function initGame() {
                 }
             }
             
-            // Check collision with trees
+            // Check collision with trees (visual feedback on both)
             if (!bulletHit) {
                 for (let j = 0; j < trees.length; j++) {
                     const tree = trees[j];
@@ -1095,13 +1555,14 @@ function initGame() {
                     ).length();
                     if (dist < tree.radius + bullet.radius) {
                         Audio.playBulletImpactSound();
+                        createExplosion(bullet.mesh.position.x, bullet.mesh.position.y, bullet.mesh.position.z);
                         bulletHit = true;
                         break;
                     }
                 }
             }
             
-            // Check collision with hills
+            // Check collision with hills (visual feedback on both)
             if (!bulletHit) {
                 for (let j = 0; j < HILLS.length; j++) {
                     const hill = HILLS[j];
@@ -1114,6 +1575,7 @@ function initGame() {
                         const hillHeight = getTerrainHeight(bullet.mesh.position.x, bullet.mesh.position.z);
                         if (bullet.mesh.position.y <= hillHeight + 1) {
                             Audio.playBulletImpactSound();
+                            createExplosion(bullet.mesh.position.x, bullet.mesh.position.y, bullet.mesh.position.z);
                             bulletHit = true;
                             break;
                         }
@@ -1146,18 +1608,44 @@ function initGame() {
         goblins.forEach(gob => {
             if (!gob.alive || gameWon) return;
             
+            // Initialize velocity tracking if not present
+            if (!gob.velocity) {
+                gob.velocity = { x: 0, z: 0 };
+            }
+            
+            const oldX = gob.mesh.position.x;
+            const oldZ = gob.mesh.position.z;
+            
+            // Check distance to both players (if multiplayer)
             const distToPlayer = Math.sqrt(
                 Math.pow(playerGroup.position.x - gob.mesh.position.x, 2) + 
                 Math.pow(playerGroup.position.z - gob.mesh.position.z, 2)
             );
             
-            if (gob.isGuardian && distToPlayer < 25) {
+            let targetPlayer = playerGroup;
+            let distToTarget = distToPlayer;
+            
+            // If multiplayer and other player is visible, check distance to them too
+            if (multiplayerManager && multiplayerManager.isConnected() && otherPlayerMesh.visible) {
+                const distToOther = Math.sqrt(
+                    Math.pow(otherPlayerMesh.position.x - gob.mesh.position.x, 2) + 
+                    Math.pow(otherPlayerMesh.position.z - gob.mesh.position.z, 2)
+                );
+                
+                // Chase the closer player
+                if (distToOther < distToTarget) {
+                    targetPlayer = otherPlayerMesh;
+                    distToTarget = distToOther;
+                }
+            }
+            
+            if (gob.isGuardian && distToTarget < 25) {
                 gob.isChasing = true;
             }
             
-            if (distToPlayer < 25 || (gob.isGuardian && gob.isChasing) || gob.isChasing) {
-                const directionX = playerGroup.position.x - gob.mesh.position.x;
-                const directionZ = playerGroup.position.z - gob.mesh.position.z;
+            if (distToTarget < 25 || (gob.isGuardian && gob.isChasing) || gob.isChasing) {
+                const directionX = targetPlayer.position.x - gob.mesh.position.x;
+                const directionZ = targetPlayer.position.z - gob.mesh.position.z;
                 const length = Math.sqrt(directionX * directionX + directionZ * directionZ);
                 
                 if (length > 0) {
@@ -1175,6 +1663,10 @@ function initGame() {
                     gob.direction = -1;
                 }
             }
+            
+            // Track velocity for sync
+            gob.velocity.x = gob.mesh.position.x - oldX;
+            gob.velocity.z = gob.mesh.position.z - oldZ;
             
             const terrainHeight = getTerrainHeight(gob.mesh.position.x, gob.mesh.position.z);
             gob.mesh.position.y = terrainHeight + 0.1;
@@ -1199,6 +1691,11 @@ function initGame() {
                 gameDead = true;
                 Audio.stopBackgroundMusic();
                 Audio.playDeathSound();
+                
+                // Notify other player of death
+                if (multiplayerManager && multiplayerManager.isConnected()) {
+                    multiplayerManager.sendGameEvent('playerDeath', {});
+                }
             }
             
             // Guardian arrows
@@ -1266,6 +1763,11 @@ function initGame() {
                     gameDead = true;
                     Audio.stopBackgroundMusic();
                     Audio.playDeathSound();
+                    
+                    // Notify other player of death
+                    if (multiplayerManager && multiplayerManager.isConnected()) {
+                        multiplayerManager.sendGameEvent('playerDeath', {});
+                    }
                 } else {
                     // Play hurt sound or use existing sound
                     Audio.playStuckSound();
@@ -1382,6 +1884,11 @@ function initGame() {
                         gameDead = true;
                         Audio.stopBackgroundMusic();
                         Audio.playDeathSound();
+                        
+                        // Notify other player of death
+                        if (multiplayerManager && multiplayerManager.isConnected()) {
+                            multiplayerManager.sendGameEvent('playerDeath', {});
+                        }
                     } else {
                         // Play danger sound
                         Audio.playStuckSound();
@@ -1391,7 +1898,7 @@ function initGame() {
         });
         
         // Collect materials
-        materials.forEach(material => {
+        materials.forEach((material, idx) => {
             if (!material.collected) {
                 const dist = playerGroup.position.distanceTo(material.mesh.position);
                 if (dist < material.radius) {
@@ -1399,12 +1906,17 @@ function initGame() {
                     material.mesh.visible = false;
                     materialsCollected++;
                     Audio.playCollectSound();
+                    
+                    // Notify other player
+                    if (multiplayerManager && multiplayerManager.isConnected()) {
+                        multiplayerManager.sendGameEvent('itemCollected', { type: 'material', index: idx });
+                    }
                 }
             }
         });
         
         // Collect ammo
-        ammoPickups.forEach(pickup => {
+        ammoPickups.forEach((pickup, idx) => {
             if (!pickup.collected) {
                 const dist = playerGroup.position.distanceTo(pickup.mesh.position);
                 if (dist < pickup.radius) {
@@ -1412,12 +1924,17 @@ function initGame() {
                     pickup.mesh.visible = false;
                     ammo = Math.min(ammo + pickup.amount, maxAmmo);
                     Audio.playCollectSound();
+                    
+                    // Notify other player
+                    if (multiplayerManager && multiplayerManager.isConnected()) {
+                        multiplayerManager.sendGameEvent('itemCollected', { type: 'ammo', index: idx });
+                    }
                 }
             }
         });
         
         // Collect health
-        healthPickups.forEach(pickup => {
+        healthPickups.forEach((pickup, idx) => {
             if (!pickup.collected) {
                 const dist = playerGroup.position.distanceTo(pickup.mesh.position);
                 if (dist < pickup.radius) {
@@ -1425,22 +1942,34 @@ function initGame() {
                     pickup.mesh.visible = false;
                     playerHealth = Math.min(playerHealth + 1, maxPlayerHealth);
                     Audio.playCollectSound();
+                    
+                    // Notify other player
+                    if (multiplayerManager && multiplayerManager.isConnected()) {
+                        multiplayerManager.sendGameEvent('itemCollected', { type: 'health', index: idx });
+                    }
                 }
             }
         });
         
-        // Trap collision
-        traps.forEach(trap => {
-            const distToTrap = new THREE.Vector2(
-                playerGroup.position.x - trap.mesh.position.x,
-                playerGroup.position.z - trap.mesh.position.z
-            ).length();
-            if (distToTrap < trap.radius) {
-                gameDead = true;
-                Audio.stopBackgroundMusic();
-                Audio.playDeathSound();
-            }
-        });
+        // Trap collision (only when not gliding)
+        if (!player.isGliding) {
+            traps.forEach(trap => {
+                const distToTrap = new THREE.Vector2(
+                    playerGroup.position.x - trap.mesh.position.x,
+                    playerGroup.position.z - trap.mesh.position.z
+                ).length();
+                if (distToTrap < trap.radius) {
+                    gameDead = true;
+                    Audio.stopBackgroundMusic();
+                    Audio.playDeathSound();
+                    
+                    // Notify other player of death
+                    if (multiplayerManager && multiplayerManager.isConnected()) {
+                        multiplayerManager.sendGameEvent('playerDeath', {});
+                    }
+                }
+            });
+        }
         
         // Bridge repair
         if (!bridgeRepaired && materialsCollected >= materialsNeeded) {
@@ -1456,8 +1985,8 @@ function initGame() {
             }
         }
         
-        // River and bridge collision
-        if (playerGroup.position.z > riverObj.minZ && playerGroup.position.z < riverObj.maxZ) {
+        // River and bridge collision (can fly over when gliding)
+        if (!player.isGliding && playerGroup.position.z > riverObj.minZ && playerGroup.position.z < riverObj.maxZ) {
             const onBridge = bridgeRepaired &&
                             playerGroup.position.x > bridgeObj.minX && 
                             playerGroup.position.x < bridgeObj.maxX &&
@@ -1471,8 +2000,16 @@ function initGame() {
         // Treasure collection
         const dist = playerGroup.position.distanceTo(treasureGroup.position);
         if (dist < treasure.radius + 0.8) {
-            gameWon = true;
-            Audio.playWinSound();
+            // Only host decides win state
+            if (!multiplayerManager || multiplayerManager.isHost) {
+                gameWon = true;
+                Audio.playWinSound();
+            } else {
+                // Client notifies host they reached treasure
+                if (multiplayerManager && multiplayerManager.isConnected()) {
+                    multiplayerManager.sendGameEvent('playerWin', {});
+                }
+            }
         }
         
         // Check world kite collection
@@ -1483,6 +2020,7 @@ function initGame() {
                 player.hasKite = true;
                 scene.remove(worldKiteGroup);
                 Audio.playCollectSound();
+                // Note: Kite state is synced via fullSync, not individual events
             }
         }
         
@@ -1495,7 +2033,8 @@ function initGame() {
         
         Audio.startBackgroundMusic();
         
-        playerGroup.position.set(0, getTerrainHeight(0, 40), 40);
+        const startX = (!multiplayerManager || multiplayerManager.isHost) ? -2 : 2;
+        playerGroup.position.set(startX, getTerrainHeight(startX, 40), 40);
         player.rotation = Math.PI;
         playerGroup.rotation.y = Math.PI;
         player.isGliding = false;
@@ -1707,10 +2246,52 @@ function initGame() {
             
             if (!gameDead) {
                 updatePlayer();
+                
+                // Optimistic update for other player position (interpolation between syncs)
+                if (multiplayerManager && multiplayerManager.isConnected() && otherPlayerMesh.visible) {
+                    // Only apply optimistic updates if velocity is significant
+                    const velocityMag = Math.sqrt(otherPlayerVelocity.x * otherPlayerVelocity.x + otherPlayerVelocity.z * otherPlayerVelocity.z);
+                    if (velocityMag > 0.001) {
+                        // Lighter dampening for smoother prediction
+                        const dampening = 0.15;
+                        otherPlayerMesh.position.x += otherPlayerVelocity.x * dampening;
+                        otherPlayerMesh.position.z += otherPlayerVelocity.z * dampening;
+                    }
+                    // Update Y position respecting gliding state
+                    const terrainHeight = getTerrainHeight(otherPlayerMesh.position.x, otherPlayerMesh.position.z);
+                    if (otherPlayerIsGliding) {
+                        // Calculate gliding height
+                        const groundHeight = 0.1;
+                        const glideHeight = 1.2;
+                        const currentHeight = groundHeight + (glideHeight - groundHeight) * otherPlayerGlideLiftProgress;
+                        otherPlayerMesh.position.y = terrainHeight + currentHeight;
+                    } else {
+                        otherPlayerMesh.position.y = terrainHeight + 0.1;
+                    }
+                }
+                
+                // Both host and client run bullets and explosions for responsiveness
                 updateBullets();
                 updateExplosions();
-                updateGoblins();
-                updateGuardianArrows();
+                
+                // Only host runs game logic (goblins, arrows, etc.)
+                if (!multiplayerManager || multiplayerManager.isHost) {
+                    updateGoblins();
+                    updateGuardianArrows();
+                } else {
+                    // Client does optimistic goblin position updates
+                    goblins.forEach(gob => {
+                        if (gob.alive && gob.velocity) {
+                            const dampening = 0.5; // Smooth interpolation
+                            gob.mesh.position.x += gob.velocity.x * dampening;
+                            gob.mesh.position.z += gob.velocity.z * dampening;
+                            const terrainHeight = getTerrainHeight(gob.mesh.position.x, gob.mesh.position.z);
+                            gob.mesh.position.y = terrainHeight + 0.1;
+                        }
+                    });
+                }
+                
+                // Both update audio based on their position
                 Audio.updateGoblinProximitySound(playerGroup.position, goblins);
             }
             

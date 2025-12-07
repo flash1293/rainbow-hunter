@@ -6,6 +6,7 @@
     <title>Fahrrad-Abenteuer</title>
     <link rel="stylesheet" href="style.css">
     <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+    <script src="https://unpkg.com/peerjs@1.4.7/dist/peerjs.min.js"></script>
 </head>
 <body>
     <div id="difficulty-menu">
@@ -13,6 +14,15 @@
         <h2>Wähle Schwierigkeit:</h2>
         <button id="easy-btn" class="difficulty-btn">Leicht</button>
         <button id="hard-btn" class="difficulty-btn">Schwierig</button>
+        <div id="multiplayer-setup" style="margin-top: 20px; padding: 15px; border: 2px solid #4CAF50; background: #f0f0f0;">
+            <h3>Multiplayer</h3>
+            <div>Dein Raum-Code: <strong id="my-room-code">---</strong></div>
+            <div style="margin-top: 10px;">
+                <input id="join-room-code" placeholder="Raum beitreten" size="3" maxlength="3" style="padding: 5px; font-size: 16px;">
+                <button id="join-btn" style="padding: 5px 15px; font-size: 16px;">Beitreten</button>
+            </div>
+            <div id="multiplayer-status" style="margin-top: 10px; font-weight: bold;"></div>
+        </div>
     </div>
     <div id="game-container" style="display: none;">
         <div id="gameCanvas"></div>
@@ -23,6 +33,7 @@
     <script src="js/config.js"></script>
     <script src="js/terrain.js"></script>
     <script src="js/audio.js"></script>
+    <script src="js/multiplayer.js"></script>
     <script src="js/main.js"></script>
 </body>
 </html>
