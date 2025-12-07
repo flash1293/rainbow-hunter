@@ -199,6 +199,67 @@ const Audio = (function() {
         });
     }
 
+    function playArrowShootSound() {
+        const oscillator = audioContext.createOscillator();
+        const gainNode = audioContext.createGain();
+        
+        oscillator.connect(gainNode);
+        gainNode.connect(audioContext.destination);
+        
+        oscillator.type = 'sawtooth';
+        oscillator.frequency.setValueAtTime(400, audioContext.currentTime);
+        oscillator.frequency.exponentialRampToValueAtTime(200, audioContext.currentTime + 0.15);
+        
+        gainNode.gain.setValueAtTime(0.3, audioContext.currentTime);
+        gainNode.gain.exponentialRampToValueAtTime(0.01, audioContext.currentTime + 0.15);
+        
+        oscillator.start(audioContext.currentTime);
+        oscillator.stop(audioContext.currentTime + 0.15);
+    }
+
+    let arrowWhooshNodes = [];
+
+    function updateArrowProximitySound(playerPos, arrows) {
+        // Clean up old arrow sounds
+        arrowWhooshNodes = arrowWhooshNodes.filter(node => {
+            if (node.stopTime && audioContext.currentTime > node.stopTime) {
+                try { node.oscillator.stop(); } catch(e) {}
+                return false;
+            }
+            return true;
+        });
+
+        arrows.forEach((arrow, index) => {
+            const dist = playerPos.distanceTo(arrow.mesh.position);
+            const maxDist = 20;
+            
+            if (dist < maxDist) {
+                let node = arrowWhooshNodes.find(n => n.arrowIndex === index);
+                
+                if (!node) {
+                    const oscillator = audioContext.createOscillator();
+                    const gainNode = audioContext.createGain();
+                    
+                    oscillator.connect(gainNode);
+                    gainNode.connect(audioContext.destination);
+                    
+                    oscillator.type = 'sine';
+                    oscillator.frequency.setValueAtTime(800, audioContext.currentTime);
+                    
+                    gainNode.gain.setValueAtTime(0, audioContext.currentTime);
+                    
+                    oscillator.start();
+                    
+                    node = { oscillator, gainNode, arrowIndex: index };
+                    arrowWhooshNodes.push(node);
+                }
+                
+                const volume = Math.max(0, (maxDist - dist) / maxDist) * 0.2;
+                node.gainNode.gain.setValueAtTime(volume, audioContext.currentTime);
+            }
+        });
+    }
+
     function startBackgroundMusic() {
         const melody = [
             { freq: 523, duration: 0.3 }, { freq: 587, duration: 0.3 }, { freq: 659, duration: 0.3 },
@@ -328,7 +389,9 @@ const Audio = (function() {
         stopBackgroundMusic,
         startBikeSound,
         stopBikeSound,
-        updateGoblinProximitySound
+        updateGoblinProximitySound,
+        playArrowShootSound,
+        updateArrowProximitySound
     };
 })();
 

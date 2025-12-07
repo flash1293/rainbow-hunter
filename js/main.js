@@ -79,6 +79,11 @@ function initGame() {
     const maxAmmo = GAME_CONFIG.MAX_AMMO;
     let materialsCollected = 0;
     const materialsNeeded = GAME_CONFIG.MATERIALS_NEEDED;
+    let playerHealth = 1;
+    const maxPlayerHealth = 3;
+    let lastDamageTime = 0;
+    const damageCooldown = 2500; // ms between damage from goblins
+    let damageFlashTime = 0;
     
     // Create player
     const playerGroup = new THREE.Group();
@@ -189,17 +194,18 @@ function initGame() {
 
     const player = {
         mesh: playerGroup,
-        speed: 0.08,
+        speed: 0.08 * (difficulty === 'hard' ? 1.3 : 1),
         rotation: Math.PI,
-        rotationSpeed: 0.025,
+        rotationSpeed: 0.025 * (difficulty === 'hard' ? 1.3 : 1),
         isGliding: false,
         glideCharge: 100,
         maxGlideCharge: 100,
-        glideSpeed: 0.15,
+        glideSpeed: 0.15 * (difficulty === 'hard' ? 1.3 : 1),
         glideHeight: 1.2,
         glideState: 'none',
         glideLiftProgress: 0,
-        hasKite: false
+        hasKite: false,
+        gamepadMoveScale: 0
     };
 
     // Keyboard input
@@ -213,6 +219,92 @@ function initGame() {
         a: false,
         d: false
     };
+
+    // Gamepad support
+    let gamepad = null;
+    let lastShootTime = 0;
+    let lastKiteActivationTime = 0;
+    const shootCooldown = 200; // ms between shots
+    const kiteActivationCooldown = 300; // ms between kite activations
+
+    window.addEventListener('gamepadconnected', (e) => {
+        gamepad = e.gamepad;
+        console.log('Gamepad connected:', gamepad.id);
+    });
+
+    window.addEventListener('gamepaddisconnected', (e) => {
+        console.log('Gamepad disconnected');
+        gamepad = null;
+    });
+
+    function updateGamepad() {
+        if (!gamepad) return;
+        
+        // Get latest gamepad state
+        const gamepads = navigator.getGamepads();
+        gamepad = gamepads[gamepad.index];
+        
+        if (!gamepad) return;
+        
+        const now = Date.now();
+        
+        // Left stick for rotation and movement (axes 0 and 1)
+        const leftStickX = gamepad.axes[0];
+        const leftStickY = gamepad.axes[1];
+        const deadzone = 0.15;
+        
+        // Horizontal rotation
+        if (Math.abs(leftStickX) > deadzone) {
+            player.rotation -= leftStickX * 0.015;
+        }
+        
+        // Vertical movement with analog scaling
+        if (Math.abs(leftStickY) > deadzone) {
+            if (leftStickY < 0) {
+                // Forward
+                keys.w = true;
+                keys.s = false;
+                player.gamepadMoveScale = Math.abs(leftStickY);
+            } else {
+                // Backward
+                keys.w = false;
+                keys.s = true;
+                player.gamepadMoveScale = Math.abs(leftStickY);
+            }
+        } else {
+            // R2 (button 7) for forward, L2 (button 6) for backward
+            const r2Value = gamepad.buttons[7]?.value || 0;
+            const l2Value = gamepad.buttons[6]?.value || 0;
+            
+            keys.w = r2Value > 0.1;
+            keys.s = l2Value > 0.1;
+            player.gamepadMoveScale = Math.max(r2Value, l2Value);
+        }
+        
+        keys.a = false;
+        keys.d = false;
+        
+        // X (button 0) for shooting
+        if (gamepad.buttons[0]?.pressed && now - lastShootTime > shootCooldown) {
+            shootBullet();
+            lastShootTime = now;
+        }
+        
+        // Triangle (button 2) for kite
+        if (gamepad.buttons[2]?.pressed && player.hasKite && !player.isGliding && 
+            player.glideCharge >= 20 && !gameWon && !gameDead && now - lastKiteActivationTime > kiteActivationCooldown) {
+            player.isGliding = true;
+            player.glideState = 'takeoff';
+            player.glideLiftProgress = 0;
+            kiteGroup.visible = true;
+            lastKiteActivationTime = now;
+        }
+        
+        // Options (button 9) for restart
+        if (gamepad.buttons[9]?.pressed && (gameWon || gameDead)) {
+            resetGame();
+        }
+    }
 
     document.addEventListener('keydown', (e) => {
         if (keys.hasOwnProperty(e.key)) {
@@ -413,6 +505,60 @@ function initGame() {
         ammoPickups.push({ mesh: ammoGroup, collected: false, radius: 1.2, amount: 15 });
     });
 
+    // Health pickups (hearts)
+    const healthPickups = [];
+    const heartPositions = [
+        { x: -8, z: 50 }, { x: 32, z: -18 }, { x: -48, z: -25 },
+        { x: 55, z: 22 }, { x: -22, z: 65 }
+    ];
+
+    heartPositions.forEach(pos => {
+        const heartGroup = new THREE.Group();
+        
+        // Create heart shape using two spheres and a rotated box
+        const sphereGeometry = new THREE.SphereGeometry(0.3, 16, 16);
+        const heartMaterial = new THREE.MeshLambertMaterial({ 
+            color: 0xFF0000,
+            emissive: 0xFF0000,
+            emissiveIntensity: 0.3
+        });
+        
+        const leftSphere = new THREE.Mesh(sphereGeometry, heartMaterial);
+        leftSphere.position.set(-0.15, 0.5, 0);
+        leftSphere.scale.set(0.7, 0.9, 0.8);
+        leftSphere.castShadow = true;
+        heartGroup.add(leftSphere);
+        
+        const rightSphere = new THREE.Mesh(sphereGeometry, heartMaterial);
+        rightSphere.position.set(0.15, 0.5, 0);
+        rightSphere.scale.set(0.7, 0.9, 0.8);
+        rightSphere.castShadow = true;
+        heartGroup.add(rightSphere);
+        
+        const bottomGeometry = new THREE.BoxGeometry(0.42, 0.42, 0.48);
+        const bottom = new THREE.Mesh(bottomGeometry, heartMaterial);
+        bottom.position.set(0, 0.28, 0);
+        bottom.rotation.z = Math.PI / 4;
+        bottom.castShadow = true;
+        heartGroup.add(bottom);
+        
+        // Glow effect
+        const glowGeometry = new THREE.SphereGeometry(0.5, 8, 8);
+        const glowMaterial = new THREE.MeshBasicMaterial({ 
+            color: 0xFF6666, 
+            transparent: true, 
+            opacity: 0.3 
+        });
+        const glow = new THREE.Mesh(glowGeometry, glowMaterial);
+        glow.position.y = 0.4;
+        heartGroup.add(glow);
+        
+        const terrainHeight = getTerrainHeight(pos.x, pos.z);
+        heartGroup.position.set(pos.x, terrainHeight, pos.z);
+        scene.add(heartGroup);
+        healthPickups.push({ mesh: heartGroup, collected: false, radius: 1.2 });
+    });
+
     // Materials for bridge repair
     const materials = [];
     const materialConfigs = [
@@ -554,7 +700,11 @@ function initGame() {
             radius: 1.5,
             health: health,
             maxHealth: health,
-            isChasing: false
+            isChasing: false,
+            initialX: x,
+            initialZ: z,
+            initialPatrolLeft: patrolLeft,
+            initialPatrolRight: patrolRight
         };
     }
 
@@ -617,7 +767,11 @@ function initGame() {
             maxHealth: health,
             isGuardian: true,
             lastFireTime: Date.now() - Math.random() * 4000,
-            isChasing: false
+            isChasing: false,
+            initialX: x,
+            initialZ: z,
+            initialPatrolLeft: patrolLeft,
+            initialPatrolRight: patrolRight
         };
     }
 
@@ -783,7 +937,8 @@ function initGame() {
         const bullet = {
             mesh: bulletMesh,
             velocity: direction.multiplyScalar(0.5),
-            radius: 0.2
+            radius: 0.2,
+            startPos: { x: playerGroup.position.x, z: playerGroup.position.z }
         };
         bullets.push(bullet);
         ammo--;
@@ -844,14 +999,16 @@ function initGame() {
             }
             
             isMoving = keys.ArrowUp || keys.ArrowDown || keys.w || keys.s;
+            const moveScale = player.gamepadMoveScale > 0 ? player.gamepadMoveScale : 1;
             if (keys.ArrowUp || keys.w) {
-                playerGroup.position.x += Math.sin(player.rotation) * player.speed;
-                playerGroup.position.z += Math.cos(player.rotation) * player.speed;
+                playerGroup.position.x += Math.sin(player.rotation) * player.speed * moveScale;
+                playerGroup.position.z += Math.cos(player.rotation) * player.speed * moveScale;
             }
             if (keys.ArrowDown || keys.s) {
-                playerGroup.position.x -= Math.sin(player.rotation) * player.speed;
-                playerGroup.position.z -= Math.cos(player.rotation) * player.speed;
+                playerGroup.position.x -= Math.sin(player.rotation) * player.speed * moveScale;
+                playerGroup.position.z -= Math.cos(player.rotation) * player.speed * moveScale;
             }
+            player.gamepadMoveScale = 0;
         }
         
         playerGroup.rotation.y = player.rotation;
@@ -890,7 +1047,15 @@ function initGame() {
             const bullet = bullets[i];
             bullet.mesh.position.add(bullet.velocity);
             
-            if (Math.abs(bullet.mesh.position.x) > 150 || Math.abs(bullet.mesh.position.z) > 150) {
+            // Calculate distance from start position
+            const distFromStart = new THREE.Vector2(
+                bullet.mesh.position.x - bullet.startPos.x,
+                bullet.mesh.position.z - bullet.startPos.z
+            ).length();
+            
+            const maxDistance = difficulty === 'hard' ? 35 : 150;
+            
+            if (Math.abs(bullet.mesh.position.x) > 150 || Math.abs(bullet.mesh.position.z) > 150 || distFromStart > maxDistance) {
                 scene.remove(bullet.mesh);
                 bullets.splice(i, 1);
                 continue;
@@ -1050,6 +1215,8 @@ function initGame() {
                     arrowMesh.position.y += 1.5;
                     scene.add(arrowMesh);
                     
+                    Audio.playArrowShootSound();
+                    
                     const tipGeometry = new THREE.ConeGeometry(0.1, 0.2, 8);
                     const tipMaterial = new THREE.MeshLambertMaterial({ color: 0x696969 });
                     const tipMesh = new THREE.Mesh(tipGeometry, tipMaterial);
@@ -1070,9 +1237,11 @@ function initGame() {
                     arrowMesh.rotation.x = Math.PI / 2;
                     arrowMesh.rotation.z = -angle;
                     
+                    const arrowSpeed = difficulty === 'hard' ? 0.15 : 0.1;
+                    
                     guardianArrows.push({
                         mesh: arrowMesh,
-                        velocity: direction.multiplyScalar(0.1 * speedMultiplier),
+                        velocity: direction.multiplyScalar(arrowSpeed * speedMultiplier),
                         radius: 0.3
                     });
                 }
@@ -1092,9 +1261,15 @@ function initGame() {
             ).length();
             
             if (dist < 1.0) {
-                gameDead = true;
-                Audio.stopBackgroundMusic();
-                Audio.playDeathSound();
+                playerHealth--;
+                if (playerHealth <= 0) {
+                    gameDead = true;
+                    Audio.stopBackgroundMusic();
+                    Audio.playDeathSound();
+                } else {
+                    // Play hurt sound or use existing sound
+                    Audio.playStuckSound();
+                }
                 scene.remove(arrow.mesh);
                 guardianArrows.splice(i, 1);
                 continue;
@@ -1189,6 +1364,32 @@ function initGame() {
             }
         }
         
+        // Goblin collision damage
+        const now = Date.now();
+        goblins.forEach(gob => {
+            if (!gob.alive) return;
+            const distToGob = new THREE.Vector2(
+                playerGroup.position.x - gob.mesh.position.x,
+                playerGroup.position.z - gob.mesh.position.z
+            ).length();
+            
+            if (distToGob < gob.radius + 1) {
+                if (now - lastDamageTime > damageCooldown) {
+                    playerHealth--;
+                    lastDamageTime = now;
+                    damageFlashTime = now;
+                    if (playerHealth <= 0) {
+                        gameDead = true;
+                        Audio.stopBackgroundMusic();
+                        Audio.playDeathSound();
+                    } else {
+                        // Play danger sound
+                        Audio.playStuckSound();
+                    }
+                }
+            }
+        });
+        
         // Collect materials
         materials.forEach(material => {
             if (!material.collected) {
@@ -1210,6 +1411,19 @@ function initGame() {
                     pickup.collected = true;
                     pickup.mesh.visible = false;
                     ammo = Math.min(ammo + pickup.amount, maxAmmo);
+                    Audio.playCollectSound();
+                }
+            }
+        });
+        
+        // Collect health
+        healthPickups.forEach(pickup => {
+            if (!pickup.collected) {
+                const dist = playerGroup.position.distanceTo(pickup.mesh.position);
+                if (dist < pickup.radius) {
+                    pickup.collected = true;
+                    pickup.mesh.visible = false;
+                    playerHealth = Math.min(playerHealth + 1, maxPlayerHealth);
                     Audio.playCollectSound();
                 }
             }
@@ -1304,8 +1518,13 @@ function initGame() {
             gob.health = gob.maxHealth;
             gob.direction = 1;
             gob.isChasing = false;
-            const terrainH = getTerrainHeight(gob.mesh.position.x, gob.mesh.position.z);
-            gob.mesh.position.y = terrainH;
+            gob.patrolLeft = gob.initialPatrolLeft;
+            gob.patrolRight = gob.initialPatrolRight;
+            const terrainH = getTerrainHeight(gob.initialX, gob.initialZ);
+            gob.mesh.position.set(gob.initialX, terrainH, gob.initialZ);
+            if (gob.isGuardian) {
+                gob.lastFireTime = Date.now() - Math.random() * 4000;
+            }
         });
         
         bullets.forEach(b => scene.remove(b.mesh));
@@ -1318,6 +1537,8 @@ function initGame() {
         guardianArrows.length = 0;
         
         ammo = maxAmmo;
+        playerHealth = 1;
+        lastDamageTime = 0;
         bridgeRepaired = false;
         materialsCollected = 0;
         bridgeObj.mesh.visible = false;
@@ -1329,6 +1550,11 @@ function initGame() {
         });
         
         ammoPickups.forEach(pickup => {
+            pickup.collected = false;
+            pickup.mesh.visible = true;
+        });
+        
+        healthPickups.forEach(pickup => {
             pickup.collected = false;
             pickup.mesh.visible = true;
         });
@@ -1364,27 +1590,38 @@ function initGame() {
         
         hudCtx.fillText(`Material: ${materialsCollected}/${materialsNeeded}`, 10, 75);
         
+        // Health display
+        hudCtx.fillText(`Leben: ${playerHealth}/${maxPlayerHealth}`, 10, 100);
+        
+        // Damage flash effect
+        const now = Date.now();
+        if (now - damageFlashTime < 300) {
+            const flashOpacity = 0.4 * (1 - (now - damageFlashTime) / 300);
+            hudCtx.fillStyle = `rgba(255, 0, 0, ${flashOpacity})`;
+            hudCtx.fillRect(0, 0, hudCanvas.width, hudCanvas.height);
+        }
+        
         // Kite charge bar or collection status
         if (player.hasKite) {
-            hudCtx.fillText(`Drachen: ${Math.floor(player.glideCharge)}%`, 10, 100);
+            hudCtx.fillText(`Drachen: ${Math.floor(player.glideCharge)}%`, 10, 125);
             hudCtx.fillStyle = player.glideCharge >= 20 ? '#00FF00' : '#FF0000';
-            hudCtx.fillRect(10, 105, player.glideCharge * 2, 10);
+            hudCtx.fillRect(10, 130, player.glideCharge * 2, 10);
             hudCtx.strokeStyle = '#000';
-            hudCtx.strokeRect(10, 105, 200, 10);
+            hudCtx.strokeRect(10, 130, 200, 10);
             hudCtx.fillStyle = '#000';
         } else {
             hudCtx.fillStyle = '#FFD700';
-            hudCtx.fillText('Finde den Drachen auf der anderen Seite!', 10, 100);
+            hudCtx.fillText('Finde den Drachen auf der anderen Seite!', 10, 125);
             hudCtx.fillStyle = '#000';
         }
         
         if (!bridgeRepaired && materialsCollected >= materialsNeeded) {
             hudCtx.fillStyle = '#FFD700';
-            hudCtx.fillText('Gehe zur Brücke um sie zu reparieren!', 10, 130);
+            hudCtx.fillText('Gehe zur Brücke um sie zu reparieren!', 10, 155);
             hudCtx.fillStyle = '#000';
         } else if (bridgeRepaired) {
             hudCtx.fillStyle = '#00FF00';
-            hudCtx.fillText('Brücke repariert!', 10, 130);
+            hudCtx.fillText('Brücke repariert!', 10, 155);
             hudCtx.fillStyle = '#000';
         }
         
@@ -1418,13 +1655,22 @@ function initGame() {
     // Start background music
     Audio.startBackgroundMusic();
 
-    // Game loop
-    function animate() {
+    // Game loop with delta time
+    let lastTime = performance.now();
+    const targetFPS = 60;
+    const targetFrameTime = 1000 / targetFPS;
+    let accumulator = 0;
+    
+    function animate(currentTime) {
         requestAnimationFrame(animate);
         
-        const time = Date.now() * 0.001;
+        const deltaTime = currentTime - lastTime;
+        lastTime = currentTime;
+        accumulator += deltaTime;
         
-        // Animate river water
+        const time = currentTime * 0.001;
+        
+        // Animate river water (visual only, runs every frame)
         const riverGeometry = riverObj.mesh.geometry;
         const positions = riverGeometry.attributes.position;
         for (let i = 0; i < positions.count; i++) {
@@ -1435,29 +1681,45 @@ function initGame() {
         }
         positions.needsUpdate = true;
         
-        // Rotate world kite
+        // Rotate world kite (visual only)
         if (!worldKiteCollected) {
             worldKiteGroup.rotation.y = time;
         }
         
-        // Animate grass bushels
+        // Animate grass bushels (visual only)
         grassBushels.forEach(grass => {
             const sway = Math.sin(time * 2 + grass.phase) * 0.1;
             grass.mesh.rotation.z = sway;
         });
         
-        if (!gameDead) {
-            updatePlayer();
-            updateBullets();
-            updateExplosions();
-            updateGoblins();
-            updateGuardianArrows();
-            Audio.updateGoblinProximitySound(playerGroup.position, goblins);
+        // Animate health pickups (visual only)
+        healthPickups.forEach(pickup => {
+            if (!pickup.collected) {
+                pickup.mesh.rotation.y = time * 2;
+                pickup.mesh.position.y = getTerrainHeight(pickup.mesh.position.x, pickup.mesh.position.z) + 0.3 + Math.sin(time * 3) * 0.15;
+            }
+        });
+        
+        // Fixed timestep game logic updates
+        while (accumulator >= targetFrameTime) {
+            // Update gamepad input
+            updateGamepad();
+            
+            if (!gameDead) {
+                updatePlayer();
+                updateBullets();
+                updateExplosions();
+                updateGoblins();
+                updateGuardianArrows();
+                Audio.updateGoblinProximitySound(playerGroup.position, goblins);
+            }
+            
+            accumulator -= targetFrameTime;
         }
         
         drawHUD();
         renderer.render(scene, camera);
     }
 
-    animate();
+    animate(performance.now());
 }
