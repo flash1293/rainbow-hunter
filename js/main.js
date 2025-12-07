@@ -163,6 +163,7 @@ function initGame() {
     let materialsCollected = 0;
     const materialsNeeded = GAME_CONFIG.MATERIALS_NEEDED;
     let playerHealth = 1;
+    let otherPlayerHealth = 1;
     const maxPlayerHealth = 3;
     let lastDamageTime = 0;
     const damageCooldown = 2500; // ms between damage from goblins
@@ -446,6 +447,7 @@ function initGame() {
                 rotation: player.rotation,
                 isGliding: player.isGliding,
                 glideLiftProgress: player.glideLiftProgress,
+                glideCharge: player.glideCharge,
                 hasKite: player.hasKite
             },
             goblins: goblins.map(g => ({
@@ -462,7 +464,8 @@ function initGame() {
             guardianArrows: guardianArrows.map(a => ({
                 x: a.mesh.position.x,
                 y: a.mesh.position.y,
-                z: a.mesh.position.z
+                z: a.mesh.position.z,
+                rotationZ: a.mesh.rotation.z
             })),
             bullets: bullets.filter(b => !b.isRemote).map(b => ({
                 x: b.mesh.position.x,
@@ -504,6 +507,13 @@ function initGame() {
             otherPlayerMesh.position.set(data.hostPlayer.x, data.hostPlayer.y, data.hostPlayer.z);
             otherPlayerMesh.rotation.y = data.hostPlayer.rotation;
             otherPlayerMesh.visible = true;
+            // Update other player's health and glide charge
+            if (data.hostPlayer.health !== undefined) {
+                otherPlayerHealth = data.hostPlayer.health;
+            }
+            if (data.hostPlayer.glideCharge !== undefined) {
+                player.glideCharge = data.hostPlayer.glideCharge;
+            }
             // Update kite visibility based on gliding state
             if (otherPlayerMesh.kiteGroup) {
                 otherPlayerMesh.kiteGroup.visible = data.hostPlayer.isGliding === true;
@@ -543,10 +553,38 @@ function initGame() {
                 scene.remove(arrow.mesh);
             }
             
-            // Update existing arrows
+            // Update existing arrows and create new ones
             data.guardianArrows.forEach((arrowData, i) => {
                 if (i < guardianArrows.length) {
                     guardianArrows[i].mesh.position.set(arrowData.x, arrowData.y, arrowData.z);
+                    if (arrowData.rotationZ !== undefined) {
+                        guardianArrows[i].mesh.rotation.z = arrowData.rotationZ;
+                    }
+                } else {
+                    // Create new arrow on client
+                    const arrowGeometry = new THREE.CylinderGeometry(0.05, 0.05, 1, 8);
+                    const arrowMaterial = new THREE.MeshLambertMaterial({ color: 0x8B4513 });
+                    const arrowMesh = new THREE.Mesh(arrowGeometry, arrowMaterial);
+                    arrowMesh.castShadow = true;
+                    arrowMesh.position.set(arrowData.x, arrowData.y, arrowData.z);
+                    scene.add(arrowMesh);
+                    
+                    const tipGeometry = new THREE.ConeGeometry(0.1, 0.2, 8);
+                    const tipMaterial = new THREE.MeshLambertMaterial({ color: 0x696969 });
+                    const tipMesh = new THREE.Mesh(tipGeometry, tipMaterial);
+                    tipMesh.position.y = 0.5;
+                    arrowMesh.add(tipMesh);
+                    
+                    arrowMesh.rotation.x = Math.PI / 2;
+                    if (arrowData.rotationZ !== undefined) {
+                        arrowMesh.rotation.z = arrowData.rotationZ;
+                    }
+                    
+                    guardianArrows.push({
+                        mesh: arrowMesh,
+                        velocity: new THREE.Vector3(0, 0, 0),
+                        radius: 0.3
+                    });
                 }
             });
         }
@@ -602,13 +640,13 @@ function initGame() {
 
     const player = {
         mesh: playerGroup,
-        speed: 0.08 * (difficulty === 'hard' ? 1.3 : 1),
+        speed: 0.12 * (difficulty === 'hard' ? 1.3 : 1),
         rotation: Math.PI,
-        rotationSpeed: 0.025 * (difficulty === 'hard' ? 1.3 : 1),
+        rotationSpeed: 0.04 * (difficulty === 'hard' ? 1.3 : 1),
         isGliding: false,
         glideCharge: 100,
         maxGlideCharge: 100,
-        glideSpeed: 0.15 * (difficulty === 'hard' ? 1.3 : 1),
+        glideSpeed: 0.2 * (difficulty === 'hard' ? 1.3 : 1),
         glideHeight: 1.2,
         glideState: 'none',
         glideLiftProgress: 0,
@@ -1354,7 +1392,8 @@ function initGame() {
         Audio.playShootSound();
         
         const bulletGeometry = new THREE.SphereGeometry(0.2, 8, 8);
-        const bulletMaterial = new THREE.MeshLambertMaterial({ color: 0x000000 });
+        const bulletColor = isHost ? 0xFF69B4 : 0x4169E1; // Pink for girl, Blue for boy
+        const bulletMaterial = new THREE.MeshLambertMaterial({ color: bulletColor });
         const bulletMesh = new THREE.Mesh(bulletGeometry, bulletMaterial);
         bulletMesh.position.copy(playerGroup.position);
         bulletMesh.position.y = 1;
@@ -1392,7 +1431,8 @@ function initGame() {
         Audio.playShootSound();
         
         const bulletGeometry = new THREE.SphereGeometry(0.2, 8, 8);
-        const bulletMaterial = new THREE.MeshLambertMaterial({ color: 0x00FFFF }); // Different color for remote bullets
+        const remoteBulletColor = isHost ? 0x4169E1 : 0xFF69B4; // Blue for boy's bullets, Pink for girl's bullets
+        const bulletMaterial = new THREE.MeshLambertMaterial({ color: remoteBulletColor });
         const bulletMesh = new THREE.Mesh(bulletGeometry, bulletMaterial);
         bulletMesh.position.set(bulletData.position.x, bulletData.position.y, bulletData.position.z);
         bulletMesh.castShadow = true;
@@ -1433,6 +1473,17 @@ function initGame() {
             if (multiplayerManager && multiplayerManager.isHost) {
                 gameWon = true;
                 Audio.playWinSound();
+            }
+        } else if (eventType === 'playerDamage') {
+            // Other player took damage
+            playerHealth--;
+            damageFlashTime = Date.now();
+            if (playerHealth <= 0) {
+                gameDead = true;
+                Audio.stopBackgroundMusic();
+                Audio.playDeathSound();
+            } else {
+                Audio.playStuckSound();
             }
         } else if (eventType === 'playerDeath') {
             // Other player died, game over for both
@@ -1755,7 +1806,7 @@ function initGame() {
             }
             
             // Guardian arrows
-            if (gob.isGuardian && distToPlayer < 25) {
+            if (gob.isGuardian && distToTarget < 25) {
                 const now = Date.now();
                 const fireInterval = 4000 + Math.random() * 2000;
                 if (now - gob.lastFireTime > fireInterval) {
@@ -1776,8 +1827,26 @@ function initGame() {
                     tipMesh.position.y = 0.5;
                     arrowMesh.add(tipMesh);
                     
-                    const dirX = playerGroup.position.x - gob.mesh.position.x;
-                    const dirZ = playerGroup.position.z - gob.mesh.position.z;
+                    // Target the closest player
+                    let targetPlayer = playerGroup;
+                    let closestDist = Math.sqrt(
+                        Math.pow(playerGroup.position.x - gob.mesh.position.x, 2) +
+                        Math.pow(playerGroup.position.z - gob.mesh.position.z, 2)
+                    );
+                    
+                    // Check if other player is closer
+                    if (multiplayerManager && multiplayerManager.isConnected() && otherPlayerMesh.visible) {
+                        const distToOther = Math.sqrt(
+                            Math.pow(otherPlayerMesh.position.x - gob.mesh.position.x, 2) +
+                            Math.pow(otherPlayerMesh.position.z - gob.mesh.position.z, 2)
+                        );
+                        if (distToOther < closestDist) {
+                            targetPlayer = otherPlayerMesh;
+                        }
+                    }
+                    
+                    const dirX = targetPlayer.position.x - gob.mesh.position.x;
+                    const dirZ = targetPlayer.position.z - gob.mesh.position.z;
                     const length = Math.sqrt(dirX * dirX + dirZ * dirZ);
                     
                     const direction = new THREE.Vector3(
@@ -1808,13 +1877,16 @@ function initGame() {
             arrow.mesh.position.x += arrow.velocity.x;
             arrow.mesh.position.z += arrow.velocity.z;
             
+            // Check collision with local player
             const dist = new THREE.Vector2(
                 playerGroup.position.x - arrow.mesh.position.x,
                 playerGroup.position.z - arrow.mesh.position.z
             ).length();
             
+            let hitPlayer = false;
             if (dist < 1.0) {
                 playerHealth--;
+                damageFlashTime = Date.now();
                 if (playerHealth <= 0) {
                     gameDead = true;
                     Audio.stopBackgroundMusic();
@@ -1828,6 +1900,25 @@ function initGame() {
                     // Play hurt sound or use existing sound
                     Audio.playStuckSound();
                 }
+                hitPlayer = true;
+            }
+            
+            // Check collision with other player (in multiplayer)
+            if (!hitPlayer && multiplayerManager && multiplayerManager.isConnected() && otherPlayerMesh.visible) {
+                const distToOther = new THREE.Vector2(
+                    otherPlayerMesh.position.x - arrow.mesh.position.x,
+                    otherPlayerMesh.position.z - arrow.mesh.position.z
+                ).length();
+                
+                if (distToOther < 1.0) {
+                    // Arrow hit other player - send damage event to them
+                    // Note: Don't modify otherPlayerHealth here, it will be updated via sync
+                    multiplayerManager.sendGameEvent('playerDamage', {});
+                    hitPlayer = true;
+                }
+            }
+            
+            if (hitPlayer) {
                 scene.remove(arrow.mesh);
                 guardianArrows.splice(i, 1);
                 continue;

@@ -126,7 +126,7 @@ class MultiplayerManager {
     startHostSync(getSyncDataCallback) {
         if (!this.isHost) return;
         
-        // Send full game state every 100ms
+        // Send full game state every 50ms (20 Hz)
         this.syncInterval = setInterval(() => {
             if (this.conn && this.conn.open && getSyncDataCallback) {
                 const syncData = getSyncDataCallback();
@@ -135,7 +135,7 @@ class MultiplayerManager {
                     data: syncData
                 });
             }
-        }, 100);
+        }, 50);
     }
     
     stopHostSync() {
