@@ -1,9 +1,14 @@
 // Multiplayer system using PeerJS
 
 class MultiplayerManager {
-    constructor() {
-        this.myRoomCode = Math.floor(100 + Math.random() * 900).toString();
-        this.peer = new Peer(`fahrrad-abenteuer-${this.myRoomCode}`);
+    constructor(predefinedRoomCode = null) {
+        this.myRoomCode = predefinedRoomCode || Math.floor(100 + Math.random() * 900).toString();
+        // For splitscreen, host uses the room code, client uses room code + "-client"
+        const urlParams = new URLSearchParams(window.location.search);
+        this.isSplitscreenClient = urlParams.get('splitscreen') === 'client';
+        const peerId = this.isSplitscreenClient ? `fahrrad-abenteuer-${this.myRoomCode}-client` : `fahrrad-abenteuer-${this.myRoomCode}`;
+        
+        this.peer = new Peer(peerId);
         this.conn = null;
         this.isHost = false;
         this.isClient = false;
@@ -18,7 +23,10 @@ class MultiplayerManager {
     setupPeer() {
         this.peer.on('open', (id) => {
             console.log('My peer ID:', id);
-            this.isHost = true; // By default, you're a host until you join someone
+            // In splitscreen mode, client should not be host
+            if (!this.isSplitscreenClient) {
+                this.isHost = true; // By default, you're a host until you join someone
+            }
         });
         
         this.peer.on('connection', (conn) => {
@@ -54,6 +62,7 @@ class MultiplayerManager {
             return;
         }
         
+        console.log('Attempting to join room:', roomCode);
         this.conn = this.peer.connect(`fahrrad-abenteuer-${roomCode}`);
         this.isHost = false;
         this.isClient = true;
@@ -82,11 +91,14 @@ class MultiplayerManager {
     }
     
     setupConnection(conn) {
+        console.log('setupConnection called for conn:', conn);
         conn.on('data', (data) => {
+            console.log('conn.on(data) fired, received data');
             this.handleData(data);
         });
         
         conn.on('close', () => {
+            console.log('Connection closed');
             this.updateStatus('Verbindung getrennt');
             this.conn = null;
             
@@ -135,11 +147,15 @@ class MultiplayerManager {
     
     // Host: Send game start command
     sendGameStart(difficulty) {
+        console.log('sendGameStart called, isHost:', this.isHost, 'conn open:', this.conn && this.conn.open);
         if (this.isHost && this.conn && this.conn.open) {
+            console.log('Sending gameStart with difficulty:', difficulty);
             this.conn.send({
                 type: 'gameStart',
                 difficulty: difficulty
             });
+        } else {
+            console.log('NOT sending gameStart - conditions not met');
         }
     }
     
@@ -187,6 +203,7 @@ class MultiplayerManager {
     
     // Handle incoming data
     handleData(data) {
+        console.log('handleData received:', data.type, data);
         switch(data.type) {
             case 'fullSync':
                 // Client receives full game state from host
@@ -194,6 +211,7 @@ class MultiplayerManager {
                 break;
             case 'gameStart':
                 // Client receives game start command
+                console.log('Calling notifyGameStart with difficulty:', data.difficulty);
                 this.notifyGameStart(data.difficulty);
                 break;
             case 'playerState':

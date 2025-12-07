@@ -14,39 +14,78 @@ let otherPlayerLastPos = { x: 0, z: 0 };
 let otherPlayerIsGliding = false;
 let otherPlayerGlideLiftProgress = 0;
 
+// Splitscreen support
+const urlParams = new URLSearchParams(window.location.search);
+const isSplitscreen = urlParams.get('splitscreen');
+const splitscreenRoom = urlParams.get('room');
+const controllerIndex = parseInt(urlParams.get('controller')) || 0;
+
 // Initialize multiplayer on page load
 window.addEventListener('DOMContentLoaded', () => {
-    multiplayerManager = new MultiplayerManager();
+    // Hide multiplayer UI in splitscreen mode
+    if (isSplitscreen) {
+        const multiplayerSetup = document.getElementById('multiplayer-setup');
+        if (multiplayerSetup) multiplayerSetup.style.display = 'none';
+    }
     
-    // Setup join button
-    const joinBtn = document.getElementById('join-btn');
-    const joinInput = document.getElementById('join-room-code');
+    multiplayerManager = new MultiplayerManager(isSplitscreen ? splitscreenRoom : null);
     
-    joinBtn.addEventListener('click', () => {
-        const roomCode = joinInput.value.trim();
-        multiplayerManager.joinRoom(roomCode);
-    });
-    
-    // Allow Enter key in input
-    joinInput.addEventListener('keypress', (e) => {
-        if (e.key === 'Enter') {
-            const roomCode = joinInput.value.trim();
-            multiplayerManager.joinRoom(roomCode);
+    // Setup join button only if not in splitscreen mode
+    if (!isSplitscreen) {
+        const joinBtn = document.getElementById('join-btn');
+        const joinInput = document.getElementById('join-room-code');
+        
+        if (joinBtn && joinInput) {
+            joinBtn.addEventListener('click', () => {
+                const roomCode = joinInput.value.trim();
+                multiplayerManager.joinRoom(roomCode);
+            });
+            
+            // Allow Enter key in input
+            joinInput.addEventListener('keypress', (e) => {
+                if (e.key === 'Enter') {
+                    const roomCode = joinInput.value.trim();
+                    multiplayerManager.joinRoom(roomCode);
+                }
+            });
         }
-    });
+    }
     
     // Handle multiplayer callbacks
     multiplayerManager.onUpdate((type, data) => {
         if (type === 'gameStart') {
             // Client receives game start from host
+            console.log('Client received gameStart');
             startGame(data.difficulty);
         }
     });
+    
+    // Auto-join for splitscreen client
+    if (isSplitscreen === 'client' && splitscreenRoom) {
+        // Hide all difficulty menu content for client
+        const difficultyMenu = document.getElementById('difficulty-menu');
+        if (difficultyMenu) {
+            const title = difficultyMenu.querySelector('h1');
+            const h2 = difficultyMenu.querySelector('h2');
+            const buttons = difficultyMenu.querySelectorAll('.difficulty-btn');
+            
+            if (title) title.textContent = 'Spieler 2';
+            if (h2) h2.textContent = 'Warte auf Spieler 1...';
+            buttons.forEach(btn => btn.style.display = 'none');
+        }
+        
+        // Wait a moment for host to be ready, then join
+        setTimeout(() => {
+            multiplayerManager.joinRoom(splitscreenRoom);
+        }, 1500);
+    }
 });
 
-// Difficulty selection
-document.getElementById('easy-btn').addEventListener('click', () => startGame('easy'));
-document.getElementById('hard-btn').addEventListener('click', () => startGame('hard'));
+// Difficulty selection - only for host or non-splitscreen
+if (!isSplitscreen || isSplitscreen === 'host') {
+    document.getElementById('easy-btn').addEventListener('click', () => startGame('easy'));
+    document.getElementById('hard-btn').addEventListener('click', () => startGame('hard'));
+}
 
 function startGame(selectedDifficulty) {
     difficulty = selectedDifficulty;
@@ -362,6 +401,7 @@ function initGame() {
             } else if (type === 'playerState') {
                 // Host receives client player position (client to host)
                 if (multiplayerManager.isHost) {
+                    console.log('Host received playerState from client:', data);
                     // Calculate velocity for optimistic updates
                     otherPlayerVelocity.x = data.position.x - otherPlayerLastPos.x;
                     otherPlayerVelocity.z = data.position.z - otherPlayerLastPos.z;
@@ -375,6 +415,7 @@ function initGame() {
                     otherPlayerMesh.position.set(data.position.x, data.position.y, data.position.z);
                     otherPlayerMesh.rotation.y = data.rotation;
                     otherPlayerMesh.visible = true;
+                    console.log('otherPlayerMesh visible set to true, position:', otherPlayerMesh.position);
                     // Update kite visibility based on gliding state
                     if (otherPlayerMesh.kiteGroup) {
                         otherPlayerMesh.kiteGroup.visible = data.isGliding === true;
@@ -595,21 +636,35 @@ function initGame() {
     const kiteActivationCooldown = 300; // ms between kite activations
 
     window.addEventListener('gamepadconnected', (e) => {
-        gamepad = e.gamepad;
-        console.log('Gamepad connected:', gamepad.id);
+        // In splitscreen mode, only use the assigned controller
+        if (isSplitscreen) {
+            if (e.gamepad.index === controllerIndex) {
+                gamepad = e.gamepad;
+                console.log('Gamepad connected for player', controllerIndex + 1, ':', gamepad.id);
+            }
+        } else {
+            gamepad = e.gamepad;
+            console.log('Gamepad connected:', gamepad.id);
+        }
     });
 
     window.addEventListener('gamepaddisconnected', (e) => {
-        console.log('Gamepad disconnected');
-        gamepad = null;
+        if (!isSplitscreen || e.gamepad.index === controllerIndex) {
+            console.log('Gamepad disconnected');
+            gamepad = null;
+        }
     });
 
     function updateGamepad() {
-        if (!gamepad) return;
-        
-        // Get latest gamepad state
+        // In splitscreen mode, use specific controller index
         const gamepads = navigator.getGamepads();
-        gamepad = gamepads[gamepad.index];
+        if (isSplitscreen) {
+            gamepad = gamepads[controllerIndex];
+        } else if (gamepad) {
+            gamepad = gamepads[gamepad.index];
+        }
+        
+        if (!gamepad) return;
         
         if (!gamepad) return;
         
@@ -1486,6 +1541,7 @@ function initGame() {
         
         // Client syncs their player state to host (host handles full sync separately)
         if (multiplayerManager && multiplayerManager.isClient && multiplayerManager.isConnected()) {
+            console.log('Client sending playerState, isClient:', multiplayerManager.isClient, 'isConnected:', multiplayerManager.isConnected());
             multiplayerManager.sendPlayerState({
                 position: playerGroup.position,
                 rotation: player.rotation,

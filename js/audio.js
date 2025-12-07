@@ -2,6 +2,14 @@
 const Audio = (function() {
     const audioContext = new (window.AudioContext || window.webkitAudioContext)();
 
+    // Check if in splitscreen mode as client (only host plays sounds)
+    function shouldPlayAudio() {
+        const urlParams = new URLSearchParams(window.location.search);
+        const isSplitscreen = urlParams.get('splitscreen');
+        // Only play audio if not in splitscreen mode, or if we're the host
+        return !isSplitscreen || isSplitscreen === 'host';
+    }
+
     // Background music state
     let backgroundMusicOscillators = [];
     let backgroundMusicGains = [];
@@ -12,6 +20,8 @@ const Audio = (function() {
 
     // Sound effect functions
     function playShootSound() {
+        if (!shouldPlayAudio()) return;
+        
         const oscillator = audioContext.createOscillator();
         const gainNode = audioContext.createGain();
         
@@ -29,6 +39,8 @@ const Audio = (function() {
     }
 
     function playExplosionSound() {
+        if (!shouldPlayAudio()) return;
+        
         const oscillator = audioContext.createOscillator();
         const gainNode = audioContext.createGain();
         const filter = audioContext.createBiquadFilter();
@@ -53,6 +65,8 @@ const Audio = (function() {
     }
 
     function playDeathSound() {
+        if (!shouldPlayAudio()) return;
+        
         const oscillator = audioContext.createOscillator();
         const gainNode = audioContext.createGain();
         
@@ -70,6 +84,8 @@ const Audio = (function() {
     }
 
     function playCollectSound() {
+        if (!shouldPlayAudio()) return;
+        
         const oscillator = audioContext.createOscillator();
         const gainNode = audioContext.createGain();
         
@@ -88,6 +104,8 @@ const Audio = (function() {
     }
 
     function playRepairSound() {
+        if (!shouldPlayAudio()) return;
+        
         const oscillator = audioContext.createOscillator();
         const gainNode = audioContext.createGain();
         
@@ -105,6 +123,8 @@ const Audio = (function() {
     }
 
     function playEmptyGunSound() {
+        if (!shouldPlayAudio()) return;
+        
         const oscillator = audioContext.createOscillator();
         const gainNode = audioContext.createGain();
         
@@ -122,6 +142,8 @@ const Audio = (function() {
     }
 
     function playStuckSound() {
+        if (!shouldPlayAudio()) return;
+        
         const oscillator = audioContext.createOscillator();
         const gainNode = audioContext.createGain();
         
@@ -140,6 +162,8 @@ const Audio = (function() {
     }
 
     function playBulletImpactSound() {
+        if (!shouldPlayAudio()) return;
+        
         const oscillator = audioContext.createOscillator();
         const gainNode = audioContext.createGain();
         const filter = audioContext.createBiquadFilter();
@@ -163,6 +187,8 @@ const Audio = (function() {
     }
 
     function playGoblinDeathSound() {
+        if (!shouldPlayAudio()) return;
+        
         const oscillator = audioContext.createOscillator();
         const gainNode = audioContext.createGain();
         
@@ -181,6 +207,8 @@ const Audio = (function() {
     }
 
     function playWinSound() {
+        if (!shouldPlayAudio()) return;
+        
         const notes = [523, 587, 659, 784, 880];
         notes.forEach((freq, i) => {
             const oscillator = audioContext.createOscillator();
@@ -200,6 +228,8 @@ const Audio = (function() {
     }
 
     function playArrowShootSound() {
+        if (!shouldPlayAudio()) return;
+        
         const oscillator = audioContext.createOscillator();
         const gainNode = audioContext.createGain();
         
@@ -220,6 +250,8 @@ const Audio = (function() {
     let arrowWhooshNodes = [];
 
     function updateArrowProximitySound(playerPos, arrows) {
+        if (!shouldPlayAudio()) return;
+        
         // Clean up old arrow sounds
         arrowWhooshNodes = arrowWhooshNodes.filter(node => {
             if (node.stopTime && audioContext.currentTime > node.stopTime) {
@@ -261,6 +293,8 @@ const Audio = (function() {
     }
 
     function startBackgroundMusic() {
+        if (!shouldPlayAudio()) return;
+        
         const melody = [
             { freq: 523, duration: 0.3 }, { freq: 587, duration: 0.3 }, { freq: 659, duration: 0.3 },
             { freq: 784, duration: 0.6 }, { freq: 659, duration: 0.3 }, { freq: 587, duration: 0.3 },
@@ -339,6 +373,8 @@ const Audio = (function() {
     }
 
     function updateGoblinProximitySound(playerPosition, goblins) {
+        if (!shouldPlayAudio()) return;
+        
         let closestDist = Infinity;
         
         goblins.forEach(gob => {

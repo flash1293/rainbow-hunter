@@ -1,0 +1,79 @@
+<!DOCTYPE html>
+<html lang="de">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Fahrrad-Abenteuer - Splitscreen</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        body {
+            overflow: hidden;
+            font-family: Arial, sans-serif;
+        }
+        #splitscreen-container {
+            display: flex;
+            width: 100vw;
+            height: 100vh;
+        }
+        .player-frame {
+            width: 100%;
+            height: 100%;
+            border: none;
+        }
+        .player-container {
+            position: relative;
+            width: 50%;
+            height: 100%;
+        }
+        .player-label {
+            position: absolute;
+            top: 10px;
+            left: 10px;
+            background: rgba(0, 0, 0, 0.7);
+            color: white;
+            padding: 8px 15px;
+            border-radius: 5px;
+            font-size: 18px;
+            font-weight: bold;
+            z-index: 1000;
+            pointer-events: none;
+        }
+        .player-1-label {
+            background: rgba(255, 105, 180, 0.8);
+        }
+        .player-2-label {
+            background: rgba(0, 150, 255, 0.8);
+        }
+    </style>
+</head>
+<body>
+    <div id="splitscreen-container">
+        <div class="player-container">
+            <div class="player-label player-1-label">Spieler 1 (Mädchen) - Controller 1</div>
+            <iframe id="player1" class="player-frame"></iframe>
+        </div>
+        <div class="player-container">
+            <div class="player-label player-2-label">Spieler 2 (Junge) - Controller 2</div>
+            <iframe id="player2" class="player-frame"></iframe>
+        </div>
+    </div>
+    <script>
+        // Generate a unique room code for this splitscreen session
+        const roomCode = Math.floor(100 + Math.random() * 900).toString();
+        
+        // Load player 1 as host with controller index 0
+        const player1Frame = document.getElementById('player1');
+        player1Frame.src = `index.html?splitscreen=host&room=${roomCode}&controller=0`;
+        
+        // Load player 2 as client with controller index 1
+        const player2Frame = document.getElementById('player2');
+        player2Frame.src = `index.html?splitscreen=client&room=${roomCode}&controller=1`;
+        
+        console.log('Splitscreen session started with room code:', roomCode);
+    </script>
+</body>
+</html>
