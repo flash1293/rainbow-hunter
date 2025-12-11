@@ -17,6 +17,11 @@ const Audio = (function() {
 
     // Goblin proximity sound state
     let lastGoblinSoundTime = 0;
+    
+    // Giant proximity sound state
+    let giantRumbleOscillator = null;
+    let giantRumbleGain = null;
+    let giantRumbleFilter = null;
 
     // Sound effect functions
     function playShootSound() {
@@ -150,15 +155,65 @@ const Audio = (function() {
         oscillator.connect(gainNode);
         gainNode.connect(audioContext.destination);
         
-        oscillator.type = 'triangle';
-        oscillator.frequency.setValueAtTime(200, audioContext.currentTime);
-        oscillator.frequency.exponentialRampToValueAtTime(150, audioContext.currentTime + 0.15);
+        oscillator.type = 'sawtooth';
+        oscillator.frequency.setValueAtTime(300, audioContext.currentTime);
+        oscillator.frequency.exponentialRampToValueAtTime(150, audioContext.currentTime + 0.2);
         
         gainNode.gain.setValueAtTime(0.3, audioContext.currentTime);
-        gainNode.gain.exponentialRampToValueAtTime(0.01, audioContext.currentTime + 0.15);
+        gainNode.gain.exponentialRampToValueAtTime(0.01, audioContext.currentTime + 0.2);
         
         oscillator.start(audioContext.currentTime);
-        oscillator.stop(audioContext.currentTime + 0.15);
+        oscillator.stop(audioContext.currentTime + 0.2);
+    }
+    
+    function playGiantAttackSound() {
+        if (!shouldPlayAudio()) return;
+        
+        // Deep impact sound with rumble
+        const impact = audioContext.createOscillator();
+        const impactGain = audioContext.createGain();
+        const impactFilter = audioContext.createBiquadFilter();
+        
+        impact.type = 'sawtooth';
+        impact.frequency.setValueAtTime(60, audioContext.currentTime);
+        impact.frequency.exponentialRampToValueAtTime(20, audioContext.currentTime + 0.4);
+        
+        impactFilter.type = 'lowpass';
+        impactFilter.frequency.setValueAtTime(200, audioContext.currentTime);
+        impactFilter.frequency.exponentialRampToValueAtTime(30, audioContext.currentTime + 0.4);
+        
+        impact.connect(impactFilter);
+        impactFilter.connect(impactGain);
+        impactGain.connect(audioContext.destination);
+        
+        impactGain.gain.setValueAtTime(0.6, audioContext.currentTime);
+        impactGain.gain.exponentialRampToValueAtTime(0.01, audioContext.currentTime + 0.5);
+        
+        impact.start(audioContext.currentTime);
+        impact.stop(audioContext.currentTime + 0.5);
+        
+        // Wind-up whoosh sound
+        const whoosh = audioContext.createOscillator();
+        const whooshGain = audioContext.createGain();
+        const whooshFilter = audioContext.createBiquadFilter();
+        
+        whoosh.type = 'triangle';
+        whoosh.frequency.setValueAtTime(200, audioContext.currentTime);
+        whoosh.frequency.exponentialRampToValueAtTime(80, audioContext.currentTime + 0.15);
+        
+        whooshFilter.type = 'bandpass';
+        whooshFilter.frequency.setValueAtTime(400, audioContext.currentTime);
+        whooshFilter.Q.setValueAtTime(10, audioContext.currentTime);
+        
+        whoosh.connect(whooshFilter);
+        whooshFilter.connect(whooshGain);
+        whooshGain.connect(audioContext.destination);
+        
+        whooshGain.gain.setValueAtTime(0.3, audioContext.currentTime);
+        whooshGain.gain.exponentialRampToValueAtTime(0.01, audioContext.currentTime + 0.2);
+        
+        whoosh.start(audioContext.currentTime);
+        whoosh.stop(audioContext.currentTime + 0.2);
     }
 
     function playBulletImpactSound() {
@@ -408,6 +463,67 @@ const Audio = (function() {
             osc.stop(audioContext.currentTime + 0.2);
         }
     }
+    
+    function updateGiantProximitySound(playerPosition, goblins) {
+        if (!shouldPlayAudio()) return;
+        
+        // Find closest giant
+        let closestGiantDist = Infinity;
+        goblins.forEach(gob => {
+            if (gob.alive && gob.isGiant) {
+                const dist = Math.sqrt(
+                    Math.pow(playerPosition.x - gob.mesh.position.x, 2) +
+                    Math.pow(playerPosition.z - gob.mesh.position.z, 2)
+                );
+                closestGiantDist = Math.min(closestGiantDist, dist);
+            }
+        });
+        
+        const giantProximityRange = 50;
+        
+        if (closestGiantDist < giantProximityRange) {
+            // Start or update rumble sound
+            if (!giantRumbleOscillator) {
+                giantRumbleOscillator = audioContext.createOscillator();
+                giantRumbleGain = audioContext.createGain();
+                giantRumbleFilter = audioContext.createBiquadFilter();
+                
+                giantRumbleOscillator.type = 'sawtooth';
+                giantRumbleOscillator.frequency.setValueAtTime(30, audioContext.currentTime);
+                
+                giantRumbleFilter.type = 'lowpass';
+                giantRumbleFilter.frequency.setValueAtTime(60, audioContext.currentTime);
+                giantRumbleFilter.Q.setValueAtTime(8, audioContext.currentTime);
+                
+                giantRumbleOscillator.connect(giantRumbleFilter);
+                giantRumbleFilter.connect(giantRumbleGain);
+                giantRumbleGain.connect(audioContext.destination);
+                
+                giantRumbleOscillator.start(audioContext.currentTime);
+            }
+            
+            // Adjust volume based on distance
+            const volume = Math.max(0, 0.4 * (1 - closestGiantDist / giantProximityRange));
+            giantRumbleGain.gain.setTargetAtTime(volume, audioContext.currentTime, 0.1);
+            
+            // Modulate frequency more dramatically for menacing effect
+            const freqModulation = 30 + Math.sin(audioContext.currentTime * 3) * 10;
+            giantRumbleOscillator.frequency.setTargetAtTime(freqModulation, audioContext.currentTime, 0.05);
+        } else {
+            // Stop rumble sound if too far
+            if (giantRumbleOscillator) {
+                giantRumbleGain.gain.setTargetAtTime(0, audioContext.currentTime, 0.2);
+                setTimeout(() => {
+                    if (giantRumbleOscillator) {
+                        giantRumbleOscillator.stop();
+                        giantRumbleOscillator = null;
+                        giantRumbleGain = null;
+                        giantRumbleFilter = null;
+                    }
+                }, 300);
+            }
+        }
+    }
 
     // Return public API
     return {
@@ -418,6 +534,7 @@ const Audio = (function() {
         playRepairSound,
         playEmptyGunSound,
         playStuckSound,
+        playGiantAttackSound,
         playBulletImpactSound,
         playGoblinDeathSound,
         playWinSound,
@@ -426,6 +543,7 @@ const Audio = (function() {
         startBikeSound,
         stopBikeSound,
         updateGoblinProximitySound,
+        updateGiantProximitySound,
         playArrowShootSound,
         updateArrowProximitySound
     };

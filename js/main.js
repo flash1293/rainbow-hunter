@@ -965,7 +965,12 @@ function initGame() {
         { x: -15, z: 20 }, { x: 35, z: 15 }, { x: -25, z: -10 },
         { x: 15, z: -25 }, { x: -40, z: 40 }, { x: 45, z: -35 },
         { x: 5, z: 25 }, { x: -30, z: -30 }, { x: 20, z: -15 },
-        { x: -10, z: -40 }, { x: 40, z: 35 }, { x: -35, z: 5 }
+        { x: -10, z: -40 }, { x: 40, z: 35 }, { x: -35, z: 5 },
+        { x: -50, z: -15 }, { x: 55, z: -20 }, { x: -18, z: 50 },
+        { x: 25, z: 55 }, { x: -45, z: -50 }, { x: 50, z: -55 },
+        // Behind the gap
+        { x: -20, z: -100 }, { x: 30, z: -110 }, { x: -10, z: -125 },
+        { x: 40, z: -135 }
     ];
 
     ammoPositions.forEach(pos => {
@@ -1274,6 +1279,137 @@ function initGame() {
         };
     }
 
+    // Giant guardian helper - huge slow enemy with lots of health
+    function createGiant(x, z, patrolLeft, patrolRight, speed = 0.018) {
+        const giantGrp = new THREE.Group();
+        
+        // Massive cylindrical body
+        const bodyGeometry = new THREE.CylinderGeometry(1.5, 1.8, 5.0, 12);
+        const bodyMaterial = new THREE.MeshLambertMaterial({ color: 0x4a3a2a });
+        const body = new THREE.Mesh(bodyGeometry, bodyMaterial);
+        body.position.y = 3.5;
+        body.castShadow = true;
+        giantGrp.add(body);
+        
+        // Add armor plates on body
+        const plateGeometry = new THREE.BoxGeometry(2.0, 0.4, 2.2);
+        const plateMaterial = new THREE.MeshLambertMaterial({ color: 0x1a1a1a });
+        for (let i = 0; i < 4; i++) {
+            const plate = new THREE.Mesh(plateGeometry, plateMaterial);
+            plate.position.y = 2.0 + (i * 1.2);
+            plate.castShadow = true;
+            giantGrp.add(plate);
+        }
+        
+        // Large head with horns
+        const headGeometry = new THREE.BoxGeometry(1.8, 1.5, 1.6);
+        const headMaterial = new THREE.MeshLambertMaterial({ color: 0x3a2a1a });
+        const head = new THREE.Mesh(headGeometry, headMaterial);
+        head.position.y = 6.5;
+        head.castShadow = true;
+        giantGrp.add(head);
+        
+        // Horns
+        const hornGeometry = new THREE.ConeGeometry(0.3, 1.2, 6);
+        const hornMaterial = new THREE.MeshLambertMaterial({ color: 0x2a2a2a });
+        
+        const leftHorn = new THREE.Mesh(hornGeometry, hornMaterial);
+        leftHorn.position.set(-0.9, 7.5, 0);
+        leftHorn.rotation.z = -0.3;
+        leftHorn.castShadow = true;
+        giantGrp.add(leftHorn);
+        
+        const rightHorn = new THREE.Mesh(hornGeometry, hornMaterial);
+        rightHorn.position.set(0.9, 7.5, 0);
+        rightHorn.rotation.z = 0.3;
+        rightHorn.castShadow = true;
+        giantGrp.add(rightHorn);
+        
+        // Glowing orange eyes
+        const eyeGeometry = new THREE.SphereGeometry(0.3, 8, 8);
+        const eyeMaterial = new THREE.MeshBasicMaterial({ 
+            color: 0xff6600, 
+            emissive: 0xff6600, 
+            emissiveIntensity: 1.0 
+        });
+        const e1 = new THREE.Mesh(eyeGeometry, eyeMaterial);
+        e1.position.set(-0.5, 6.5, 0.9);
+        giantGrp.add(e1);
+        
+        const e2 = new THREE.Mesh(eyeGeometry, eyeMaterial);
+        e2.position.set(0.5, 6.5, 0.9);
+        giantGrp.add(e2);
+        
+        // Massive club-like arms
+        const armGeometry = new THREE.CylinderGeometry(0.4, 0.8, 4.0, 8);
+        const armMaterial = new THREE.MeshLambertMaterial({ color: 0x4a3a2a });
+        
+        const leftArm = new THREE.Mesh(armGeometry, armMaterial);
+        leftArm.position.set(-2.2, 4.0, 0);
+        leftArm.rotation.z = 0.3;
+        leftArm.castShadow = true;
+        giantGrp.add(leftArm);
+        giantGrp.leftArm = leftArm; // Store for animation
+        
+        const rightArm = new THREE.Mesh(armGeometry, armMaterial);
+        rightArm.position.set(2.2, 4.0, 0);
+        rightArm.rotation.z = -0.3;
+        rightArm.castShadow = true;
+        giantGrp.add(rightArm);
+        giantGrp.rightArm = rightArm; // Store for animation
+        
+        // Giant fists
+        const fistGeometry = new THREE.BoxGeometry(0.8, 0.8, 0.8);
+        const fistMaterial = new THREE.MeshLambertMaterial({ color: 0x3a2a1a });
+        
+        const leftFist = new THREE.Mesh(fistGeometry, fistMaterial);
+        leftFist.position.set(-2.8, 1.8, 0);
+        leftFist.castShadow = true;
+        giantGrp.add(leftFist);
+        giantGrp.leftFist = leftFist; // Store for animation
+        
+        const rightFist = new THREE.Mesh(fistGeometry, fistMaterial);
+        rightFist.position.set(2.8, 1.8, 0);
+        rightFist.castShadow = true;
+        giantGrp.add(rightFist);
+        giantGrp.rightFist = rightFist; // Store for animation
+        
+        // Thick legs
+        const legGeometry = new THREE.CylinderGeometry(0.7, 0.9, 3.5, 8);
+        const leftLeg = new THREE.Mesh(legGeometry, armMaterial);
+        leftLeg.position.set(-0.9, 1.2, 0);
+        leftLeg.castShadow = true;
+        giantGrp.add(leftLeg);
+        
+        const rightLeg = new THREE.Mesh(legGeometry, armMaterial);
+        rightLeg.position.set(0.9, 1.2, 0);
+        rightLeg.castShadow = true;
+        giantGrp.add(rightLeg);
+        
+        giantGrp.position.set(x, getTerrainHeight(x, z), z);
+        scene.add(giantGrp);
+        
+        return {
+            mesh: giantGrp,
+            speed: speed * speedMultiplier,
+            direction: 1,
+            patrolLeft: patrolLeft,
+            patrolRight: patrolRight,
+            alive: true,
+            radius: 6.0,  // Very wide damage range
+            health: 20,
+            maxHealth: 20,
+            isGiant: true,
+            isChasing: false,
+            attackAnimationProgress: 0,
+            isAttacking: false,
+            initialX: x,
+            initialZ: z,
+            initialPatrolLeft: patrolLeft,
+            initialPatrolRight: patrolRight
+        };
+    }
+
     // Create goblins
     const goblins = [];
     const maxGoblins = difficulty === 'easy' ? GAME_CONFIG.EASY_GOBLIN_COUNT : GAME_CONFIG.HARD_GOBLIN_COUNT;
@@ -1287,6 +1423,9 @@ function initGame() {
     if (difficulty === 'hard') {
         // Add one test guardian for testing
         goblins.push(createGuardianGoblin(15, 15, 10, 20, 0.014));
+        
+        // Giant guardian at the gap - huge, fast, lots of health
+        goblins.push(createGiant(0, -85, -8, 8));
         
         // Guardians at the narrow mountain gap (the passage before treasure area)
         goblins.push(createGuardianGoblin(-5, -85, -8, -2, 0.014));
@@ -2047,9 +2186,17 @@ function initGame() {
             
             if (distToGob < gob.radius + 1) {
                 if (now - lastDamageTime > damageCooldown) {
+                    // Trigger giant attack animation and sound BEFORE damage
+                    if (gob.isGiant) {
+                        gob.isAttacking = true;
+                        gob.attackAnimationProgress = 0;
+                        Audio.playGiantAttackSound();
+                    }
+                    
                     playerHealth--;
                     lastDamageTime = now;
                     damageFlashTime = now;
+                    
                     if (playerHealth <= 0) {
                         if (!gameDead) {
                             gameDead = true;
@@ -2060,6 +2207,83 @@ function initGame() {
                         // Play danger sound
                         Audio.playStuckSound();
                     }
+                }
+            }
+            
+            // Update giant attack animation
+            if (gob.isGiant && gob.isAttacking) {
+                gob.attackAnimationProgress += 0.12;
+                
+                // Extra camera shake during attack
+                const distToPlayer = new THREE.Vector2(
+                    playerGroup.position.x - gob.mesh.position.x,
+                    playerGroup.position.z - gob.mesh.position.z
+                ).length();
+                if (distToPlayer < 30) {
+                    const attackShake = (1 - distToPlayer / 30) * 5;
+                    camera.position.x += (Math.random() - 0.5) * attackShake;
+                    camera.position.y += (Math.random() - 0.5) * attackShake;
+                    camera.position.z += (Math.random() - 0.5) * attackShake;
+                }
+                
+                // Dramatic slam animation - wind up, slam down, shake
+                if (gob.attackAnimationProgress < 1.0) {
+                    const t = gob.attackAnimationProgress;
+                    
+                    if (t < 0.35) {
+                        // Wind up - raise arms high and lean back
+                        const windUp = t / 0.35;
+                        const easeOut = 1 - Math.pow(1 - windUp, 3);
+                        gob.mesh.leftArm.rotation.x = -easeOut * 1.4;
+                        gob.mesh.rightArm.rotation.x = -easeOut * 1.4;
+                        gob.mesh.leftArm.rotation.z = 0.3 + easeOut * 0.4;
+                        gob.mesh.rightArm.rotation.z = -0.3 - easeOut * 0.4;
+                        gob.mesh.leftFist.position.y = 1.8 + easeOut * 4.0;
+                        gob.mesh.rightFist.position.y = 1.8 + easeOut * 4.0;
+                        gob.mesh.position.y = getTerrainHeight(gob.mesh.position.x, gob.mesh.position.z) - easeOut * 0.3;
+                    } else if (t < 0.5) {
+                        // Slam down - fast downward motion
+                        const slam = (t - 0.35) / 0.15;
+                        const easeIn = Math.pow(slam, 2.5);
+                        const armAngle = -1.4 + easeIn * 2.2;
+                        gob.mesh.leftArm.rotation.x = armAngle;
+                        gob.mesh.rightArm.rotation.x = armAngle;
+                        gob.mesh.leftArm.rotation.z = 0.7 - easeIn * 0.9;
+                        gob.mesh.rightArm.rotation.z = -0.7 + easeIn * 0.9;
+                        gob.mesh.leftFist.position.y = 5.8 - easeIn * 5.0;
+                        gob.mesh.rightFist.position.y = 5.8 - easeIn * 5.0;
+                        gob.mesh.leftFist.position.z = easeIn * 1.2;
+                        gob.mesh.rightFist.position.z = easeIn * 1.2;
+                        gob.mesh.position.y = getTerrainHeight(gob.mesh.position.x, gob.mesh.position.z) - 0.3 + easeIn * 0.5;
+                    } else {
+                        // Recovery and shake
+                        const recover = (t - 0.5) / 0.5;
+                        const shake = Math.sin(recover * Math.PI * 4) * (1 - recover) * 0.15;
+                        const easeBack = 1 - Math.pow(1 - recover, 2);
+                        gob.mesh.leftArm.rotation.x = 0.8 - easeBack * 0.8;
+                        gob.mesh.rightArm.rotation.x = 0.8 - easeBack * 0.8;
+                        gob.mesh.leftArm.rotation.z = -0.2 + easeBack * 0.5;
+                        gob.mesh.rightArm.rotation.z = 0.2 - easeBack * 0.5;
+                        gob.mesh.leftFist.position.y = 0.8 + easeBack * 1.0;
+                        gob.mesh.rightFist.position.y = 0.8 + easeBack * 1.0;
+                        gob.mesh.leftFist.position.z = 1.2 - easeBack * 1.2;
+                        gob.mesh.rightFist.position.z = 1.2 - easeBack * 1.2;
+                        gob.mesh.position.y = getTerrainHeight(gob.mesh.position.x, gob.mesh.position.z) + 0.2 - easeBack * 0.2 + shake;
+                        gob.mesh.rotation.y += shake * 0.3;
+                    }
+                } else {
+                    // Reset to idle position
+                    gob.mesh.leftArm.rotation.x = 0;
+                    gob.mesh.rightArm.rotation.x = 0;
+                    gob.mesh.leftArm.rotation.z = 0.3;
+                    gob.mesh.rightArm.rotation.z = -0.3;
+                    gob.mesh.leftFist.position.y = 1.8;
+                    gob.mesh.rightFist.position.y = 1.8;
+                    gob.mesh.leftFist.position.z = 0;
+                    gob.mesh.rightFist.position.z = 0;
+                    gob.mesh.position.y = getTerrainHeight(gob.mesh.position.x, gob.mesh.position.z);
+                    gob.isAttacking = false;
+                    gob.attackAnimationProgress = 0;
                 }
             }
         });
@@ -2424,6 +2648,24 @@ function initGame() {
             if (!gameDead) {
                 updatePlayer();
                 
+                // Camera shake when close to giant (runs every frame)
+                const now = Date.now();
+                goblins.forEach(gob => {
+                    if (!gob.alive || !gob.isGiant) return;
+                    const distToGiant = new THREE.Vector2(
+                        playerGroup.position.x - gob.mesh.position.x,
+                        playerGroup.position.z - gob.mesh.position.z
+                    ).length();
+                    
+                    if (distToGiant < 50) {
+                        const shakeIntensity = (1 - distToGiant / 50) * 0.3;
+                        const shakeSpeed = now * 0.015;
+                        camera.position.x += Math.sin(shakeSpeed * 3.7) * shakeIntensity;
+                        camera.position.y += Math.sin(shakeSpeed * 4.3) * shakeIntensity;
+                        camera.position.z += Math.sin(shakeSpeed * 3.1) * shakeIntensity;
+                    }
+                });
+                
                 // Optimistic update for other player position (interpolation between syncs)
                 if (multiplayerManager && multiplayerManager.isConnected() && otherPlayerMesh.visible) {
                     // Only apply optimistic updates if velocity is significant
@@ -2480,6 +2722,7 @@ function initGame() {
                 
                 // Both update audio based on their position
                 Audio.updateGoblinProximitySound(playerGroup.position, goblins);
+                Audio.updateGiantProximitySound(playerGroup.position, goblins);
             }
             
             accumulator -= targetFrameTime;
