@@ -39,11 +39,11 @@ const GAME_CONFIG = {
     EASY_SPEED_MULTIPLIER: 1.0,
     
     // World bounds
-    WORLD_BOUND: 150,
+    WORLD_BOUND: 200,
     
-    // Treasure location
-    TREASURE_X: 30,
-    TREASURE_Z: -57,
+    // Treasure location (right side behind the gap, away from mountains)
+    TREASURE_X: 60,
+    TREASURE_Z: -130,
     TREASURE_RADIUS: 0.8
 };
 
@@ -63,27 +63,79 @@ const HILLS = [
     { x: -70, z: -30, radius: 8, height: 4 },
     { x: 70, z: 60, radius: 7, height: 3.5 },
     { x: -50, z: 50, radius: 9, height: 4.5 },
-    { x: 30, z: -20, radius: 6, height: 3 }
+    { x: 30, z: -20, radius: 6, height: 3 },
+    // Hills behind the gap (treasure area)
+    { x: -40, z: -100, radius: 8, height: 4 },
+    { x: 25, z: -105, radius: 7, height: 3.5 },
+    { x: -15, z: -130, radius: 9, height: 4.5 },
+    { x: 50, z: -125, radius: 8, height: 4 },
+    { x: 0, z: -95, radius: 6, height: 3 },
+    { x: 60, z: -150, radius: 7, height: 3.5 },
+    { x: -60, z: -140, radius: 8, height: 4 }
 ];
 
 // Mountain positions (world boundaries)
 const MOUNTAINS = [
-    { x: 0, z: -140, width: 80, height: 30 },
-    { x: -100, z: -100, width: 60, height: 25 },
-    { x: 100, z: -100, width: 60, height: 25 },
-    { x: -140, z: 0, width: 60, height: 28 },
-    { x: 140, z: 0, width: 60, height: 28 },
-    { x: -100, z: 100, width: 70, height: 22 },
-    { x: 100, z: 100, width: 70, height: 22 },
-    { x: 0, z: 140, width: 80, height: 26 },
-    { x: -50, z: -135, width: 65, height: 27 },
-    { x: 50, z: -135, width: 65, height: 27 },
-    { x: -135, z: -50, width: 55, height: 24 },
-    { x: -135, z: 50, width: 55, height: 24 },
-    { x: 135, z: -50, width: 55, height: 24 },
-    { x: 135, z: 50, width: 55, height: 24 },
-    { x: -50, z: 135, width: 65, height: 23 },
-    { x: 50, z: 135, width: 65, height: 23 }
+    // Far north wall (behind treasure) - complete coverage
+    { x: -120, z: -180, width: 80, height: 30 },
+    { x: -40, z: -180, width: 80, height: 30 },
+    { x: 40, z: -180, width: 80, height: 30 },
+    { x: 120, z: -180, width: 80, height: 30 },
+    { x: -80, z: -165, width: 60, height: 28 },
+    { x: 0, z: -165, width: 60, height: 28 },
+    { x: 80, z: -165, width: 60, height: 28 },
+    
+    // Mountain wall before treasure area (with narrow gap in middle at z: -85)
+    { x: -120, z: -85, width: 60, height: 28 },
+    { x: -70, z: -85, width: 50, height: 28 },
+    { x: -35, z: -85, width: 40, height: 28 },   // Left of gap
+    { x: 35, z: -85, width: 40, height: 28 },    // Right of gap
+    { x: 70, z: -85, width: 50, height: 28 },
+    { x: 120, z: -85, width: 60, height: 28 },
+    // Narrow gap at x: -10 to 10, z: -85 for passage (20 unit wide gap)
+    
+    // Northwest corner
+    { x: -170, z: -140, width: 60, height: 28 },
+    { x: -170, z: -100, width: 60, height: 28 },
+    
+    // Northeast corner
+    { x: 170, z: -140, width: 60, height: 28 },
+    { x: 170, z: -100, width: 60, height: 28 },
+    
+    // West wall (left side) - complete coverage
+    { x: -190, z: -120, width: 50, height: 28 },
+    { x: -190, z: -80, width: 50, height: 28 },
+    { x: -190, z: -40, width: 50, height: 28 },
+    { x: -190, z: 0, width: 50, height: 28 },
+    { x: -190, z: 40, width: 50, height: 28 },
+    { x: -190, z: 80, width: 50, height: 28 },
+    { x: -190, z: 120, width: 50, height: 28 },
+    
+    // East wall (right side) - complete coverage
+    { x: 190, z: -120, width: 50, height: 28 },
+    { x: 190, z: -80, width: 50, height: 28 },
+    { x: 190, z: -40, width: 50, height: 28 },
+    { x: 190, z: 0, width: 50, height: 28 },
+    { x: 190, z: 40, width: 50, height: 28 },
+    { x: 190, z: 80, width: 50, height: 28 },
+    { x: 190, z: 120, width: 50, height: 28 },
+    
+    // Southwest corner
+    { x: -170, z: 140, width: 60, height: 26 },
+    { x: -170, z: 100, width: 60, height: 26 },
+    
+    // Southeast corner
+    { x: 170, z: 140, width: 60, height: 26 },
+    { x: 170, z: 100, width: 60, height: 26 },
+    
+    // South wall (player side) - complete coverage
+    { x: -120, z: 180, width: 80, height: 26 },
+    { x: -40, z: 180, width: 80, height: 26 },
+    { x: 40, z: 180, width: 80, height: 26 },
+    { x: 120, z: 180, width: 80, height: 26 },
+    { x: -80, z: 165, width: 60, height: 24 },
+    { x: 0, z: 165, width: 60, height: 24 },
+    { x: 80, z: 165, width: 60, height: 24 }
 ];
 
 // Goblin spawn positions [x, z, patrolLeft, patrolRight, speed]

@@ -413,6 +413,17 @@ function initGame() {
                     otherPlayerIsGliding = data.isGliding === true;
                     otherPlayerGlideLiftProgress = data.glideLiftProgress || 0;
                     
+                    // Update client health and check for death
+                    if (data.health !== undefined) {
+                        otherPlayerHealth = data.health;
+                        // If client died, trigger game death for both players
+                        if (otherPlayerHealth <= 0 && !gameDead) {
+                            gameDead = true;
+                            Audio.stopBackgroundMusic();
+                            Audio.playDeathSound();
+                        }
+                    }
+                    
                     otherPlayerMesh.position.set(data.position.x, data.position.y, data.position.z);
                     otherPlayerMesh.rotation.y = data.rotation;
                     otherPlayerMesh.visible = true;
@@ -465,7 +476,10 @@ function initGame() {
                 x: a.mesh.position.x,
                 y: a.mesh.position.y,
                 z: a.mesh.position.z,
-                rotationZ: a.mesh.rotation.z
+                rotationZ: a.mesh.rotation.z,
+                vx: a.velocity.x,
+                vy: a.velocity.y,
+                vz: a.velocity.z
             })),
             bullets: bullets.filter(b => !b.isRemote).map(b => ({
                 x: b.mesh.position.x,
@@ -484,8 +498,8 @@ function initGame() {
             gameState: {
                 bridgeRepaired: bridgeRepaired,
                 materialsCollected: materialsCollected,
-                gameWon: gameWon
-                // Note: gameDead is NOT synced - each player has their own death state
+                gameWon: gameWon,
+                gameDead: gameDead
             }
         };
     }
@@ -560,6 +574,10 @@ function initGame() {
                     if (arrowData.rotationZ !== undefined) {
                         guardianArrows[i].mesh.rotation.z = arrowData.rotationZ;
                     }
+                    // Store velocity for optimistic updates
+                    if (arrowData.vx !== undefined) {
+                        guardianArrows[i].velocity.set(arrowData.vx, arrowData.vy, arrowData.vz);
+                    }
                 } else {
                     // Create new arrow on client
                     const arrowGeometry = new THREE.CylinderGeometry(0.05, 0.05, 1, 8);
@@ -591,8 +609,8 @@ function initGame() {
         
         // Update game state
         if (data.gameState) {
-            // gameDead is NOT synced - each player manages their own death
             gameWon = data.gameState.gameWon;
+            gameDead = data.gameState.gameDead;
             bridgeRepaired = data.gameState.bridgeRepaired;
             materialsCollected = data.gameState.materialsCollected;
             
@@ -778,14 +796,19 @@ function initGame() {
             e.preventDefault();
         }
         if ((e.key === 'r' || e.key === 'R') && (gameWon || gameDead)) {
-            // Only host can restart the game
-            if (!multiplayerManager || multiplayerManager.isHost) {
+            e.preventDefault();
+            // Only host can restart in multiplayer
+            if (multiplayerManager && multiplayerManager.isHost) {
                 resetGame();
                 // Notify client to restart
-                if (multiplayerManager && multiplayerManager.isConnected()) {
+                if (multiplayerManager.isConnected()) {
                     multiplayerManager.sendGameEvent('gameRestart', {});
                 }
+            } else if (!multiplayerManager || !multiplayerManager.isConnected()) {
+                // Single player mode - allow restart
+                resetGame();
             }
+            // Client in multiplayer: ignore R key, wait for host
         }
         // Check if either player has collected the kite
         const anyoneHasKite = player.hasKite || worldKiteCollected;
@@ -838,7 +861,12 @@ function initGame() {
         { x: -30, z: -50 }, { x: 25, z: -55 }, { x: -60, z: 10 },
         { x: 65, z: 5 }, { x: 15, z: 55 }, { x: -40, z: 60 },
         { x: 45, z: -60 }, { x: -55, z: -55 }, { x: 60, z: 60 },
-        { x: 5, z: -65 }, { x: -65, z: 35 }
+        { x: 5, z: -65 }, { x: -65, z: 35 },
+        // Trees behind the gap (treasure area)
+        { x: -20, z: -95 }, { x: 15, z: -100 }, { x: -35, z: -110 },
+        { x: 40, z: -115 }, { x: -10, z: -125 }, { x: 25, z: -130 },
+        { x: -50, z: -135 }, { x: 55, z: -140 }, { x: 0, z: -145 },
+        { x: -30, z: -150 }, { x: 35, z: -155 }, { x: 10, z: -160 }
     ];
 
     treePositions.forEach(pos => {
@@ -1257,6 +1285,14 @@ function initGame() {
     
     // Create guardian goblins on hard
     if (difficulty === 'hard') {
+        // Add one test guardian for testing
+        goblins.push(createGuardianGoblin(15, 15, 10, 20, 0.014));
+        
+        // Guardians at the narrow mountain gap (the passage before treasure area)
+        goblins.push(createGuardianGoblin(-5, -85, -8, -2, 0.014));
+        goblins.push(createGuardianGoblin(5, -85, 2, 8, 0.014));
+        
+        // Original guardians around treasure
         for (let i = 0; i < GAME_CONFIG.HARD_GUARDIAN_COUNT; i++) {
             const angle = (i / GAME_CONFIG.HARD_GUARDIAN_COUNT) * Math.PI * 2;
             const x = GAME_CONFIG.TREASURE_X + Math.cos(angle) * 8;
@@ -1275,7 +1311,7 @@ function initGame() {
         const arc = new THREE.Mesh(arcGeometry, arcMaterial);
         rainbowGroup.add(arc);
     });
-    rainbowGroup.position.set(30, 5, -55);
+    rainbowGroup.position.set(GAME_CONFIG.TREASURE_X, 5, GAME_CONFIG.TREASURE_Z + 5);
     scene.add(rainbowGroup);
 
     // Treasure
@@ -1342,7 +1378,7 @@ function initGame() {
         treasureGroup.add(goldCoin);
     }
 
-    treasureGroup.position.set(30, 0, -57);
+    treasureGroup.position.set(GAME_CONFIG.TREASURE_X, 0, GAME_CONFIG.TREASURE_Z);
     scene.add(treasureGroup);
 
     const treasure = { mesh: treasureGroup, radius: 1 };
@@ -1475,21 +1511,14 @@ function initGame() {
                 Audio.playWinSound();
             }
         } else if (eventType === 'playerDamage') {
-            // Other player took damage
+            // Other player took damage (from host's guardian arrow)
             playerHealth--;
             damageFlashTime = Date.now();
-            if (playerHealth <= 0) {
-                gameDead = true;
-                Audio.stopBackgroundMusic();
-                Audio.playDeathSound();
-            } else {
+            // Don't check for death here - client will send updated health to host
+            // and host will sync gameDead status back via fullSync
+            if (playerHealth > 0) {
                 Audio.playStuckSound();
             }
-        } else if (eventType === 'playerDeath') {
-            // Other player died, game over for both
-            gameDead = true;
-            Audio.stopBackgroundMusic();
-            Audio.playDeathSound();
         }
     }
 
@@ -1795,13 +1824,10 @@ function initGame() {
             // Check player collision
             const dist = playerGroup.position.distanceTo(gob.mesh.position);
             if (dist < 1.5) {
-                gameDead = true;
-                Audio.stopBackgroundMusic();
-                Audio.playDeathSound();
-                
-                // Notify other player of death
-                if (multiplayerManager && multiplayerManager.isConnected()) {
-                    multiplayerManager.sendGameEvent('playerDeath', {});
+                if (!gameDead) {
+                    gameDead = true;
+                    Audio.stopBackgroundMusic();
+                    Audio.playDeathSound();
                 }
             }
             
@@ -1888,13 +1914,10 @@ function initGame() {
                 playerHealth--;
                 damageFlashTime = Date.now();
                 if (playerHealth <= 0) {
-                    gameDead = true;
-                    Audio.stopBackgroundMusic();
-                    Audio.playDeathSound();
-                    
-                    // Notify other player of death
-                    if (multiplayerManager && multiplayerManager.isConnected()) {
-                        multiplayerManager.sendGameEvent('playerDeath', {});
+                    if (!gameDead) {
+                        gameDead = true;
+                        Audio.stopBackgroundMusic();
+                        Audio.playDeathSound();
                     }
                 } else {
                     // Play hurt sound or use existing sound
@@ -2028,13 +2051,10 @@ function initGame() {
                     lastDamageTime = now;
                     damageFlashTime = now;
                     if (playerHealth <= 0) {
-                        gameDead = true;
-                        Audio.stopBackgroundMusic();
-                        Audio.playDeathSound();
-                        
-                        // Notify other player of death
-                        if (multiplayerManager && multiplayerManager.isConnected()) {
-                            multiplayerManager.sendGameEvent('playerDeath', {});
+                        if (!gameDead) {
+                            gameDead = true;
+                            Audio.stopBackgroundMusic();
+                            Audio.playDeathSound();
                         }
                     } else {
                         // Play danger sound
@@ -2222,7 +2242,7 @@ function initGame() {
         guardianArrows.forEach(arrow => scene.remove(arrow.mesh));
         guardianArrows.length = 0;
         
-        ammo = maxAmmo;
+        ammo = GAME_CONFIG.STARTING_AMMO;
         playerHealth = 1;
         lastDamageTime = 0;
         bridgeRepaired = false;
@@ -2320,7 +2340,12 @@ function initGame() {
             hudCtx.textAlign = 'center';
             hudCtx.fillText('GEWONNEN!', hudCanvas.width / 2, hudCanvas.height / 2);
             hudCtx.font = '20px Arial';
-            hudCtx.fillText('Drücke R zum Neustart', hudCanvas.width / 2, hudCanvas.height / 2 + 60);
+            // Show different message for host vs client
+            if (!multiplayerManager || !multiplayerManager.isConnected() || multiplayerManager.isHost) {
+                hudCtx.fillText('Drücke R zum Neustart', hudCanvas.width / 2, hudCanvas.height / 2 + 60);
+            } else {
+                hudCtx.fillText('Warte auf Host für Neustart...', hudCanvas.width / 2, hudCanvas.height / 2 + 60);
+            }
             hudCtx.textAlign = 'left';
         }
         
@@ -2333,7 +2358,12 @@ function initGame() {
             hudCtx.textAlign = 'center';
             hudCtx.fillText('GESTORBEN', hudCanvas.width / 2, hudCanvas.height / 2 - 30);
             hudCtx.font = '24px Arial';
-            hudCtx.fillText('Drücke R zum Neustart', hudCanvas.width / 2, hudCanvas.height / 2 + 30);
+            // Show different message for host vs client
+            if (!multiplayerManager || !multiplayerManager.isConnected() || multiplayerManager.isHost) {
+                hudCtx.fillText('Drücke R zum Neustart', hudCanvas.width / 2, hudCanvas.height / 2 + 30);
+            } else {
+                hudCtx.fillText('Warte auf Host für Neustart...', hudCanvas.width / 2, hudCanvas.height / 2 + 30);
+            }
             hudCtx.textAlign = 'left';
         }
     }
@@ -2434,6 +2464,16 @@ function initGame() {
                             gob.mesh.position.z += gob.velocity.z * dampening;
                             const terrainHeight = getTerrainHeight(gob.mesh.position.x, gob.mesh.position.z);
                             gob.mesh.position.y = terrainHeight + 0.1;
+                        }
+                    });
+                    
+                    // Client does optimistic arrow position updates
+                    guardianArrows.forEach(arrow => {
+                        if (arrow.velocity) {
+                            const dampening = 0.6; // Smooth interpolation for arrows
+                            arrow.mesh.position.x += arrow.velocity.x * dampening;
+                            arrow.mesh.position.y += arrow.velocity.y * dampening;
+                            arrow.mesh.position.z += arrow.velocity.z * dampening;
                         }
                     });
                 }
