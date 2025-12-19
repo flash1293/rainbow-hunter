@@ -14,6 +14,12 @@ let otherPlayerLastPos = { x: 0, z: 0 };
 let otherPlayerIsGliding = false;
 let otherPlayerGlideLiftProgress = 0;
 
+// Math exercise state
+let mathExerciseActive = false;
+let mathExercises = [];
+let currentMathAnswer = '';
+let mathCorrectAnswer = 0;
+
 // Splitscreen support
 const urlParams = new URLSearchParams(window.location.search);
 const isSplitscreen = urlParams.get('splitscreen');
@@ -100,6 +106,68 @@ function startGame(selectedDifficulty) {
     
     initGame();
 }
+
+// Math exercise system
+function generateMathExercise() {
+    const num1 = Math.floor(Math.random() * 50) + 1;
+    const num2 = Math.floor(Math.random() * 50) + 1;
+    const operation = Math.random() < 0.5 ? '+' : '-';
+    
+    let question, answer;
+    if (operation === '+') {
+        question = `${num1} + ${num2}`;
+        answer = num1 + num2;
+    } else {
+        // Make sure result is positive
+        const larger = Math.max(num1, num2);
+        const smaller = Math.min(num1, num2);
+        question = `${larger} - ${smaller}`;
+        answer = larger - smaller;
+    }
+    
+    return { question, answer };
+}
+
+function showMathExercise(count = 1) {
+    mathExercises = [];
+    for (let i = 0; i < count; i++) {
+        mathExercises.push(generateMathExercise());
+    }
+    mathExerciseActive = true;
+    currentMathAnswer = '';
+    mathCorrectAnswer = mathExercises[0].answer;
+}
+
+function checkMathAnswer() {
+    const userAnswer = parseInt(currentMathAnswer);
+    if (userAnswer === mathCorrectAnswer) {
+        // Correct answer - move to next exercise or resume game
+        mathExercises.shift();
+        if (mathExercises.length > 0) {
+            currentMathAnswer = '';
+            mathCorrectAnswer = mathExercises[0].answer;
+        } else {
+            mathExerciseActive = false;
+            currentMathAnswer = '';
+        }
+    } else {
+        // Wrong answer - reset input
+        currentMathAnswer = '';
+    }
+}
+
+// Keyboard input for math exercises
+window.addEventListener('keydown', (e) => {
+    if (!mathExerciseActive) return;
+    
+    if (e.key >= '0' && e.key <= '9') {
+        currentMathAnswer += e.key;
+    } else if (e.key === 'Backspace') {
+        currentMathAnswer = currentMathAnswer.slice(0, -1);
+    } else if (e.key === 'Enter') {
+        checkMathAnswer();
+    }
+});
 
 function initGame() {
     // Three.js setup
@@ -409,8 +477,8 @@ function initGame() {
                     otherPlayerLastPos.x = data.position.x;
                     otherPlayerLastPos.z = data.position.z;
                     
-                    // Store gliding state for optimistic updates
-                    otherPlayerIsGliding = data.isGliding === true;
+                    // Store gliding state for optimistic updates (explicitly handle false)
+                    otherPlayerIsGliding = (data.isGliding === true);
                     otherPlayerGlideLiftProgress = data.glideLiftProgress || 0;
                     
                     // Update client health and check for death
@@ -514,8 +582,8 @@ function initGame() {
             otherPlayerLastPos.x = data.hostPlayer.x;
             otherPlayerLastPos.z = data.hostPlayer.z;
             
-            // Store gliding state for optimistic updates
-            otherPlayerIsGliding = data.hostPlayer.isGliding === true;
+            // Store gliding state for optimistic updates (explicitly handle false)
+            otherPlayerIsGliding = (data.hostPlayer.isGliding === true);
             otherPlayerGlideLiftProgress = data.hostPlayer.glideLiftProgress || 0;
             
             otherPlayerMesh.position.set(data.hostPlayer.x, data.hostPlayer.y, data.hostPlayer.z);
@@ -771,13 +839,19 @@ function initGame() {
         // Triangle (button 2) for kite
         // Check if either player has collected the kite
         const anyoneHasKite = player.hasKite || worldKiteCollected;
-        if (gamepad.buttons[2]?.pressed && anyoneHasKite && !player.isGliding && 
-            player.glideCharge >= 20 && !gameWon && !gameDead && now - lastKiteActivationTime > kiteActivationCooldown) {
-            player.isGliding = true;
-            player.glideState = 'takeoff';
-            player.glideLiftProgress = 0;
-            kiteGroup.visible = true;
-            lastKiteActivationTime = now;
+        if (gamepad.buttons[2]?.pressed && anyoneHasKite && !gameWon && !gameDead && now - lastKiteActivationTime > kiteActivationCooldown) {
+            if (!player.isGliding && player.glideCharge >= 20) {
+                // Start gliding
+                player.isGliding = true;
+                player.glideState = 'takeoff';
+                player.glideLiftProgress = 0;
+                kiteGroup.visible = true;
+                lastKiteActivationTime = now;
+            } else if (player.isGliding && player.glideState === 'flying') {
+                // Exit gliding
+                player.glideState = 'landing';
+                lastKiteActivationTime = now;
+            }
         }
         
         // Options (button 9) for restart
@@ -812,11 +886,17 @@ function initGame() {
         }
         // Check if either player has collected the kite
         const anyoneHasKite = player.hasKite || worldKiteCollected;
-        if ((e.key === 'f' || e.key === 'F') && anyoneHasKite && !player.isGliding && player.glideCharge >= 20 && !gameWon && !gameDead) {
-            player.isGliding = true;
-            player.glideState = 'takeoff';
-            player.glideLiftProgress = 0;
-            kiteGroup.visible = true;
+        if ((e.key === 'f' || e.key === 'F') && anyoneHasKite && !gameWon && !gameDead) {
+            if (!player.isGliding && player.glideCharge >= 20) {
+                // Start gliding
+                player.isGliding = true;
+                player.glideState = 'takeoff';
+                player.glideLiftProgress = 0;
+                kiteGroup.visible = true;
+            } else if (player.isGliding && player.glideState === 'flying') {
+                // Exit gliding
+                player.glideState = 'landing';
+            }
         }
     });
 
@@ -970,7 +1050,11 @@ function initGame() {
         { x: 25, z: 55 }, { x: -45, z: -50 }, { x: 50, z: -55 },
         // Behind the gap
         { x: -20, z: -100 }, { x: 30, z: -110 }, { x: -10, z: -125 },
-        { x: 40, z: -135 }
+        { x: 40, z: -135 },
+        // Additional ammo for harder difficulty
+        { x: 10, z: -70 }, { x: -35, z: -75 }, { x: 45, z: -90 },
+        { x: -15, z: -105 }, { x: 25, z: -120 }, { x: -30, z: -118 },
+        { x: 52, z: -125 }, { x: 15, z: 45 }
     ];
 
     ammoPositions.forEach(pos => {
@@ -1427,9 +1511,20 @@ function initGame() {
         // Giant guardian at the gap - huge, fast, lots of health
         goblins.push(createGiant(0, -85, -8, 8));
         
+        // Additional giants guarding key areas
+        goblins.push(createGiant(-40, -50, -50, -30));
+        goblins.push(createGiant(40, -110, 30, 50));
+        goblins.push(createGiant(-25, -115, -35, -15));
+        
         // Guardians at the narrow mountain gap (the passage before treasure area)
         goblins.push(createGuardianGoblin(-5, -85, -8, -2, 0.014));
         goblins.push(createGuardianGoblin(5, -85, 2, 8, 0.014));
+        
+        // More guardians in the mid-area
+        goblins.push(createGuardianGoblin(-45, -65, -55, -35, 0.014));
+        goblins.push(createGuardianGoblin(35, -70, 25, 45, 0.014));
+        goblins.push(createGuardianGoblin(0, -100, -10, 10, 0.014));
+        goblins.push(createGuardianGoblin(-30, -95, -40, -20, 0.014));
         
         // Original guardians around treasure
         for (let i = 0; i < GAME_CONFIG.HARD_GUARDIAN_COUNT; i++) {
@@ -1803,7 +1898,7 @@ function initGame() {
                         createExplosion(gob.mesh.position.x, gob.mesh.position.y + 1, gob.mesh.position.z);
                         
                         // Only host applies actual damage
-                        if (!multiplayerManager || multiplayerManager.isHost) {
+                        if (!multiplayerManager || !multiplayerManager.isConnected() || multiplayerManager.isHost) {
                             gob.health--;
                             gob.isChasing = true;
                             if (gob.health <= 0) {
@@ -1812,6 +1907,12 @@ function initGame() {
                                 gob.mesh.rotation.z = Math.PI / 2;
                                 const terrainH = getTerrainHeight(gob.mesh.position.x, gob.mesh.position.z);
                                 gob.mesh.position.y = terrainH + 0.5;
+                                
+                                // Show math exercise(s) only in easy mode
+                                if (difficulty === 'easy') {
+                                    const exerciseCount = gob.isGiant ? 3 : 1;
+                                    showMathExercise(exerciseCount);
+                                }
                             }
                         }
                         bulletHit = true;
@@ -1957,6 +2058,12 @@ function initGame() {
                     gob.mesh.rotation.z = Math.PI / 2;
                     gob.mesh.position.y = terrainHeight + 0.5;
                     createExplosion(gob.mesh.position.x, gob.mesh.position.y + 1, gob.mesh.position.z);
+                    
+                    // Show math exercise(s) only in easy mode
+                    if (difficulty === 'easy') {
+                        const exerciseCount = gob.isGiant ? 3 : 1;
+                        showMathExercise(exerciseCount);
+                    }
                 }
             });
             
@@ -2435,6 +2542,23 @@ function initGame() {
         player.hasKite = false;
         kiteGroup.visible = false;
         
+        // Reset other player gliding state
+        otherPlayerIsGliding = false;
+        otherPlayerGlideLiftProgress = 0;
+        if (otherPlayerMesh.kiteGroup) {
+            otherPlayerMesh.kiteGroup.visible = false;
+        }
+        
+        // Reset other player position and health
+        const otherStartX = (!multiplayerManager || multiplayerManager.isHost) ? 2 : -2;
+        otherPlayerMesh.position.set(otherStartX, getTerrainHeight(otherStartX, 40), 40);
+        otherPlayerMesh.rotation.y = Math.PI;
+        otherPlayerHealth = 1;
+        otherPlayerVelocity.x = 0;
+        otherPlayerVelocity.z = 0;
+        otherPlayerLastPos.x = otherStartX;
+        otherPlayerLastPos.z = 40;
+        
         // Reset world kite
         if (worldKiteCollected) {
             worldKiteCollected = false;
@@ -2590,6 +2714,38 @@ function initGame() {
             }
             hudCtx.textAlign = 'left';
         }
+        
+        // Math exercise display
+        if (mathExerciseActive && mathExercises.length > 0) {
+            // Semi-transparent overlay
+            hudCtx.fillStyle = 'rgba(0, 0, 0, 0.8)';
+            hudCtx.fillRect(0, 0, hudCanvas.width, hudCanvas.height);
+            
+            // Exercise text
+            hudCtx.fillStyle = 'white';
+            hudCtx.font = 'bold 48px Arial';
+            hudCtx.textAlign = 'center';
+            hudCtx.fillText('Löse die Aufgabe!', hudCanvas.width / 2, 150);
+            
+            hudCtx.font = 'bold 64px Arial';
+            hudCtx.fillText(mathExercises[0].question + ' = ?', hudCanvas.width / 2, 250);
+            
+            hudCtx.font = 'bold 56px Arial';
+            hudCtx.fillStyle = '#4CAF50';
+            hudCtx.fillText(currentMathAnswer || '_', hudCanvas.width / 2, 350);
+            
+            // Show remaining exercises
+            if (mathExercises.length > 1) {
+                hudCtx.font = '24px Arial';
+                hudCtx.fillStyle = 'white';
+                hudCtx.fillText(`Noch ${mathExercises.length} Aufgaben`, hudCanvas.width / 2, 420);
+            }
+            
+            hudCtx.font = '20px Arial';
+            hudCtx.fillStyle = '#AAA';
+            hudCtx.fillText('Gib deine Antwort ein und drücke ENTER', hudCanvas.width / 2, 480);
+            hudCtx.textAlign = 'left';
+        }
     }
 
     // Start background music
@@ -2645,17 +2801,20 @@ function initGame() {
             // Update gamepad input
             updateGamepad();
             
-            if (!gameDead) {
+            if (!gameDead && !mathExerciseActive) {
                 updatePlayer();
                 
                 // Camera shake when close to giant (runs every frame)
                 const now = Date.now();
+                let closestGiantDist = Infinity;
                 goblins.forEach(gob => {
                     if (!gob.alive || !gob.isGiant) return;
                     const distToGiant = new THREE.Vector2(
                         playerGroup.position.x - gob.mesh.position.x,
                         playerGroup.position.z - gob.mesh.position.z
                     ).length();
+                    
+                    closestGiantDist = Math.min(closestGiantDist, distToGiant);
                     
                     if (distToGiant < 50) {
                         const shakeIntensity = (1 - distToGiant / 50) * 0.3;
@@ -2665,6 +2824,18 @@ function initGame() {
                         camera.position.z += Math.sin(shakeSpeed * 3.1) * shakeIntensity;
                     }
                 });
+                
+                // Controller rumble when close to giant
+                if (gamepad && closestGiantDist < 50) {
+                    const rumbleIntensity = (1 - closestGiantDist / 50) * 0.8;
+                    if (gamepad.vibrationActuator) {
+                        gamepad.vibrationActuator.playEffect('dual-rumble', {
+                            duration: 100,
+                            weakMagnitude: rumbleIntensity * 0.5,
+                            strongMagnitude: rumbleIntensity
+                        });
+                    }
+                }
                 
                 // Optimistic update for other player position (interpolation between syncs)
                 if (multiplayerManager && multiplayerManager.isConnected() && otherPlayerMesh.visible) {
@@ -2689,9 +2860,11 @@ function initGame() {
                     }
                 }
                 
-                // Both host and client run bullets and explosions for responsiveness
-                updateBullets();
-                updateExplosions();
+                // Both host and client run bullets and explosions for responsiveness (but not during math)
+                if (!mathExerciseActive) {
+                    updateBullets();
+                    updateExplosions();
+                }
                 
                 // Only host runs game logic (goblins, arrows, etc.)
                 if (!multiplayerManager || multiplayerManager.isHost) {
