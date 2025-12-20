@@ -69,6 +69,78 @@ const Audio = (function() {
         oscillator.stop(audioContext.currentTime + 0.3);
     }
 
+    function playBombExplosionSound() {
+        if (!shouldPlayAudio()) return;
+        
+        // Create a deeper, more intense explosion sound
+        const now = audioContext.currentTime;
+        
+        // Main explosion boom
+        const mainOsc = audioContext.createOscillator();
+        const mainGain = audioContext.createGain();
+        const mainFilter = audioContext.createBiquadFilter();
+        
+        mainOsc.connect(mainFilter);
+        mainFilter.connect(mainGain);
+        mainGain.connect(audioContext.destination);
+        
+        mainOsc.type = 'sawtooth';
+        mainFilter.type = 'lowpass';
+        mainFilter.frequency.setValueAtTime(3000, now);
+        mainFilter.frequency.exponentialRampToValueAtTime(30, now + 0.5);
+        
+        mainOsc.frequency.setValueAtTime(150, now);
+        mainOsc.frequency.exponentialRampToValueAtTime(25, now + 0.5);
+        
+        mainGain.gain.setValueAtTime(0.7, now);
+        mainGain.gain.exponentialRampToValueAtTime(0.01, now + 0.5);
+        
+        mainOsc.start(now);
+        mainOsc.stop(now + 0.5);
+        
+        // Sub-bass thump
+        const subOsc = audioContext.createOscillator();
+        const subGain = audioContext.createGain();
+        
+        subOsc.connect(subGain);
+        subGain.connect(audioContext.destination);
+        
+        subOsc.type = 'sine';
+        subOsc.frequency.setValueAtTime(80, now);
+        subOsc.frequency.exponentialRampToValueAtTime(20, now + 0.4);
+        
+        subGain.gain.setValueAtTime(0.6, now);
+        subGain.gain.exponentialRampToValueAtTime(0.01, now + 0.4);
+        
+        subOsc.start(now);
+        subOsc.stop(now + 0.4);
+        
+        // Noise burst for texture
+        const noiseBuffer = audioContext.createBuffer(1, audioContext.sampleRate * 0.3, audioContext.sampleRate);
+        const noiseData = noiseBuffer.getChannelData(0);
+        for (let i = 0; i < noiseData.length; i++) {
+            noiseData[i] = (Math.random() * 2 - 1) * (1 - i / noiseData.length);
+        }
+        
+        const noiseSource = audioContext.createBufferSource();
+        const noiseGain = audioContext.createGain();
+        const noiseFilter = audioContext.createBiquadFilter();
+        
+        noiseSource.buffer = noiseBuffer;
+        noiseSource.connect(noiseFilter);
+        noiseFilter.connect(noiseGain);
+        noiseGain.connect(audioContext.destination);
+        
+        noiseFilter.type = 'lowpass';
+        noiseFilter.frequency.setValueAtTime(2000, now);
+        noiseFilter.frequency.exponentialRampToValueAtTime(100, now + 0.3);
+        
+        noiseGain.gain.setValueAtTime(0.3, now);
+        noiseGain.gain.exponentialRampToValueAtTime(0.01, now + 0.3);
+        
+        noiseSource.start(now);
+    }
+
     function playDeathSound() {
         if (!shouldPlayAudio()) return;
         
@@ -529,6 +601,7 @@ const Audio = (function() {
     return {
         playShootSound,
         playExplosionSound,
+        playBombExplosionSound,
         playDeathSound,
         playCollectSound,
         playRepairSound,

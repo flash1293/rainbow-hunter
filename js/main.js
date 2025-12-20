@@ -549,6 +549,19 @@ function initGame() {
                 vy: a.velocity.y,
                 vz: a.velocity.z
             })),
+            birds: birds.map(b => ({
+                x: b.mesh.position.x,
+                y: b.mesh.position.y,
+                z: b.mesh.position.z,
+                rotation: b.mesh.rotation.y,
+                angle: b.angle
+            })),
+            bombs: bombs.map(b => ({
+                x: b.mesh.position.x,
+                y: b.mesh.position.y,
+                z: b.mesh.position.z,
+                vy: b.velocity.y
+            })),
             bullets: bullets.filter(b => !b.isRemote).map(b => ({
                 x: b.mesh.position.x,
                 y: b.mesh.position.y,
@@ -589,12 +602,9 @@ function initGame() {
             otherPlayerMesh.position.set(data.hostPlayer.x, data.hostPlayer.y, data.hostPlayer.z);
             otherPlayerMesh.rotation.y = data.hostPlayer.rotation;
             otherPlayerMesh.visible = true;
-            // Update other player's health and glide charge
+            // Update other player's health
             if (data.hostPlayer.health !== undefined) {
                 otherPlayerHealth = data.hostPlayer.health;
-            }
-            if (data.hostPlayer.glideCharge !== undefined) {
-                player.glideCharge = data.hostPlayer.glideCharge;
             }
             // Update kite visibility based on gliding state
             if (otherPlayerMesh.kiteGroup) {
@@ -670,6 +680,53 @@ function initGame() {
                         mesh: arrowMesh,
                         velocity: new THREE.Vector3(0, 0, 0),
                         radius: 0.3
+                    });
+                }
+            });
+        }
+        
+        // Update birds
+        if (data.birds) {
+            data.birds.forEach((birdData, i) => {
+                if (i < birds.length) {
+                    birds[i].mesh.position.x = birdData.x;
+                    birds[i].mesh.position.y = birdData.y;
+                    birds[i].mesh.position.z = birdData.z;
+                    birds[i].mesh.rotation.y = birdData.rotation;
+                    birds[i].angle = birdData.angle;
+                }
+            });
+        }
+        
+        // Update bombs
+        if (data.bombs) {
+            // Remove excess bombs
+            while (bombs.length > data.bombs.length) {
+                const removed = bombs.pop();
+                scene.remove(removed.mesh);
+            }
+            
+            // Update or create bombs
+            data.bombs.forEach((bombData, i) => {
+                if (i < bombs.length) {
+                    // Update existing bomb
+                    bombs[i].mesh.position.x = bombData.x;
+                    bombs[i].mesh.position.y = bombData.y;
+                    bombs[i].mesh.position.z = bombData.z;
+                    bombs[i].velocity.y = bombData.vy;
+                } else {
+                    // Create new bomb
+                    const bombGeometry = new THREE.SphereGeometry(0.3, 8, 8);
+                    const bombMaterial = new THREE.MeshLambertMaterial({ color: 0x000000 });
+                    const bombMesh = new THREE.Mesh(bombGeometry, bombMaterial);
+                    bombMesh.position.set(bombData.x, bombData.y, bombData.z);
+                    bombMesh.castShadow = true;
+                    scene.add(bombMesh);
+                    
+                    bombs.push({
+                        mesh: bombMesh,
+                        velocity: new THREE.Vector3(0, bombData.vy, 0),
+                        radius: 5
                     });
                 }
             });
@@ -1621,6 +1678,75 @@ function initGame() {
     const bullets = [];
     const explosions = [];
     const guardianArrows = [];
+    const birds = [];
+    const bombs = [];
+
+    // Bird helper
+    function createBird(centerX, centerZ, radius, speed) {
+        const birdGroup = new THREE.Group();
+        
+        // Bird body
+        const bodyGeometry = new THREE.SphereGeometry(0.4, 8, 8);
+        const bodyMaterial = new THREE.MeshLambertMaterial({ color: 0x4a3a2a });
+        const body = new THREE.Mesh(bodyGeometry, bodyMaterial);
+        body.castShadow = true;
+        birdGroup.add(body);
+        
+        // Wings
+        const wingGeometry = new THREE.BoxGeometry(1.2, 0.1, 0.4);
+        const wingMaterial = new THREE.MeshLambertMaterial({ color: 0x3a2a1a });
+        const leftWing = new THREE.Mesh(wingGeometry, wingMaterial);
+        leftWing.position.set(-0.6, 0, 0);
+        leftWing.castShadow = true;
+        birdGroup.add(leftWing);
+        
+        const rightWing = new THREE.Mesh(wingGeometry, wingMaterial);
+        rightWing.position.set(0.6, 0, 0);
+        rightWing.castShadow = true;
+        birdGroup.add(rightWing);
+        
+        // Beak
+        const beakGeometry = new THREE.ConeGeometry(0.15, 0.3, 6);
+        const beakMaterial = new THREE.MeshLambertMaterial({ color: 0xFFA500 });
+        const beak = new THREE.Mesh(beakGeometry, beakMaterial);
+        beak.rotation.z = -Math.PI / 2;
+        beak.position.set(0, 0, -0.4);
+        birdGroup.add(beak);
+        
+        const angle = Math.random() * Math.PI * 2;
+        const startX = centerX + Math.cos(angle) * radius;
+        const startZ = centerZ + Math.sin(angle) * radius;
+        const startY = 8 + Math.random() * 4;
+        
+        birdGroup.position.set(startX, startY, startZ);
+        scene.add(birdGroup);
+        
+        return {
+            mesh: birdGroup,
+            centerX: centerX,
+            centerZ: centerZ,
+            radius: radius,
+            speed: speed,
+            angle: angle,
+            height: startY,
+            leftWing: leftWing,
+            rightWing: rightWing,
+            lastBombTime: Date.now(),
+            wingFlapPhase: 0
+        };
+    }
+    
+    // Create birds in hard mode
+    if (difficulty === 'hard') {
+        // Birds circling around the gap area - moved further from mountains
+        birds.push(createBird(0, -85, 35, 0.006));
+        birds.push(createBird(0, -85, 42, 0.007));
+        birds.push(createBird(5, -80, 38, 0.0065));
+        
+        // Birds circling around the rainbow treasure area
+        birds.push(createBird(60, -130, 22, 0.007));
+        birds.push(createBird(60, -130, 28, 0.006));
+    }
 
     // Explosion helper
     function createExplosion(x, y, z) {
@@ -1645,6 +1771,48 @@ function initGame() {
             
             scene.add(particle);
             particles.push({ mesh: particle, velocity: velocity, life: 30 });
+        }
+        
+        explosions.push(...particles);
+    }
+
+    // Big bomb explosion helper
+    function createBombExplosion(x, y, z) {
+        Audio.playBombExplosionSound();
+        
+        const particles = [];
+        const particleCount = 80;
+        
+        for (let i = 0; i < particleCount; i++) {
+            const size = 0.15 + Math.random() * 0.3;
+            const particleGeometry = new THREE.SphereGeometry(size, 6, 6);
+            
+            // Mix of fire colors and smoke
+            let color;
+            const rand = Math.random();
+            if (rand > 0.7) {
+                color = 0xFFFF00; // Bright yellow
+            } else if (rand > 0.4) {
+                color = 0xFF4500; // Orange-red
+            } else if (rand > 0.2) {
+                color = 0xFF8C00; // Dark orange
+            } else {
+                color = 0x888888; // Gray smoke
+            }
+            
+            const particleMaterial = new THREE.MeshBasicMaterial({ color: color });
+            const particle = new THREE.Mesh(particleGeometry, particleMaterial);
+            particle.position.set(x, y, z);
+            
+            const speed = 0.3 + Math.random() * 0.8;
+            const velocity = new THREE.Vector3(
+                (Math.random() - 0.5) * speed,
+                Math.random() * speed * 0.8,
+                (Math.random() - 0.5) * speed
+            );
+            
+            scene.add(particle);
+            particles.push({ mesh: particle, velocity: velocity, life: 45 });
         }
         
         explosions.push(...particles);
@@ -1722,18 +1890,44 @@ function initGame() {
     function handleRemoteGameEvent(eventData) {
         const { eventType, data } = eventData;
         
-        if (eventType === 'itemCollected') {
+        if (eventType === 'bombExplosion') {
+            // Show explosion effect on client
+            createBombExplosion(data.x, data.y, data.z);
+            
+            // Add camera shake
+            const distToExplosion = Math.sqrt(
+                (playerGroup.position.x - data.x) ** 2 +
+                (playerGroup.position.z - data.z) ** 2
+            );
+            if (distToExplosion < 30) {
+                const shakeIntensity = Math.max(0, 1 - distToExplosion / 30) * 0.3;
+                camera.position.x += (Math.random() - 0.5) * shakeIntensity;
+                camera.position.y += (Math.random() - 0.5) * shakeIntensity;
+                camera.position.z += (Math.random() - 0.5) * shakeIntensity;
+            }
+        } else if (eventType === 'itemCollected') {
             // Other player collected an item
             if (data.type === 'material' && materials[data.index]) {
                 materials[data.index].collected = true;
                 materials[data.index].mesh.visible = false;
                 materialsCollected++;
+                Audio.playCollectSound();
             } else if (data.type === 'ammo' && ammoPickups[data.index]) {
                 ammoPickups[data.index].collected = true;
                 ammoPickups[data.index].mesh.visible = false;
+                Audio.playCollectSound();
             } else if (data.type === 'health' && healthPickups[data.index]) {
                 healthPickups[data.index].collected = true;
                 healthPickups[data.index].mesh.visible = false;
+                Audio.playCollectSound();
+            }
+        } else if (eventType === 'bridgeRepaired') {
+            // Other player repaired the bridge
+            if (!bridgeRepaired) {
+                bridgeRepaired = true;
+                bridgeObj.mesh.visible = true;
+                brokenBridgeGroup.visible = false;
+                Audio.playRepairSound();
             }
         } else if (eventType === 'gameRestart') {
             // Host requested game restart
@@ -2232,6 +2426,142 @@ function initGame() {
         }
     }
 
+    function updateBirds() {
+        const now = Date.now();
+        
+        birds.forEach(bird => {
+            // Circle around center point
+            bird.angle += bird.speed;
+            bird.mesh.position.x = bird.centerX + Math.cos(bird.angle) * bird.radius;
+            bird.mesh.position.z = bird.centerZ + Math.sin(bird.angle) * bird.radius;
+            
+            // Slight bobbing motion
+            bird.mesh.position.y = bird.height + Math.sin(now * 0.003) * 0.5;
+            
+            // Calculate tangent direction (perpendicular to radius) and flip to face forward
+            const dx = -Math.sin(bird.angle);
+            const dz = Math.cos(bird.angle);
+            bird.mesh.rotation.y = Math.atan2(-dx, -dz);
+            
+            // Wing flapping animation
+            bird.wingFlapPhase += 0.2;
+            const flapAngle = Math.sin(bird.wingFlapPhase) * 0.4;
+            bird.leftWing.rotation.z = flapAngle;
+            bird.rightWing.rotation.z = -flapAngle;
+            
+            // Drop bomb if player is close
+            const distToPlayer = new THREE.Vector2(
+                playerGroup.position.x - bird.mesh.position.x,
+                playerGroup.position.z - bird.mesh.position.z
+            ).length();
+            
+            // Also check distance to other player in multiplayer
+            let distToOtherPlayer = Infinity;
+            if (multiplayerManager && multiplayerManager.isConnected() && otherPlayerMesh.visible) {
+                distToOtherPlayer = new THREE.Vector2(
+                    otherPlayerMesh.position.x - bird.mesh.position.x,
+                    otherPlayerMesh.position.z - bird.mesh.position.z
+                ).length();
+            }
+            
+            const closestPlayerDist = Math.min(distToPlayer, distToOtherPlayer);
+            
+            if (closestPlayerDist < 20 && now - bird.lastBombTime > 2500) {
+                // Drop bomb
+                const bombGeometry = new THREE.SphereGeometry(0.3, 8, 8);
+                const bombMaterial = new THREE.MeshLambertMaterial({ color: 0x000000 });
+                const bombMesh = new THREE.Mesh(bombGeometry, bombMaterial);
+                bombMesh.position.copy(bird.mesh.position);
+                bombMesh.castShadow = true;
+                scene.add(bombMesh);
+                
+                bombs.push({
+                    mesh: bombMesh,
+                    velocity: new THREE.Vector3(0, -0.2, 0),
+                    radius: 7 // Explosion radius
+                });
+                
+                bird.lastBombTime = now;
+            }
+        });
+    }
+    
+    function updateBombs() {
+        for (let i = bombs.length - 1; i >= 0; i--) {
+            const bomb = bombs[i];
+            
+            // Apply gravity
+            bomb.velocity.y -= 0.01;
+            bomb.mesh.position.add(bomb.velocity);
+            
+            // Check if bomb hit ground
+            const terrainHeight = getTerrainHeight(bomb.mesh.position.x, bomb.mesh.position.z);
+            if (bomb.mesh.position.y <= terrainHeight) {
+                // Explode
+                const explosionX = bomb.mesh.position.x;
+                const explosionZ = bomb.mesh.position.z;
+                createBombExplosion(explosionX, terrainHeight + 0.5, explosionZ);
+                
+                // Add camera shake for bomb explosion
+                const distToExplosion = Math.sqrt(
+                    (playerGroup.position.x - explosionX) ** 2 +
+                    (playerGroup.position.z - explosionZ) ** 2
+                );
+                if (distToExplosion < 30) {
+                    const shakeIntensity = Math.max(0, 1 - distToExplosion / 30) * 0.3;
+                    camera.position.x += (Math.random() - 0.5) * shakeIntensity;
+                    camera.position.y += (Math.random() - 0.5) * shakeIntensity;
+                    camera.position.z += (Math.random() - 0.5) * shakeIntensity;
+                }
+                
+                // Send explosion event to client
+                if (multiplayerManager && multiplayerManager.isConnected()) {
+                    multiplayerManager.sendGameEvent('bombExplosion', {
+                        x: explosionX,
+                        y: terrainHeight + 0.5,
+                        z: explosionZ
+                    });
+                }
+                
+                // Check if player is in blast radius
+                const distToPlayer = new THREE.Vector2(
+                    playerGroup.position.x - bomb.mesh.position.x,
+                    playerGroup.position.z - bomb.mesh.position.z
+                ).length();
+                
+                if (distToPlayer < bomb.radius) {
+                    playerHealth--;
+                    damageFlashTime = Date.now();
+                    if (playerHealth <= 0) {
+                        if (!gameDead) {
+                            gameDead = true;
+                            Audio.stopBackgroundMusic();
+                            Audio.playDeathSound();
+                        }
+                    } else {
+                        Audio.playStuckSound();
+                    }
+                }
+                
+                // Check if other player is in blast radius (multiplayer)
+                if (multiplayerManager && multiplayerManager.isConnected() && otherPlayerMesh.visible) {
+                    const distToOther = new THREE.Vector2(
+                        otherPlayerMesh.position.x - bomb.mesh.position.x,
+                        otherPlayerMesh.position.z - bomb.mesh.position.z
+                    ).length();
+                    
+                    if (distToOther < bomb.radius) {
+                        // Bomb hit other player - send damage event to them
+                        multiplayerManager.sendGameEvent('playerDamage', {});
+                    }
+                }
+                
+                scene.remove(bomb.mesh);
+                bombs.splice(i, 1);
+            }
+        }
+    }
+
     function checkCollisions(prevPos) {
         let isStuck = false;
         const px = playerGroup.position.x;
@@ -2480,6 +2810,11 @@ function initGame() {
                 bridgeObj.mesh.visible = true;
                 brokenBridgeGroup.visible = false;
                 Audio.playRepairSound();
+                
+                // Notify other player in multiplayer
+                if (multiplayerManager && multiplayerManager.isConnected()) {
+                    multiplayerManager.sendGameEvent('bridgeRepaired', {});
+                }
             }
         }
         
@@ -2589,6 +2924,14 @@ function initGame() {
         
         guardianArrows.forEach(arrow => scene.remove(arrow.mesh));
         guardianArrows.length = 0;
+        
+        bombs.forEach(bomb => scene.remove(bomb.mesh));
+        bombs.length = 0;
+        
+        // Reset birds
+        birds.forEach(bird => {
+            bird.lastBombTime = Date.now();
+        });
         
         ammo = GAME_CONFIG.STARTING_AMMO;
         playerHealth = 1;
@@ -2870,6 +3213,8 @@ function initGame() {
                 if (!multiplayerManager || multiplayerManager.isHost) {
                     updateGoblins();
                     updateGuardianArrows();
+                    updateBirds();
+                    updateBombs();
                 } else {
                     // Client does optimistic goblin position updates
                     goblins.forEach(gob => {
