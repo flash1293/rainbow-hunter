@@ -53,7 +53,7 @@ function createMountains(scene, THREE, mountainPositions) {
 
 // Create ground plane
 function createGround(scene, THREE) {
-    const groundGeometry = new THREE.PlaneGeometry(300, 300, 1, 1);
+    const groundGeometry = new THREE.PlaneGeometry(600, 600, 1, 1);
     const groundMaterial = new THREE.MeshLambertMaterial({ color: 0x90EE90 });
     const ground = new THREE.Mesh(groundGeometry, groundMaterial);
     ground.rotation.x = -Math.PI / 2;
@@ -63,7 +63,7 @@ function createGround(scene, THREE) {
 
 // Create river
 function createRiver(scene, THREE) {
-    const riverGeometry = new THREE.PlaneGeometry(300, 4, 60, 8);
+    const riverGeometry = new THREE.PlaneGeometry(600, 4, 60, 8);
     const riverMaterial = new THREE.MeshLambertMaterial({ 
         color: 0x4682B4,
         transparent: true,

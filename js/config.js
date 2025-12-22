@@ -39,11 +39,11 @@ const GAME_CONFIG = {
     EASY_SPEED_MULTIPLIER: 1.0,
     
     // World bounds
-    WORLD_BOUND: 200,
+    WORLD_BOUND: 300,
     
-    // Treasure location (right side behind the gap, away from mountains)
-    TREASURE_X: 60,
-    TREASURE_Z: -130,
+    // Treasure location (left corner of dragon boss area, away from mountains)
+    TREASURE_X: -120,
+    TREASURE_Z: -220,
     TREASURE_RADIUS: 0.8
 };
 
@@ -71,39 +71,90 @@ const HILLS = [
     { x: 50, z: -125, radius: 8, height: 4 },
     { x: 0, z: -95, radius: 6, height: 3 },
     { x: 60, z: -150, radius: 7, height: 3.5 },
-    { x: -60, z: -140, radius: 8, height: 4 }
+    { x: -60, z: -140, radius: 8, height: 4 },
+    // Dragon boss area hills - many in CENTER behind dragon
+    { x: -25, z: -212, radius: 8, height: 3.5 },
+    { x: 20, z: -220, radius: 9, height: 4 },
+    { x: -15, z: -228, radius: 7, height: 3 },
+    { x: 30, z: -236, radius: 8, height: 3.5 },
+    { x: -35, z: -244, radius: 9, height: 4 },
+    { x: 10, z: -252, radius: 8, height: 3.5 },
+    { x: -20, z: -258, radius: 7, height: 3 },
+    { x: 35, z: -215, radius: 6, height: 2.5 },
+    { x: -30, z: -225, radius: 8, height: 3.5 },
+    { x: 5, z: -235, radius: 7, height: 3 },
+    { x: 25, z: -248, radius: 9, height: 4 }
 ];
 
 // Mountain positions (world boundaries)
 const MOUNTAINS = [
-    // Far north wall (behind treasure) - complete coverage
-    { x: -120, z: -180, width: 80, height: 30 },
-    { x: -40, z: -180, width: 80, height: 30 },
-    { x: 40, z: -180, width: 80, height: 30 },
-    { x: 120, z: -180, width: 80, height: 30 },
-    { x: -80, z: -165, width: 60, height: 28 },
-    { x: 0, z: -165, width: 60, height: 28 },
-    { x: 80, z: -165, width: 60, height: 28 },
+    // Far north wall (behind treasure at z: -210) - solid wall
+    { x: -160, z: -270, width: 80, height: 30 },
+    { x: -120, z: -270, width: 80, height: 30 },
+    { x: -80, z: -270, width: 80, height: 30 },
+    { x: -40, z: -270, width: 80, height: 30 },
+    { x: 0, z: -270, width: 80, height: 30 },
+    { x: 40, z: -270, width: 80, height: 30 },
+    { x: 80, z: -270, width: 80, height: 30 },
+    { x: 120, z: -270, width: 80, height: 30 },
+    { x: 160, z: -270, width: 80, height: 30 },
+    // Second row for solid wall
+    { x: -140, z: -260, width: 60, height: 28 },
+    { x: -80, z: -260, width: 60, height: 28 },
+    { x: -20, z: -260, width: 60, height: 28 },
+    { x: 20, z: -260, width: 60, height: 28 },
+    { x: 80, z: -260, width: 60, height: 28 },
+    { x: 140, z: -260, width: 60, height: 28 },
     
-    // Mountain wall before treasure area (with narrow gap in middle at z: -85)
+    // Back area side walls (z: -180 to z: -270) - widest area for dragon
+    { x: -190, z: -260, width: 50, height: 28 },
+    { x: -190, z: -240, width: 50, height: 28 },
+    { x: -190, z: -220, width: 50, height: 28 },
+    { x: -190, z: -200, width: 50, height: 28 },
+    { x: -190, z: -190, width: 50, height: 28 },
+    { x: 190, z: -260, width: 50, height: 28 },
+    { x: 190, z: -240, width: 50, height: 28 },
+    { x: 190, z: -220, width: 50, height: 28 },
+    { x: 190, z: -200, width: 50, height: 28 },
+    { x: 190, z: -190, width: 50, height: 28 },
+    
+    // Second gap entrance at z: -180 (narrow passage leading to back area)
+    { x: -120, z: -180, width: 60, height: 28 },
+    { x: -70, z: -180, width: 50, height: 28 },
+    { x: -35, z: -180, width: 40, height: 28 },   // Left of gap
+    { x: 35, z: -180, width: 40, height: 28 },    // Right of gap
+    { x: 70, z: -180, width: 50, height: 28 },
+    { x: 120, z: -180, width: 60, height: 28 },
+    // Gap at x: -10 to 10, z: -180 (20 unit wide gap)
+    
+    // Middle area side walls (z: -85 to z: -180) - medium width for guardians
+    { x: -150, z: -170, width: 50, height: 28 },
+    { x: -150, z: -150, width: 50, height: 28 },
+    { x: -150, z: -130, width: 50, height: 28 },
+    { x: -150, z: -110, width: 50, height: 28 },
+    { x: -150, z: -95, width: 50, height: 28 },
+    { x: 150, z: -170, width: 50, height: 28 },
+    { x: 150, z: -150, width: 50, height: 28 },
+    { x: 150, z: -130, width: 50, height: 28 },
+    { x: 150, z: -110, width: 50, height: 28 },
+    { x: 150, z: -95, width: 50, height: 28 },
+    
+    // First gap entrance at z: -85 (narrow passage leading to middle area)
     { x: -120, z: -85, width: 60, height: 28 },
     { x: -70, z: -85, width: 50, height: 28 },
     { x: -35, z: -85, width: 40, height: 28 },   // Left of gap
     { x: 35, z: -85, width: 40, height: 28 },    // Right of gap
     { x: 70, z: -85, width: 50, height: 28 },
     { x: 120, z: -85, width: 60, height: 28 },
-    // Narrow gap at x: -10 to 10, z: -85 for passage (20 unit wide gap)
+    // Gap at x: -10 to 10, z: -85 (20 unit wide gap)
     
-    // Northwest corner
-    { x: -170, z: -140, width: 60, height: 28 },
-    { x: -170, z: -100, width: 60, height: 28 },
+    // Front area corners (before first gap)
+    { x: -170, z: -70, width: 60, height: 28 },
+    { x: -170, z: -50, width: 60, height: 28 },
+    { x: 170, z: -70, width: 60, height: 28 },
+    { x: 170, z: -50, width: 60, height: 28 },
     
-    // Northeast corner
-    { x: 170, z: -140, width: 60, height: 28 },
-    { x: 170, z: -100, width: 60, height: 28 },
-    
-    // West wall (left side) - complete coverage
-    { x: -190, z: -120, width: 50, height: 28 },
+    // West wall (left side) - front area
     { x: -190, z: -80, width: 50, height: 28 },
     { x: -190, z: -40, width: 50, height: 28 },
     { x: -190, z: 0, width: 50, height: 28 },
@@ -111,8 +162,12 @@ const MOUNTAINS = [
     { x: -190, z: 80, width: 50, height: 28 },
     { x: -190, z: 120, width: 50, height: 28 },
     
-    // East wall (right side) - complete coverage
-    { x: 190, z: -120, width: 50, height: 28 },
+    // East wall (right side) - front area
+    { x: 190, z: -80, width: 50, height: 28 },
+    { x: 190, z: -40, width: 50, height: 28 },
+    { x: 190, z: 0, width: 50, height: 28 },
+    { x: 190, z: 40, width: 50, height: 28 },
+    { x: 190, z: 80, width: 50, height: 28 },
     { x: 190, z: -80, width: 50, height: 28 },
     { x: 190, z: -40, width: 50, height: 28 },
     { x: 190, z: 0, width: 50, height: 28 },

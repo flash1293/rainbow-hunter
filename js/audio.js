@@ -597,6 +597,65 @@ const Audio = (function() {
         }
     }
 
+    function playIcePowerSound() {
+        if (!shouldPlayAudio()) return;
+        
+        const now = audioContext.currentTime;
+        
+        // Crystal chime sound
+        const frequencies = [523, 659, 784, 1047]; // C, E, G, C (major chord)
+        frequencies.forEach((freq, i) => {
+            const osc = audioContext.createOscillator();
+            const gain = audioContext.createGain();
+            const filter = audioContext.createBiquadFilter();
+            
+            osc.connect(filter);
+            filter.connect(gain);
+            gain.connect(audioContext.destination);
+            
+            osc.type = 'sine';
+            osc.frequency.setValueAtTime(freq, now);
+            
+            filter.type = 'bandpass';
+            filter.frequency.setValueAtTime(freq * 2, now);
+            filter.Q.setValueAtTime(10, now);
+            
+            const delay = i * 0.05;
+            gain.gain.setValueAtTime(0, now + delay);
+            gain.gain.linearRampToValueAtTime(0.15, now + delay + 0.01);
+            gain.gain.exponentialRampToValueAtTime(0.001, now + delay + 1.5);
+            
+            osc.start(now + delay);
+            osc.stop(now + delay + 1.5);
+        });
+        
+        // Whoosh/wind sound
+        const noiseBuffer = audioContext.createBuffer(1, audioContext.sampleRate * 1, audioContext.sampleRate);
+        const noiseData = noiseBuffer.getChannelData(0);
+        for (let i = 0; i < noiseData.length; i++) {
+            noiseData[i] = Math.random() * 2 - 1;
+        }
+        
+        const noiseSource = audioContext.createBufferSource();
+        const noiseGain = audioContext.createGain();
+        const noiseFilter = audioContext.createBiquadFilter();
+        
+        noiseSource.buffer = noiseBuffer;
+        noiseSource.connect(noiseFilter);
+        noiseFilter.connect(noiseGain);
+        noiseGain.connect(audioContext.destination);
+        
+        noiseFilter.type = 'highpass';
+        noiseFilter.frequency.setValueAtTime(2000, now);
+        noiseFilter.frequency.linearRampToValueAtTime(4000, now + 0.8);
+        
+        noiseGain.gain.setValueAtTime(0, now);
+        noiseGain.gain.linearRampToValueAtTime(0.3, now + 0.1);
+        noiseGain.gain.exponentialRampToValueAtTime(0.001, now + 0.8);
+        
+        noiseSource.start(now);
+    }
+
     // Return public API
     return {
         playShootSound,
@@ -611,6 +670,7 @@ const Audio = (function() {
         playBulletImpactSound,
         playGoblinDeathSound,
         playWinSound,
+        playIcePowerSound,
         startBackgroundMusic,
         stopBackgroundMusic,
         startBikeSound,

@@ -6,6 +6,10 @@ let speedMultiplier = 1;
 let gameDead = false;
 let gameWon = false;
 
+// God mode for debugging
+let godMode = false;
+let godModeSpeed = 2.0;
+
 // Multiplayer
 let multiplayerManager = null;
 let otherPlayerMesh = null;
@@ -61,7 +65,6 @@ window.addEventListener('DOMContentLoaded', () => {
     multiplayerManager.onUpdate((type, data) => {
         if (type === 'gameStart') {
             // Client receives game start from host
-            console.log('Client received gameStart');
             startGame(data.difficulty);
         }
     });
@@ -470,7 +473,6 @@ function initGame() {
             } else if (type === 'playerState') {
                 // Host receives client player position (client to host)
                 if (multiplayerManager.isHost) {
-                    console.log('Host received playerState from client:', data);
                     // Calculate velocity for optimistic updates
                     otherPlayerVelocity.x = data.position.x - otherPlayerLastPos.x;
                     otherPlayerVelocity.z = data.position.z - otherPlayerLastPos.z;
@@ -495,7 +497,6 @@ function initGame() {
                     otherPlayerMesh.position.set(data.position.x, data.position.y, data.position.z);
                     otherPlayerMesh.rotation.y = data.rotation;
                     otherPlayerMesh.visible = true;
-                    console.log('otherPlayerMesh visible set to true, position:', otherPlayerMesh.position);
                     // Update kite visibility based on gliding state
                     if (otherPlayerMesh.kiteGroup) {
                         otherPlayerMesh.kiteGroup.visible = data.isGliding === true;
@@ -538,7 +539,9 @@ function initGame() {
                 health: g.health,
                 isChasing: g.isChasing,
                 vx: g.velocity ? g.velocity.x : 0,
-                vz: g.velocity ? g.velocity.z : 0
+                vz: g.velocity ? g.velocity.z : 0,
+                frozen: g.frozen || false,
+                frozenUntil: g.frozenUntil || 0
             })),
             guardianArrows: guardianArrows.map(a => ({
                 x: a.mesh.position.x,
@@ -570,11 +573,31 @@ function initGame() {
                 vy: b.velocity.y,
                 vz: b.velocity.z
             })),
+            dragon: dragon ? {
+                x: dragon.mesh.position.x,
+                y: dragon.mesh.position.y,
+                z: dragon.mesh.position.z,
+                rotation: dragon.mesh.rotation.y,
+                rotationX: dragon.mesh.rotation.x,
+                rotationZ: dragon.mesh.rotation.z,
+                alive: dragon.alive,
+                health: dragon.health,
+                isFlying: dragon.isFlying
+            } : null,
+            fireballs: fireballs.map(f => ({
+                x: f.mesh.position.x,
+                y: f.mesh.position.y,
+                z: f.mesh.position.z,
+                vx: f.velocity.x,
+                vy: f.velocity.y,
+                vz: f.velocity.z
+            })),
             items: {
                 materials: materials.map(m => m.collected),
                 ammoPickups: ammoPickups.map(a => a.collected),
                 healthPickups: healthPickups.map(h => h.collected),
-                kiteCollected: worldKiteCollected
+                kiteCollected: worldKiteCollected,
+                icePowerCollected: icePowerCollected
             },
             gameState: {
                 bridgeRepaired: bridgeRepaired,
@@ -629,6 +652,28 @@ function initGame() {
                     }
                     gob.velocity.x = gobData.vx || 0;
                     gob.velocity.z = gobData.vz || 0;
+                    
+                    // Sync frozen state
+                    const wasFrozen = gob.frozen;
+                    gob.frozen = gobData.frozen || false;
+                    gob.frozenUntil = gobData.frozenUntil || 0;
+                    
+                    // Apply or remove frozen visual effect
+                    if (gob.frozen && !wasFrozen) {
+                        gob.mesh.children.forEach(child => {
+                            if (child.material && child.material.emissive !== undefined) {
+                                child.material.emissive = new THREE.Color(0x0088FF);
+                                child.material.emissiveIntensity = 0.5;
+                            }
+                        });
+                    } else if (!gob.frozen && wasFrozen) {
+                        gob.mesh.children.forEach(child => {
+                            if (child.material && child.material.emissive !== undefined) {
+                                child.material.emissive = new THREE.Color(0x000000);
+                                child.material.emissiveIntensity = 0;
+                            }
+                        });
+                    }
                     
                     if (!gobData.alive && gob.mesh.rotation.z !== Math.PI / 2) {
                         gob.mesh.rotation.z = Math.PI / 2;
@@ -746,6 +791,56 @@ function initGame() {
             }
         }
         
+        // Update dragon state
+        if (data.dragon) {
+            if (!dragon && currentDifficulty === 'hard') {
+                // Create dragon if it doesn't exist yet
+                dragon = createDragon();
+                scene.add(dragon.mesh);
+            }
+            if (dragon) {
+                dragon.mesh.position.set(data.dragon.x, data.dragon.y, data.dragon.z);
+                dragon.mesh.rotation.y = data.dragon.rotation;
+                dragon.mesh.rotation.x = data.dragon.rotationX || 0;
+                dragon.mesh.rotation.z = data.dragon.rotationZ || 0;
+                dragon.alive = data.dragon.alive;
+                dragon.health = data.dragon.health;
+                dragon.isFlying = data.dragon.isFlying || false;
+            }
+        }
+        
+        // Update fireballs
+        if (data.fireballs) {
+            // Remove old fireballs
+            while (fireballs.length > data.fireballs.length) {
+                const fb = fireballs.pop();
+                scene.remove(fb.mesh);
+            }
+            // Update existing and create new fireballs
+            data.fireballs.forEach((fbData, i) => {
+                if (i < fireballs.length) {
+                    fireballs[i].mesh.position.set(fbData.x, fbData.y, fbData.z);
+                    fireballs[i].velocity.set(fbData.vx, fbData.vy, fbData.vz);
+                } else {
+                    const fireballGeometry = new THREE.SphereGeometry(0.8, 8, 8);
+                    const fireballMaterial = new THREE.MeshBasicMaterial({ 
+                        color: 0xFF4500,
+                        emissive: 0xFF4500,
+                        emissiveIntensity: 1.0
+                    });
+                    const fireballMesh = new THREE.Mesh(fireballGeometry, fireballMaterial);
+                    fireballMesh.position.set(fbData.x, fbData.y, fbData.z);
+                    scene.add(fireballMesh);
+                    fireballs.push({
+                        mesh: fireballMesh,
+                        velocity: new THREE.Vector3(fbData.vx, fbData.vy, fbData.vz),
+                        radius: 1.5,
+                        damage: 2
+                    });
+                }
+            });
+        }
+        
         // Update item collection states
         if (data.items) {
             if (data.items.materials) {
@@ -778,6 +873,14 @@ function initGame() {
                 worldKiteCollected = true;
                 scene.remove(worldKiteGroup);
             }
+            
+            // Update ice power state
+            if (data.items.icePowerCollected !== undefined) {
+                if (data.items.icePowerCollected && !icePowerCollected) {
+                    icePowerCollected = true;
+                    hasIcePower = true;
+                }
+            }
         }
     }
 
@@ -806,32 +909,33 @@ function initGame() {
         w: false,
         s: false,
         a: false,
-        d: false
+        d: false,
+        q: false,
+        e: false
     };
 
     // Gamepad support
     let gamepad = null;
     let lastShootTime = 0;
     let lastKiteActivationTime = 0;
+    let lastIcePowerTime = 0;
     const shootCooldown = 200; // ms between shots
     const kiteActivationCooldown = 300; // ms between kite activations
+    const icePowerCooldown = 10000; // 10 seconds between ice power uses
 
     window.addEventListener('gamepadconnected', (e) => {
         // In splitscreen mode, only use the assigned controller
         if (isSplitscreen) {
             if (e.gamepad.index === controllerIndex) {
                 gamepad = e.gamepad;
-                console.log('Gamepad connected for player', controllerIndex + 1, ':', gamepad.id);
             }
         } else {
             gamepad = e.gamepad;
-            console.log('Gamepad connected:', gamepad.id);
         }
     });
 
     window.addEventListener('gamepaddisconnected', (e) => {
         if (!isSplitscreen || e.gamepad.index === controllerIndex) {
-            console.log('Gamepad disconnected');
             gamepad = null;
         }
     });
@@ -911,6 +1015,11 @@ function initGame() {
             }
         }
         
+        // Y button (button 3) for ice power
+        if (gamepad.buttons[3]?.pressed && hasIcePower && !gameWon && !gameDead && now - lastIcePowerTime >= icePowerCooldown) {
+            activateIcePower();
+        }
+        
         // Options (button 9) for restart
         if (gamepad.buttons[9]?.pressed && (gameWon || gameDead)) {
             resetGame();
@@ -954,6 +1063,21 @@ function initGame() {
                 // Exit gliding
                 player.glideState = 'landing';
             }
+        }
+        // Ice power activation
+        if ((e.key === 'e' || e.key === 'E') && hasIcePower && !gameWon && !gameDead) {
+            activateIcePower();
+            e.preventDefault();
+        }
+        // God mode toggle
+        if (e.key === 'g' || e.key === 'G') {
+            godMode = !godMode;
+            const statusEl = document.getElementById('status-message');
+            if (statusEl) {
+                statusEl.textContent = godMode ? 'GOD MODE: ON (Q/E up/down)' : '';
+                statusEl.style.display = godMode ? 'block' : 'none';
+            }
+            e.preventDefault();
         }
     });
 
@@ -1003,7 +1127,26 @@ function initGame() {
         { x: -20, z: -95 }, { x: 15, z: -100 }, { x: -35, z: -110 },
         { x: 40, z: -115 }, { x: -10, z: -125 }, { x: 25, z: -130 },
         { x: -50, z: -135 }, { x: 55, z: -140 }, { x: 0, z: -145 },
-        { x: -30, z: -150 }, { x: 35, z: -155 }, { x: 10, z: -160 }
+        { x: -30, z: -150 }, { x: 35, z: -155 }, { x: 10, z: -160 },
+        // Dragon boss area trees - MANY MORE in the back and CENTER
+        { x: -130, z: -195 }, { x: 140, z: -205 }, { x: -100, z: -220 },
+        { x: 110, z: -230 }, { x: -140, z: -245 }, { x: 130, z: -255 },
+        { x: -80, z: -200 }, { x: 90, z: -215 }, { x: -70, z: -260 },
+        { x: 115, z: -240 }, { x: -95, z: -235 }, { x: 105, z: -250 },
+        { x: -150, z: -220 }, { x: 145, z: -225 }, { x: 75, z: -195 },
+        { x: -50, z: -210 }, { x: 55, z: -235 }, { x: -85, z: -247 },
+        { x: 95, z: -258 }, { x: -120, z: -262 }, { x: 125, z: -248 },
+        { x: -60, z: -225 }, { x: 65, z: -252 }, { x: -110, z: -238 },
+        { x: 100, z: -222 }, { x: -75, z: -254 }, { x: 85, z: -245 },
+        { x: -135, z: -232 }, { x: 135, z: -260 }, { x: -45, z: -218 },
+        { x: 50, z: -243 }, { x: -105, z: -256 }, { x: 120, z: -217 },
+        // CENTER area behind dragon (x: -40 to 40, z: -210 to -260)
+        { x: -30, z: -210 }, { x: -15, z: -215 }, { x: 0, z: -220 },
+        { x: 15, z: -225 }, { x: 30, z: -230 }, { x: -35, z: -235 },
+        { x: -20, z: -240 }, { x: 10, z: -245 }, { x: 25, z: -250 },
+        { x: -25, z: -255 }, { x: 5, z: -260 }, { x: 35, z: -212 },
+        { x: -40, z: -222 }, { x: 20, z: -233 }, { x: -10, z: -248 },
+        { x: 40, z: -258 }, { x: -5, z: -228 }, { x: 12, z: -238 }
     ];
 
     treePositions.forEach(pos => {
@@ -1043,7 +1186,28 @@ function initGame() {
         { x: 8, z: 60 }, { x: -12, z: 65 }, { x: 15, z: -60 }, { x: -18, z: -65 },
         { x: -60, z: 20 }, { x: 62, z: 25 }, { x: -28, z: 70 }, { x: 32, z: 72 },
         { x: -65, z: -50 }, { x: 68, z: -55 }, { x: 25, z: 75 },
-        { x: 0, z: 30 }
+        { x: 0, z: 30 },
+        // Dragon boss area rocks - MANY MORE in the back
+        { x: -110, z: -200 }, { x: 125, z: -210 }, { x: -85, z: -225 },
+        { x: 95, z: -235 }, { x: -135, z: -250 }, { x: 120, z: -245 },
+        { x: -75, z: -205 }, { x: 100, z: -220 }, { x: -115, z: -255 },
+        { x: 130, z: -230 }, { x: -90, z: -240 }, { x: 110, z: -260 },
+        { x: -140, z: -215 }, { x: 135, z: -250 }, { x: -65, z: -260 },
+        { x: 85, z: -200 }, { x: -125, z: -225 }, { x: 105, z: -255 },
+        { x: -55, z: -218 }, { x: 70, z: -238 }, { x: -98, z: -248 },
+        { x: 115, z: -252 }, { x: -82, z: -233 }, { x: 92, z: -258 },
+        { x: -122, z: -243 }, { x: 128, z: -222 }, { x: -68, z: -246 },
+        { x: 88, z: -228 }, { x: -102, z: -262 }, { x: 118, z: -236 },
+        { x: -78, z: -214 }, { x: 82, z: -254 }, { x: -132, z: -257 },
+        { x: 138, z: -241 }, { x: -72, z: -222 }, { x: 78, z: -248 },
+        // CENTER area rocks behind dragon (x: -40 to 40, z: -210 to -260)
+        { x: -35, z: -212 }, { x: -20, z: -218 }, { x: -8, z: -224 },
+        { x: 5, z: -230 }, { x: 18, z: -236 }, { x: 32, z: -242 },
+        { x: -28, z: -248 }, { x: -15, z: -254 }, { x: 0, z: -260 },
+        { x: 12, z: -216 }, { x: 25, z: -222 }, { x: -38, z: -228 },
+        { x: -25, z: -234 }, { x: -10, z: -240 }, { x: 8, z: -246 },
+        { x: 22, z: -252 }, { x: 35, z: -258 }, { x: -32, z: -215 },
+        { x: -18, z: -225 }, { x: 15, z: -235 }, { x: 28, z: -245 }
     ];
 
     rockPositions.forEach(pos => {
@@ -1095,6 +1259,37 @@ function initGame() {
             phase: Math.random() * Math.PI * 2
         });
     }
+    
+    // Extra grass in dragon boss area
+    for (let i = 0; i < 150; i++) {
+        const x = (Math.random() - 0.5) * 80; // x: -40 to 40
+        const z = -210 - Math.random() * 55; // z: -210 to -265
+        
+        const grassGroup = new THREE.Group();
+        const bladeCount = 5 + Math.floor(Math.random() * 4);
+        for (let j = 0; j < bladeCount; j++) {
+            const bladeGeometry = new THREE.ConeGeometry(0.05, 0.4 + Math.random() * 0.3, 3);
+            const bladeMaterial = new THREE.MeshLambertMaterial({ 
+                color: 0x228B22,
+                flatShading: true
+            });
+            const blade = new THREE.Mesh(bladeGeometry, bladeMaterial);
+            blade.position.x = (Math.random() - 0.5) * 0.2;
+            blade.position.z = (Math.random() - 0.5) * 0.2;
+            blade.rotation.x = (Math.random() - 0.5) * 0.3;
+            blade.rotation.z = (Math.random() - 0.5) * 0.3;
+            grassGroup.add(blade);
+        }
+        
+        const terrainHeight = getTerrainHeight(x, z);
+        grassGroup.position.set(x, terrainHeight, z);
+        scene.add(grassGroup);
+        grassBushels.push({
+            mesh: grassGroup,
+            baseHeight: terrainHeight,
+            phase: Math.random() * Math.PI * 2
+        });
+    }
 
     // Ammo pickups
     const ammoPickups = [];
@@ -1111,7 +1306,11 @@ function initGame() {
         // Additional ammo for harder difficulty
         { x: 10, z: -70 }, { x: -35, z: -75 }, { x: 45, z: -90 },
         { x: -15, z: -105 }, { x: 25, z: -120 }, { x: -30, z: -118 },
-        { x: 52, z: -125 }, { x: 15, z: 45 }
+        { x: 52, z: -125 }, { x: 15, z: 45 },
+        // Dragon boss area
+        { x: -90, z: -195 }, { x: 100, z: -205 }, { x: -70, z: -220 },
+        { x: 85, z: -235 }, { x: 0, z: -245 }, { x: -110, z: -250 },
+        { x: 120, z: -215 }
     ];
 
     ammoPositions.forEach(pos => {
@@ -1154,7 +1353,10 @@ function initGame() {
     const healthPickups = [];
     const heartPositions = [
         { x: -8, z: 50 }, { x: 32, z: -18 }, { x: -48, z: -25 },
-        { x: 55, z: 22 }, { x: -22, z: 65 }
+        { x: 55, z: 22 }, { x: -22, z: 65 },
+        // Dragon boss area
+        { x: -100, z: -210 }, { x: 95, z: -225 }, { x: -60, z: -240 },
+        { x: 70, z: -255 }
     ];
 
     heartPositions.forEach(pos => {
@@ -1563,7 +1765,7 @@ function initGame() {
     // Create guardian goblins on hard
     if (difficulty === 'hard') {
         // Add one test guardian for testing
-        goblins.push(createGuardianGoblin(15, 15, 10, 20, 0.014));
+        // goblins.push(createGuardianGoblin(15, 15, 10, 20, 0.014));
         
         // Giant guardian at the gap - huge, fast, lots of health
         goblins.push(createGiant(0, -85, -8, 8));
@@ -1573,17 +1775,7 @@ function initGame() {
         goblins.push(createGiant(40, -110, 30, 50));
         goblins.push(createGiant(-25, -115, -35, -15));
         
-        // Guardians at the narrow mountain gap (the passage before treasure area)
-        goblins.push(createGuardianGoblin(-5, -85, -8, -2, 0.014));
-        goblins.push(createGuardianGoblin(5, -85, 2, 8, 0.014));
-        
-        // More guardians in the mid-area
-        goblins.push(createGuardianGoblin(-45, -65, -55, -35, 0.014));
-        goblins.push(createGuardianGoblin(35, -70, 25, 45, 0.014));
-        goblins.push(createGuardianGoblin(0, -100, -10, 10, 0.014));
-        goblins.push(createGuardianGoblin(-30, -95, -40, -20, 0.014));
-        
-        // Original guardians around treasure
+        // Guardians in a ring around treasure
         for (let i = 0; i < GAME_CONFIG.HARD_GUARDIAN_COUNT; i++) {
             const angle = (i / GAME_CONFIG.HARD_GUARDIAN_COUNT) * Math.PI * 2;
             const x = GAME_CONFIG.TREASURE_X + Math.cos(angle) * 8;
@@ -1603,6 +1795,7 @@ function initGame() {
         rainbowGroup.add(arc);
     });
     rainbowGroup.position.set(GAME_CONFIG.TREASURE_X, 5, GAME_CONFIG.TREASURE_Z + 5);
+    rainbowGroup.rotation.y = Math.PI / 2; // Rotate 90 degrees to face player
     scene.add(rainbowGroup);
 
     // Treasure
@@ -1673,6 +1866,262 @@ function initGame() {
     scene.add(treasureGroup);
 
     const treasure = { mesh: treasureGroup, radius: 1 };
+
+    // Ice Berg - opposite side of treasure, behind the gap
+    const iceBergGroup = new THREE.Group();
+    
+    // Main ice berg structure - tall crystalline shape
+    const iceBergGeometry = new THREE.ConeGeometry(8, 20, 6);
+    const iceBergMaterial = new THREE.MeshPhongMaterial({
+        color: 0xB0E0E6,
+        transparent: true,
+        opacity: 0.7,
+        shininess: 100,
+        specular: 0xFFFFFF
+    });
+    const iceBergMesh = new THREE.Mesh(iceBergGeometry, iceBergMaterial);
+    iceBergMesh.position.y = 10;
+    iceBergMesh.castShadow = true;
+    iceBergMesh.receiveShadow = true;
+    iceBergGroup.add(iceBergMesh);
+    
+    // Additional ice crystals around the base
+    for (let i = 0; i < 5; i++) {
+        const angle = (i / 5) * Math.PI * 2;
+        const dist = 6;
+        const crystalGeometry = new THREE.ConeGeometry(2, 8, 6);
+        const crystal = new THREE.Mesh(crystalGeometry, iceBergMaterial);
+        crystal.position.x = Math.cos(angle) * dist;
+        crystal.position.z = Math.sin(angle) * dist;
+        crystal.position.y = 4;
+        crystal.rotation.z = Math.random() * 0.3 - 0.15;
+        iceBergGroup.add(crystal);
+    }
+    
+    // Position ice berg on the north side of river, between river and gap
+    iceBergGroup.position.set(80, getTerrainHeight(80, -40), -40);
+    scene.add(iceBergGroup);
+    
+    const iceBerg = {
+        mesh: iceBergGroup,
+        position: { x: 80, z: -40 },
+        radius: 12,
+        powerRadius: 8 // Radius for collecting ice power
+    };
+    
+    let hasIcePower = false;
+    let icePowerCollected = false;
+
+    // Create Dragon (boss enemy)
+    function createDragon() {
+        const dragonGroup = new THREE.Group();
+        
+        // Body - long segmented shape
+        const bodyGeometry = new THREE.CylinderGeometry(2, 2.5, 10, 12);
+        const bodyMaterial = new THREE.MeshLambertMaterial({ color: 0x8B0000 });
+        const body = new THREE.Mesh(bodyGeometry, bodyMaterial);
+        body.rotation.z = Math.PI / 2;
+        body.position.x = 5;
+        body.castShadow = true;
+        dragonGroup.add(body);
+        
+        // Body scales
+        for (let i = 0; i < 8; i++) {
+            const scaleGeometry = new THREE.ConeGeometry(0.6, 1.2, 6);
+            const scaleMaterial = new THREE.MeshLambertMaterial({ color: 0x6B0000 });
+            const scale = new THREE.Mesh(scaleGeometry, scaleMaterial);
+            scale.position.set(i * 1.2, 2.8, 0);
+            scale.rotation.z = 0;
+            scale.castShadow = true;
+            dragonGroup.add(scale);
+        }
+        
+        // Neck
+        const neckGeometry = new THREE.CylinderGeometry(1.8, 2, 4, 8);
+        const neck = new THREE.Mesh(neckGeometry, bodyMaterial);
+        neck.rotation.z = Math.PI / 2;
+        neck.position.x = 10;
+        neck.position.y = 1;
+        neck.castShadow = true;
+        dragonGroup.add(neck);
+        
+        // Head - large diamond shape
+        const headGeometry = new THREE.ConeGeometry(2.5, 5, 8);
+        const headMaterial = new THREE.MeshLambertMaterial({ color: 0xA52A2A });
+        const head = new THREE.Mesh(headGeometry, headMaterial);
+        head.rotation.z = -Math.PI / 2;
+        head.position.x = 13;
+        head.position.y = 1.5;
+        head.castShadow = true;
+        dragonGroup.add(head);
+        
+        // Jaw
+        const jawGeometry = new THREE.BoxGeometry(2, 1.5, 2);
+        const jaw = new THREE.Mesh(jawGeometry, headMaterial);
+        jaw.position.set(14, 0.5, 0);
+        jaw.castShadow = true;
+        dragonGroup.add(jaw);
+        
+        // Teeth
+        for (let i = 0; i < 6; i++) {
+            const toothGeometry = new THREE.ConeGeometry(0.15, 0.6, 4);
+            const toothMaterial = new THREE.MeshLambertMaterial({ color: 0xFFFFFF });
+            const tooth = new THREE.Mesh(toothGeometry, toothMaterial);
+            tooth.position.set(14 + (i % 2) * 0.5, 1.2, -1 + i * 0.4);
+            tooth.rotation.z = Math.PI;
+            dragonGroup.add(tooth);
+        }
+        
+        // Eyes - glowing orange with pupils
+        const eyeGeometry = new THREE.SphereGeometry(0.5, 8, 8);
+        const eyeMaterial = new THREE.MeshBasicMaterial({ 
+            color: 0xFF6600, 
+            emissive: 0xFF6600, 
+            emissiveIntensity: 1.0 
+        });
+        const leftEye = new THREE.Mesh(eyeGeometry, eyeMaterial);
+        leftEye.position.set(13.5, 2.5, 1.2);
+        dragonGroup.add(leftEye);
+        
+        const rightEye = new THREE.Mesh(eyeGeometry, eyeMaterial);
+        rightEye.position.set(13.5, 2.5, -1.2);
+        dragonGroup.add(rightEye);
+        
+        // Pupils
+        const pupilGeometry = new THREE.SphereGeometry(0.2, 6, 6);
+        const pupilMaterial = new THREE.MeshBasicMaterial({ color: 0x000000 });
+        const leftPupil = new THREE.Mesh(pupilGeometry, pupilMaterial);
+        leftPupil.position.set(14, 2.5, 1.2);
+        dragonGroup.add(leftPupil);
+        
+        const rightPupil = new THREE.Mesh(pupilGeometry, pupilMaterial);
+        rightPupil.position.set(14, 2.5, -1.2);
+        dragonGroup.add(rightPupil);
+        
+        // Wings - more detailed
+        const wingGeometry = new THREE.BufferGeometry();
+        const wingVertices = new Float32Array([
+            0, 0, 0,
+            6, 2, 0,
+            8, 0, 0,
+            6, -2, 0,
+            4, -1, 0
+        ]);
+        wingGeometry.setAttribute('position', new THREE.BufferAttribute(wingVertices, 3));
+        wingGeometry.setIndex([0, 1, 2, 0, 2, 3, 0, 3, 4]);
+        wingGeometry.computeVertexNormals();
+        
+        const wingMaterial = new THREE.MeshLambertMaterial({ 
+            color: 0x6B0000, 
+            side: THREE.DoubleSide 
+        });
+        
+        const leftWing = new THREE.Mesh(wingGeometry, wingMaterial);
+        leftWing.position.set(3, 3, 0);
+        leftWing.rotation.y = Math.PI / 2;
+        leftWing.castShadow = true;
+        dragonGroup.add(leftWing);
+        
+        const rightWing = new THREE.Mesh(wingGeometry, wingMaterial);
+        rightWing.position.set(3, 3, 0);
+        rightWing.rotation.y = -Math.PI / 2;
+        rightWing.castShadow = true;
+        dragonGroup.add(rightWing);
+        
+        // Tail segments
+        const tailSegments = [];
+        for (let i = 0; i < 3; i++) {
+            const segmentGeometry = new THREE.CylinderGeometry(1.5 - i * 0.3, 1.8 - i * 0.3, 3, 8);
+            const segment = new THREE.Mesh(segmentGeometry, bodyMaterial);
+            segment.rotation.z = Math.PI / 2;
+            segment.position.x = -3 - i * 2.5;
+            segment.position.y = 0.5 - i * 0.3;
+            segment.castShadow = true;
+            dragonGroup.add(segment);
+            tailSegments.push(segment);
+        }
+        
+        // Tail spikes
+        for (let i = 0; i < 10; i++) {
+            const spikeGeometry = new THREE.ConeGeometry(0.3, 1, 6);
+            const spikeMaterial = new THREE.MeshLambertMaterial({ color: 0x4B0000 });
+            const spike = new THREE.Mesh(spikeGeometry, spikeMaterial);
+            spike.position.set(-i * 0.8, 2.5, 0);
+            spike.rotation.z = Math.PI;
+            spike.castShadow = true;
+            dragonGroup.add(spike);
+        }
+        
+        // Horns - larger and more imposing
+        const hornGeometry = new THREE.ConeGeometry(0.5, 2.5, 6);
+        const hornMaterial = new THREE.MeshLambertMaterial({ color: 0x2F2F2F });
+        
+        const leftHorn = new THREE.Mesh(hornGeometry, hornMaterial);
+        leftHorn.position.set(12.5, 4, 1.5);
+        leftHorn.rotation.z = -0.4;
+        leftHorn.rotation.x = 0.2;
+        leftHorn.castShadow = true;
+        dragonGroup.add(leftHorn);
+        
+        const rightHorn = new THREE.Mesh(hornGeometry, hornMaterial);
+        rightHorn.position.set(12.5, 4, -1.5);
+        rightHorn.rotation.z = -0.4;
+        rightHorn.rotation.x = -0.2;
+        rightHorn.castShadow = true;
+        dragonGroup.add(rightHorn);
+        
+        // Chest/belly - lighter color
+        const bellyGeometry = new THREE.CylinderGeometry(1.8, 2.2, 8, 12);
+        const bellyMaterial = new THREE.MeshLambertMaterial({ color: 0xB8860B });
+        const belly = new THREE.Mesh(bellyGeometry, bellyMaterial);
+        belly.rotation.z = Math.PI / 2;
+        belly.position.x = 5;
+        belly.position.y = -1.5;
+        belly.castShadow = true;
+        dragonGroup.add(belly);
+        
+        // Position dragon closer to spawn for testing (normally at 60, -160)
+        const dragonX = 0;
+        const dragonZ = -200;
+        dragonGroup.position.set(dragonX, getTerrainHeight(dragonX, dragonZ) + 3, dragonZ);
+        scene.add(dragonGroup);
+        
+        return {
+            mesh: dragonGroup,
+            head: head,
+            leftWing: leftWing,
+            rightWing: rightWing,
+            tailSegments: tailSegments,
+            leftEye: leftEye,
+            rightEye: rightEye,
+            leftPupil: leftPupil,
+            rightPupil: rightPupil,
+            health: 30,
+            maxHealth: 30,
+            alive: true,
+            speed: 0.08 * speedMultiplier,
+            patrolLeft: -30,
+            patrolRight: 30,
+            patrolFront: -210,
+            patrolBack: -190,
+            direction: 1,
+            lastFireTime: Date.now(),
+            fireInterval: 2000, // Fire every 2 seconds
+            wingFlapPhase: 0,
+            isFlying: false,
+            flyStartTime: 0,
+            flyDuration: 0,
+            flyTargetY: 0,
+            groundY: 0
+        };
+    }
+    
+    let dragon = null;
+    const fireballs = [];
+    
+    if (difficulty === 'hard') {
+        dragon = createDragon();
+    }
 
     // Game arrays
     const bullets = [];
@@ -1822,7 +2271,7 @@ function initGame() {
     function shootBullet() {
         if (gameWon) return;
         
-        if (ammo <= 0) {
+        if (ammo <= 0 && !godMode) {
             Audio.playEmptyGunSound();
             return;
         }
@@ -1851,7 +2300,7 @@ function initGame() {
             startPos: { x: playerGroup.position.x, z: playerGroup.position.z }
         };
         bullets.push(bullet);
-        ammo--;
+        if (!godMode) ammo--;
         
         // Sync bullet to other player
         if (multiplayerManager && multiplayerManager.isConnected()) {
@@ -1884,6 +2333,159 @@ function initGame() {
             isRemote: true // Mark as remote to differentiate
         };
         bullets.push(bullet);
+    }
+    
+    // Create freeze particle effect on an NPC
+    function createFreezeEffect(x, y, z) {
+        const particleCount = 20;
+        const particles = [];
+        
+        for (let i = 0; i < particleCount; i++) {
+            const geometry = new THREE.SphereGeometry(0.1, 4, 4);
+            const material = new THREE.MeshBasicMaterial({
+                color: 0xAAFFFF,
+                transparent: true,
+                opacity: 0.8
+            });
+            const particle = new THREE.Mesh(geometry, material);
+            
+            // Random position around the NPC
+            const angle = (i / particleCount) * Math.PI * 2;
+            const radius = 0.5 + Math.random() * 0.5;
+            particle.position.set(
+                x + Math.cos(angle) * radius,
+                y + 0.5 + Math.random() * 1.5,
+                z + Math.sin(angle) * radius
+            );
+            
+            scene.add(particle);
+            particles.push({
+                mesh: particle,
+                life: 30,
+                velocity: {
+                    x: (Math.random() - 0.5) * 0.02,
+                    y: Math.random() * 0.05,
+                    z: (Math.random() - 0.5) * 0.02
+                }
+            });
+        }
+        
+        // Animate particles
+        let frame = 0;
+        const animateInterval = setInterval(() => {
+            frame++;
+            particles.forEach(p => {
+                p.mesh.position.x += p.velocity.x;
+                p.mesh.position.y += p.velocity.y;
+                p.mesh.position.z += p.velocity.z;
+                p.mesh.material.opacity = 0.8 * (1 - frame / p.life);
+            });
+            
+            if (frame >= 30) {
+                clearInterval(animateInterval);
+                particles.forEach(p => scene.remove(p.mesh));
+            }
+        }, 16);
+    }
+    
+    // Ice power activation
+    function activateIcePower() {
+        if (gameWon || gameDead || !hasIcePower) return;
+        
+        const now = Date.now();
+        if (now - lastIcePowerTime < icePowerCooldown) return; // Cooldown not ready
+        
+        lastIcePowerTime = now;
+        
+        console.log('Activating ice power, isHost:', multiplayerManager ? multiplayerManager.isHost : 'no multiplayer');
+        
+        Audio.playIcePowerSound();
+        
+        const freezeRadius = 20;
+        const playerPos = playerGroup.position;
+        
+        // Create visual effect - expanding blue circle
+        const circleGeometry = new THREE.RingGeometry(0.1, freezeRadius, 32);
+        const circleMaterial = new THREE.MeshBasicMaterial({
+            color: 0x00BFFF,
+            transparent: true,
+            opacity: 0.6,
+            side: THREE.DoubleSide
+        });
+        const circle = new THREE.Mesh(circleGeometry, circleMaterial);
+        circle.rotation.x = -Math.PI / 2;
+        circle.position.set(playerPos.x, 2.0, playerPos.z);
+        scene.add(circle);
+        
+        // Animate circle expansion and fade
+        let expansion = 0;
+        const expandInterval = setInterval(() => {
+            expansion += 0.05;
+            circle.scale.set(expansion, expansion, 1);
+            circle.material.opacity = 0.6 * (1 - expansion);
+            
+            if (expansion >= 1) {
+                clearInterval(expandInterval);
+                scene.remove(circle);
+            }
+        }, 16);
+        
+        // Freeze all NPCs in radius
+        const freezeDuration = 5000; // 5 seconds
+        
+        // Freeze goblins
+        goblins.forEach(gob => {
+            if (gob.alive) {
+                const dist = Math.sqrt(
+                    (gob.mesh.position.x - playerPos.x) ** 2 +
+                    (gob.mesh.position.z - playerPos.z) ** 2
+                );
+                if (dist <= freezeRadius) {
+                    gob.frozen = true;
+                    gob.frozenUntil = now + freezeDuration;
+                    // Apply blue tint
+                    gob.mesh.children.forEach(child => {
+                        if (child.material && child.material.emissive !== undefined) {
+                            child.material.emissive = new THREE.Color(0x0088FF);
+                            child.material.emissiveIntensity = 0.5;
+                        }
+                    });
+                    // Create freeze particle effect
+                    createFreezeEffect(gob.mesh.position.x, gob.mesh.position.y, gob.mesh.position.z);
+                }
+            }
+        });
+        
+        // Freeze birds
+        birds.forEach(bird => {
+            const birdDist = Math.sqrt(
+                (bird.mesh.position.x - playerPos.x) ** 2 +
+                (bird.mesh.position.z - playerPos.z) ** 2
+            );
+            if (birdDist <= freezeRadius) {
+                bird.frozen = true;
+                bird.frozenUntil = now + freezeDuration;
+                // Apply blue tint to bird
+                bird.mesh.children.forEach(child => {
+                    if (child.material && child.material.emissive !== undefined) {
+                        child.material.emissive = new THREE.Color(0x0088FF);
+                        child.material.emissiveIntensity = 0.5;
+                    }
+                });
+                // Create freeze particle effect
+                createFreezeEffect(bird.mesh.position.x, bird.mesh.position.y, bird.mesh.position.z);
+            }
+        });
+        
+        // Send ice power activation to other player in multiplayer
+        if (multiplayerManager && multiplayerManager.isConnected()) {
+            multiplayerManager.sendGameEvent('icePowerActivated', {
+                x: playerPos.x,
+                y: playerPos.y,
+                z: playerPos.z,
+                isHost: multiplayerManager.isHost
+            });
+        }
     }
     
     // Handle game events from remote player
@@ -1928,6 +2530,94 @@ function initGame() {
                 bridgeObj.mesh.visible = true;
                 brokenBridgeGroup.visible = false;
                 Audio.playRepairSound();
+            }
+        } else if (eventType === 'icePowerCollected') {
+            // Other player collected ice power
+            if (!icePowerCollected) {
+                icePowerCollected = true;
+                hasIcePower = true;
+                Audio.playCollectSound();
+            }
+        } else if (eventType === 'icePowerActivated') {
+            // Other player activated ice power
+            const playerPos = { x: data.x, y: data.y, z: data.z };
+            
+            // Always play sound for the receiving player
+            Audio.playIcePowerSound();
+            
+            const freezeRadius = 20;
+            const circleGeometry = new THREE.RingGeometry(0.1, freezeRadius, 32);
+            const circleMaterial = new THREE.MeshBasicMaterial({
+                color: 0x00BFFF,
+                transparent: true,
+                opacity: 0.6,
+                side: THREE.DoubleSide
+            });
+            const circle = new THREE.Mesh(circleGeometry, circleMaterial);
+            circle.rotation.x = -Math.PI / 2;
+            circle.position.set(playerPos.x, 2.0, playerPos.z);
+            scene.add(circle);
+            
+            let expansion = 0;
+            const expandInterval = setInterval(() => {
+                expansion += 0.05;
+                circle.scale.set(expansion, expansion, 1);
+                circle.material.opacity = 0.6 * (1 - expansion);
+                
+                if (expansion >= 1) {
+                    clearInterval(expandInterval);
+                    scene.remove(circle);
+                }
+            }, 16);
+            
+            // If this is the host, apply freezing (client sent the event)
+            if (multiplayerManager && multiplayerManager.isHost && !data.isHost) {
+                console.log('Host applying freeze from client at position:', playerPos);
+                const freezeDuration = 5000;
+                const now = Date.now();
+                
+                // Freeze goblins
+                console.log('Checking', goblins.length, 'goblins for freezing');
+                goblins.forEach(gob => {
+                    if (gob.alive) {
+                        const dist = Math.sqrt(
+                            (gob.mesh.position.x - playerPos.x) ** 2 +
+                            (gob.mesh.position.z - playerPos.z) ** 2
+                        );
+                        if (dist <= freezeRadius) {
+                            gob.frozen = true;
+                            gob.frozenUntil = now + freezeDuration;
+                            gob.mesh.children.forEach(child => {
+                                if (child.material && child.material.emissive !== undefined) {
+                                    child.material.emissive = new THREE.Color(0x0088FF);
+                                    child.material.emissiveIntensity = 0.5;
+                                }
+                            });
+                            // Create freeze particle effect
+                            createFreezeEffect(gob.mesh.position.x, gob.mesh.position.y, gob.mesh.position.z);
+                        }
+                    }
+                });
+                
+                // Freeze birds
+                birds.forEach(bird => {
+                    const birdDist = Math.sqrt(
+                        (bird.mesh.position.x - playerPos.x) ** 2 +
+                        (bird.mesh.position.z - playerPos.z) ** 2
+                    );
+                    if (birdDist <= freezeRadius) {
+                        bird.frozen = true;
+                        bird.frozenUntil = now + freezeDuration;
+                        bird.mesh.children.forEach(child => {
+                            if (child.material && child.material.emissive !== undefined) {
+                                child.material.emissive = new THREE.Color(0x0088FF);
+                                child.material.emissiveIntensity = 0.5;
+                            }
+                        });
+                        // Create freeze particle effect
+                        createFreezeEffect(bird.mesh.position.x, bird.mesh.position.y, bird.mesh.position.z);
+                    }
+                });
             }
         } else if (eventType === 'gameRestart') {
             // Host requested game restart
@@ -1990,6 +2680,37 @@ function initGame() {
             playerGroup.position.x += Math.sin(player.rotation) * player.glideSpeed;
             playerGroup.position.z += Math.cos(player.rotation) * player.glideSpeed;
             isMoving = true;
+        } else if (godMode) {
+            // God mode flying controls
+            let moveSpeed = godModeSpeed;
+            
+            // Forward/backward
+            if (keys.ArrowUp || keys.w) {
+                playerGroup.position.x += Math.sin(player.rotation) * moveSpeed;
+                playerGroup.position.z += Math.cos(player.rotation) * moveSpeed;
+            }
+            if (keys.ArrowDown || keys.s) {
+                playerGroup.position.x -= Math.sin(player.rotation) * moveSpeed;
+                playerGroup.position.z -= Math.cos(player.rotation) * moveSpeed;
+            }
+            
+            // Left/right rotation
+            if (keys.ArrowLeft || keys.a) {
+                player.rotation += player.rotationSpeed;
+            }
+            if (keys.ArrowRight || keys.d) {
+                player.rotation -= player.rotationSpeed;
+            }
+            
+            // Up/down (Q/E keys)
+            if (keys.q) {
+                playerGroup.position.y += moveSpeed * 0.5;
+            }
+            if (keys.e) {
+                playerGroup.position.y -= moveSpeed * 0.5;
+            }
+            
+            isMoving = keys.ArrowUp || keys.ArrowDown || keys.w || keys.s;
         } else {
             // Recharge glide
             if (player.glideCharge < player.maxGlideCharge) {
@@ -2019,7 +2740,7 @@ function initGame() {
         
         playerGroup.rotation.y = player.rotation;
         
-        const isStuck = checkCollisions(prevPos);
+        const isStuck = godMode ? false : checkCollisions(prevPos);
         
         if (isMoving && !isStuck) {
             Audio.startBikeSound();
@@ -2027,13 +2748,15 @@ function initGame() {
             Audio.stopBikeSound();
         }
         
-        const terrainHeight = getTerrainHeight(playerGroup.position.x, playerGroup.position.z);
-        if (player.isGliding) {
-            const groundHeight = 0.1;
-            const currentHeight = groundHeight + (player.glideHeight - groundHeight) * player.glideLiftProgress;
-            playerGroup.position.y = terrainHeight + currentHeight;
-        } else {
-            playerGroup.position.y = terrainHeight + 0.1;
+        if (!godMode) {
+            const terrainHeight = getTerrainHeight(playerGroup.position.x, playerGroup.position.z);
+            if (player.isGliding) {
+                const groundHeight = 0.1;
+                const currentHeight = groundHeight + (player.glideHeight - groundHeight) * player.glideLiftProgress;
+                playerGroup.position.y = terrainHeight + currentHeight;
+            } else {
+                playerGroup.position.y = terrainHeight + 0.1;
+            }
         }
         
         const cameraDistance = 8;
@@ -2049,7 +2772,6 @@ function initGame() {
         
         // Client syncs their player state to host (host handles full sync separately)
         if (multiplayerManager && multiplayerManager.isClient && multiplayerManager.isConnected()) {
-            console.log('Client sending playerState, isClient:', multiplayerManager.isClient, 'isConnected:', multiplayerManager.isConnected());
             multiplayerManager.sendPlayerState({
                 position: playerGroup.position,
                 rotation: player.rotation,
@@ -2071,9 +2793,9 @@ function initGame() {
                 bullet.mesh.position.z - bullet.startPos.z
             ).length();
             
-            const maxDistance = difficulty === 'hard' ? 35 : 150;
+            const maxDistance = difficulty === 'hard' ? 35 : GAME_CONFIG.WORLD_BOUND;
             
-            if (Math.abs(bullet.mesh.position.x) > 150 || Math.abs(bullet.mesh.position.z) > 150 || distFromStart > maxDistance) {
+            if (Math.abs(bullet.mesh.position.x) > GAME_CONFIG.WORLD_BOUND || Math.abs(bullet.mesh.position.z) > GAME_CONFIG.WORLD_BOUND || distFromStart > maxDistance) {
                 scene.remove(bullet.mesh);
                 bullets.splice(i, 1);
                 continue;
@@ -2112,6 +2834,43 @@ function initGame() {
                         bulletHit = true;
                         break;
                     }
+                }
+            }
+            
+            // Check collision with dragon
+            if (!bulletHit && dragon && dragon.alive) {
+                const dist = bullet.mesh.position.distanceTo(dragon.mesh.position);
+                if (dist < 8) {
+                    // Visual feedback
+                    createExplosion(bullet.mesh.position.x, bullet.mesh.position.y, bullet.mesh.position.z);
+                    
+                    // Only host applies damage
+                    if (!multiplayerManager || !multiplayerManager.isConnected() || multiplayerManager.isHost) {
+                        dragon.health--;
+                        if (dragon.health <= 0 && dragon.alive) {
+                            dragon.alive = false;
+                            dragon.deathTime = Date.now();
+                            Audio.playGoblinDeathSound();
+                            
+                            // Create multiple large explosions
+                            for (let i = 0; i < 8; i++) {
+                                const offsetX = (Math.random() - 0.5) * 10;
+                                const offsetY = Math.random() * 8;
+                                const offsetZ = (Math.random() - 0.5) * 10;
+                                setTimeout(() => {
+                                    createExplosion(
+                                        dragon.mesh.position.x + offsetX,
+                                        dragon.mesh.position.y + offsetY + 2,
+                                        dragon.mesh.position.z + offsetZ
+                                    );
+                                }, i * 150);
+                            }
+                            
+                            // Hide dragon mesh immediately
+                            dragon.mesh.visible = false;
+                        }
+                    }
+                    bulletHit = true;
                 }
             }
             
@@ -2178,6 +2937,24 @@ function initGame() {
         goblins.forEach(gob => {
             if (!gob.alive || gameWon) return;
             
+            // Check if frozen
+            if (gob.frozen) {
+                if (Date.now() < gob.frozenUntil) {
+                    return; // Skip update while frozen
+                } else {
+                    // Unfreeze
+                    gob.frozen = false;
+                    gob.frozenUntil = 0;
+                    // Remove blue tint
+                    gob.mesh.children.forEach(child => {
+                        if (child.material && child.material.emissive !== undefined) {
+                            child.material.emissive = new THREE.Color(0x000000);
+                            child.material.emissiveIntensity = 0;
+                        }
+                    });
+                }
+            }
+            
             // Initialize velocity tracking if not present
             if (!gob.velocity) {
                 gob.velocity = { x: 0, z: 0 };
@@ -2192,8 +2969,15 @@ function initGame() {
                 Math.pow(playerGroup.position.z - gob.mesh.position.z, 2)
             );
             
+            // Check if player is in ice berg (safe zone)
+            const playerInIceBerg = Math.sqrt(
+                Math.pow(playerGroup.position.x - iceBerg.position.x, 2) +
+                Math.pow(playerGroup.position.z - iceBerg.position.z, 2)
+            ) < iceBerg.radius;
+            
             let targetPlayer = playerGroup;
             let distToTarget = distToPlayer;
+            let targetInIceBerg = playerInIceBerg;
             
             // If multiplayer and other player is visible, check distance to them too
             if (multiplayerManager && multiplayerManager.isConnected() && otherPlayerMesh.visible) {
@@ -2202,14 +2986,30 @@ function initGame() {
                     Math.pow(otherPlayerMesh.position.z - gob.mesh.position.z, 2)
                 );
                 
-                // Chase the closer player
-                if (distToOther < distToTarget) {
+                const otherInIceBerg = Math.sqrt(
+                    Math.pow(otherPlayerMesh.position.x - iceBerg.position.x, 2) +
+                    Math.pow(otherPlayerMesh.position.z - iceBerg.position.z, 2)
+                ) < iceBerg.radius;
+                
+                // Chase the closer player who is NOT in ice berg
+                if (!playerInIceBerg && (otherInIceBerg || distToPlayer < distToOther)) {
+                    targetPlayer = playerGroup;
+                    distToTarget = distToPlayer;
+                    targetInIceBerg = playerInIceBerg;
+                } else if (!otherInIceBerg) {
                     targetPlayer = otherPlayerMesh;
                     distToTarget = distToOther;
+                    targetInIceBerg = otherInIceBerg;
+                } else {
+                    // Both in ice berg, don't chase anyone
+                    return;
                 }
+            } else if (playerInIceBerg) {
+                // Single player in ice berg, don't chase
+                return;
             }
             
-            if (gob.isGuardian && distToTarget < 25) {
+            if (gob.isGuardian && distToTarget < 25 && !targetInIceBerg) {
                 gob.isChasing = true;
             }
             
@@ -2414,12 +3214,12 @@ function initGame() {
                 continue;
             }
             
-            // Remove arrows that travel too far (150 units to match world bounds)
+            // Remove arrows that travel too far
             const distFromOrigin = Math.sqrt(
                 arrow.mesh.position.x * arrow.mesh.position.x +
                 arrow.mesh.position.z * arrow.mesh.position.z
             );
-            if (distFromOrigin > 150) {
+            if (distFromOrigin > GAME_CONFIG.WORLD_BOUND) {
                 scene.remove(arrow.mesh);
                 guardianArrows.splice(i, 1);
             }
@@ -2430,6 +3230,24 @@ function initGame() {
         const now = Date.now();
         
         birds.forEach(bird => {
+            // Check if frozen
+            if (bird.frozen) {
+                if (Date.now() < bird.frozenUntil) {
+                    return; // Skip update while frozen
+                } else {
+                    // Unfreeze
+                    bird.frozen = false;
+                    bird.frozenUntil = 0;
+                    // Remove blue tint
+                    bird.mesh.children.forEach(child => {
+                        if (child.material && child.material.emissive !== undefined) {
+                            child.material.emissive = new THREE.Color(0x000000);
+                            child.material.emissiveIntensity = 0;
+                        }
+                    });
+                }
+            }
+            
             // Circle around center point
             bird.angle += bird.speed;
             bird.mesh.position.x = bird.centerX + Math.cos(bird.angle) * bird.radius;
@@ -2449,7 +3267,13 @@ function initGame() {
             bird.leftWing.rotation.z = flapAngle;
             bird.rightWing.rotation.z = -flapAngle;
             
-            // Drop bomb if player is close
+            // Check if players are in ice berg (safe zone)
+            const playerInIceBerg = Math.sqrt(
+                Math.pow(playerGroup.position.x - iceBerg.position.x, 2) +
+                Math.pow(playerGroup.position.z - iceBerg.position.z, 2)
+            ) < iceBerg.radius;
+            
+            // Drop bomb if player is close (and not in ice berg)
             const distToPlayer = new THREE.Vector2(
                 playerGroup.position.x - bird.mesh.position.x,
                 playerGroup.position.z - bird.mesh.position.z
@@ -2457,7 +3281,13 @@ function initGame() {
             
             // Also check distance to other player in multiplayer
             let distToOtherPlayer = Infinity;
+            let otherInIceBerg = true;
             if (multiplayerManager && multiplayerManager.isConnected() && otherPlayerMesh.visible) {
+                otherInIceBerg = Math.sqrt(
+                    Math.pow(otherPlayerMesh.position.x - iceBerg.position.x, 2) +
+                    Math.pow(otherPlayerMesh.position.z - iceBerg.position.z, 2)
+                ) < iceBerg.radius;
+                
                 distToOtherPlayer = new THREE.Vector2(
                     otherPlayerMesh.position.x - bird.mesh.position.x,
                     otherPlayerMesh.position.z - bird.mesh.position.z
@@ -2465,8 +3295,9 @@ function initGame() {
             }
             
             const closestPlayerDist = Math.min(distToPlayer, distToOtherPlayer);
+            const anyPlayerInRange = (!playerInIceBerg && distToPlayer < 20) || (!otherInIceBerg && distToOtherPlayer < 20);
             
-            if (closestPlayerDist < 20 && now - bird.lastBombTime > 2500) {
+            if (anyPlayerInRange && now - bird.lastBombTime > 2500) {
                 // Drop bomb
                 const bombGeometry = new THREE.SphereGeometry(0.3, 8, 8);
                 const bombMaterial = new THREE.MeshLambertMaterial({ color: 0x000000 });
@@ -2562,6 +3393,263 @@ function initGame() {
         }
     }
 
+    function updateDragonVisuals() {
+        if (!dragon) return;
+        
+        const now = Date.now();
+        
+        // Wing flap animation
+        dragon.wingFlapPhase += 0.15;
+        const flapAngle = Math.sin(dragon.wingFlapPhase) * 0.5;
+        dragon.leftWing.rotation.x = flapAngle;
+        dragon.rightWing.rotation.x = -flapAngle;
+        dragon.leftWing.rotation.z = 0.3 + flapAngle * 0.3;
+        dragon.rightWing.rotation.z = -0.3 - flapAngle * 0.3;
+        
+        // Tail sway
+        if (dragon.tailSegments) {
+            dragon.tailSegments.forEach((segment, i) => {
+                const sway = Math.sin(now * 0.003 + i * 0.5) * (0.15 + i * 0.05);
+                segment.rotation.y = sway;
+            });
+        }
+    }
+
+    function updateDragon() {
+        if (!dragon) return;
+        
+        const now = Date.now();
+        
+        // Handle death - dragon is hidden after explosion
+        if (!dragon.alive) {
+            return; // Don't update behavior when dead
+        }
+        
+        // Find closest player for targeting
+        const distToPlayer = Math.sqrt(
+            (playerGroup.position.x - dragon.mesh.position.x) ** 2 +
+            (playerGroup.position.z - dragon.mesh.position.z) ** 2
+        );
+        
+        let targetPlayer = playerGroup;
+        let targetDist = distToPlayer;
+        
+        if (multiplayerManager && multiplayerManager.isConnected() && otherPlayerMesh.visible) {
+            const distToOther = Math.sqrt(
+                (otherPlayerMesh.position.x - dragon.mesh.position.x) ** 2 +
+                (otherPlayerMesh.position.z - dragon.mesh.position.z) ** 2
+            );
+            if (distToOther < targetDist) {
+                targetPlayer = otherPlayerMesh;
+                targetDist = distToOther;
+            }
+        }
+        
+        // Look at the closest player (add Math.PI/2 offset to fix 90-degree rotation)
+        const angleToPlayer = Math.atan2(
+            targetPlayer.position.x - dragon.mesh.position.x,
+            targetPlayer.position.z - dragon.mesh.position.z
+        );
+        dragon.mesh.rotation.y = angleToPlayer - Math.PI / 2;
+        
+        // Make eyes look at player
+        const eyeOffsetX = (targetPlayer.position.x - dragon.mesh.position.x) * 0.02;
+        const eyeOffsetZ = (targetPlayer.position.z - dragon.mesh.position.z) * 0.02;
+        dragon.leftPupil.position.x = 14 + Math.min(Math.max(eyeOffsetX, -0.2), 0.2);
+        dragon.leftPupil.position.z = 1.2 + Math.min(Math.max(eyeOffsetZ, -0.2), 0.2);
+        dragon.rightPupil.position.x = 14 + Math.min(Math.max(eyeOffsetX, -0.2), 0.2);
+        dragon.rightPupil.position.z = -1.2 + Math.min(Math.max(eyeOffsetZ, -0.2), 0.2);
+        
+        // Check collision damage with host player (host only handles damage)
+        if (distToPlayer < 5 && !godMode) { // Dragon body radius ~5 units
+            if (now - lastDamageTime > damageCooldown) {
+                playerHealth--;
+                lastDamageTime = now;
+                damageFlashTime = now;
+                Audio.playStuckSound();
+                
+                if (playerHealth <= 0) {
+                    if (!gameDead) {
+                        gameDead = true;
+                        Audio.stopBackgroundMusic();
+                        Audio.playDeathSound();
+                    }
+                }
+            }
+        }
+        
+        // Check collision damage with other player (multiplayer)
+        if (multiplayerManager && multiplayerManager.isConnected() && otherPlayerMesh.visible) {
+            const distToOther = Math.sqrt(
+                (otherPlayerMesh.position.x - dragon.mesh.position.x) ** 2 +
+                (otherPlayerMesh.position.z - dragon.mesh.position.z) ** 2
+            );
+            
+            if (distToOther < 5) {
+                // Host sends damage event to client
+                if (multiplayerManager.isHost) {
+                    if (now - lastDamageTime > damageCooldown) {
+                        multiplayerManager.sendGameEvent('playerDamage', {});
+                        lastDamageTime = now;
+                    }
+                }
+            }
+        }
+        
+        // Flying behavior - randomly fly up sometimes
+        if (!dragon.isFlying && Math.random() < 0.002) { // 0.2% chance per frame
+            dragon.isFlying = true;
+            dragon.flyStartTime = now;
+            dragon.flyDuration = 3000 + Math.random() * 2000; // 3-5 seconds
+            dragon.groundY = dragon.mesh.position.y;
+            dragon.flyTargetY = dragon.groundY + 15 + Math.random() * 10; // Fly 15-25 units up
+        }
+        
+        // Handle flying state
+        if (dragon.isFlying) {
+            const flyElapsed = now - dragon.flyStartTime;
+            const flyProgress = flyElapsed / dragon.flyDuration;
+            
+            if (flyProgress < 0.3) {
+                // Ascending
+                const ascendProgress = flyProgress / 0.3;
+                dragon.mesh.position.y = dragon.groundY + (dragon.flyTargetY - dragon.groundY) * ascendProgress;
+            } else if (flyProgress < 0.7) {
+                // Flying at height
+                dragon.mesh.position.y = dragon.flyTargetY;
+            } else if (flyProgress < 1.0) {
+                // Descending
+                const descendProgress = (flyProgress - 0.7) / 0.3;
+                dragon.mesh.position.y = dragon.flyTargetY - (dragon.flyTargetY - dragon.groundY) * descendProgress;
+            } else {
+                // Landing complete
+                dragon.mesh.position.y = dragon.groundY;
+                dragon.isFlying = false;
+            }
+        }
+        
+        // Patrol movement
+        dragon.mesh.position.x += dragon.speed * dragon.direction;
+        
+        if (dragon.mesh.position.x <= dragon.patrolLeft) {
+            dragon.direction = 1;
+        } else if (dragon.mesh.position.x >= dragon.patrolRight) {
+            dragon.direction = -1;
+        }
+        
+        // Fire fireballs at players
+        if (now - dragon.lastFireTime > dragon.fireInterval) {            let targetPlayer = playerGroup;
+            let targetDist = distToPlayer;
+            
+            if (multiplayerManager && multiplayerManager.isConnected() && otherPlayerMesh.visible) {
+                const distToOther = Math.sqrt(
+                    (otherPlayerMesh.position.x - dragon.mesh.position.x) ** 2 +
+                    (otherPlayerMesh.position.z - dragon.mesh.position.z) ** 2
+                );
+                if (distToOther < targetDist) {
+                    targetPlayer = otherPlayerMesh;
+                    targetDist = distToOther;
+                }
+            }
+            
+            // Only fire if player is in range
+            if (targetDist < 100) {
+                const fireballGeometry = new THREE.SphereGeometry(0.8, 8, 8);
+                const fireballMaterial = new THREE.MeshBasicMaterial({ 
+                    color: 0xFF4500,
+                    emissive: 0xFF4500,
+                    emissiveIntensity: 1.0
+                });
+                const fireballMesh = new THREE.Mesh(fireballGeometry, fireballMaterial);
+                fireballMesh.position.copy(dragon.mesh.position);
+                fireballMesh.position.x += dragon.direction > 0 ? 14 : -14;
+                fireballMesh.position.y += 1;
+                scene.add(fireballMesh);
+                
+                // Calculate direction to target (including Y axis)
+                const dirX = targetPlayer.position.x - fireballMesh.position.x;
+                const dirY = targetPlayer.position.y - fireballMesh.position.y;
+                const dirZ = targetPlayer.position.z - fireballMesh.position.z;
+                const length = Math.sqrt(dirX * dirX + dirY * dirY + dirZ * dirZ);
+                
+                fireballs.push({
+                    mesh: fireballMesh,
+                    velocity: new THREE.Vector3(dirX / length * 0.4, dirY / length * 0.4, dirZ / length * 0.4),
+                    radius: 1.5,
+                    damage: 2
+                });
+                
+                dragon.lastFireTime = now;
+                Audio.playExplosionSound();
+            }
+        }
+    }
+
+    function updateFireballs() {
+        // Update fireballs
+        for (let i = fireballs.length - 1; i >= 0; i--) {
+            const fireball = fireballs[i];
+            fireball.mesh.position.add(fireball.velocity);
+            
+            // Check collision with player
+            const distToPlayer = new THREE.Vector2(
+                playerGroup.position.x - fireball.mesh.position.x,
+                playerGroup.position.z - fireball.mesh.position.z
+            ).length();
+            
+            if (distToPlayer < fireball.radius) {
+                if (!godMode) {
+                    playerHealth -= fireball.damage;
+                    damageFlashTime = Date.now();
+                    if (playerHealth <= 0) {
+                        if (!gameDead) {
+                            gameDead = true;
+                            Audio.stopBackgroundMusic();
+                            Audio.playDeathSound();
+                        }
+                    } else {
+                        Audio.playStuckSound();
+                    }
+                }
+                
+                createExplosion(fireball.mesh.position.x, fireball.mesh.position.y, fireball.mesh.position.z);
+                scene.remove(fireball.mesh);
+                fireballs.splice(i, 1);
+                continue;
+            }
+            
+            // Check collision with other player (multiplayer)
+            if (multiplayerManager && multiplayerManager.isConnected() && otherPlayerMesh.visible) {
+                const distToOther = new THREE.Vector2(
+                    otherPlayerMesh.position.x - fireball.mesh.position.x,
+                    otherPlayerMesh.position.z - fireball.mesh.position.z
+                ).length();
+                
+                if (distToOther < fireball.radius) {
+                    // Let host handle damage
+                    if (multiplayerManager.isHost) {
+                        // Notify client of damage
+                        multiplayerManager.sendGameEvent('playerDamage', {});
+                    }
+                    createExplosion(fireball.mesh.position.x, fireball.mesh.position.y, fireball.mesh.position.z);
+                    scene.remove(fireball.mesh);
+                    fireballs.splice(i, 1);
+                    continue;
+                }
+            }
+            
+            // Remove if out of bounds or hit ground
+            const terrainHeight = getTerrainHeight(fireball.mesh.position.x, fireball.mesh.position.z);
+            if (fireball.mesh.position.y < terrainHeight || 
+                Math.abs(fireball.mesh.position.x) > GAME_CONFIG.WORLD_BOUND ||
+                Math.abs(fireball.mesh.position.z) > GAME_CONFIG.WORLD_BOUND) {
+                createExplosion(fireball.mesh.position.x, terrainHeight, fireball.mesh.position.z);
+                scene.remove(fireball.mesh);
+                fireballs.splice(i, 1);
+            }
+        }
+    }
+
     function checkCollisions(prevPos) {
         let isStuck = false;
         const px = playerGroup.position.x;
@@ -2616,13 +3704,29 @@ function initGame() {
         const now = Date.now();
         goblins.forEach(gob => {
             if (!gob.alive) return;
+            
+            // Check if frozen
+            if (gob.frozen && Date.now() < gob.frozenUntil) {
+                return; // Skip damage while frozen
+            }
+            
             const distToGob = new THREE.Vector2(
                 playerGroup.position.x - gob.mesh.position.x,
                 playerGroup.position.z - gob.mesh.position.z
             ).length();
             
+            // Check if player is in ice berg (safe zone)
+            const playerInIceBerg = Math.sqrt(
+                Math.pow(playerGroup.position.x - iceBerg.position.x, 2) +
+                Math.pow(playerGroup.position.z - iceBerg.position.z, 2)
+            ) < iceBerg.radius;
+            
+            if (playerInIceBerg) {
+                return; // Don't damage player in ice berg
+            }
+            
             if (distToGob < gob.radius + 1) {
-                if (now - lastDamageTime > damageCooldown) {
+                if (!godMode && now - lastDamageTime > damageCooldown) {
                     // Trigger giant attack animation and sound BEFORE damage
                     if (gob.isGiant) {
                         gob.isAttacking = true;
@@ -2648,7 +3752,7 @@ function initGame() {
             }
             
             // Update giant attack animation
-            if (gob.isGiant && gob.isAttacking) {
+            if (gob.isGiant && gob.isAttacking && !gob.frozen) {
                 gob.attackAnimationProgress += 0.12;
                 
                 // Extra camera shake during attack
@@ -2845,6 +3949,24 @@ function initGame() {
             }
         }
         
+        // Ice power collection
+        if (!icePowerCollected) {
+            const iceDist = Math.sqrt(
+                (px - iceBerg.position.x) ** 2 +
+                (pz - iceBerg.position.z) ** 2
+            );
+            if (iceDist < iceBerg.powerRadius) {
+                icePowerCollected = true;
+                hasIcePower = true;
+                Audio.playCollectSound();
+                
+                // Notify other player in multiplayer
+                if (multiplayerManager && multiplayerManager.isConnected()) {
+                    multiplayerManager.sendGameEvent('icePowerCollected', {});
+                }
+            }
+        }
+        
         // Check world kite collection
         if (!worldKiteCollected) {
             const kiteDistSq = (px - worldKiteGroup.position.x) ** 2 + (pz - worldKiteGroup.position.z) ** 2;
@@ -2938,6 +4060,8 @@ function initGame() {
         lastDamageTime = 0;
         bridgeRepaired = false;
         materialsCollected = 0;
+        hasIcePower = false;
+        icePowerCollected = false;
         bridgeObj.mesh.visible = false;
         brokenBridgeGroup.visible = true;
         
@@ -3012,13 +4136,31 @@ function initGame() {
             hudCtx.fillStyle = '#000';
         }
         
+        // Ice power status
+        if (hasIcePower) {
+            const now = Date.now();
+            const cooldownRemaining = Math.max(0, icePowerCooldown - (now - lastIcePowerTime));
+            if (cooldownRemaining > 0) {
+                hudCtx.fillStyle = '#666';
+                hudCtx.fillText('Eis-Kraft: ' + Math.ceil(cooldownRemaining / 1000) + 's', 10, 155);
+            } else {
+                hudCtx.fillStyle = '#00BFFF';
+                hudCtx.fillText('Eis-Kraft: Drücke E zum Einfrieren!', 10, 155);
+            }
+            hudCtx.fillStyle = '#000';
+        } else if (!icePowerCollected) {
+            hudCtx.fillStyle = '#87CEEB';
+            hudCtx.fillText('Finde den Eisberg für Eis-Kraft!', 10, 155);
+            hudCtx.fillStyle = '#000';
+        }
+        
         if (!bridgeRepaired && materialsCollected >= materialsNeeded) {
             hudCtx.fillStyle = '#FFD700';
-            hudCtx.fillText('Gehe zur Brücke um sie zu reparieren!', 10, 155);
+            hudCtx.fillText('Gehe zur Brücke um sie zu reparieren!', 10, 185);
             hudCtx.fillStyle = '#000';
         } else if (bridgeRepaired) {
             hudCtx.fillStyle = '#00FF00';
-            hudCtx.fillText('Brücke repariert!', 10, 155);
+            hudCtx.fillText('Brücke repariert!', 10, 185);
             hudCtx.fillStyle = '#000';
         }
         
@@ -3151,7 +4293,7 @@ function initGame() {
                 const now = Date.now();
                 let closestGiantDist = Infinity;
                 goblins.forEach(gob => {
-                    if (!gob.alive || !gob.isGiant) return;
+                    if (!gob.alive || !gob.isGiant || gob.frozen) return;
                     const distToGiant = new THREE.Vector2(
                         playerGroup.position.x - gob.mesh.position.x,
                         playerGroup.position.z - gob.mesh.position.z
@@ -3207,6 +4349,7 @@ function initGame() {
                 if (!mathExerciseActive) {
                     updateBullets();
                     updateExplosions();
+                    updateFireballs();
                 }
                 
                 // Only host runs game logic (goblins, arrows, etc.)
@@ -3215,7 +4358,14 @@ function initGame() {
                     updateGuardianArrows();
                     updateBirds();
                     updateBombs();
-                } else {
+                    updateDragon();
+                }
+                
+                // Dragon visuals run on both host and client
+                updateDragonVisuals();
+                
+                // Client does optimistic updates
+                if (multiplayerManager && !multiplayerManager.isHost) {
                     // Client does optimistic goblin position updates
                     goblins.forEach(gob => {
                         if (gob.alive && gob.velocity) {
