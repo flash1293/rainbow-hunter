@@ -6,6 +6,10 @@ let speedMultiplier = 1;
 let gameDead = false;
 let gameWon = false;
 
+// Dragon death shake
+let dragonDeathShakeUntil = 0;
+let dragonDeathShakeIntensity = 0;
+
 // God mode for debugging
 let godMode = false;
 let godModeSpeed = 2.0;
@@ -239,6 +243,8 @@ function initGame() {
     let lastDamageTime = 0;
     const damageCooldown = 2500; // ms between damage from goblins
     let damageFlashTime = 0;
+    let lastClientStateSend = 0;
+    const clientStateSendInterval = 50; // Send client state at 20Hz to match host sync
     
     // Create player
     const playerGroup = new THREE.Group();
@@ -803,9 +809,44 @@ function initGame() {
                 dragon.mesh.rotation.y = data.dragon.rotation;
                 dragon.mesh.rotation.x = data.dragon.rotationX || 0;
                 dragon.mesh.rotation.z = data.dragon.rotationZ || 0;
+                
+                // Handle dragon death on client
+                const wasAlive = dragon.alive;
                 dragon.alive = data.dragon.alive;
                 dragon.health = data.dragon.health;
                 dragon.isFlying = data.dragon.isFlying || false;
+                
+                // If dragon just died, trigger death effects on client
+                if (wasAlive && !dragon.alive && !dragon.deathTime) {
+                    dragon.deathTime = Date.now();
+                    Audio.playGoblinDeathSound();
+                    
+                    // Start massive camera shake
+                    dragonDeathShakeUntil = Date.now() + 1200; // 1.2 seconds
+                    dragonDeathShakeIntensity = 1.0;
+                    
+                    // Capture position before hiding mesh
+                    const deathX = dragon.mesh.position.x;
+                    const deathY = dragon.mesh.position.y;
+                    const deathZ = dragon.mesh.position.z;
+                    
+                    // Create multiple massive explosions
+                    for (let i = 0; i < 8; i++) {
+                        const offsetX = (Math.random() - 0.5) * 12;
+                        const offsetY = Math.random() * 10;
+                        const offsetZ = (Math.random() - 0.5) * 12;
+                        setTimeout(() => {
+                            createDragonExplosion(
+                                deathX + offsetX,
+                                deathY + offsetY + 2,
+                                deathZ + offsetZ
+                            );
+                        }, i * 150);
+                    }
+                    
+                    // Hide dragon mesh immediately
+                    dragon.mesh.visible = false;
+                }
             }
         }
         
@@ -835,7 +876,7 @@ function initGame() {
                         mesh: fireballMesh,
                         velocity: new THREE.Vector3(fbData.vx, fbData.vy, fbData.vz),
                         radius: 1.5,
-                        damage: 2
+                        damage: 1
                     });
                 }
             });
@@ -871,6 +912,8 @@ function initGame() {
             // Update kite state
             if (data.items.kiteCollected && !worldKiteCollected) {
                 worldKiteCollected = true;
+                player.hasKite = true;
+                player.glideCharge = player.maxGlideCharge; // Full charge immediately for other player too
                 scene.remove(worldKiteGroup);
             }
             
@@ -1354,6 +1397,9 @@ function initGame() {
     const heartPositions = [
         { x: -8, z: 50 }, { x: 32, z: -18 }, { x: -48, z: -25 },
         { x: 55, z: 22 }, { x: -22, z: 65 },
+        // Middle area (before second gap and dragon)
+        { x: -80, z: -100 }, { x: 75, z: -110 }, { x: 0, z: -120 },
+        { x: -60, z: -140 }, { x: 65, z: -160 },
         // Dragon boss area
         { x: -100, z: -210 }, { x: 95, z: -225 }, { x: -60, z: -240 },
         { x: 70, z: -255 }
@@ -1775,6 +1821,27 @@ function initGame() {
         goblins.push(createGiant(40, -110, 30, 50));
         goblins.push(createGiant(-25, -115, -35, -15));
         
+        // Guardians sprinkled across the far side of the river
+        // Early area (just past the first gap)
+        goblins.push(createGuardianGoblin(-45, -15, -50, -40, 0.012));
+        goblins.push(createGuardianGoblin(50, -25, 45, 55, 0.012));
+        goblins.push(createGuardianGoblin(-15, -40, -20, -10, 0.010));
+        goblins.push(createGuardianGoblin(35, -55, 30, 40, 0.011));
+        
+        // Middle area (before second gap and dragon)
+        goblins.push(createGuardianGoblin(-70, -95, -75, -65, 0.013));
+        goblins.push(createGuardianGoblin(60, -105, 55, 65, 0.012));
+        goblins.push(createGuardianGoblin(-30, -125, -35, -25, 0.011));
+        goblins.push(createGuardianGoblin(80, -135, 75, 85, 0.013));
+        goblins.push(createGuardianGoblin(-85, -150, -90, -80, 0.012));
+        goblins.push(createGuardianGoblin(40, -165, 35, 45, 0.011));
+        
+        // Dragon area (scattered around the boss)
+        goblins.push(createGuardianGoblin(-90, -195, -95, -85, 0.013));
+        goblins.push(createGuardianGoblin(85, -205, 80, 90, 0.012));
+        goblins.push(createGuardianGoblin(-50, -215, -55, -45, 0.011));
+        goblins.push(createGuardianGoblin(60, -230, 55, 65, 0.013));
+        
         // Guardians in a ring around treasure
         for (let i = 0; i < GAME_CONFIG.HARD_GUARDIAN_COUNT; i++) {
             const angle = (i / GAME_CONFIG.HARD_GUARDIAN_COUNT) * Math.PI * 2;
@@ -2106,13 +2173,15 @@ function initGame() {
             patrolBack: -190,
             direction: 1,
             lastFireTime: Date.now(),
-            fireInterval: 2000, // Fire every 2 seconds
+            fireInterval: 4000, // Fire every 4 seconds
             wingFlapPhase: 0,
             isFlying: false,
             flyStartTime: 0,
             flyDuration: 0,
             flyTargetY: 0,
-            groundY: 0
+            groundY: 0,
+            frozen: false,
+            frozenUntil: 0
         };
     }
     
@@ -2262,6 +2331,48 @@ function initGame() {
             
             scene.add(particle);
             particles.push({ mesh: particle, velocity: velocity, life: 45 });
+        }
+        
+        explosions.push(...particles);
+    }
+
+    // Massive dragon death explosion
+    function createDragonExplosion(x, y, z) {
+        Audio.playBombExplosionSound();
+        
+        const particles = [];
+        const particleCount = 150; // Way more particles
+        
+        for (let i = 0; i < particleCount; i++) {
+            const size = 0.3 + Math.random() * 0.6; // Much bigger particles
+            const particleGeometry = new THREE.SphereGeometry(size, 8, 8);
+            
+            // Intense fire colors
+            let color;
+            const rand = Math.random();
+            if (rand > 0.7) {
+                color = 0xFFFF00; // Bright yellow
+            } else if (rand > 0.4) {
+                color = 0xFF4500; // Orange-red
+            } else if (rand > 0.2) {
+                color = 0xFF8C00; // Dark orange
+            } else {
+                color = 0xFF0000; // Pure red
+            }
+            
+            const particleMaterial = new THREE.MeshBasicMaterial({ color: color });
+            const particle = new THREE.Mesh(particleGeometry, particleMaterial);
+            particle.position.set(x, y, z);
+            
+            const speed = 0.5 + Math.random() * 1.2; // Much faster
+            const velocity = new THREE.Vector3(
+                (Math.random() - 0.5) * speed,
+                Math.random() * speed,
+                (Math.random() - 0.5) * speed
+            );
+            
+            scene.add(particle);
+            particles.push({ mesh: particle, velocity: velocity, life: 60 }); // Longer life
         }
         
         explosions.push(...particles);
@@ -2477,6 +2588,27 @@ function initGame() {
             }
         });
         
+        // Freeze dragon (can still move and damage, just can't fire)
+        // Use larger radius for dragon since it's a big boss
+        if (dragon && dragon.alive) {
+            const dist = Math.sqrt(
+                (dragon.mesh.position.x - playerPos.x) ** 2 +
+                (dragon.mesh.position.z - playerPos.z) ** 2
+            );
+            if (dist <= freezeRadius + 15) { // Extra 15 units for dragon's size
+                dragon.frozen = true;
+                dragon.frozenUntil = now + freezeDuration;
+                // Apply blue tint to dragon
+                dragon.mesh.children.forEach(child => {
+                    if (child.material && child.material.emissive !== undefined) {
+                        child.material.emissive = new THREE.Color(0x0088FF);
+                        child.material.emissiveIntensity = 0.5;
+                    }
+                });
+                createFreezeEffect(dragon.mesh.position.x, dragon.mesh.position.y + 5, dragon.mesh.position.z);
+            }
+        }
+        
         // Send ice power activation to other player in multiplayer
         if (multiplayerManager && multiplayerManager.isConnected()) {
             multiplayerManager.sendGameEvent('icePowerActivated', {
@@ -2618,6 +2750,26 @@ function initGame() {
                         createFreezeEffect(bird.mesh.position.x, bird.mesh.position.y, bird.mesh.position.z);
                     }
                 });
+                
+                // Freeze dragon (can still move and damage, just can't fire)
+                if (dragon && dragon.alive) {
+                    const dist = Math.sqrt(
+                        (dragon.mesh.position.x - playerPos.x) ** 2 +
+                        (dragon.mesh.position.z - playerPos.z) ** 2
+                    );
+                    if (dist <= freezeRadius + 15) { // Extra 15 units for dragon's size
+                        dragon.frozen = true;
+                        dragon.frozenUntil = now + freezeDuration;
+                        // Apply blue tint to dragon
+                        dragon.mesh.children.forEach(child => {
+                            if (child.material && child.material.emissive !== undefined) {
+                                child.material.emissive = new THREE.Color(0x0088FF);
+                                child.material.emissiveIntensity = 0.5;
+                            }
+                        });
+                        createFreezeEffect(dragon.mesh.position.x, dragon.mesh.position.y + 5, dragon.mesh.position.z);
+                    }
+                }
             }
         } else if (eventType === 'gameRestart') {
             // Host requested game restart
@@ -2770,15 +2922,19 @@ function initGame() {
         camera.position.z = playerGroup.position.z + cameraOffsetZ;
         camera.lookAt(playerGroup.position.x, playerGroup.position.y, playerGroup.position.z);
         
-        // Client syncs their player state to host (host handles full sync separately)
+        // Client syncs their player state to host (throttled to 20Hz to reduce network traffic)
         if (multiplayerManager && multiplayerManager.isClient && multiplayerManager.isConnected()) {
-            multiplayerManager.sendPlayerState({
-                position: playerGroup.position,
-                rotation: player.rotation,
-                health: playerHealth,
-                isGliding: player.isGliding,
-                glideLiftProgress: player.glideLiftProgress
-            });
+            const now = Date.now();
+            if (now - lastClientStateSend >= clientStateSendInterval) {
+                multiplayerManager.sendPlayerState({
+                    position: playerGroup.position,
+                    rotation: player.rotation,
+                    health: playerHealth,
+                    isGliding: player.isGliding,
+                    glideLiftProgress: player.glideLiftProgress
+                });
+                lastClientStateSend = now;
+            }
         }
     }
 
@@ -2852,16 +3008,25 @@ function initGame() {
                             dragon.deathTime = Date.now();
                             Audio.playGoblinDeathSound();
                             
-                            // Create multiple large explosions
+                            // Start massive camera shake
+                            dragonDeathShakeUntil = Date.now() + 1200; // 1.2 seconds
+                            dragonDeathShakeIntensity = 1.0;
+                            
+                            // Capture position before hiding mesh
+                            const deathX = dragon.mesh.position.x;
+                            const deathY = dragon.mesh.position.y;
+                            const deathZ = dragon.mesh.position.z;
+                            
+                            // Create multiple massive explosions
                             for (let i = 0; i < 8; i++) {
-                                const offsetX = (Math.random() - 0.5) * 10;
-                                const offsetY = Math.random() * 8;
-                                const offsetZ = (Math.random() - 0.5) * 10;
+                                const offsetX = (Math.random() - 0.5) * 12;
+                                const offsetY = Math.random() * 10;
+                                const offsetZ = (Math.random() - 0.5) * 12;
                                 setTimeout(() => {
-                                    createExplosion(
-                                        dragon.mesh.position.x + offsetX,
-                                        dragon.mesh.position.y + offsetY + 2,
-                                        dragon.mesh.position.z + offsetZ
+                                    createDragonExplosion(
+                                        deathX + offsetX,
+                                        deathY + offsetY + 2,
+                                        deathZ + offsetZ
                                     );
                                 }, i * 150);
                             }
@@ -3398,6 +3563,18 @@ function initGame() {
         
         const now = Date.now();
         
+        // Check if freeze effect should end
+        if (dragon.frozen && now >= dragon.frozenUntil) {
+            dragon.frozen = false;
+            // Remove blue tint
+            dragon.mesh.children.forEach(child => {
+                if (child.material && child.material.emissive !== undefined) {
+                    child.material.emissive = new THREE.Color(0x000000);
+                    child.material.emissiveIntensity = 0;
+                }
+            });
+        }
+        
         // Wing flap animation
         dragon.wingFlapPhase += 0.15;
         const flapAngle = Math.sin(dragon.wingFlapPhase) * 0.5;
@@ -3497,7 +3674,7 @@ function initGame() {
         }
         
         // Flying behavior - randomly fly up sometimes
-        if (!dragon.isFlying && Math.random() < 0.002) { // 0.2% chance per frame
+        if (!dragon.isFlying && Math.random() < 0.0005) { // 0.05% chance per frame (4x less frequent)
             dragon.isFlying = true;
             dragon.flyStartTime = now;
             dragon.flyDuration = 3000 + Math.random() * 2000; // 3-5 seconds
@@ -3537,8 +3714,8 @@ function initGame() {
             dragon.direction = -1;
         }
         
-        // Fire fireballs at players
-        if (now - dragon.lastFireTime > dragon.fireInterval) {            let targetPlayer = playerGroup;
+        // Fire fireballs at players (not when frozen)
+        if (!dragon.frozen && now - dragon.lastFireTime > dragon.fireInterval) {            let targetPlayer = playerGroup;
             let targetDist = distToPlayer;
             
             if (multiplayerManager && multiplayerManager.isConnected() && otherPlayerMesh.visible) {
@@ -3576,7 +3753,7 @@ function initGame() {
                     mesh: fireballMesh,
                     velocity: new THREE.Vector3(dirX / length * 0.4, dirY / length * 0.4, dirZ / length * 0.4),
                     radius: 1.5,
-                    damage: 2
+                    damage: 1
                 });
                 
                 dragon.lastFireTime = now;
@@ -3973,6 +4150,7 @@ function initGame() {
             if (kiteDistSq < 4) {
                 worldKiteCollected = true;
                 player.hasKite = true;
+                player.glideCharge = player.maxGlideCharge; // Full charge immediately
                 scene.remove(worldKiteGroup);
                 Audio.playCollectSound();
                 // Note: Kite state is synced via fullSync, not individual events
@@ -4291,34 +4469,46 @@ function initGame() {
                 
                 // Camera shake when close to giant (runs every frame)
                 const now = Date.now();
-                let closestGiantDist = Infinity;
-                goblins.forEach(gob => {
-                    if (!gob.alive || !gob.isGiant || gob.frozen) return;
-                    const distToGiant = new THREE.Vector2(
-                        playerGroup.position.x - gob.mesh.position.x,
-                        playerGroup.position.z - gob.mesh.position.z
-                    ).length();
-                    
-                    closestGiantDist = Math.min(closestGiantDist, distToGiant);
-                    
-                    if (distToGiant < 50) {
-                        const shakeIntensity = (1 - distToGiant / 50) * 0.3;
-                        const shakeSpeed = now * 0.015;
-                        camera.position.x += Math.sin(shakeSpeed * 3.7) * shakeIntensity;
-                        camera.position.y += Math.sin(shakeSpeed * 4.3) * shakeIntensity;
-                        camera.position.z += Math.sin(shakeSpeed * 3.1) * shakeIntensity;
-                    }
-                });
                 
-                // Controller rumble when close to giant
-                if (gamepad && closestGiantDist < 50) {
-                    const rumbleIntensity = (1 - closestGiantDist / 50) * 0.8;
-                    if (gamepad.vibrationActuator) {
-                        gamepad.vibrationActuator.playEffect('dual-rumble', {
-                            duration: 100,
-                            weakMagnitude: rumbleIntensity * 0.5,
-                            strongMagnitude: rumbleIntensity
-                        });
+                // Dragon death shake (overrides giant shake)
+                if (now < dragonDeathShakeUntil) {
+                    const progress = (dragonDeathShakeUntil - now) / 1200; // 0 to 1
+                    const shakeIntensity = dragonDeathShakeIntensity * progress;
+                    const shakeSpeed = now * 0.03; // Fast shake
+                    camera.position.x += Math.sin(shakeSpeed * 5.7) * shakeIntensity;
+                    camera.position.y += Math.sin(shakeSpeed * 6.3) * shakeIntensity;
+                    camera.position.z += Math.sin(shakeSpeed * 4.9) * shakeIntensity;
+                } else {
+                    // Regular giant shake
+                    let closestGiantDist = Infinity;
+                    goblins.forEach(gob => {
+                        if (!gob.alive || !gob.isGiant || gob.frozen) return;
+                        const distToGiant = new THREE.Vector2(
+                            playerGroup.position.x - gob.mesh.position.x,
+                            playerGroup.position.z - gob.mesh.position.z
+                        ).length();
+                        
+                        closestGiantDist = Math.min(closestGiantDist, distToGiant);
+                        
+                        if (distToGiant < 50) {
+                            const shakeIntensity = (1 - distToGiant / 50) * 0.3;
+                            const shakeSpeed = now * 0.015;
+                            camera.position.x += Math.sin(shakeSpeed * 3.7) * shakeIntensity;
+                            camera.position.y += Math.sin(shakeSpeed * 4.3) * shakeIntensity;
+                            camera.position.z += Math.sin(shakeSpeed * 3.1) * shakeIntensity;
+                        }
+                    });
+                    
+                    // Controller rumble when close to giant
+                    if (gamepad && closestGiantDist < 50) {
+                        const rumbleIntensity = (1 - closestGiantDist / 50) * 0.8;
+                        if (gamepad.vibrationActuator) {
+                            gamepad.vibrationActuator.playEffect('dual-rumble', {
+                                duration: 100,
+                                weakMagnitude: rumbleIntensity * 0.5,
+                                strongMagnitude: rumbleIntensity
+                            });
+                        }
                     }
                 }
                 
@@ -4327,8 +4517,8 @@ function initGame() {
                     // Only apply optimistic updates if velocity is significant
                     const velocityMag = Math.sqrt(otherPlayerVelocity.x * otherPlayerVelocity.x + otherPlayerVelocity.z * otherPlayerVelocity.z);
                     if (velocityMag > 0.001) {
-                        // Lighter dampening for smoother prediction
-                        const dampening = 0.15;
+                        // Very light dampening for smoother prediction
+                        const dampening = 0.08;
                         otherPlayerMesh.position.x += otherPlayerVelocity.x * dampening;
                         otherPlayerMesh.position.z += otherPlayerVelocity.z * dampening;
                     }
