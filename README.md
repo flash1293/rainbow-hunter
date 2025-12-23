@@ -4,6 +4,29 @@ A 3D bicycle adventure game built with Three.js where you navigate terrain, coll
 
 ![Game Screenshot](screenshot.png)
 
+## 🎮 How to Play
+
+### Play Now (Easiest Way)
+**Just click this link to play instantly in your browser:**
+
+👉 **[Play Fahrrad-Abenteuer Now!](https://raw.githack.com/flash1293/rainbow-hunter/main/index.html)** 👈
+
+No installation, no setup needed!
+
+### Play Locally
+Download or clone this repository and open `index.html` in any modern web browser. That's it!
+
+```bash
+# Clone the repo
+git clone https://github.com/flash1293/rainbow-hunter.git
+cd rainbow-hunter
+
+# Open index.html in your browser
+# Or serve with a local server (for best results):
+python -m http.server 8000
+# Then visit http://localhost:8000
+```
+
 ## Project Structure
 
 ```
@@ -147,13 +170,6 @@ The codebase has been restructured from a single 2500-line file into modular ES6
 
 **Note**: The original `game.js` is kept as a backup. The new modular version uses `js/main.js` as the entry point.
 
-To run locally, serve the files with any HTTP server (ES6 modules require HTTP/HTTPS protocol):
-```bash
-python -m http.server 8000
-# or
-npx serve
-```
-
 ## Browser Compatibility
 
 Works in all modern browsers that support:
@@ -161,3 +177,5 @@ Works in all modern browsers that support:
 - WebGL
 - Web Audio API
 - Pointer Lock API
+
+Tested on Chrome, Firefox, Safari, and Edge.
