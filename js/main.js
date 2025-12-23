@@ -3768,14 +3768,15 @@ function initGame() {
             const fireball = fireballs[i];
             fireball.mesh.position.add(fireball.velocity);
             
-            // Check collision with player
+            // Check collision with player (only host applies damage)
             const distToPlayer = new THREE.Vector2(
                 playerGroup.position.x - fireball.mesh.position.x,
                 playerGroup.position.z - fireball.mesh.position.z
             ).length();
             
             if (distToPlayer < fireball.radius) {
-                if (!godMode) {
+                // Only host applies damage to host player
+                if (!godMode && (!multiplayerManager || !multiplayerManager.isConnected() || multiplayerManager.isHost)) {
                     playerHealth -= fireball.damage;
                     damageFlashTime = Date.now();
                     if (playerHealth <= 0) {
@@ -3817,7 +3818,22 @@ function initGame() {
             
             // Remove if out of bounds or hit ground
             const terrainHeight = getTerrainHeight(fireball.mesh.position.x, fireball.mesh.position.z);
-            if (fireball.mesh.position.y < terrainHeight || 
+            
+            // Check collision with mountains
+            let hitMountain = false;
+            for (const mtn of MOUNTAINS) {
+                const distToMountain = Math.sqrt(
+                    (fireball.mesh.position.x - mtn.x) ** 2 +
+                    (fireball.mesh.position.z - mtn.z) ** 2
+                );
+                // Mountain radius is half its width
+                if (distToMountain < mtn.width / 2) {
+                    hitMountain = true;
+                    break;
+                }
+            }
+            
+            if (fireball.mesh.position.y < terrainHeight || hitMountain ||
                 Math.abs(fireball.mesh.position.x) > GAME_CONFIG.WORLD_BOUND ||
                 Math.abs(fireball.mesh.position.z) > GAME_CONFIG.WORLD_BOUND) {
                 createExplosion(fireball.mesh.position.x, terrainHeight, fireball.mesh.position.z);
