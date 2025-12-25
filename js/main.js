@@ -14,6 +14,10 @@ let dragonDeathShakeIntensity = 0;
 let godMode = false;
 let godModeSpeed = 2.0;
 
+// Controller state
+let bananaButtonWasPressed = false;
+let bombButtonWasPressed = false;
+
 // Multiplayer
 let multiplayerManager = null;
 let otherPlayerMesh = null;
@@ -1005,7 +1009,7 @@ function initGame() {
         
         // Horizontal rotation
         if (Math.abs(leftStickX) > deadzone) {
-            player.rotation -= leftStickX * 0.015;
+            player.rotation -= leftStickX * 0.03;
         }
         
         // Vertical movement with analog scaling
@@ -1063,11 +1067,41 @@ function initGame() {
             activateIcePower();
         }
         
+        // Circle button (button 1) for banana placement
+        if (!bananaButtonWasPressed && gamepad.buttons[1]?.pressed && hasBananaPower && bananaInventory > 0 && !gameWon && !gameDead) {
+            placeBanana();
+            bananaButtonWasPressed = true;
+        } else if (!gamepad.buttons[1]?.pressed) {
+            bananaButtonWasPressed = false;
+        }
+        
+        // R1/Right Bumper (button 5) for bomb placement
+        if (!bombButtonWasPressed && gamepad.buttons[5]?.pressed && bombInventory > 0 && !gameWon && !gameDead) {
+            placeBomb();
+            bombButtonWasPressed = true;
+        } else if (!gamepad.buttons[5]?.pressed) {
+            bombButtonWasPressed = false;
+        }
+        
         // Options (button 9) for restart
         if (gamepad.buttons[9]?.pressed && (gameWon || gameDead)) {
             resetGame();
         }
     }
+
+    document.addEventListener('keyup', (e) => {
+        if (keys.hasOwnProperty(e.key)) {
+            keys[e.key] = false;
+        }
+        // Reset banana key debounce
+        if (e.key === 'b' || e.key === 'B') {
+            keys.bananaKeyPressed = false;
+        }
+        // Reset bomb key debounce
+        if (e.key === 'x' || e.key === 'X') {
+            keys.bombKeyPressed = false;
+        }
+    });
 
     document.addEventListener('keydown', (e) => {
         if (keys.hasOwnProperty(e.key)) {
@@ -1110,6 +1144,22 @@ function initGame() {
         // Ice power activation
         if ((e.key === 'e' || e.key === 'E') && hasIcePower && !gameWon && !gameDead) {
             activateIcePower();
+            e.preventDefault();
+        }
+        // Banana placement (debounced)
+        if ((e.key === 'b' || e.key === 'B') && hasBananaPower && bananaInventory > 0 && !gameWon && !gameDead) {
+            if (!keys.bananaKeyPressed) {
+                placeBanana();
+                keys.bananaKeyPressed = true;
+            }
+            e.preventDefault();
+        }
+        // Bomb placement (debounced)
+        if ((e.key === 'x' || e.key === 'X') && bombInventory > 0 && !gameWon && !gameDead) {
+            if (!keys.bombKeyPressed) {
+                placeBomb();
+                keys.bombKeyPressed = true;
+            }
             e.preventDefault();
         }
         // God mode toggle
@@ -1390,6 +1440,69 @@ function initGame() {
         ammoGroup.position.set(pos.x, terrainHeight, pos.z);
         scene.add(ammoGroup);
         ammoPickups.push({ mesh: ammoGroup, collected: false, radius: 1.2, amount: 15 });
+    });
+
+    // Bomb pickups
+    const bombPickups = [];
+    const bombPositions = [
+        // Early area
+        { x: -35, z: 30 }, { x: 42, z: -10 }, { x: -18, z: -35 },
+        { x: 30, z: 45 }, { x: -48, z: -18 }, { x: 15, z: -50 },
+        { x: -25, z: 55 }, { x: 50, z: 25 }, { x: -55, z: -45 },
+        // Middle area
+        { x: -65, z: -110 }, { x: 55, z: -115 }, { x: -25, z: -140 },
+        { x: 70, z: -155 }, { x: -80, z: -125 }, { x: 35, z: -130 },
+        { x: -45, z: -165 }, { x: 60, z: -145 },
+        // Dragon area
+        { x: -95, z: -200 }, { x: 90, z: -210 }, { x: -60, z: -225 },
+        { x: 75, z: -195 }, { x: -110, z: -215 }, { x: 105, z: -230 },
+        { x: -40, z: -240 }, { x: 50, z: -220 }
+    ];
+
+    bombPositions.forEach(pos => {
+        const bombGroup = new THREE.Group();
+        
+        // Main sphere (black bomb)
+        const sphereGeometry = new THREE.SphereGeometry(0.4, 16, 16);
+        const sphereMaterial = new THREE.MeshLambertMaterial({ color: 0x1a1a1a });
+        const sphere = new THREE.Mesh(sphereGeometry, sphereMaterial);
+        sphere.position.y = 0.5;
+        sphere.castShadow = true;
+        bombGroup.add(sphere);
+        
+        // Fuse (small cylinder on top)
+        const fuseGeometry = new THREE.CylinderGeometry(0.05, 0.05, 0.3, 8);
+        const fuseMaterial = new THREE.MeshLambertMaterial({ color: 0x8B4513 });
+        const fuse = new THREE.Mesh(fuseGeometry, fuseMaterial);
+        fuse.position.y = 0.85;
+        bombGroup.add(fuse);
+        
+        // Spark at top of fuse
+        const sparkGeometry = new THREE.SphereGeometry(0.1, 8, 8);
+        const sparkMaterial = new THREE.MeshBasicMaterial({ 
+            color: 0xFF4500,
+            emissive: 0xFF4500,
+            emissiveIntensity: 1.0
+        });
+        const spark = new THREE.Mesh(sparkGeometry, sparkMaterial);
+        spark.position.y = 1.0;
+        bombGroup.add(spark);
+        
+        // Glow effect
+        const glowGeometry = new THREE.SphereGeometry(0.5, 8, 8);
+        const glowMaterial = new THREE.MeshBasicMaterial({ 
+            color: 0xFF4500, 
+            transparent: true, 
+            opacity: 0.3 
+        });
+        const glow = new THREE.Mesh(glowGeometry, glowMaterial);
+        glow.position.y = 0.5;
+        bombGroup.add(glow);
+        
+        const terrainHeight = getTerrainHeight(pos.x, pos.z);
+        bombGroup.position.set(pos.x, terrainHeight, pos.z);
+        scene.add(bombGroup);
+        bombPickups.push({ mesh: bombGroup, collected: false, radius: 1.5 });
     });
 
     // Health pickups (hearts)
@@ -1836,11 +1949,24 @@ function initGame() {
         goblins.push(createGuardianGoblin(-85, -150, -90, -80, 0.012));
         goblins.push(createGuardianGoblin(40, -165, 35, 45, 0.011));
         
+        // Additional regular goblins in middle area
+        goblins.push(createGoblin(-50, -100, -60, -40, 0.013));
+        goblins.push(createGoblin(45, -120, 35, 55, 0.012));
+        goblins.push(createGoblin(-15, -145, -25, -5, 0.011));
+        goblins.push(createGoblin(65, -160, 55, 75, 0.013));
+        
         // Dragon area (scattered around the boss)
         goblins.push(createGuardianGoblin(-90, -195, -95, -85, 0.013));
         goblins.push(createGuardianGoblin(85, -205, 80, 90, 0.012));
         goblins.push(createGuardianGoblin(-50, -215, -55, -45, 0.011));
         goblins.push(createGuardianGoblin(60, -230, 55, 65, 0.013));
+        
+        // Additional regular goblins in dragon area
+        goblins.push(createGoblin(-75, -210, -85, -65, 0.012));
+        goblins.push(createGoblin(70, -220, 60, 80, 0.013));
+        goblins.push(createGoblin(-30, -235, -40, -20, 0.011));
+        goblins.push(createGoblin(40, -245, 30, 50, 0.012));
+        goblins.push(createGoblin(0, -225, -10, 10, 0.013));
         
         // Guardians in a ring around treasure
         for (let i = 0; i < GAME_CONFIG.HARD_GUARDIAN_COUNT; i++) {
@@ -1978,6 +2104,62 @@ function initGame() {
     
     let hasIcePower = false;
     let icePowerCollected = false;
+
+    // Banana Ice Berg - close to spawn for easy testing
+    const bananaIceBergGroup = new THREE.Group();
+    
+    // Main banana ice berg structure - tall crystalline shape (yellow tinted)
+    const bananaIceBergGeometry = new THREE.ConeGeometry(8, 20, 6);
+    const bananaIceBergMaterial = new THREE.MeshPhongMaterial({
+        color: 0xFFFF99, // Yellow tint
+        transparent: true,
+        opacity: 0.7,
+        shininess: 100,
+        specular: 0xFFFFFF
+    });
+    const bananaIceBergMesh = new THREE.Mesh(bananaIceBergGeometry, bananaIceBergMaterial);
+    bananaIceBergMesh.position.y = 10;
+    bananaIceBergMesh.castShadow = true;
+    bananaIceBergMesh.receiveShadow = true;
+    bananaIceBergGroup.add(bananaIceBergMesh);
+    
+    // Additional banana crystals around the base
+    for (let i = 0; i < 5; i++) {
+        const angle = (i / 5) * Math.PI * 2;
+        const dist = 6;
+        const crystalGeometry = new THREE.ConeGeometry(2, 8, 6);
+        const crystal = new THREE.Mesh(crystalGeometry, bananaIceBergMaterial);
+        crystal.position.x = Math.cos(angle) * dist;
+        crystal.position.z = Math.sin(angle) * dist;
+        crystal.position.y = 4;
+        crystal.rotation.z = Math.random() * 0.3 - 0.15;
+        bananaIceBergGroup.add(crystal);
+    }
+    
+    // Position banana ice berg in first area (before first mountain gap)
+    bananaIceBergGroup.position.set(-30, getTerrainHeight(-30, -50), -50);
+    scene.add(bananaIceBergGroup);
+    
+    const bananaIceBerg = {
+        mesh: bananaIceBergGroup,
+        position: { x: -30, z: -50 },
+        radius: 12,
+        powerRadius: 8
+    };
+    
+    let hasBananaPower = false;
+    let bananaPowerCollected = false;
+    let bananaInventory = 0; // Number of bananas player has
+    const maxBananas = 5;
+    
+    // Placed bananas array
+    const placedBananas = [];
+    let worldBananaPowerCollected = false; // Shared collection flag for multiplayer
+
+    // Bomb inventory
+    let bombInventory = 0;
+    const maxBombs = 3;
+    const placedBombs = []; // {id, mesh, x, z, radius, explodeAt}
 
     // Create Dragon (boss enemy)
     function createDragon() {
@@ -2163,8 +2345,8 @@ function initGame() {
             rightEye: rightEye,
             leftPupil: leftPupil,
             rightPupil: rightPupil,
-            health: 30,
-            maxHealth: 30,
+            health: 50,
+            maxHealth: 50,
             alive: true,
             speed: 0.08 * speedMultiplier,
             patrolLeft: -30,
@@ -2619,6 +2801,165 @@ function initGame() {
             });
         }
     }
+
+    // Place banana trap
+    function placeBanana() {
+        if (bananaInventory <= 0) return;
+        
+        bananaInventory--;
+        
+        // Create banana mesh
+        const bananaGroup = new THREE.Group();
+        
+        // Banana body (curved cylinder)
+        const bananaGeometry = new THREE.CylinderGeometry(0.3, 0.3, 1.5, 8);
+        const bananaMaterial = new THREE.MeshLambertMaterial({ 
+            color: 0xFFFF00,
+            emissive: 0xFFFF00,
+            emissiveIntensity: 0.3
+        });
+        const bananaMesh = new THREE.Mesh(bananaGeometry, bananaMaterial);
+        bananaMesh.rotation.z = Math.PI / 6; // Slight curve
+        bananaMesh.castShadow = true;
+        bananaGroup.add(bananaMesh);
+        
+        // Banana ends (darker)
+        const endMaterial = new THREE.MeshLambertMaterial({ color: 0x8B7500 });
+        const endGeometry = new THREE.SphereGeometry(0.35, 8, 8);
+        const end1 = new THREE.Mesh(endGeometry, endMaterial);
+        end1.position.y = 0.7;
+        end1.scale.set(0.8, 1, 0.8);
+        bananaGroup.add(end1);
+        
+        const end2 = new THREE.Mesh(endGeometry, endMaterial);
+        end2.position.y = -0.7;
+        end2.scale.set(0.8, 1, 0.8);
+        bananaGroup.add(end2);
+        
+        // Position 3 units in front of the player based on their rotation
+        const placeDistance = 3;
+        const bananaX = playerGroup.position.x + Math.sin(player.rotation) * placeDistance;
+        const bananaZ = playerGroup.position.z + Math.cos(player.rotation) * placeDistance;
+        const terrainHeight = getTerrainHeight(bananaX, bananaZ);
+        bananaGroup.position.set(bananaX, terrainHeight + 0.5, bananaZ);
+        scene.add(bananaGroup);
+        
+        const bananaId = Date.now() + Math.random(); // Unique ID
+        placedBananas.push({
+            id: bananaId,
+            mesh: bananaGroup,
+            x: bananaX,
+            z: bananaZ,
+            radius: 1.2
+        });
+        
+        Audio.playCollectSound();
+        
+        // Notify other player in multiplayer
+        if (multiplayerManager && multiplayerManager.isConnected()) {
+            multiplayerManager.sendGameEvent('bananaPlaced', {
+                id: bananaId,
+                x: bananaX,
+                z: bananaZ
+            });
+        }
+    }
+    
+    function placeBomb() {
+        if (bombInventory <= 0) return;
+        
+        const bombId = Date.now() + Math.random();
+        bombInventory--;
+        
+        // Create bomb mesh
+        const bombGroup = new THREE.Group();
+        
+        // Main sphere (black bomb)
+        const sphereGeometry = new THREE.SphereGeometry(0.4, 16, 16);
+        const sphereMaterial = new THREE.MeshLambertMaterial({ color: 0x1a1a1a });
+        const sphere = new THREE.Mesh(sphereGeometry, sphereMaterial);
+        sphere.castShadow = true;
+        bombGroup.add(sphere);
+        
+        // Fuse
+        const fuseGeometry = new THREE.CylinderGeometry(0.05, 0.05, 0.3, 8);
+        const fuseMaterial = new THREE.MeshLambertMaterial({ color: 0x8B4513 });
+        const fuse = new THREE.Mesh(fuseGeometry, fuseMaterial);
+        fuse.position.y = 0.4;
+        bombGroup.add(fuse);
+        
+        // Animated spark
+        const sparkGeometry = new THREE.SphereGeometry(0.1, 8, 8);
+        const sparkMaterial = new THREE.MeshBasicMaterial({ 
+            color: 0xFF4500,
+            emissive: 0xFF4500,
+            emissiveIntensity: 1.0
+        });
+        const spark = new THREE.Mesh(sparkGeometry, sparkMaterial);
+        spark.position.y = 0.55;
+        bombGroup.add(spark);
+        
+        // Start position at player, throw to 6 units in front
+        const throwDistance = 6;
+        const targetX = playerGroup.position.x + Math.sin(player.rotation) * throwDistance;
+        const targetZ = playerGroup.position.z + Math.cos(player.rotation) * throwDistance;
+        const targetTerrainHeight = getTerrainHeight(targetX, targetZ);
+        
+        // Start at player position
+        bombGroup.position.set(
+            playerGroup.position.x,
+            playerGroup.position.y + 1.5, // Start at chest height
+            playerGroup.position.z
+        );
+        scene.add(bombGroup);
+        
+        // Animate throw (arc motion)
+        const throwDuration = 400; // 400ms throw animation
+        const startTime = Date.now();
+        const startY = bombGroup.position.y;
+        const throwHeight = 3; // Arc height
+        
+        const throwInterval = setInterval(() => {
+            const elapsed = Date.now() - startTime;
+            const progress = Math.min(elapsed / throwDuration, 1);
+            
+            if (progress >= 1) {
+                clearInterval(throwInterval);
+                bombGroup.position.set(targetX, targetTerrainHeight + 0.4, targetZ);
+            } else {
+                // Linear horizontal movement
+                bombGroup.position.x = playerGroup.position.x + (targetX - playerGroup.position.x) * progress;
+                bombGroup.position.z = playerGroup.position.z + (targetZ - playerGroup.position.z) * progress;
+                
+                // Parabolic arc for vertical movement
+                const arcProgress = Math.sin(progress * Math.PI);
+                bombGroup.position.y = startY + arcProgress * throwHeight - (progress * (startY - targetTerrainHeight - 0.4));
+            }
+        }, 16);
+        
+        const explodeAt = Date.now() + 3000; // 3 seconds
+        placedBombs.push({
+            id: bombId,
+            mesh: bombGroup,
+            x: targetX,
+            z: targetZ,
+            radius: 12, // Explosion radius
+            explodeAt: explodeAt,
+            spark: spark // For animation
+        });
+        
+        Audio.playCollectSound();
+        
+        // Notify other player in multiplayer
+        if (multiplayerManager && multiplayerManager.isConnected()) {
+            multiplayerManager.sendGameEvent('bombPlaced', {
+                id: bombId,
+                x: targetX,
+                z: targetZ,
+                explodeAt: explodeAt
+            });
+        }
+    }
     
     // Handle game events from remote player
     function handleRemoteGameEvent(eventData) {
@@ -2653,6 +2994,10 @@ function initGame() {
             } else if (data.type === 'health' && healthPickups[data.index]) {
                 healthPickups[data.index].collected = true;
                 healthPickups[data.index].mesh.visible = false;
+                Audio.playCollectSound();
+            } else if (data.type === 'bomb' && bombPickups[data.index]) {
+                bombPickups[data.index].collected = true;
+                bombPickups[data.index].mesh.visible = false;
                 Audio.playCollectSound();
             }
         } else if (eventType === 'bridgeRepaired') {
@@ -2782,12 +3127,113 @@ function initGame() {
             }
         } else if (eventType === 'playerDamage') {
             // Other player took damage (from host's guardian arrow)
-            playerHealth--;
-            damageFlashTime = Date.now();
-            // Don't check for death here - client will send updated health to host
-            // and host will sync gameDead status back via fullSync
-            if (playerHealth > 0) {
-                Audio.playStuckSound();
+            if (!godMode) {
+                playerHealth--;
+                damageFlashTime = Date.now();
+                // Don't check for death here - client will send updated health to host
+                // and host will sync gameDead status back via fullSync
+                if (playerHealth > 0) {
+                    Audio.playStuckSound();
+                }
+            }
+        } else if (eventType === 'bananaPowerCollected') {
+            // Other player collected banana power, both get it
+            worldBananaPowerCollected = true;
+            hasBananaPower = true;
+            bananaInventory = maxBananas;
+            Audio.playCollectSound();
+        } else if (eventType === 'bananaPlaced') {
+            // Other player placed a banana
+            const bananaGroup = new THREE.Group();
+            const bananaGeometry = new THREE.CylinderGeometry(0.3, 0.3, 1.5, 8);
+            const bananaMaterial = new THREE.MeshLambertMaterial({ 
+                color: 0xFFFF00,
+                emissive: 0xFFFF00,
+                emissiveIntensity: 0.3
+            });
+            const bananaMesh = new THREE.Mesh(bananaGeometry, bananaMaterial);
+            bananaMesh.rotation.z = Math.PI / 6;
+            bananaMesh.castShadow = true;
+            bananaGroup.add(bananaMesh);
+            
+            const endMaterial = new THREE.MeshLambertMaterial({ color: 0x8B7500 });
+            const endGeometry = new THREE.SphereGeometry(0.35, 8, 8);
+            const end1 = new THREE.Mesh(endGeometry, endMaterial);
+            end1.position.y = 0.7;
+            end1.scale.set(0.8, 1, 0.8);
+            bananaGroup.add(end1);
+            
+            const end2 = new THREE.Mesh(endGeometry, endMaterial);
+            end2.position.y = -0.7;
+            end2.scale.set(0.8, 1, 0.8);
+            bananaGroup.add(end2);
+            
+            const terrainHeight = getTerrainHeight(data.x, data.z);
+            bananaGroup.position.set(data.x, terrainHeight + 0.5, data.z);
+            scene.add(bananaGroup);
+            
+            placedBananas.push({
+                id: data.id,
+                mesh: bananaGroup,
+                x: data.x,
+                z: data.z,
+                radius: 1.2
+            });
+        } else if (eventType === 'bananaCollected') {
+            // Other player collected a banana - remove it
+            const index = placedBananas.findIndex(b => b.id === data.id);
+            if (index !== -1) {
+                scene.remove(placedBananas[index].mesh);
+                placedBananas.splice(index, 1);
+            }
+        } else if (eventType === 'bombPlaced') {
+            // Other player placed a bomb
+            const bombGroup = new THREE.Group();
+            
+            const sphereGeometry = new THREE.SphereGeometry(0.4, 16, 16);
+            const sphereMaterial = new THREE.MeshLambertMaterial({ color: 0x1a1a1a });
+            const sphere = new THREE.Mesh(sphereGeometry, sphereMaterial);
+            sphere.castShadow = true;
+            bombGroup.add(sphere);
+            
+            const fuseGeometry = new THREE.CylinderGeometry(0.05, 0.05, 0.3, 8);
+            const fuseMaterial = new THREE.MeshLambertMaterial({ color: 0x8B4513 });
+            const fuse = new THREE.Mesh(fuseGeometry, fuseMaterial);
+            fuse.position.y = 0.4;
+            bombGroup.add(fuse);
+            
+            const sparkGeometry = new THREE.SphereGeometry(0.1, 8, 8);
+            const sparkMaterial = new THREE.MeshBasicMaterial({ 
+                color: 0xFF4500,
+                emissive: 0xFF4500,
+                emissiveIntensity: 1.0
+            });
+            const spark = new THREE.Mesh(sparkGeometry, sparkMaterial);
+            spark.position.y = 0.55;
+            bombGroup.add(spark);
+            
+            const terrainHeight = getTerrainHeight(data.x, data.z);
+            bombGroup.position.set(data.x, terrainHeight + 0.4, data.z);
+            scene.add(bombGroup);
+            
+            placedBombs.push({
+                id: data.id,
+                mesh: bombGroup,
+                x: data.x,
+                z: data.z,
+                radius: 12,
+                explodeAt: data.explodeAt,
+                spark: spark
+            });
+        } else if (eventType === 'bombExploded') {
+            // Other player's bomb exploded, show visual effect only
+            createBombExplosion(data.x, data.y, data.z);
+            
+            // Remove bomb from array
+            const index = placedBombs.findIndex(b => b.id === data.id);
+            if (index !== -1) {
+                scene.remove(placedBombs[index].mesh);
+                placedBombs.splice(index, 1);
             }
         }
     }
@@ -3226,13 +3672,59 @@ function initGame() {
                 }
             });
             
-            // Check player collision
+            // Check banana trap collision
+            placedBananas.forEach(banana => {
+                const distToBanana = new THREE.Vector2(
+                    gob.mesh.position.x - banana.x,
+                    gob.mesh.position.z - banana.z
+                ).length();
+                if (distToBanana < banana.radius) {
+                    gob.alive = false;
+                    gob.mesh.rotation.z = Math.PI / 2;
+                    gob.mesh.position.y = terrainHeight + 0.5;
+                    createExplosion(gob.mesh.position.x, gob.mesh.position.y + 1, gob.mesh.position.z);
+                    
+                    // Show math exercise(s) only in easy mode
+                    if (difficulty === 'easy') {
+                        const exerciseCount = gob.isGiant ? 3 : 1;
+                        showMathExercise(exerciseCount);
+                    }
+                }
+            });
+            
+            // Check player collision - LOCAL PLAYER (deals damage with cooldown like dragon)
             const dist = playerGroup.position.distanceTo(gob.mesh.position);
-            if (dist < 1.5) {
-                if (!gameDead) {
-                    gameDead = true;
-                    Audio.stopBackgroundMusic();
-                    Audio.playDeathSound();
+            if (dist < 1.5 && !godMode) {
+                const now = Date.now();
+                if (now - lastDamageTime > damageCooldown) {
+                    playerHealth--;
+                    lastDamageTime = now;
+                    damageFlashTime = now;
+                    
+                    if (playerHealth <= 0) {
+                        if (!gameDead) {
+                            gameDead = true;
+                            Audio.stopBackgroundMusic();
+                            Audio.playDeathSound();
+                        }
+                    } else {
+                        Audio.playStuckSound();
+                    }
+                }
+            }
+            
+            // Check OTHER PLAYER collision in multiplayer (HOST ONLY)
+            if (multiplayerManager && multiplayerManager.isHost && multiplayerManager.isConnected() && otherPlayerMesh.visible) {
+                const distToOther = otherPlayerMesh.position.distanceTo(gob.mesh.position);
+                if (distToOther < 1.5) {
+                    const now = Date.now();
+                    // Initialize per-goblin cooldown tracker for other player
+                    if (!gob.lastOtherPlayerDamageTime) gob.lastOtherPlayerDamageTime = 0;
+                    
+                    if (now - gob.lastOtherPlayerDamageTime > damageCooldown) {
+                        multiplayerManager.sendGameEvent('playerDamage', {});
+                        gob.lastOtherPlayerDamageTime = now;
+                    }
                 }
             }
             
@@ -3316,17 +3808,19 @@ function initGame() {
             
             let hitPlayer = false;
             if (dist < 1.0) {
-                playerHealth--;
-                damageFlashTime = Date.now();
-                if (playerHealth <= 0) {
-                    if (!gameDead) {
-                        gameDead = true;
-                        Audio.stopBackgroundMusic();
-                        Audio.playDeathSound();
+                if (!godMode) {
+                    playerHealth--;
+                    damageFlashTime = Date.now();
+                    if (playerHealth <= 0) {
+                        if (!gameDead) {
+                            gameDead = true;
+                            Audio.stopBackgroundMusic();
+                            Audio.playDeathSound();
+                        }
+                    } else {
+                        // Play hurt sound or use existing sound
+                        Audio.playStuckSound();
                     }
-                } else {
-                    // Play hurt sound or use existing sound
-                    Audio.playStuckSound();
                 }
                 hitPlayer = true;
             }
@@ -3525,7 +4019,7 @@ function initGame() {
                     playerGroup.position.z - bomb.mesh.position.z
                 ).length();
                 
-                if (distToPlayer < bomb.radius) {
+                if (distToPlayer < bomb.radius && !godMode) {
                     playerHealth--;
                     damageFlashTime = Date.now();
                     if (playerHealth <= 0) {
@@ -3655,20 +4149,20 @@ function initGame() {
             }
         }
         
-        // Check collision damage with other player (multiplayer)
-        if (multiplayerManager && multiplayerManager.isConnected() && otherPlayerMesh.visible) {
+        // Check collision damage with other player (multiplayer) - HOST ONLY
+        if (multiplayerManager && multiplayerManager.isHost && multiplayerManager.isConnected() && otherPlayerMesh.visible) {
             const distToOther = Math.sqrt(
                 (otherPlayerMesh.position.x - dragon.mesh.position.x) ** 2 +
                 (otherPlayerMesh.position.z - dragon.mesh.position.z) ** 2
             );
             
             if (distToOther < 5) {
-                // Host sends damage event to client
-                if (multiplayerManager.isHost) {
-                    if (now - lastDamageTime > damageCooldown) {
-                        multiplayerManager.sendGameEvent('playerDamage', {});
-                        lastDamageTime = now;
-                    }
+                // Initialize cooldown tracker if needed
+                if (!dragon.lastOtherPlayerDamageTime) dragon.lastOtherPlayerDamageTime = 0;
+                
+                if (now - dragon.lastOtherPlayerDamageTime > damageCooldown) {
+                    multiplayerManager.sendGameEvent('playerDamage', {});
+                    dragon.lastOtherPlayerDamageTime = now;
                 }
             }
         }
@@ -4083,7 +4577,7 @@ function initGame() {
                     playerGroup.position.x - trap.mesh.position.x,
                     playerGroup.position.z - trap.mesh.position.z
                 ).length();
-                if (distToTrap < trap.radius) {
+                if (distToTrap < trap.radius && !godMode) {
                     gameDead = true;
                     Audio.stopBackgroundMusic();
                     Audio.playDeathSound();
@@ -4159,6 +4653,74 @@ function initGame() {
                 }
             }
         }
+        
+        // Banana power collection and refill
+        const bananaDist = Math.sqrt(
+            (px - bananaIceBerg.position.x) ** 2 +
+            (pz - bananaIceBerg.position.z) ** 2
+        );
+        if (bananaDist < bananaIceBerg.powerRadius) {
+            if (!worldBananaPowerCollected) {
+                worldBananaPowerCollected = true;
+                hasBananaPower = true;
+                bananaInventory = maxBananas;
+                Audio.playCollectSound();
+                
+                // Notify other player in multiplayer - both get the power
+                if (multiplayerManager && multiplayerManager.isConnected()) {
+                    multiplayerManager.sendGameEvent('bananaPowerCollected', {});
+                }
+            } else if (hasBananaPower && bananaInventory < maxBananas) {
+                // Refill bananas when returning to ice berg
+                bananaInventory = maxBananas;
+                Audio.playCollectSound();
+            }
+        }
+        
+        // Collect placed bananas
+        for (let i = placedBananas.length - 1; i >= 0; i--) {
+            const banana = placedBananas[i];
+            const distToBanana = Math.sqrt(
+                (px - banana.x) ** 2 +
+                (pz - banana.z) ** 2
+            );
+            if (distToBanana < banana.radius) {
+                // Pick up the banana
+                bananaInventory = Math.min(bananaInventory + 1, maxBananas);
+                scene.remove(banana.mesh);
+                placedBananas.splice(i, 1);
+                Audio.playCollectSound();
+                
+                // Notify other player
+                if (multiplayerManager && multiplayerManager.isConnected()) {
+                    multiplayerManager.sendGameEvent('bananaCollected', { id: banana.id });
+                }
+            }
+        }
+        
+        // Bomb pickups
+        bombPickups.forEach((pickup, idx) => {
+            if (!pickup.collected) {
+                const distToPickup = Math.sqrt(
+                    (px - pickup.mesh.position.x) ** 2 +
+                    (pz - pickup.mesh.position.z) ** 2
+                );
+                if (distToPickup < pickup.radius && bombInventory < maxBombs) {
+                    bombInventory++;
+                    pickup.collected = true;
+                    pickup.mesh.visible = false;
+                    Audio.playCollectSound();
+                    
+                    // Notify other player
+                    if (multiplayerManager && multiplayerManager.isConnected()) {
+                        multiplayerManager.sendGameEvent('itemCollected', {
+                            type: 'bomb',
+                            index: idx
+                        });
+                    }
+                }
+            }
+        });
         
         // Check world kite collection
         if (!worldKiteCollected) {
@@ -4256,8 +4818,20 @@ function initGame() {
         materialsCollected = 0;
         hasIcePower = false;
         icePowerCollected = false;
+        hasBananaPower = false;
+        worldBananaPowerCollected = false;
+        bananaInventory = 0;
+        bombInventory = 0;
         bridgeObj.mesh.visible = false;
         brokenBridgeGroup.visible = true;
+        
+        // Remove all placed bananas
+        placedBananas.forEach(banana => scene.remove(banana.mesh));
+        placedBananas.length = 0;
+        
+        // Remove all placed bombs
+        placedBombs.forEach(bomb => scene.remove(bomb.mesh));
+        placedBombs.length = 0;
         
         materials.forEach(material => {
             material.collected = false;
@@ -4270,6 +4844,11 @@ function initGame() {
         });
         
         healthPickups.forEach(pickup => {
+            pickup.collected = false;
+            pickup.mesh.visible = true;
+        });
+        
+        bombPickups.forEach(pickup => {
             pickup.collected = false;
             pickup.mesh.visible = true;
         });
@@ -4347,6 +4926,22 @@ function initGame() {
             hudCtx.fillText('Finde den Eisberg für Eis-Kraft!', 10, 155);
             hudCtx.fillStyle = '#000';
         }
+        
+        // Banana power status
+        if (hasBananaPower) {
+            hudCtx.fillStyle = '#FFD700';
+            hudCtx.fillText(`🍌 Bananen: ${bananaInventory}/${maxBananas} (Drücke B)`, 10, 180);
+            hudCtx.fillStyle = '#000';
+        } else if (!worldBananaPowerCollected) {
+            hudCtx.fillStyle = '#FFFF99';
+            hudCtx.fillText('Finde den Bananen-Eisberg!', 10, 180);
+            hudCtx.fillStyle = '#000';
+        }
+        
+        // Bomb inventory
+        hudCtx.fillStyle = '#FF4500';
+        hudCtx.fillText(`💣 Bomben: ${bombInventory}/${maxBombs} (Drücke X)`, 10, 210);
+        hudCtx.fillStyle = '#000';
         
         if (!bridgeRepaired && materialsCollected >= materialsNeeded) {
             hudCtx.fillStyle = '#FFD700';
@@ -4560,6 +5155,96 @@ function initGame() {
                 
                 // Only host runs game logic (goblins, arrows, etc.)
                 if (!multiplayerManager || multiplayerManager.isHost) {
+                    // Update placed bombs
+                    const now = Date.now();
+                    for (let i = placedBombs.length - 1; i >= 0; i--) {
+                        const bomb = placedBombs[i];
+                        
+                        // Animate spark
+                        if (bomb.spark) {
+                            const timeLeft = bomb.explodeAt - now;
+                            const blinkSpeed = Math.max(50, timeLeft / 3);
+                            bomb.spark.visible = (now % (blinkSpeed * 2)) < blinkSpeed;
+                        }
+                        
+                        // Check if bomb should explode
+                        if (now >= bomb.explodeAt) {
+                            // Create explosion
+                            createBombExplosion(bomb.x, 0.4, bomb.z);
+                            
+                            // Damage goblins
+                            goblins.forEach(gob => {
+                                if (gob.alive) {
+                                    const distToGob = Math.sqrt(
+                                        (gob.mesh.position.x - bomb.x) ** 2 +
+                                        (gob.mesh.position.z - bomb.z) ** 2
+                                    );
+                                    if (distToGob < bomb.radius) {
+                                        gob.health -= 5;
+                                        if (gob.health <= 0) {
+                                            gob.alive = false;
+                                            Audio.playGoblinDeathSound();
+                                            gob.mesh.rotation.z = Math.PI / 2;
+                                            const terrainH = getTerrainHeight(gob.mesh.position.x, gob.mesh.position.z);
+                                            gob.mesh.position.y = terrainH + 0.5;
+                                            createExplosion(gob.mesh.position.x, 1, gob.mesh.position.z);
+                                            if (difficulty === 'easy') {
+                                                const exerciseCount = gob.isGiant ? 3 : 1;
+                                                showMathExercise(exerciseCount);
+                                            }
+                                        }
+                                    }
+                                }
+                            });
+                            
+                            // Damage player
+                            const distToPlayer = Math.sqrt(
+                                (playerGroup.position.x - bomb.x) ** 2 +
+                                (playerGroup.position.z - bomb.z) ** 2
+                            );
+                            if (distToPlayer < bomb.radius && !godMode) {
+                                playerHealth -= 5;
+                                damageFlashTime = now;
+                                if (playerHealth <= 0 && !gameDead) {
+                                    gameDead = true;
+                                    Audio.stopBackgroundMusic();
+                                    Audio.playDeathSound();
+                                } else if (playerHealth > 0) {
+                                    Audio.playStuckSound();
+                                }
+                            }
+                            
+                            // Damage dragon if present
+                            if (dragon && dragon.alive) {
+                                const distToDragon = Math.sqrt(
+                                    (dragon.mesh.position.x - bomb.x) ** 2 +
+                                    (dragon.mesh.position.z - bomb.z) ** 2
+                                );
+                                if (distToDragon < bomb.radius + 10) {
+                                    dragon.health -= 5;
+                                    if (dragon.health <= 0) {
+                                        dragon.alive = false;
+                                        dragon.mesh.visible = false;
+                                    }
+                                }
+                            }
+                            
+                            // Remove bomb mesh
+                            scene.remove(bomb.mesh);
+                            placedBombs.splice(i, 1);
+                            
+                            // Notify other player
+                            if (multiplayerManager && multiplayerManager.isConnected()) {
+                                multiplayerManager.sendGameEvent('bombExploded', {
+                                    id: bomb.id,
+                                    x: bomb.x,
+                                    y: 0.4,
+                                    z: bomb.z
+                                });
+                            }
+                        }
+                    }
+                    
                     updateGoblins();
                     updateGuardianArrows();
                     updateBirds();
