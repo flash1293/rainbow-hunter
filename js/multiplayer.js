@@ -248,6 +248,11 @@ class MultiplayerManager {
         this.updateCallbacks.push(callback);
     }
     
+    // Clear all update callbacks (used during level switch)
+    clearCallbacks() {
+        this.updateCallbacks = [];
+    }
+    
     isConnected() {
         return this.conn && this.conn.open;
     }

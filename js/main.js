@@ -180,7 +180,51 @@ window.addEventListener('keydown', (e) => {
     }
 });
 
+// Current level (can be changed for multi-level support)
+let currentLevel = 1;
+let currentAnimationId = null;
+
+// Switch to a different level
+function switchLevel(newLevel) {
+    console.log(`Switching to Level ${newLevel}...`);
+    currentLevel = newLevel;
+    
+    // Cancel current animation loop
+    if (currentAnimationId) {
+        cancelAnimationFrame(currentAnimationId);
+        currentAnimationId = null;
+    }
+    
+    // Stop multiplayer sync and clear callbacks before reinitializing
+    if (multiplayerManager) {
+        multiplayerManager.stopHostSync();
+        multiplayerManager.clearCallbacks();
+    }
+    
+    // Clear container
+    const container = document.getElementById('gameCanvas');
+    while (container.firstChild) {
+        container.removeChild(container.firstChild);
+    }
+    
+    // Stop any audio
+    if (typeof Audio !== 'undefined' && Audio.stopBackgroundMusic) {
+        Audio.stopBackgroundMusic();
+    }
+    
+    // Small delay to let things clean up, then restart
+    setTimeout(() => {
+        initGame();
+    }, 100);
+}
+
+// Expose switchLevel globally for multiplayer sync
+window.switchLevel = switchLevel;
+
 function initGame() {
+    // Get level configuration
+    const levelConfig = getLevelConfig(currentLevel);
+    
     // Three.js setup
     const container = document.getElementById('gameCanvas');
     const scene = new THREE.Scene();
@@ -227,10 +271,18 @@ function initGame() {
     directionalLight.shadow.mapSize.height = 2048;
     scene.add(directionalLight);
 
-    // Create terrain
-    createGround(scene, THREE);
-    createHills(scene, THREE);
-    createMountains(scene, THREE, MOUNTAINS);
+    // Set current level hills for terrain height calculation
+    setCurrentLevelHills(levelConfig.hills);
+    
+    // Get theme colors (default to green if not specified)
+    const hillColor = levelConfig.hillColor || 0x228B22;
+    const treeColor = levelConfig.treeColor || 0x228B22;
+    const grassColor = levelConfig.grassColor || 0x228B22;
+
+    // Create terrain (use level-specific ground color if available)
+    createGround(scene, THREE, levelConfig.groundColor);
+    createHills(scene, THREE, levelConfig.hills, hillColor);
+    createMountains(scene, THREE, levelConfig.mountains);
     const riverObj = createRiver(scene, THREE);
     const bridgeObj = createBridge(scene, THREE);
     const brokenBridgeGroup = createBrokenBridge(scene, THREE);
@@ -356,8 +408,9 @@ function initGame() {
     playerGroup.add(kiteGroup);
 
     // Different starting positions for host and client
-    const startX = isHost ? -2 : 2;
-    playerGroup.position.set(startX, 0, 40);
+    const startX = isHost ? levelConfig.playerStart.x - 2 : levelConfig.playerStart.x + 2;
+    const startZ = levelConfig.playerStart.z;
+    playerGroup.position.set(startX, 0, startZ);
     playerGroup.rotation.y = Math.PI;
     scene.add(playerGroup);
 
@@ -613,13 +666,21 @@ function initGame() {
                 bridgeRepaired: bridgeRepaired,
                 materialsCollected: materialsCollected,
                 gameWon: gameWon,
-                gameDead: gameDead
+                gameDead: gameDead,
+                currentLevel: currentLevel
             }
         };
     }
     
     // Function for client to apply full game state from host
     function applyFullGameSync(data) {
+        // Check if host is on a different level - if so, switch to it
+        if (data.gameState && data.gameState.currentLevel && data.gameState.currentLevel !== currentLevel) {
+            console.log(`Host is on level ${data.gameState.currentLevel}, switching...`);
+            switchLevel(data.gameState.currentLevel);
+            return; // Don't apply the rest of the sync - we're switching levels
+        }
+        
         // Update host player (shown as other player for client)
         if (data.hostPlayer) {
             // Calculate velocity for optimistic updates
@@ -645,49 +706,47 @@ function initGame() {
             }
         }
         
-        // Update goblins
-        if (data.goblins) {
+        // Update goblins (only if array lengths match - skip during level transitions)
+        if (data.goblins && data.goblins.length === goblins.length) {
             data.goblins.forEach((gobData, i) => {
-                if (i < goblins.length) {
-                    const gob = goblins[i];
-                    gob.mesh.position.set(gobData.x, gobData.y, gobData.z);
-                    gob.mesh.rotation.y = gobData.rotation;
-                    gob.alive = gobData.alive;
-                    gob.health = gobData.health;
-                    gob.isChasing = gobData.isChasing;
-                    
-                    // Store velocity for optimistic updates
-                    if (!gob.velocity) {
-                        gob.velocity = { x: 0, z: 0 };
-                    }
-                    gob.velocity.x = gobData.vx || 0;
-                    gob.velocity.z = gobData.vz || 0;
-                    
-                    // Sync frozen state
-                    const wasFrozen = gob.frozen;
-                    gob.frozen = gobData.frozen || false;
-                    gob.frozenUntil = gobData.frozenUntil || 0;
-                    
-                    // Apply or remove frozen visual effect
-                    if (gob.frozen && !wasFrozen) {
-                        gob.mesh.children.forEach(child => {
-                            if (child.material && child.material.emissive !== undefined) {
-                                child.material.emissive = new THREE.Color(0x0088FF);
-                                child.material.emissiveIntensity = 0.5;
-                            }
-                        });
-                    } else if (!gob.frozen && wasFrozen) {
-                        gob.mesh.children.forEach(child => {
-                            if (child.material && child.material.emissive !== undefined) {
-                                child.material.emissive = new THREE.Color(0x000000);
-                                child.material.emissiveIntensity = 0;
-                            }
-                        });
-                    }
-                    
-                    if (!gobData.alive && gob.mesh.rotation.z !== Math.PI / 2) {
-                        gob.mesh.rotation.z = Math.PI / 2;
-                    }
+                const gob = goblins[i];
+                gob.mesh.position.set(gobData.x, gobData.y, gobData.z);
+                gob.mesh.rotation.y = gobData.rotation;
+                gob.alive = gobData.alive;
+                gob.health = gobData.health;
+                gob.isChasing = gobData.isChasing;
+                
+                // Store velocity for optimistic updates
+                if (!gob.velocity) {
+                    gob.velocity = { x: 0, z: 0 };
+                }
+                gob.velocity.x = gobData.vx || 0;
+                gob.velocity.z = gobData.vz || 0;
+                
+                // Sync frozen state
+                const wasFrozen = gob.frozen;
+                gob.frozen = gobData.frozen || false;
+                gob.frozenUntil = gobData.frozenUntil || 0;
+                
+                // Apply or remove frozen visual effect
+                if (gob.frozen && !wasFrozen) {
+                    gob.mesh.children.forEach(child => {
+                        if (child.material && child.material.emissive !== undefined) {
+                            child.material.emissive = new THREE.Color(0x0088FF);
+                            child.material.emissiveIntensity = 0.5;
+                        }
+                    });
+                } else if (!gob.frozen && wasFrozen) {
+                    gob.mesh.children.forEach(child => {
+                        if (child.material && child.material.emissive !== undefined) {
+                            child.material.emissive = new THREE.Color(0x000000);
+                            child.material.emissiveIntensity = 0;
+                        }
+                    });
+                }
+                
+                if (!gobData.alive && gob.mesh.rotation.z !== Math.PI / 2) {
+                    gob.mesh.rotation.z = Math.PI / 2;
                 }
             });
         }
@@ -1246,14 +1305,14 @@ function initGame() {
         const treeGroup = new THREE.Group();
         
         const trunkGeometry = new THREE.CylinderGeometry(0.3, 0.4, 2, 8);
-        const trunkMaterial = new THREE.MeshLambertMaterial({ color: 0x8B4513 });
+        const trunkMaterial = new THREE.MeshLambertMaterial({ color: levelConfig.iceTheme ? 0x556677 : 0x8B4513 });
         const trunk = new THREE.Mesh(trunkGeometry, trunkMaterial);
         trunk.position.y = 1;
         trunk.castShadow = true;
         treeGroup.add(trunk);
         
         const foliageGeometry = new THREE.SphereGeometry(1.5, 8, 8);
-        const foliageMaterial = new THREE.MeshLambertMaterial({ color: 0x228B22 });
+        const foliageMaterial = new THREE.MeshLambertMaterial({ color: treeColor });
         const foliage = new THREE.Mesh(foliageGeometry, foliageMaterial);
         foliage.position.y = 2.5;
         foliage.castShadow = true;
@@ -1331,7 +1390,7 @@ function initGame() {
         for (let j = 0; j < bladeCount; j++) {
             const bladeGeometry = new THREE.ConeGeometry(0.05, 0.4 + Math.random() * 0.3, 3);
             const bladeMaterial = new THREE.MeshLambertMaterial({ 
-                color: 0x228B22,
+                color: grassColor,
                 flatShading: true
             });
             const blade = new THREE.Mesh(bladeGeometry, bladeMaterial);
@@ -1363,7 +1422,7 @@ function initGame() {
         for (let j = 0; j < bladeCount; j++) {
             const bladeGeometry = new THREE.ConeGeometry(0.05, 0.4 + Math.random() * 0.3, 3);
             const bladeMaterial = new THREE.MeshLambertMaterial({ 
-                color: 0x228B22,
+                color: grassColor,
                 flatShading: true
             });
             const blade = new THREE.Mesh(bladeGeometry, bladeMaterial);
@@ -1386,25 +1445,7 @@ function initGame() {
 
     // Ammo pickups
     const ammoPickups = [];
-    const ammoPositions = [
-        { x: -15, z: 20 }, { x: 35, z: 15 }, { x: -25, z: -10 },
-        { x: 15, z: -25 }, { x: -40, z: 40 }, { x: 45, z: -35 },
-        { x: 5, z: 25 }, { x: -30, z: -30 }, { x: 20, z: -15 },
-        { x: -10, z: -40 }, { x: 40, z: 35 }, { x: -35, z: 5 },
-        { x: -50, z: -15 }, { x: 55, z: -20 }, { x: -18, z: 50 },
-        { x: 25, z: 55 }, { x: -45, z: -50 }, { x: 50, z: -55 },
-        // Behind the gap
-        { x: -20, z: -100 }, { x: 30, z: -110 }, { x: -10, z: -125 },
-        { x: 40, z: -135 },
-        // Additional ammo for harder difficulty
-        { x: 10, z: -70 }, { x: -35, z: -75 }, { x: 45, z: -90 },
-        { x: -15, z: -105 }, { x: 25, z: -120 }, { x: -30, z: -118 },
-        { x: 52, z: -125 }, { x: 15, z: 45 },
-        // Dragon boss area
-        { x: -90, z: -195 }, { x: 100, z: -205 }, { x: -70, z: -220 },
-        { x: 85, z: -235 }, { x: 0, z: -245 }, { x: -110, z: -250 },
-        { x: 120, z: -215 }
-    ];
+    const ammoPositions = levelConfig.ammoPositions;
 
     ammoPositions.forEach(pos => {
         const ammoGroup = new THREE.Group();
@@ -1444,20 +1485,7 @@ function initGame() {
 
     // Bomb pickups
     const bombPickups = [];
-    const bombPositions = [
-        // Early area
-        { x: -35, z: 30 }, { x: 42, z: -10 }, { x: -18, z: -35 },
-        { x: 30, z: 45 }, { x: -48, z: -18 }, { x: 15, z: -50 },
-        { x: -25, z: 55 }, { x: 50, z: 25 }, { x: -55, z: -45 },
-        // Middle area
-        { x: -65, z: -110 }, { x: 55, z: -115 }, { x: -25, z: -140 },
-        { x: 70, z: -155 }, { x: -80, z: -125 }, { x: 35, z: -130 },
-        { x: -45, z: -165 }, { x: 60, z: -145 },
-        // Dragon area
-        { x: -95, z: -200 }, { x: 90, z: -210 }, { x: -60, z: -225 },
-        { x: 75, z: -195 }, { x: -110, z: -215 }, { x: 105, z: -230 },
-        { x: -40, z: -240 }, { x: 50, z: -220 }
-    ];
+    const bombPositions = levelConfig.bombPositions;
 
     bombPositions.forEach(pos => {
         const bombGroup = new THREE.Group();
@@ -1507,16 +1535,7 @@ function initGame() {
 
     // Health pickups (hearts)
     const healthPickups = [];
-    const heartPositions = [
-        { x: -8, z: 50 }, { x: 32, z: -18 }, { x: -48, z: -25 },
-        { x: 55, z: 22 }, { x: -22, z: 65 },
-        // Middle area (before second gap and dragon)
-        { x: -80, z: -100 }, { x: 75, z: -110 }, { x: 0, z: -120 },
-        { x: -60, z: -140 }, { x: 65, z: -160 },
-        // Dragon boss area
-        { x: -100, z: -210 }, { x: 95, z: -225 }, { x: -60, z: -240 },
-        { x: 70, z: -255 }
-    ];
+    const heartPositions = levelConfig.healthPositions;
 
     heartPositions.forEach(pos => {
         const heartGroup = new THREE.Group();
@@ -1567,11 +1586,7 @@ function initGame() {
 
     // Materials for bridge repair
     const materials = [];
-    const materialConfigs = [
-        { x: -20, z: 35, type: 'wood', color: 0x8B4513, glowColor: 0xFFAA00 },
-        { x: 25, z: 30, type: 'glass', color: 0x87CEEB, glowColor: 0x00FFFF },
-        { x: 10, z: 15, type: 'metal', color: 0xC0C0C0, glowColor: 0xFFFFFF }
-    ];
+    const materialConfigs = levelConfig.materials;
 
     materialConfigs.forEach(config => {
         const materialGroup = new THREE.Group();
@@ -1625,17 +1640,7 @@ function initGame() {
 
     // Traps
     const traps = [];
-    const trapPositions = [
-        { x: -5, z: 12 }, { x: 12, z: 11 }, { x: -15, z: 9 },
-        { x: -8, z: -5 }, { x: 10, z: -6 }, { x: -2, z: -20 },
-        { x: 25, z: 15 }, { x: -30, z: 20 }, { x: 18, z: -15 },
-        { x: -22, z: -25 }, { x: 35, z: -10 }, { x: -28, z: -40 },
-        { x: -38, z: 28 }, { x: 40, z: 32 }, { x: -12, z: 50 },
-        { x: 15, z: 52 }, { x: -48, z: -18 }, { x: 50, z: -22 },
-        { x: -25, z: -50 }, { x: 28, z: -52 }, { x: -55, z: 40 },
-        { x: 58, z: 42 }, { x: 5, z: -55 }, { x: -8, z: -58 },
-        { x: -42, z: 55 }
-    ];
+    const trapPositions = levelConfig.trapPositions;
 
     trapPositions.forEach(pos => {
         const trapGeometry = new THREE.PlaneGeometry(2, 2);
@@ -1914,59 +1919,30 @@ function initGame() {
 
     // Create goblins
     const goblins = [];
+    const goblinPositions = levelConfig.goblins;
     const maxGoblins = difficulty === 'easy' ? GAME_CONFIG.EASY_GOBLIN_COUNT : GAME_CONFIG.HARD_GOBLIN_COUNT;
     
-    for (let i = 0; i < maxGoblins; i++) {
-        const pos = GOBLIN_POSITIONS[i];
+    for (let i = 0; i < Math.min(maxGoblins, goblinPositions.length); i++) {
+        const pos = goblinPositions[i];
         goblins.push(createGoblin(pos[0], pos[1], pos[2], pos[3], pos[4]));
     }
     
     // Create guardian goblins on hard
     if (difficulty === 'hard') {
-        // Add one test guardian for testing
-        // goblins.push(createGuardianGoblin(15, 15, 10, 20, 0.014));
+        // Create giants from level config
+        levelConfig.giants.forEach(giant => {
+            goblins.push(createGiant(giant[0], giant[1], giant[2], giant[3]));
+        });
         
-        // Giant guardian at the gap - huge, fast, lots of health
-        goblins.push(createGiant(0, -85, -8, 8));
+        // Create guardian goblins from level config
+        levelConfig.guardians.forEach(guardian => {
+            goblins.push(createGuardianGoblin(guardian[0], guardian[1], guardian[2], guardian[3], guardian[4]));
+        });
         
-        // Additional giants guarding key areas
-        goblins.push(createGiant(-40, -50, -50, -30));
-        goblins.push(createGiant(40, -110, 30, 50));
-        goblins.push(createGiant(-25, -115, -35, -15));
-        
-        // Guardians sprinkled across the far side of the river
-        // Early area (just past the first gap)
-        goblins.push(createGuardianGoblin(-45, -15, -50, -40, 0.012));
-        goblins.push(createGuardianGoblin(50, -25, 45, 55, 0.012));
-        goblins.push(createGuardianGoblin(-15, -40, -20, -10, 0.010));
-        goblins.push(createGuardianGoblin(35, -55, 30, 40, 0.011));
-        
-        // Middle area (before second gap and dragon)
-        goblins.push(createGuardianGoblin(-70, -95, -75, -65, 0.013));
-        goblins.push(createGuardianGoblin(60, -105, 55, 65, 0.012));
-        goblins.push(createGuardianGoblin(-30, -125, -35, -25, 0.011));
-        goblins.push(createGuardianGoblin(80, -135, 75, 85, 0.013));
-        goblins.push(createGuardianGoblin(-85, -150, -90, -80, 0.012));
-        goblins.push(createGuardianGoblin(40, -165, 35, 45, 0.011));
-        
-        // Additional regular goblins in middle area
-        goblins.push(createGoblin(-50, -100, -60, -40, 0.013));
-        goblins.push(createGoblin(45, -120, 35, 55, 0.012));
-        goblins.push(createGoblin(-15, -145, -25, -5, 0.011));
-        goblins.push(createGoblin(65, -160, 55, 75, 0.013));
-        
-        // Dragon area (scattered around the boss)
-        goblins.push(createGuardianGoblin(-90, -195, -95, -85, 0.013));
-        goblins.push(createGuardianGoblin(85, -205, 80, 90, 0.012));
-        goblins.push(createGuardianGoblin(-50, -215, -55, -45, 0.011));
-        goblins.push(createGuardianGoblin(60, -230, 55, 65, 0.013));
-        
-        // Additional regular goblins in dragon area
-        goblins.push(createGoblin(-75, -210, -85, -65, 0.012));
-        goblins.push(createGoblin(70, -220, 60, 80, 0.013));
-        goblins.push(createGoblin(-30, -235, -40, -20, 0.011));
-        goblins.push(createGoblin(40, -245, 30, 50, 0.012));
-        goblins.push(createGoblin(0, -225, -10, 10, 0.013));
+        // Additional regular goblins for hard mode
+        levelConfig.hardModeGoblins.forEach(goblin => {
+            goblins.push(createGoblin(goblin[0], goblin[1], goblin[2], goblin[3], goblin[4]));
+        });
         
         // Guardians in a ring around treasure
         for (let i = 0; i < GAME_CONFIG.HARD_GUARDIAN_COUNT; i++) {
@@ -1987,7 +1963,7 @@ function initGame() {
         const arc = new THREE.Mesh(arcGeometry, arcMaterial);
         rainbowGroup.add(arc);
     });
-    rainbowGroup.position.set(GAME_CONFIG.TREASURE_X, 5, GAME_CONFIG.TREASURE_Z + 5);
+    rainbowGroup.position.set(levelConfig.rainbow.x, 5, levelConfig.rainbow.z + 5);
     rainbowGroup.rotation.y = Math.PI / 2; // Rotate 90 degrees to face player
     scene.add(rainbowGroup);
 
@@ -2009,7 +1985,7 @@ function initGame() {
     worldTail.position.y = -1.2;
     worldKiteGroup.add(worldTail);
     
-    worldKiteGroup.position.set(0, getTerrainHeight(0, -10) + 1.5, -10);
+    worldKiteGroup.position.set(levelConfig.worldKite.x, getTerrainHeight(levelConfig.worldKite.x, levelConfig.worldKite.z) + 1.5, levelConfig.worldKite.z);
     scene.add(worldKiteGroup);
     
     let worldKiteCollected = false;
@@ -2092,12 +2068,12 @@ function initGame() {
     }
     
     // Position ice berg on the north side of river, between river and gap
-    iceBergGroup.position.set(80, getTerrainHeight(80, -40), -40);
+    iceBergGroup.position.set(levelConfig.iceBerg.x, getTerrainHeight(levelConfig.iceBerg.x, levelConfig.iceBerg.z), levelConfig.iceBerg.z);
     scene.add(iceBergGroup);
     
     const iceBerg = {
         mesh: iceBergGroup,
-        position: { x: 80, z: -40 },
+        position: { x: levelConfig.iceBerg.x, z: levelConfig.iceBerg.z },
         radius: 12,
         powerRadius: 8 // Radius for collecting ice power
     };
@@ -2160,6 +2136,231 @@ function initGame() {
     let bombInventory = 0;
     const maxBombs = 3;
     const placedBombs = []; // {id, mesh, x, z, radius, explodeAt}
+
+    // ============================================
+    // PORTAL SYSTEM - For level switching
+    // ============================================
+    const portalGroup = new THREE.Group();
+    const portalConfig = levelConfig.portal;
+    let portalCooldown = 0; // Prevent immediate re-entry
+    
+    // Create portal outer ring (spinning torus)
+    const portalRingGeometry = new THREE.TorusGeometry(3, 0.3, 16, 48);
+    const portalRingMaterial = new THREE.MeshPhongMaterial({
+        color: 0x00ffff,
+        emissive: 0x00ffff,
+        emissiveIntensity: 0.8,
+        transparent: true,
+        opacity: 0.9
+    });
+    const portalRing = new THREE.Mesh(portalRingGeometry, portalRingMaterial);
+    portalRing.rotation.x = Math.PI / 2;
+    portalGroup.add(portalRing);
+    
+    // Inner spinning ring
+    const portalInnerRingGeometry = new THREE.TorusGeometry(2.2, 0.2, 16, 48);
+    const portalInnerRingMaterial = new THREE.MeshPhongMaterial({
+        color: 0xff00ff,
+        emissive: 0xff00ff,
+        emissiveIntensity: 0.6,
+        transparent: true,
+        opacity: 0.8
+    });
+    const portalInnerRing = new THREE.Mesh(portalInnerRingGeometry, portalInnerRingMaterial);
+    portalInnerRing.rotation.x = Math.PI / 2;
+    portalGroup.add(portalInnerRing);
+    
+    // Portal center swirl effect (animated disc)
+    const portalCenterGeometry = new THREE.CircleGeometry(2, 32);
+    const portalCenterMaterial = new THREE.MeshBasicMaterial({
+        color: 0x8800ff,
+        transparent: true,
+        opacity: 0.6,
+        side: THREE.DoubleSide
+    });
+    const portalCenter = new THREE.Mesh(portalCenterGeometry, portalCenterMaterial);
+    portalCenter.rotation.x = Math.PI / 2;
+    portalCenter.position.y = 0.1;
+    portalGroup.add(portalCenter);
+    
+    // Portal particles (floating orbs)
+    const portalParticles = [];
+    for (let i = 0; i < 12; i++) {
+        const particleGeometry = new THREE.SphereGeometry(0.15, 8, 8);
+        const particleMaterial = new THREE.MeshBasicMaterial({
+            color: i % 2 === 0 ? 0x00ffff : 0xff00ff,
+            transparent: true,
+            opacity: 0.8
+        });
+        const particle = new THREE.Mesh(particleGeometry, particleMaterial);
+        particle.userData = {
+            angle: (i / 12) * Math.PI * 2,
+            radius: 2.5,
+            speed: 0.02 + Math.random() * 0.02,
+            yOffset: Math.random() * 2
+        };
+        portalGroup.add(particle);
+        portalParticles.push(particle);
+    }
+    
+    // Portal base glow
+    const portalGlowGeometry = new THREE.CylinderGeometry(4, 4, 0.2, 32);
+    const portalGlowMaterial = new THREE.MeshBasicMaterial({
+        color: 0x4400aa,
+        transparent: true,
+        opacity: 0.4
+    });
+    const portalGlow = new THREE.Mesh(portalGlowGeometry, portalGlowMaterial);
+    portalGlow.position.y = 0.1;
+    portalGroup.add(portalGlow);
+    
+    // Portal pillars (mystical columns on each side)
+    const pillarGeometry = new THREE.CylinderGeometry(0.3, 0.4, 5, 8);
+    const pillarMaterial = new THREE.MeshPhongMaterial({
+        color: 0x6600cc,
+        emissive: 0x220044,
+        emissiveIntensity: 0.4
+    });
+    
+    const leftPillar = new THREE.Mesh(pillarGeometry, pillarMaterial);
+    leftPillar.position.set(-3.5, 2.5, 0);
+    portalGroup.add(leftPillar);
+    
+    const rightPillar = new THREE.Mesh(pillarGeometry, pillarMaterial);
+    rightPillar.position.set(3.5, 2.5, 0);
+    portalGroup.add(rightPillar);
+    
+    // Pillar top orbs
+    const orbGeometry = new THREE.SphereGeometry(0.5, 16, 16);
+    const orbMaterial = new THREE.MeshBasicMaterial({
+        color: 0x00ffff,
+        transparent: true,
+        opacity: 0.9
+    });
+    
+    const leftOrb = new THREE.Mesh(orbGeometry, orbMaterial);
+    leftOrb.position.set(-3.5, 5.3, 0);
+    portalGroup.add(leftOrb);
+    
+    const rightOrb = new THREE.Mesh(orbGeometry, orbMaterial);
+    rightOrb.position.set(3.5, 5.3, 0);
+    portalGroup.add(rightOrb);
+    
+    // Position portal
+    const portalY = getTerrainHeight(portalConfig.x, portalConfig.z);
+    portalGroup.position.set(portalConfig.x, portalY, portalConfig.z);
+    scene.add(portalGroup);
+    
+    const portal = {
+        mesh: portalGroup,
+        x: portalConfig.x,
+        z: portalConfig.z,
+        radius: 3,
+        destinationLevel: portalConfig.destinationLevel
+    };
+    
+    // Portal animation function (called in game loop)
+    function animatePortal() {
+        const time = Date.now() * 0.001;
+        
+        // Spin outer ring
+        portalRing.rotation.z = time * 0.5;
+        
+        // Spin inner ring opposite direction
+        portalInnerRing.rotation.z = -time * 0.8;
+        
+        // Pulse center
+        const pulse = 0.5 + Math.sin(time * 3) * 0.1;
+        portalCenter.scale.set(pulse, pulse, 1);
+        portalCenterMaterial.opacity = 0.4 + Math.sin(time * 2) * 0.2;
+        
+        // Animate particles
+        portalParticles.forEach(particle => {
+            particle.userData.angle += particle.userData.speed;
+            particle.position.x = Math.cos(particle.userData.angle) * particle.userData.radius;
+            particle.position.z = Math.sin(particle.userData.angle) * particle.userData.radius;
+            particle.position.y = 1.5 + Math.sin(time * 2 + particle.userData.yOffset) * 1;
+        });
+        
+        // Pulse pillar orbs
+        const orbPulse = 0.4 + Math.sin(time * 4) * 0.1;
+        leftOrb.scale.set(1 + orbPulse, 1 + orbPulse, 1 + orbPulse);
+        rightOrb.scale.set(1 + orbPulse, 1 + orbPulse, 1 + orbPulse);
+        
+        // Color cycle for glow
+        const hue = (time * 0.1) % 1;
+        portalGlowMaterial.color.setHSL(hue, 1, 0.3);
+        
+        // Decrease portal cooldown
+        if (portalCooldown > 0) {
+            portalCooldown--;
+        }
+    }
+    
+    // Level 2 unique elements (ice crystals and frozen lakes)
+    const iceCrystals = [];
+    const frozenLakes = [];
+    
+    if (levelConfig.iceCrystals) {
+        levelConfig.iceCrystals.forEach(crystal => {
+            const crystalGroup = new THREE.Group();
+            
+            // Main crystal
+            const mainCrystalGeometry = new THREE.ConeGeometry(0.8 * crystal.scale, 3 * crystal.scale, 6);
+            const crystalMaterial = new THREE.MeshPhongMaterial({
+                color: 0xaaddff,
+                transparent: true,
+                opacity: 0.7,
+                shininess: 100,
+                specular: 0xffffff
+            });
+            const mainCrystal = new THREE.Mesh(mainCrystalGeometry, crystalMaterial);
+            mainCrystal.position.y = 1.5 * crystal.scale;
+            crystalGroup.add(mainCrystal);
+            
+            // Smaller side crystals
+            for (let i = 0; i < 3; i++) {
+                const sideGeometry = new THREE.ConeGeometry(0.4 * crystal.scale, 1.5 * crystal.scale, 6);
+                const sideCrystal = new THREE.Mesh(sideGeometry, crystalMaterial);
+                const angle = (i / 3) * Math.PI * 2 + Math.random();
+                sideCrystal.position.x = Math.cos(angle) * 0.8 * crystal.scale;
+                sideCrystal.position.z = Math.sin(angle) * 0.8 * crystal.scale;
+                sideCrystal.position.y = 0.75 * crystal.scale;
+                sideCrystal.rotation.z = (Math.random() - 0.5) * 0.3;
+                crystalGroup.add(sideCrystal);
+            }
+            
+            crystalGroup.position.set(crystal.x, getTerrainHeight(crystal.x, crystal.z), crystal.z);
+            scene.add(crystalGroup);
+            iceCrystals.push({ mesh: crystalGroup, x: crystal.x, z: crystal.z });
+        });
+    }
+    
+    if (levelConfig.frozenLakes) {
+        levelConfig.frozenLakes.forEach(lake => {
+            const lakeGeometry = new THREE.CircleGeometry(lake.radius, 32);
+            const lakeMaterial = new THREE.MeshPhongMaterial({
+                color: 0x88ccff,
+                transparent: true,
+                opacity: 0.8,
+                shininess: 150,
+                specular: 0xffffff
+            });
+            const lakeMesh = new THREE.Mesh(lakeGeometry, lakeMaterial);
+            lakeMesh.rotation.x = -Math.PI / 2;
+            lakeMesh.position.set(lake.x, getTerrainHeight(lake.x, lake.z) + 0.05, lake.z);
+            scene.add(lakeMesh);
+            frozenLakes.push({ mesh: lakeMesh, x: lake.x, z: lake.z, radius: lake.radius });
+        });
+    }
+    
+    // Apply level-specific theme (sky color, fog, etc.)
+    if (levelConfig.skyColor) {
+        scene.background = new THREE.Color(levelConfig.skyColor);
+    }
+    if (levelConfig.fogDensity) {
+        scene.fog = new THREE.FogExp2(levelConfig.skyColor || 0x87CEEB, levelConfig.fogDensity);
+    }
 
     // Create Dragon (boss enemy)
     function createDragon() {
@@ -2438,14 +2639,10 @@ function initGame() {
     
     // Create birds in hard mode
     if (difficulty === 'hard') {
-        // Birds circling around the gap area - moved further from mountains
-        birds.push(createBird(0, -85, 35, 0.006));
-        birds.push(createBird(0, -85, 42, 0.007));
-        birds.push(createBird(5, -80, 38, 0.0065));
-        
-        // Birds circling around the rainbow treasure area
-        birds.push(createBird(60, -130, 22, 0.007));
-        birds.push(createBird(60, -130, 28, 0.006));
+        // Create birds from level config
+        levelConfig.birds.forEach(birdConfig => {
+            birds.push(createBird(birdConfig[0], birdConfig[1], birdConfig[2], birdConfig[3]));
+        });
     }
 
     // Explosion helper
@@ -3235,6 +3432,10 @@ function initGame() {
                 scene.remove(placedBombs[index].mesh);
                 placedBombs.splice(index, 1);
             }
+        } else if (eventType === 'levelChange') {
+            // Other player entered a portal - switch level together
+            console.log(`Received level change to Level ${data.level}`);
+            switchLevel(data.level);
         }
     }
 
@@ -3504,8 +3705,8 @@ function initGame() {
             
             // Check collision with hills (visual feedback on both)
             if (!bulletHit) {
-                for (let j = 0; j < HILLS.length; j++) {
-                    const hill = HILLS[j];
+                for (let j = 0; j < levelConfig.hills.length; j++) {
+                    const hill = levelConfig.hills[j];
                     const dist = new THREE.Vector2(
                         bullet.mesh.position.x - hill.x,
                         bullet.mesh.position.z - hill.z
@@ -3857,7 +4058,7 @@ function initGame() {
                 }
             });
             
-            HILLS.forEach(hill => {
+            levelConfig.hills.forEach(hill => {
                 const distToHill = new THREE.Vector2(
                     arrow.mesh.position.x - hill.x,
                     arrow.mesh.position.z - hill.z
@@ -4315,7 +4516,7 @@ function initGame() {
             
             // Check collision with mountains
             let hitMountain = false;
-            for (const mtn of MOUNTAINS) {
+            for (const mtn of levelConfig.mountains) {
                 const distToMountain = Math.sqrt(
                     (fireball.mesh.position.x - mtn.x) ** 2 +
                     (fireball.mesh.position.z - mtn.z) ** 2
@@ -4343,7 +4544,7 @@ function initGame() {
         const pz = playerGroup.position.z;
         
         // Mountains
-        MOUNTAINS.forEach(mtn => {
+        levelConfig.mountains.forEach(mtn => {
             const dist = new THREE.Vector2(
                 playerGroup.position.x - mtn.x,
                 playerGroup.position.z - mtn.z
@@ -4570,6 +4771,28 @@ function initGame() {
             }
         });
         
+        // Portal collision - level switching
+        if (portalCooldown <= 0) {
+            const distToPortal = Math.sqrt(
+                Math.pow(playerGroup.position.x - portal.x, 2) +
+                Math.pow(playerGroup.position.z - portal.z, 2)
+            );
+            if (distToPortal < portal.radius) {
+                // Switch to destination level
+                const destinationLevel = portal.destinationLevel;
+                console.log(`Entering portal to Level ${destinationLevel}!`);
+                
+                // Notify multiplayer if connected
+                if (multiplayerManager && multiplayerManager.isConnected()) {
+                    multiplayerManager.sendGameEvent('levelChange', { level: destinationLevel });
+                }
+                
+                // Switch level
+                switchLevel(destinationLevel);
+                return; // Exit current game loop
+            }
+        }
+        
         // Trap collision (only when not gliding)
         if (!player.isGliding) {
             traps.forEach(trap => {
@@ -4744,8 +4967,9 @@ function initGame() {
         
         Audio.startBackgroundMusic();
         
-        const startX = (!multiplayerManager || multiplayerManager.isHost) ? -2 : 2;
-        playerGroup.position.set(startX, getTerrainHeight(startX, 40), 40);
+        const startX = (!multiplayerManager || multiplayerManager.isHost) ? levelConfig.playerStart.x - 2 : levelConfig.playerStart.x + 2;
+        const startZ = levelConfig.playerStart.z;
+        playerGroup.position.set(startX, getTerrainHeight(startX, startZ), startZ);
         player.rotation = Math.PI;
         playerGroup.rotation.y = Math.PI;
         player.isGliding = false;
@@ -4874,6 +5098,26 @@ function initGame() {
 
     function drawHUD() {
         hudCtx.clearRect(0, 0, hudCanvas.width, hudCanvas.height);
+        
+        // Level indicator (top right)
+        hudCtx.fillStyle = '#6600cc';
+        hudCtx.font = 'bold 24px Arial';
+        const levelText = `Level ${currentLevel}`;
+        const levelTextWidth = hudCtx.measureText(levelText).width;
+        hudCtx.fillText(levelText, hudCanvas.width - levelTextWidth - 20, 30);
+        
+        // Portal proximity indicator
+        const distToPortal = Math.sqrt(
+            Math.pow(playerGroup.position.x - portal.x, 2) +
+            Math.pow(playerGroup.position.z - portal.z, 2)
+        );
+        if (distToPortal < 8) {
+            hudCtx.fillStyle = '#00ffff';
+            hudCtx.font = 'bold 28px Arial';
+            const portalText = `Betrete das Portal zu Level ${portal.destinationLevel}!`;
+            const portalTextWidth = hudCtx.measureText(portalText).width;
+            hudCtx.fillText(portalText, (hudCanvas.width - portalTextWidth) / 2, hudCanvas.height - 60);
+        }
         
         hudCtx.fillStyle = '#000';
         hudCtx.font = 'bold 18px Arial';
@@ -5032,7 +5276,7 @@ function initGame() {
     let accumulator = 0;
     
     function animate(currentTime) {
-        requestAnimationFrame(animate);
+        currentAnimationId = requestAnimationFrame(animate);
         
         const deltaTime = currentTime - lastTime;
         lastTime = currentTime;
@@ -5069,6 +5313,9 @@ function initGame() {
                 pickup.mesh.position.y = getTerrainHeight(pickup.mesh.position.x, pickup.mesh.position.z) + 0.3 + Math.sin(time * 3) * 0.15;
             }
         });
+        
+        // Animate portal (visual effects)
+        animatePortal();
         
         // Fixed timestep game logic updates
         while (accumulator >= targetFrameTime) {
@@ -5291,5 +5538,5 @@ function initGame() {
         renderer.render(scene, camera);
     }
 
-    animate(performance.now());
+    currentAnimationId = requestAnimationFrame(animate);
 }

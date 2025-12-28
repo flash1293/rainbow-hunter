@@ -1,11 +1,22 @@
 // Terrain and environment utilities
 
+// Current level hills (set by main.js when level loads)
+let currentLevelHills = null;
+
+// Set the current level's hills for terrain height calculation
+function setCurrentLevelHills(hills) {
+    currentLevelHills = hills;
+}
+
 // Function to get terrain height at position
 function getTerrainHeight(x, z) {
     let y = 0;
     
+    // Use current level hills if set, otherwise fall back to global HILLS
+    const hills = currentLevelHills || HILLS;
+    
     // Check each hill
-    HILLS.forEach(hill => {
+    hills.forEach(hill => {
         const dist = Math.sqrt(
             Math.pow(x - hill.x, 2) + Math.pow(z - hill.z, 2)
         );
@@ -21,10 +32,12 @@ function getTerrainHeight(x, z) {
 }
 
 // Create visual hill meshes
-function createHills(scene, THREE) {
-    HILLS.forEach(hill => {
+function createHills(scene, THREE, hillPositions, hillColor) {
+    const hills = hillPositions || HILLS;
+    const color = hillColor || 0x228B22; // Default green, or icy blue for Level 2
+    hills.forEach(hill => {
         const hillGeometry = new THREE.ConeGeometry(hill.radius, hill.height, 32);
-        const hillMaterial = new THREE.MeshLambertMaterial({ color: 0x228B22 });
+        const hillMaterial = new THREE.MeshLambertMaterial({ color: color });
         const hillMesh = new THREE.Mesh(hillGeometry, hillMaterial);
         hillMesh.position.set(hill.x, hill.height / 2, hill.z);
         hillMesh.castShadow = true;
@@ -52,9 +65,10 @@ function createMountains(scene, THREE, mountainPositions) {
 }
 
 // Create ground plane
-function createGround(scene, THREE) {
+function createGround(scene, THREE, groundColor) {
+    const color = groundColor || 0x90EE90;
     const groundGeometry = new THREE.PlaneGeometry(600, 600, 1, 1);
-    const groundMaterial = new THREE.MeshLambertMaterial({ color: 0x90EE90 });
+    const groundMaterial = new THREE.MeshLambertMaterial({ color: color });
     const ground = new THREE.Mesh(groundGeometry, groundMaterial);
     ground.rotation.x = -Math.PI / 2;
     ground.receiveShadow = true;
