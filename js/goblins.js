@@ -1,16 +1,18 @@
 // Goblin entities and AI
 import { GAME_CONFIG } from './config.js';
+import { getTerrainTextures } from './terrain.js';
 
 export function createGoblinGeometry(THREE) {
+    const textures = getTerrainTextures(THREE);
     return {
         body: new THREE.BoxGeometry(0.6, 0.8, 0.4),
-        bodyMaterial: new THREE.MeshLambertMaterial({ color: 0x1a1a1a }),
+        bodyMaterial: new THREE.MeshLambertMaterial({ map: textures.goblinArmor }),
         head: new THREE.SphereGeometry(0.4, 16, 16),
-        headMaterial: new THREE.MeshLambertMaterial({ color: 0x3d5c3d }),
+        headMaterial: new THREE.MeshLambertMaterial({ map: textures.goblinSkin }),
         eye: new THREE.SphereGeometry(0.08, 8, 8),
         eyeMaterial: new THREE.MeshBasicMaterial({ color: 0xff0000 }),
         ear: new THREE.ConeGeometry(0.15, 0.4, 4),
-        earMaterial: new THREE.MeshLambertMaterial({ color: 0x3d5c3d })
+        earMaterial: new THREE.MeshLambertMaterial({ map: textures.goblinSkin })
     };
 }
 
@@ -67,17 +69,18 @@ export function createGoblin(x, z, patrolLeft, patrolRight, speed, THREE, scene,
 }
 
 export function createGuardianGoblin(x, z, patrolLeft, patrolRight, speed, THREE, scene, getTerrainHeight, speedMultiplier) {
+    const textures = getTerrainTextures(THREE);
     const goblinGrp = new THREE.Group();
     
     const bodyGeometry = new THREE.BoxGeometry(0.8, 1.0, 0.5);
-    const bodyMaterial = new THREE.MeshLambertMaterial({ color: 0x0a0a0a });
+    const bodyMaterial = new THREE.MeshLambertMaterial({ map: textures.goblinArmor });
     const body = new THREE.Mesh(bodyGeometry, bodyMaterial);
     body.position.y = 1.0;
     body.castShadow = true;
     goblinGrp.add(body);
     
     const headGeometry = new THREE.SphereGeometry(0.5, 16, 16);
-    const headMaterial = new THREE.MeshLambertMaterial({ color: 0x1a2a1a });
+    const headMaterial = new THREE.MeshLambertMaterial({ map: textures.goblinSkin });
     const head = new THREE.Mesh(headGeometry, headMaterial);
     head.position.y = 1.8;
     head.castShadow = true;
@@ -94,7 +97,7 @@ export function createGuardianGoblin(x, z, patrolLeft, patrolRight, speed, THREE
     goblinGrp.add(e2);
     
     const earGeometry = new THREE.ConeGeometry(0.18, 0.5, 4);
-    const earMaterial = new THREE.MeshLambertMaterial({ color: 0x1a2a1a });
+    const earMaterial = new THREE.MeshLambertMaterial({ map: textures.goblinSkin });
     const er1 = new THREE.Mesh(earGeometry, earMaterial);
     er1.rotation.z = Math.PI / 2;
     er1.position.set(-0.6, 1.8, 0);

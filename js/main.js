@@ -184,7 +184,25 @@ function initGame() {
     // Three.js setup
     const container = document.getElementById('gameCanvas');
     const scene = new THREE.Scene();
-    scene.background = new THREE.Color(0x87CEEB);
+    
+    // Use sky texture as background
+    const skyTextures = getTerrainTextures(THREE);
+    scene.background = skyTextures.sky;
+    
+    // Pre-cache explosion and smoke materials to avoid texture loading glitches
+    const explosionBaseMaterial = new THREE.SpriteMaterial({
+        map: skyTextures.explosion,
+        transparent: true,
+        blending: THREE.AdditiveBlending,
+        depthWrite: false,
+        depthTest: true
+    });
+    const smokeBaseMaterial = new THREE.SpriteMaterial({
+        map: skyTextures.smoke,
+        transparent: true,
+        opacity: 0.6,
+        depthWrite: false
+    });
 
     const camera = new THREE.PerspectiveCamera(
         GAME_CONFIG.CAMERA_FOV, 
@@ -234,6 +252,76 @@ function initGame() {
     const riverObj = createRiver(scene, THREE);
     const bridgeObj = createBridge(scene, THREE);
     const brokenBridgeGroup = createBrokenBridge(scene, THREE);
+    
+    // Create 3D clouds
+    const clouds = [];
+    function createCloud(x, y, z) {
+        const cloudGroup = new THREE.Group();
+        
+        // Create fluffy cloud from multiple spheres
+        const cloudMaterial = new THREE.MeshLambertMaterial({
+            color: 0xffffff,
+            transparent: true,
+            opacity: 0.85
+        });
+        
+        // Main cloud body - randomized cluster of spheres
+        const numPuffs = 8 + Math.floor(Math.random() * 6);
+        for (let i = 0; i < numPuffs; i++) {
+            const puffSize = 3 + Math.random() * 5;
+            const puffGeometry = new THREE.SphereGeometry(puffSize, 8, 8);
+            const puff = new THREE.Mesh(puffGeometry, cloudMaterial);
+            
+            // Position puffs in a cloud-like cluster
+            puff.position.set(
+                (Math.random() - 0.5) * 15,
+                (Math.random() - 0.5) * 4,
+                (Math.random() - 0.5) * 8
+            );
+            
+            // Scale some puffs differently for variety
+            const scaleVar = 0.7 + Math.random() * 0.6;
+            puff.scale.set(scaleVar, scaleVar * 0.7, scaleVar);
+            
+            cloudGroup.add(puff);
+        }
+        
+        cloudGroup.position.set(x, y, z);
+        
+        // Random speed for each cloud
+        const speed = 0.02 + Math.random() * 0.03;
+        
+        scene.add(cloudGroup);
+        return { mesh: cloudGroup, speed: speed, startX: x };
+    }
+    
+    // Create clouds in a grid pattern for even distribution
+    const cloudGridX = 8;  // Number of clouds across X axis
+    const cloudGridZ = 6;  // Number of clouds across Z axis
+    const cloudSpacingX = 500 / cloudGridX;  // Total X range divided by count
+    const cloudSpacingZ = 300 / cloudGridZ;  // Total Z range divided by count
+    
+    for (let xi = 0; xi < cloudGridX; xi++) {
+        for (let zi = 0; zi < cloudGridZ; zi++) {
+            // Base position from grid, with small random offset for natural look
+            const x = -250 + xi * cloudSpacingX + (Math.random() - 0.5) * 30;
+            const y = 50 + Math.random() * 35;
+            const z = -280 + zi * cloudSpacingZ + (Math.random() - 0.5) * 25;
+            clouds.push(createCloud(x, y, z));
+        }
+    }
+    
+    // Function to update clouds
+    function updateClouds() {
+        clouds.forEach(cloud => {
+            cloud.mesh.position.x += cloud.speed;
+            
+            // Wrap around when cloud goes too far
+            if (cloud.mesh.position.x > 250) {
+                cloud.mesh.position.x = -250;
+            }
+        });
+    }
    
     // Game state variables
     let bridgeRepaired = false;
@@ -249,6 +337,9 @@ function initGame() {
     let damageFlashTime = 0;
     let lastClientStateSend = 0;
     const clientStateSendInterval = 50; // Send client state at 20Hz to match host sync
+    
+    // Get textures for player
+    const playerTextures = getTerrainTextures(THREE);
     
     // Create player
     const playerGroup = new THREE.Group();
@@ -304,7 +395,9 @@ function initGame() {
     const isHost = !multiplayerManager || multiplayerManager.isHost;
     
     const bodyGeometry = new THREE.BoxGeometry(0.35, 0.6, 0.25);
-    const bodyMaterial = new THREE.MeshLambertMaterial({ color: isHost ? 0xFF69B4 : 0x4169E1 }); // Pink for girl, Blue for boy
+    const bodyMaterial = new THREE.MeshLambertMaterial({ 
+        map: isHost ? playerTextures.playerClothingPink : playerTextures.playerClothingBlue 
+    });
     const body = new THREE.Mesh(bodyGeometry, bodyMaterial);
     body.position.set(0, 1.3, 0.1);
     body.castShadow = true;
@@ -312,7 +405,7 @@ function initGame() {
 
     // Head
     const headGeometry = new THREE.SphereGeometry(0.25, 16, 16);
-    const headMaterial = new THREE.MeshLambertMaterial({ color: 0xFFE4C4 });
+    const headMaterial = new THREE.MeshLambertMaterial({ map: playerTextures.playerSkin });
     const head = new THREE.Mesh(headGeometry, headMaterial);
     head.position.set(0, 1.85, 0);
     head.castShadow = true;
@@ -320,7 +413,9 @@ function initGame() {
 
     // Hair
     const hairGeometry = new THREE.SphereGeometry(0.28, 16, 16, 0, Math.PI * 2, 0, Math.PI / 2);
-    const hairMaterial = new THREE.MeshLambertMaterial({ color: isHost ? 0x8B4513 : 0x000000 }); // Brown for girl, Black for boy
+    const hairMaterial = new THREE.MeshLambertMaterial({ 
+        map: isHost ? playerTextures.hairBrown : playerTextures.hairBlack 
+    });
     const hair = new THREE.Mesh(hairGeometry, hairMaterial);
     hair.position.set(0, 1.95, 0);
     hair.castShadow = true;
@@ -335,23 +430,86 @@ function initGame() {
     directionCone.castShadow = true;
     playerGroup.add(directionCone);
 
-    // Kite
+    // Kite - proper flat diamond shape
+    const kiteTextures = getTerrainTextures(THREE);
     const kiteGroup = new THREE.Group();
-    const kiteGeometry = new THREE.ConeGeometry(0.8, 1.2, 4);
-    const kiteMaterial = new THREE.MeshLambertMaterial({ color: 0xFF1493 });
-    const kite = new THREE.Mesh(kiteGeometry, kiteMaterial);
-    kite.rotation.x = Math.PI;
+    
+    // Create diamond shape using BufferGeometry
+    const kiteShape = new THREE.BufferGeometry();
+    const kiteVertices = new Float32Array([
+        // Diamond shape: top, right, bottom, left (in X-Y plane)
+        0, 0.8, 0,      // top
+        0.6, 0, 0,      // right
+        0, -0.5, 0,     // bottom
+        -0.6, 0, 0      // left
+    ]);
+    const kiteIndices = [
+        0, 1, 2,  // top-right triangle
+        0, 2, 3   // top-left triangle
+    ];
+    const kiteUVs = new Float32Array([
+        0.5, 1,   // top
+        1, 0.5,   // right
+        0.5, 0,   // bottom
+        0, 0.5    // left
+    ]);
+    kiteShape.setAttribute('position', new THREE.BufferAttribute(kiteVertices, 3));
+    kiteShape.setAttribute('uv', new THREE.BufferAttribute(kiteUVs, 2));
+    kiteShape.setIndex(kiteIndices);
+    kiteShape.computeVertexNormals();
+    
+    // Use pink for host (girl), blue for client (boy)
+    const kiteMaterial = new THREE.MeshLambertMaterial({ 
+        map: isHost ? kiteTextures.kitePink : kiteTextures.kiteBlue,
+        side: THREE.DoubleSide
+    });
+    const kite = new THREE.Mesh(kiteShape, kiteMaterial);
     kite.castShadow = true;
     kiteGroup.add(kite);
     
-    // Kite tail
-    const tailGeometry = new THREE.CylinderGeometry(0.02, 0.02, 1.5, 4);
-    const tailMaterial = new THREE.MeshLambertMaterial({ color: 0xFFFF00 });
-    const tail = new THREE.Mesh(tailGeometry, tailMaterial);
-    tail.position.y = -1.2;
-    kiteGroup.add(tail);
+    // Kite cross-sticks
+    const stickMaterial = new THREE.MeshLambertMaterial({ color: 0x8B4513 });
+    const vertStick = new THREE.Mesh(
+        new THREE.CylinderGeometry(0.02, 0.02, 1.3, 4),
+        stickMaterial
+    );
+    vertStick.position.y = 0.15;
+    kiteGroup.add(vertStick);
     
-    kiteGroup.position.set(0, 3, 0.5);
+    const horizStick = new THREE.Mesh(
+        new THREE.CylinderGeometry(0.02, 0.02, 1.2, 4),
+        stickMaterial
+    );
+    horizStick.rotation.z = Math.PI / 2;
+    kiteGroup.add(horizStick);
+    
+    // Kite tail with ribbons
+    const tailGroup = new THREE.Group();
+    const tailStringGeometry = new THREE.CylinderGeometry(0.01, 0.01, 2, 4);
+    const tailStringMaterial = new THREE.MeshLambertMaterial({ color: 0x333333 });
+    const tailString = new THREE.Mesh(tailStringGeometry, tailStringMaterial);
+    tailString.position.y = -1.5;
+    tailGroup.add(tailString);
+    
+    // Colorful ribbons on tail
+    const ribbonColors = [0xFF0000, 0xFFFF00, 0x00FF00, 0x00FFFF];
+    for (let i = 0; i < 4; i++) {
+        const ribbon = new THREE.Mesh(
+            new THREE.BoxGeometry(0.15, 0.25, 0.02),
+            new THREE.MeshLambertMaterial({ color: ribbonColors[i] })
+        );
+        ribbon.position.y = -0.8 - i * 0.5;
+        ribbon.position.x = (Math.random() - 0.5) * 0.2;
+        tailGroup.add(ribbon);
+    }
+    tailGroup.position.y = -0.5;
+    kiteGroup.add(tailGroup);
+    
+    // Rotate kite to stand upright (vertical, facing player) with nose tilted up
+    kiteGroup.rotation.x = -Math.PI / 2 + 0.3;  // 90 degrees upright + nose tilted up
+    kiteGroup.rotation.y = Math.PI;  // 180 degrees for more realistic look
+    
+    kiteGroup.position.set(0, 3.5, -3);  // Behind player
     kiteGroup.visible = false;
     playerGroup.add(kiteGroup);
 
@@ -412,25 +570,29 @@ function initGame() {
         handlebar.castShadow = true;
         otherPlayerGroup.add(handlebar);
 
-        // Body (opposite gender color)
+        // Body (opposite gender color) with texture
         const bodyGeometry = new THREE.BoxGeometry(0.35, 0.6, 0.25);
-        const bodyMaterial = new THREE.MeshLambertMaterial({ color: otherIsGirl ? 0xFF69B4 : 0x4169E1 });
+        const bodyMaterial = new THREE.MeshLambertMaterial({ 
+            map: otherIsGirl ? playerTextures.playerClothingPink : playerTextures.playerClothingBlue 
+        });
         const body = new THREE.Mesh(bodyGeometry, bodyMaterial);
         body.position.set(0, 1.3, 0.1);
         body.castShadow = true;
         otherPlayerGroup.add(body);
 
-        // Head
+        // Head with skin texture
         const headGeometry = new THREE.SphereGeometry(0.25, 16, 16);
-        const headMaterial = new THREE.MeshLambertMaterial({ color: 0xFFE4C4 });
+        const headMaterial = new THREE.MeshLambertMaterial({ map: playerTextures.playerSkin });
         const head = new THREE.Mesh(headGeometry, headMaterial);
         head.position.set(0, 1.85, 0);
         head.castShadow = true;
         otherPlayerGroup.add(head);
 
-        // Hair (opposite gender)
+        // Hair (opposite gender) with texture
         const hairGeometry = new THREE.SphereGeometry(0.28, 16, 16, 0, Math.PI * 2, 0, Math.PI / 2);
-        const hairMaterial = new THREE.MeshLambertMaterial({ color: otherIsGirl ? 0x8B4513 : 0x000000 });
+        const hairMaterial = new THREE.MeshLambertMaterial({ 
+            map: otherIsGirl ? playerTextures.hairBrown : playerTextures.hairBlack 
+        });
         const hair = new THREE.Mesh(hairGeometry, hairMaterial);
         hair.position.set(0, 1.95, 0);
         hair.castShadow = true;
@@ -445,22 +607,76 @@ function initGame() {
         directionCone.castShadow = true;
         otherPlayerGroup.add(directionCone);
 
-        // Kite for other player
+        // Kite for other player - proper flat diamond shape
+        const otherKiteTextures = getTerrainTextures(THREE);
         const otherKiteGroup = new THREE.Group();
-        const otherKiteGeometry = new THREE.ConeGeometry(0.8, 1.2, 4);
-        const otherKiteMaterial = new THREE.MeshLambertMaterial({ color: otherIsGirl ? 0xFF1493 : 0x00BFFF });
-        const otherKite = new THREE.Mesh(otherKiteGeometry, otherKiteMaterial);
-        otherKite.rotation.x = Math.PI;
+        
+        // Create diamond shape using BufferGeometry
+        const otherKiteShape = new THREE.BufferGeometry();
+        const otherKiteVertices = new Float32Array([
+            0, 0.8, 0,      // top
+            0.6, 0, 0,      // right
+            0, -0.5, 0,     // bottom
+            -0.6, 0, 0      // left
+        ]);
+        const otherKiteIndices = [0, 1, 2, 0, 2, 3];
+        const otherKiteUVs = new Float32Array([0.5, 1, 1, 0.5, 0.5, 0, 0, 0.5]);
+        otherKiteShape.setAttribute('position', new THREE.BufferAttribute(otherKiteVertices, 3));
+        otherKiteShape.setAttribute('uv', new THREE.BufferAttribute(otherKiteUVs, 2));
+        otherKiteShape.setIndex(otherKiteIndices);
+        otherKiteShape.computeVertexNormals();
+        
+        const otherKiteMaterial = new THREE.MeshLambertMaterial({ 
+            map: otherIsGirl ? otherKiteTextures.kitePink : otherKiteTextures.kiteBlue,
+            side: THREE.DoubleSide
+        });
+        const otherKite = new THREE.Mesh(otherKiteShape, otherKiteMaterial);
         otherKite.castShadow = true;
         otherKiteGroup.add(otherKite);
         
-        const otherTailGeometry = new THREE.CylinderGeometry(0.02, 0.02, 1.5, 4);
-        const otherTailMaterial = new THREE.MeshLambertMaterial({ color: 0xFFFF00 });
-        const otherTail = new THREE.Mesh(otherTailGeometry, otherTailMaterial);
-        otherTail.position.y = -1.2;
-        otherKiteGroup.add(otherTail);
+        // Kite cross-sticks
+        const otherStickMaterial = new THREE.MeshLambertMaterial({ color: 0x8B4513 });
+        const otherVertStick = new THREE.Mesh(
+            new THREE.CylinderGeometry(0.02, 0.02, 1.3, 4),
+            otherStickMaterial
+        );
+        otherVertStick.position.y = 0.15;
+        otherKiteGroup.add(otherVertStick);
         
-        otherKiteGroup.position.set(0, 3, 0.5);
+        const otherHorizStick = new THREE.Mesh(
+            new THREE.CylinderGeometry(0.02, 0.02, 1.2, 4),
+            otherStickMaterial
+        );
+        otherHorizStick.rotation.z = Math.PI / 2;
+        otherKiteGroup.add(otherHorizStick);
+        
+        // Kite tail with ribbons
+        const otherTailGroup = new THREE.Group();
+        const otherTailString = new THREE.Mesh(
+            new THREE.CylinderGeometry(0.01, 0.01, 2, 4),
+            new THREE.MeshLambertMaterial({ color: 0x333333 })
+        );
+        otherTailString.position.y = -1.5;
+        otherTailGroup.add(otherTailString);
+        
+        const otherRibbonColors = [0xFF0000, 0xFFFF00, 0x00FF00, 0x00FFFF];
+        for (let i = 0; i < 4; i++) {
+            const ribbon = new THREE.Mesh(
+                new THREE.BoxGeometry(0.15, 0.25, 0.02),
+                new THREE.MeshLambertMaterial({ color: otherRibbonColors[i] })
+            );
+            ribbon.position.y = -0.8 - i * 0.5;
+            ribbon.position.x = (Math.random() - 0.5) * 0.2;
+            otherTailGroup.add(ribbon);
+        }
+        otherTailGroup.position.y = -0.5;
+        otherKiteGroup.add(otherTailGroup);
+        
+        // Rotate kite to stand upright (vertical, facing player)
+        otherKiteGroup.rotation.x = -Math.PI / 2 + 0.3;  // 90 degrees upright + nose tilted up
+        otherKiteGroup.rotation.y = Math.PI;  // 180 degrees for more realistic look
+        
+        otherKiteGroup.position.set(0, 3.5, -3);  // Behind player
         otherKiteGroup.visible = false;
         otherPlayerGroup.add(otherKiteGroup);
         otherPlayerGroup.kiteGroup = otherKiteGroup; // Store reference
@@ -867,20 +1083,53 @@ function initGame() {
                     fireballs[i].mesh.position.set(fbData.x, fbData.y, fbData.z);
                     fireballs[i].velocity.set(fbData.vx, fbData.vy, fbData.vz);
                 } else {
-                    const fireballGeometry = new THREE.SphereGeometry(0.8, 8, 8);
-                    const fireballMaterial = new THREE.MeshBasicMaterial({ 
-                        color: 0xFF4500,
-                        emissive: 0xFF4500,
-                        emissiveIntensity: 1.0
+                    const fbTextures = getTerrainTextures(THREE);
+                    
+                    // Create fireball group with core, glow, and flames
+                    const fireballGroup = new THREE.Group();
+                    
+                    // Core sphere
+                    const coreGeometry = new THREE.SphereGeometry(0.6, 12, 12);
+                    const coreMaterial = new THREE.MeshBasicMaterial({ 
+                        map: fbTextures.fireball,
+                        transparent: true
                     });
-                    const fireballMesh = new THREE.Mesh(fireballGeometry, fireballMaterial);
-                    fireballMesh.position.set(fbData.x, fbData.y, fbData.z);
-                    scene.add(fireballMesh);
+                    const core = new THREE.Mesh(coreGeometry, coreMaterial);
+                    fireballGroup.add(core);
+                    
+                    // Outer glow sprite
+                    const glowMaterial = new THREE.SpriteMaterial({
+                        map: fbTextures.explosion,
+                        transparent: true,
+                        blending: THREE.AdditiveBlending,
+                        depthWrite: false,
+                        opacity: 0.7
+                    });
+                    const glow = new THREE.Sprite(glowMaterial);
+                    glow.scale.set(3, 3, 1);
+                    fireballGroup.add(glow);
+                    
+                    // Inner bright glow
+                    const innerGlowMaterial = new THREE.SpriteMaterial({
+                        map: fbTextures.explosion,
+                        transparent: true,
+                        blending: THREE.AdditiveBlending,
+                        depthWrite: false,
+                        opacity: 0.9
+                    });
+                    const innerGlow = new THREE.Sprite(innerGlowMaterial);
+                    innerGlow.scale.set(1.8, 1.8, 1);
+                    fireballGroup.add(innerGlow);
+                    
+                    fireballGroup.position.set(fbData.x, fbData.y, fbData.z);
+                    scene.add(fireballGroup);
                     fireballs.push({
-                        mesh: fireballMesh,
+                        mesh: fireballGroup,
                         velocity: new THREE.Vector3(fbData.vx, fbData.vy, fbData.vz),
                         radius: 1.5,
-                        damage: 1
+                        damage: 1,
+                        trail: [],
+                        lastTrailTime: 0
                     });
                 }
             });
@@ -1245,15 +1494,24 @@ function initGame() {
     treePositions.forEach(pos => {
         const treeGroup = new THREE.Group();
         
+        // Get cached textures from terrain.js
+        const textures = getTerrainTextures(THREE);
+        
         const trunkGeometry = new THREE.CylinderGeometry(0.3, 0.4, 2, 8);
-        const trunkMaterial = new THREE.MeshLambertMaterial({ color: 0x8B4513 });
+        const trunkMaterial = new THREE.MeshLambertMaterial({ 
+            map: textures.bark,
+            color: 0xccbbaa
+        });
         const trunk = new THREE.Mesh(trunkGeometry, trunkMaterial);
         trunk.position.y = 1;
         trunk.castShadow = true;
         treeGroup.add(trunk);
         
         const foliageGeometry = new THREE.SphereGeometry(1.5, 8, 8);
-        const foliageMaterial = new THREE.MeshLambertMaterial({ color: 0x228B22 });
+        const foliageMaterial = new THREE.MeshLambertMaterial({ 
+            map: textures.foliage,
+            color: 0x88dd88
+        });
         const foliage = new THREE.Mesh(foliageGeometry, foliageMaterial);
         foliage.position.y = 2.5;
         foliage.castShadow = true;
@@ -1651,24 +1909,30 @@ function initGame() {
 
     // Goblin helper function
     function createGoblin(x, z, patrolLeft, patrolRight, speed = 0.013) {
+        const textures = getTerrainTextures(THREE);
         const goblinGrp = new THREE.Group();
         
         const bodyGeometry = new THREE.BoxGeometry(0.6, 0.8, 0.4);
-        const bodyMaterial = new THREE.MeshLambertMaterial({ color: 0x1a1a1a });
+        const bodyMaterial = new THREE.MeshLambertMaterial({ map: textures.goblinArmor });
         const goblinBody = new THREE.Mesh(bodyGeometry, bodyMaterial);
         goblinBody.position.y = 0.8;
         goblinBody.castShadow = true;
         goblinGrp.add(goblinBody);
         
         const headGeometry = new THREE.SphereGeometry(0.4, 16, 16);
-        const headMaterial = new THREE.MeshLambertMaterial({ color: 0x3d5c3d });
+        const headMaterial = new THREE.MeshLambertMaterial({ map: textures.goblinSkin });
         const goblinHead = new THREE.Mesh(headGeometry, headMaterial);
         goblinHead.position.y = 1.5;
         goblinHead.castShadow = true;
         goblinGrp.add(goblinHead);
         
-        const eyeGeometry = new THREE.SphereGeometry(0.08, 8, 8);
-        const eyeMaterial = new THREE.MeshBasicMaterial({ color: 0xff0000 });
+        const eyeGeometry = new THREE.SphereGeometry(0.1, 16, 16);
+        const eyeMaterial = new THREE.MeshBasicMaterial({ 
+            map: textures.goblinEye,
+            transparent: true,
+            blending: THREE.AdditiveBlending,
+            depthWrite: false
+        });
         const eye1 = new THREE.Mesh(eyeGeometry, eyeMaterial);
         eye1.position.set(-0.15, 1.5, 0.35);
         goblinGrp.add(eye1);
@@ -1678,7 +1942,7 @@ function initGame() {
         goblinGrp.add(eye2);
         
         const earGeometry = new THREE.ConeGeometry(0.15, 0.4, 4);
-        const earMaterial = new THREE.MeshLambertMaterial({ color: 0x3d5c3d });
+        const earMaterial = new THREE.MeshLambertMaterial({ map: textures.goblinSkin });
         const ear1 = new THREE.Mesh(earGeometry, earMaterial);
         ear1.rotation.z = Math.PI / 2;
         ear1.position.set(-0.5, 1.5, 0);
@@ -1716,24 +1980,30 @@ function initGame() {
 
     // Guardian goblin helper
     function createGuardianGoblin(x, z, patrolLeft, patrolRight, speed = 0.014) {
+        const textures = getTerrainTextures(THREE);
         const goblinGrp = new THREE.Group();
         
         const bodyGeometry = new THREE.BoxGeometry(0.8, 1.0, 0.5);
-        const bodyMaterial = new THREE.MeshLambertMaterial({ color: 0x0a0a0a });
+        const bodyMaterial = new THREE.MeshLambertMaterial({ map: textures.goblinArmor });
         const body = new THREE.Mesh(bodyGeometry, bodyMaterial);
         body.position.y = 1.0;
         body.castShadow = true;
         goblinGrp.add(body);
         
         const headGeometry = new THREE.SphereGeometry(0.5, 16, 16);
-        const headMaterial = new THREE.MeshLambertMaterial({ color: 0x1a2a1a });
+        const headMaterial = new THREE.MeshLambertMaterial({ map: textures.goblinSkin });
         const head = new THREE.Mesh(headGeometry, headMaterial);
         head.position.y = 1.8;
         head.castShadow = true;
         goblinGrp.add(head);
         
-        const eyeGeometry = new THREE.SphereGeometry(0.1, 8, 8);
-        const eyeMaterial = new THREE.MeshBasicMaterial({ color: 0xffff00 });
+        const eyeGeometry = new THREE.SphereGeometry(0.12, 16, 16);
+        const eyeMaterial = new THREE.MeshBasicMaterial({ 
+            map: textures.guardianEye,
+            transparent: true,
+            blending: THREE.AdditiveBlending,
+            depthWrite: false
+        });
         const e1 = new THREE.Mesh(eyeGeometry, eyeMaterial);
         e1.position.set(-0.18, 1.8, 0.42);
         goblinGrp.add(e1);
@@ -1743,7 +2013,7 @@ function initGame() {
         goblinGrp.add(e2);
         
         const earGeometry = new THREE.ConeGeometry(0.18, 0.5, 4);
-        const earMaterial = new THREE.MeshLambertMaterial({ color: 0x1a2a1a });
+        const earMaterial = new THREE.MeshLambertMaterial({ map: textures.goblinSkin });
         const er1 = new THREE.Mesh(earGeometry, earMaterial);
         er1.rotation.z = Math.PI / 2;
         er1.position.set(-0.6, 1.8, 0);
@@ -1783,11 +2053,12 @@ function initGame() {
 
     // Giant guardian helper - huge slow enemy with lots of health
     function createGiant(x, z, patrolLeft, patrolRight, speed = 0.018) {
+        const textures = getTerrainTextures(THREE);
         const giantGrp = new THREE.Group();
         
         // Massive cylindrical body
         const bodyGeometry = new THREE.CylinderGeometry(1.5, 1.8, 5.0, 12);
-        const bodyMaterial = new THREE.MeshLambertMaterial({ color: 0x4a3a2a });
+        const bodyMaterial = new THREE.MeshLambertMaterial({ map: textures.giantSkin });
         const body = new THREE.Mesh(bodyGeometry, bodyMaterial);
         body.position.y = 3.5;
         body.castShadow = true;
@@ -1795,7 +2066,7 @@ function initGame() {
         
         // Add armor plates on body
         const plateGeometry = new THREE.BoxGeometry(2.0, 0.4, 2.2);
-        const plateMaterial = new THREE.MeshLambertMaterial({ color: 0x1a1a1a });
+        const plateMaterial = new THREE.MeshLambertMaterial({ map: textures.giantArmor });
         for (let i = 0; i < 4; i++) {
             const plate = new THREE.Mesh(plateGeometry, plateMaterial);
             plate.position.y = 2.0 + (i * 1.2);
@@ -1805,7 +2076,7 @@ function initGame() {
         
         // Large head with horns
         const headGeometry = new THREE.BoxGeometry(1.8, 1.5, 1.6);
-        const headMaterial = new THREE.MeshLambertMaterial({ color: 0x3a2a1a });
+        const headMaterial = new THREE.MeshLambertMaterial({ map: textures.giantSkin });
         const head = new THREE.Mesh(headGeometry, headMaterial);
         head.position.y = 6.5;
         head.castShadow = true;
@@ -1813,7 +2084,7 @@ function initGame() {
         
         // Horns
         const hornGeometry = new THREE.ConeGeometry(0.3, 1.2, 6);
-        const hornMaterial = new THREE.MeshLambertMaterial({ color: 0x2a2a2a });
+        const hornMaterial = new THREE.MeshLambertMaterial({ map: textures.giantArmor });
         
         const leftHorn = new THREE.Mesh(hornGeometry, hornMaterial);
         leftHorn.position.set(-0.9, 7.5, 0);
@@ -1827,12 +2098,13 @@ function initGame() {
         rightHorn.castShadow = true;
         giantGrp.add(rightHorn);
         
-        // Glowing orange eyes
-        const eyeGeometry = new THREE.SphereGeometry(0.3, 8, 8);
+        // Glowing orange eyes with texture
+        const eyeGeometry = new THREE.SphereGeometry(0.4, 16, 16);
         const eyeMaterial = new THREE.MeshBasicMaterial({ 
-            color: 0xff6600, 
-            emissive: 0xff6600, 
-            emissiveIntensity: 1.0 
+            map: textures.giantEye,
+            transparent: true,
+            blending: THREE.AdditiveBlending,
+            depthWrite: false
         });
         const e1 = new THREE.Mesh(eyeGeometry, eyeMaterial);
         e1.position.set(-0.5, 6.5, 0.9);
@@ -1844,7 +2116,7 @@ function initGame() {
         
         // Massive club-like arms
         const armGeometry = new THREE.CylinderGeometry(0.4, 0.8, 4.0, 8);
-        const armMaterial = new THREE.MeshLambertMaterial({ color: 0x4a3a2a });
+        const armMaterial = new THREE.MeshLambertMaterial({ map: textures.giantSkin });
         
         const leftArm = new THREE.Mesh(armGeometry, armMaterial);
         leftArm.position.set(-2.2, 4.0, 0);
@@ -1862,7 +2134,7 @@ function initGame() {
         
         // Giant fists
         const fistGeometry = new THREE.BoxGeometry(0.8, 0.8, 0.8);
-        const fistMaterial = new THREE.MeshLambertMaterial({ color: 0x3a2a1a });
+        const fistMaterial = new THREE.MeshLambertMaterial({ map: textures.giantSkin });
         
         const leftFist = new THREE.Mesh(fistGeometry, fistMaterial);
         leftFist.position.set(-2.8, 1.8, 0);
@@ -2163,11 +2435,12 @@ function initGame() {
 
     // Create Dragon (boss enemy)
     function createDragon() {
+        const textures = getTerrainTextures(THREE);
         const dragonGroup = new THREE.Group();
         
         // Body - long segmented shape
         const bodyGeometry = new THREE.CylinderGeometry(2, 2.5, 10, 12);
-        const bodyMaterial = new THREE.MeshLambertMaterial({ color: 0x8B0000 });
+        const bodyMaterial = new THREE.MeshLambertMaterial({ map: textures.dragonScale });
         const body = new THREE.Mesh(bodyGeometry, bodyMaterial);
         body.rotation.z = Math.PI / 2;
         body.position.x = 5;
@@ -2177,7 +2450,7 @@ function initGame() {
         // Body scales
         for (let i = 0; i < 8; i++) {
             const scaleGeometry = new THREE.ConeGeometry(0.6, 1.2, 6);
-            const scaleMaterial = new THREE.MeshLambertMaterial({ color: 0x6B0000 });
+            const scaleMaterial = new THREE.MeshLambertMaterial({ map: textures.dragonScale });
             const scale = new THREE.Mesh(scaleGeometry, scaleMaterial);
             scale.position.set(i * 1.2, 2.8, 0);
             scale.rotation.z = 0;
@@ -2196,7 +2469,7 @@ function initGame() {
         
         // Head - large diamond shape
         const headGeometry = new THREE.ConeGeometry(2.5, 5, 8);
-        const headMaterial = new THREE.MeshLambertMaterial({ color: 0xA52A2A });
+        const headMaterial = new THREE.MeshLambertMaterial({ map: textures.dragonScale });
         const head = new THREE.Mesh(headGeometry, headMaterial);
         head.rotation.z = -Math.PI / 2;
         head.position.x = 13;
@@ -2221,12 +2494,13 @@ function initGame() {
             dragonGroup.add(tooth);
         }
         
-        // Eyes - glowing orange with pupils
-        const eyeGeometry = new THREE.SphereGeometry(0.5, 8, 8);
+        // Eyes - glowing with texture and sprite glow
+        const eyeGeometry = new THREE.SphereGeometry(0.6, 16, 16);
         const eyeMaterial = new THREE.MeshBasicMaterial({ 
-            color: 0xFF6600, 
-            emissive: 0xFF6600, 
-            emissiveIntensity: 1.0 
+            map: textures.dragonEye,
+            transparent: true,
+            blending: THREE.AdditiveBlending,
+            depthWrite: false
         });
         const leftEye = new THREE.Mesh(eyeGeometry, eyeMaterial);
         leftEye.position.set(13.5, 2.5, 1.2);
@@ -2236,16 +2510,23 @@ function initGame() {
         rightEye.position.set(13.5, 2.5, -1.2);
         dragonGroup.add(rightEye);
         
-        // Pupils
-        const pupilGeometry = new THREE.SphereGeometry(0.2, 6, 6);
-        const pupilMaterial = new THREE.MeshBasicMaterial({ color: 0x000000 });
-        const leftPupil = new THREE.Mesh(pupilGeometry, pupilMaterial);
-        leftPupil.position.set(14, 2.5, 1.2);
-        dragonGroup.add(leftPupil);
+        // Eye glow sprites - larger and brighter
+        const eyeGlowGeometry = new THREE.PlaneGeometry(2.5, 2.5);
+        const eyeGlowMaterial = new THREE.MeshBasicMaterial({
+            map: textures.dragonEye,
+            transparent: true,
+            opacity: 0.7,
+            side: THREE.DoubleSide,
+            blending: THREE.AdditiveBlending,
+            depthWrite: false
+        });
+        const leftEyeGlow = new THREE.Mesh(eyeGlowGeometry, eyeGlowMaterial);
+        leftEyeGlow.position.set(13.8, 2.5, 1.2);
+        dragonGroup.add(leftEyeGlow);
         
-        const rightPupil = new THREE.Mesh(pupilGeometry, pupilMaterial);
-        rightPupil.position.set(14, 2.5, -1.2);
-        dragonGroup.add(rightPupil);
+        const rightEyeGlow = new THREE.Mesh(eyeGlowGeometry, eyeGlowMaterial);
+        rightEyeGlow.position.set(13.8, 2.5, -1.2);
+        dragonGroup.add(rightEyeGlow);
         
         // Wings - more detailed
         const wingGeometry = new THREE.BufferGeometry();
@@ -2261,7 +2542,7 @@ function initGame() {
         wingGeometry.computeVertexNormals();
         
         const wingMaterial = new THREE.MeshLambertMaterial({ 
-            color: 0x6B0000, 
+            map: textures.dragonScale, 
             side: THREE.DoubleSide 
         });
         
@@ -2293,7 +2574,7 @@ function initGame() {
         // Tail spikes
         for (let i = 0; i < 10; i++) {
             const spikeGeometry = new THREE.ConeGeometry(0.3, 1, 6);
-            const spikeMaterial = new THREE.MeshLambertMaterial({ color: 0x4B0000 });
+            const spikeMaterial = new THREE.MeshLambertMaterial({ map: textures.dragonScale });
             const spike = new THREE.Mesh(spikeGeometry, spikeMaterial);
             spike.position.set(-i * 0.8, 2.5, 0);
             spike.rotation.z = Math.PI;
@@ -2321,7 +2602,7 @@ function initGame() {
         
         // Chest/belly - lighter color
         const bellyGeometry = new THREE.CylinderGeometry(1.8, 2.2, 8, 12);
-        const bellyMaterial = new THREE.MeshLambertMaterial({ color: 0xB8860B });
+        const bellyMaterial = new THREE.MeshLambertMaterial({ map: textures.dragonBelly });
         const belly = new THREE.Mesh(bellyGeometry, bellyMaterial);
         belly.rotation.z = Math.PI / 2;
         belly.position.x = 5;
@@ -2343,8 +2624,8 @@ function initGame() {
             tailSegments: tailSegments,
             leftEye: leftEye,
             rightEye: rightEye,
-            leftPupil: leftPupil,
-            rightPupil: rightPupil,
+            leftEyeGlow: leftEyeGlow,
+            rightEyeGlow: rightEyeGlow,
             health: 50,
             maxHealth: 50,
             alive: true,
@@ -2377,6 +2658,8 @@ function initGame() {
     // Game arrays
     const bullets = [];
     const explosions = [];
+    const smokeParticles = [];
+    const scorchMarks = [];
     const guardianArrows = [];
     const birds = [];
     const bombs = [];
@@ -2448,19 +2731,19 @@ function initGame() {
         birds.push(createBird(60, -130, 28, 0.006));
     }
 
-    // Explosion helper
+    // Explosion helper (small, for bullets hitting enemies)
     function createExplosion(x, y, z) {
         Audio.playExplosionSound();
         
         const particles = [];
-        const particleCount = 20;
+        const particleCount = 15;
         
         for (let i = 0; i < particleCount; i++) {
-            const particleGeometry = new THREE.SphereGeometry(0.1, 3, 3);
-            const particleMaterial = new THREE.MeshBasicMaterial({ 
-                color: Math.random() > 0.5 ? 0xFF4500 : 0xFFFF00 
-            });
-            const particle = new THREE.Mesh(particleGeometry, particleMaterial);
+            // Clone pre-cached material to avoid texture loading glitches
+            const spriteMaterial = explosionBaseMaterial.clone();
+            const particle = new THREE.Sprite(spriteMaterial);
+            const size = 0.2 + Math.random() * 0.25;
+            particle.scale.set(size, size, 1);
             particle.position.set(x, y, z);
             
             const velocity = new THREE.Vector3(
@@ -2470,10 +2753,43 @@ function initGame() {
             );
             
             scene.add(particle);
-            particles.push({ mesh: particle, velocity: velocity, life: 30 });
+            particles.push({ mesh: particle, velocity: velocity, life: 30, initialScale: size });
         }
         
         explosions.push(...particles);
+    }
+
+    // Fireball impact explosion (medium size with smoke and scorch)
+    function createFireballExplosion(x, y, z) {
+        Audio.playExplosionSound();
+        
+        const particles = [];
+        const particleCount = 40;
+        
+        for (let i = 0; i < particleCount; i++) {
+            const size = 0.5 + Math.random() * 0.8;
+            // Clone pre-cached material to avoid texture loading glitches
+            const spriteMaterial = explosionBaseMaterial.clone();
+            const particle = new THREE.Sprite(spriteMaterial);
+            particle.scale.set(size, size, 1);
+            particle.position.set(x, y, z);
+            
+            const speed = 0.2 + Math.random() * 0.5;
+            const velocity = new THREE.Vector3(
+                (Math.random() - 0.5) * speed,
+                Math.random() * speed * 0.6,
+                (Math.random() - 0.5) * speed
+            );
+            
+            scene.add(particle);
+            particles.push({ mesh: particle, velocity: velocity, life: 35, initialScale: size });
+        }
+        
+        explosions.push(...particles);
+        
+        // Add smoke and scorch
+        createSmokeCloud(x, y + 0.5, z, 0.8);
+        createScorchMark(x, z, 2.5);
     }
 
     // Big bomb explosion helper
@@ -2481,27 +2797,18 @@ function initGame() {
         Audio.playBombExplosionSound();
         
         const particles = [];
-        const particleCount = 80;
+        const particleCount = 100;
         
         for (let i = 0; i < particleCount; i++) {
-            const size = 0.15 + Math.random() * 0.3;
-            const particleGeometry = new THREE.SphereGeometry(size, 6, 6);
+            const size = 1.0 + Math.random() * 1.5;
             
-            // Mix of fire colors and smoke
-            let color;
-            const rand = Math.random();
-            if (rand > 0.7) {
-                color = 0xFFFF00; // Bright yellow
-            } else if (rand > 0.4) {
-                color = 0xFF4500; // Orange-red
-            } else if (rand > 0.2) {
-                color = 0xFF8C00; // Dark orange
-            } else {
-                color = 0x888888; // Gray smoke
-            }
-            
-            const particleMaterial = new THREE.MeshBasicMaterial({ color: color });
-            const particle = new THREE.Mesh(particleGeometry, particleMaterial);
+            // Mix of fire glow and smoke - clone pre-cached materials
+            let useSmokeColor = Math.random() < 0.12;
+            const spriteMaterial = useSmokeColor 
+                ? smokeBaseMaterial.clone()
+                : explosionBaseMaterial.clone();
+            const particle = new THREE.Sprite(spriteMaterial);
+            particle.scale.set(size, size, 1);
             particle.position.set(x, y, z);
             
             const speed = 0.3 + Math.random() * 0.8;
@@ -2512,10 +2819,16 @@ function initGame() {
             );
             
             scene.add(particle);
-            particles.push({ mesh: particle, velocity: velocity, life: 45 });
+            particles.push({ mesh: particle, velocity: velocity, life: 45, initialScale: size });
         }
         
         explosions.push(...particles);
+        
+        // Add lingering smoke cloud
+        createSmokeCloud(x, y + 1, z, 1.5);
+        
+        // Add scorch mark on ground
+        createScorchMark(x, z, 5);
     }
 
     // Massive dragon death explosion
@@ -2523,27 +2836,15 @@ function initGame() {
         Audio.playBombExplosionSound();
         
         const particles = [];
-        const particleCount = 150; // Way more particles
+        const particleCount = 180; // Way more particles
         
         for (let i = 0; i < particleCount; i++) {
-            const size = 0.3 + Math.random() * 0.6; // Much bigger particles
-            const particleGeometry = new THREE.SphereGeometry(size, 8, 8);
+            const size = 1.5 + Math.random() * 2.5; // Much bigger glowing sprites
             
-            // Intense fire colors
-            let color;
-            const rand = Math.random();
-            if (rand > 0.7) {
-                color = 0xFFFF00; // Bright yellow
-            } else if (rand > 0.4) {
-                color = 0xFF4500; // Orange-red
-            } else if (rand > 0.2) {
-                color = 0xFF8C00; // Dark orange
-            } else {
-                color = 0xFF0000; // Pure red
-            }
-            
-            const particleMaterial = new THREE.MeshBasicMaterial({ color: color });
-            const particle = new THREE.Mesh(particleGeometry, particleMaterial);
+            // Clone pre-cached material to avoid texture loading glitches
+            const spriteMaterial = explosionBaseMaterial.clone();
+            const particle = new THREE.Sprite(spriteMaterial);
+            particle.scale.set(size, size, 1);
             particle.position.set(x, y, z);
             
             const speed = 0.5 + Math.random() * 1.2; // Much faster
@@ -2554,10 +2855,112 @@ function initGame() {
             );
             
             scene.add(particle);
-            particles.push({ mesh: particle, velocity: velocity, life: 60 }); // Longer life
+            particles.push({ mesh: particle, velocity: velocity, life: 60, initialScale: size }); // Longer life
         }
         
         explosions.push(...particles);
+    }
+
+    // Create lingering smoke cloud
+    function createSmokeCloud(x, y, z, intensity = 1.0) {
+        const smokeCount = Math.floor(8 * intensity);
+        
+        for (let i = 0; i < smokeCount; i++) {
+            // Clone pre-cached material and adjust opacity
+            const smokeMaterial = smokeBaseMaterial.clone();
+            smokeMaterial.opacity = 0.5 + Math.random() * 0.3;
+            const smoke = new THREE.Sprite(smokeMaterial);
+            const size = (1.5 + Math.random() * 2.0) * intensity;
+            smoke.scale.set(size, size, 1);
+            
+            // Position with some spread
+            smoke.position.set(
+                x + (Math.random() - 0.5) * 2 * intensity,
+                y + Math.random() * 1.5,
+                z + (Math.random() - 0.5) * 2 * intensity
+            );
+            
+            scene.add(smoke);
+            smokeParticles.push({
+                mesh: smoke,
+                velocity: new THREE.Vector3(
+                    (Math.random() - 0.5) * 0.02,
+                    0.01 + Math.random() * 0.02,  // Slowly rise
+                    (Math.random() - 0.5) * 0.02
+                ),
+                life: 150 + Math.random() * 100,  // Long life (2.5-4 seconds)
+                initialOpacity: smoke.material.opacity,
+                initialScale: size
+            });
+        }
+    }
+
+    // Create scorch mark on the ground
+    function createScorchMark(x, z, size = 3) {
+        const textures = getTerrainTextures(THREE);
+        const terrainHeight = getTerrainHeight(x, z);
+        
+        const scorchGeometry = new THREE.PlaneGeometry(size, size);
+        const scorchMaterial = new THREE.MeshBasicMaterial({
+            map: textures.scorch,
+            transparent: true,
+            opacity: 0.8,
+            depthWrite: false
+        });
+        const scorch = new THREE.Mesh(scorchGeometry, scorchMaterial);
+        scorch.rotation.x = -Math.PI / 2;  // Lay flat on ground
+        scorch.rotation.z = Math.random() * Math.PI * 2;  // Random rotation
+        scorch.position.set(x, terrainHeight + 0.02, z);  // Slightly above ground
+        
+        scene.add(scorch);
+        scorchMarks.push({
+            mesh: scorch,
+            life: 600 + Math.random() * 300,  // 10-15 seconds
+            initialOpacity: 0.8
+        });
+    }
+
+    // Update smoke particles
+    function updateSmoke() {
+        for (let i = smokeParticles.length - 1; i >= 0; i--) {
+            const smoke = smokeParticles[i];
+            smoke.mesh.position.add(smoke.velocity);
+            smoke.life--;
+            
+            // Fade out and expand
+            const lifeRatio = smoke.life / 200;
+            smoke.mesh.material.opacity = smoke.initialOpacity * Math.min(1, lifeRatio * 1.5);
+            // Expand slightly as it rises
+            const expandFactor = 1 + (1 - lifeRatio) * 0.5;
+            smoke.mesh.scale.set(
+                smoke.initialScale * expandFactor,
+                smoke.initialScale * expandFactor,
+                1
+            );
+            
+            if (smoke.life <= 0) {
+                scene.remove(smoke.mesh);
+                smokeParticles.splice(i, 1);
+            }
+        }
+    }
+
+    // Update scorch marks (fade over time)
+    function updateScorchMarks() {
+        for (let i = scorchMarks.length - 1; i >= 0; i--) {
+            const scorch = scorchMarks[i];
+            scorch.life--;
+            
+            // Start fading in the last 200 frames
+            if (scorch.life < 200) {
+                scorch.mesh.material.opacity = scorch.initialOpacity * (scorch.life / 200);
+            }
+            
+            if (scorch.life <= 0) {
+                scene.remove(scorch.mesh);
+                scorchMarks.splice(i, 1);
+            }
+        }
     }
 
     // Shoot bullet
@@ -3537,6 +3940,17 @@ function initGame() {
             exp.velocity.y -= 0.02;
             exp.life--;
             
+            // Fade out and shrink for star-like dissipation
+            const lifeRatio = exp.life / 60; // Normalize to 0-1
+            if (exp.mesh.material) {
+                exp.mesh.material.opacity = Math.max(0, lifeRatio * 1.5);
+            }
+            // Shrink as it fades
+            if (exp.initialScale) {
+                const scale = exp.initialScale * (0.3 + lifeRatio * 0.7);
+                exp.mesh.scale.set(scale, scale, 1);
+            }
+            
             if (exp.life <= 0) {
                 scene.remove(exp.mesh);
                 explosions.splice(i, 1);
@@ -3648,6 +4062,29 @@ function initGame() {
             // Track velocity for sync
             gob.velocity.x = gob.mesh.position.x - oldX;
             gob.velocity.z = gob.mesh.position.z - oldZ;
+            
+            // Check mountain collision - prevent goblins from entering mountains
+            for (const mtn of MOUNTAINS) {
+                const distToMountain = Math.sqrt(
+                    (gob.mesh.position.x - mtn.x) ** 2 +
+                    (gob.mesh.position.z - mtn.z) ** 2
+                );
+                const mountainRadius = mtn.width / 2 - 1; // Slight buffer
+                if (distToMountain < mountainRadius) {
+                    // Push goblin back out of mountain
+                    const pushAngle = Math.atan2(
+                        gob.mesh.position.z - mtn.z,
+                        gob.mesh.position.x - mtn.x
+                    );
+                    gob.mesh.position.x = mtn.x + Math.cos(pushAngle) * mountainRadius;
+                    gob.mesh.position.z = mtn.z + Math.sin(pushAngle) * mountainRadius;
+                    
+                    // Reverse patrol direction if patrolling
+                    if (!gob.isChasing) {
+                        gob.direction *= -1;
+                    }
+                }
+            }
             
             const terrainHeight = getTerrainHeight(gob.mesh.position.x, gob.mesh.position.z);
             gob.mesh.position.y = terrainHeight + 0.1;
@@ -4123,13 +4560,10 @@ function initGame() {
         );
         dragon.mesh.rotation.y = angleToPlayer - Math.PI / 2;
         
-        // Make eyes look at player
-        const eyeOffsetX = (targetPlayer.position.x - dragon.mesh.position.x) * 0.02;
-        const eyeOffsetZ = (targetPlayer.position.z - dragon.mesh.position.z) * 0.02;
-        dragon.leftPupil.position.x = 14 + Math.min(Math.max(eyeOffsetX, -0.2), 0.2);
-        dragon.leftPupil.position.z = 1.2 + Math.min(Math.max(eyeOffsetZ, -0.2), 0.2);
-        dragon.rightPupil.position.x = 14 + Math.min(Math.max(eyeOffsetX, -0.2), 0.2);
-        dragon.rightPupil.position.z = -1.2 + Math.min(Math.max(eyeOffsetZ, -0.2), 0.2);
+        // Make eye glows pulse menacingly
+        const eyePulse = 0.4 + Math.sin(now * 0.005) * 0.2;
+        if (dragon.leftEyeGlow) dragon.leftEyeGlow.material.opacity = eyePulse;
+        if (dragon.rightEyeGlow) dragon.rightEyeGlow.material.opacity = eyePulse;
         
         // Check collision damage with host player (host only handles damage)
         if (distToPlayer < 5 && !godMode) { // Dragon body radius ~5 units
@@ -4225,29 +4659,62 @@ function initGame() {
             
             // Only fire if player is in range
             if (targetDist < 100) {
-                const fireballGeometry = new THREE.SphereGeometry(0.8, 8, 8);
-                const fireballMaterial = new THREE.MeshBasicMaterial({ 
-                    color: 0xFF4500,
-                    emissive: 0xFF4500,
-                    emissiveIntensity: 1.0
+                const fbTextures = getTerrainTextures(THREE);
+                
+                // Create fireball group with core, glow, and flames
+                const fireballGroup = new THREE.Group();
+                
+                // Core sphere
+                const coreGeometry = new THREE.SphereGeometry(0.6, 12, 12);
+                const coreMaterial = new THREE.MeshBasicMaterial({ 
+                    map: fbTextures.fireball,
+                    transparent: true
                 });
-                const fireballMesh = new THREE.Mesh(fireballGeometry, fireballMaterial);
-                fireballMesh.position.copy(dragon.mesh.position);
-                fireballMesh.position.x += dragon.direction > 0 ? 14 : -14;
-                fireballMesh.position.y += 1;
-                scene.add(fireballMesh);
+                const core = new THREE.Mesh(coreGeometry, coreMaterial);
+                fireballGroup.add(core);
+                
+                // Outer glow sprite
+                const glowMaterial = new THREE.SpriteMaterial({
+                    map: fbTextures.explosion,
+                    transparent: true,
+                    blending: THREE.AdditiveBlending,
+                    depthWrite: false,
+                    opacity: 0.7
+                });
+                const glow = new THREE.Sprite(glowMaterial);
+                glow.scale.set(3, 3, 1);
+                fireballGroup.add(glow);
+                
+                // Inner bright glow
+                const innerGlowMaterial = new THREE.SpriteMaterial({
+                    map: fbTextures.explosion,
+                    transparent: true,
+                    blending: THREE.AdditiveBlending,
+                    depthWrite: false,
+                    opacity: 0.9
+                });
+                const innerGlow = new THREE.Sprite(innerGlowMaterial);
+                innerGlow.scale.set(1.8, 1.8, 1);
+                fireballGroup.add(innerGlow);
+                
+                fireballGroup.position.copy(dragon.mesh.position);
+                fireballGroup.position.x += dragon.direction > 0 ? 14 : -14;
+                fireballGroup.position.y += 1;
+                scene.add(fireballGroup);
                 
                 // Calculate direction to target (including Y axis)
-                const dirX = targetPlayer.position.x - fireballMesh.position.x;
-                const dirY = targetPlayer.position.y - fireballMesh.position.y;
-                const dirZ = targetPlayer.position.z - fireballMesh.position.z;
+                const dirX = targetPlayer.position.x - fireballGroup.position.x;
+                const dirY = targetPlayer.position.y - fireballGroup.position.y;
+                const dirZ = targetPlayer.position.z - fireballGroup.position.z;
                 const length = Math.sqrt(dirX * dirX + dirY * dirY + dirZ * dirZ);
                 
                 fireballs.push({
-                    mesh: fireballMesh,
+                    mesh: fireballGroup,
                     velocity: new THREE.Vector3(dirX / length * 0.4, dirY / length * 0.4, dirZ / length * 0.4),
                     radius: 1.5,
-                    damage: 1
+                    damage: 1,
+                    trail: [],
+                    lastTrailTime: 0
                 });
                 
                 dragon.lastFireTime = now;
@@ -4257,10 +4724,53 @@ function initGame() {
     }
 
     function updateFireballs() {
+        const now = Date.now();
+        
         // Update fireballs
         for (let i = fireballs.length - 1; i >= 0; i--) {
             const fireball = fireballs[i];
             fireball.mesh.position.add(fireball.velocity);
+            
+            // Add flame trail particles
+            if (fireball.trail && now - fireball.lastTrailTime > 30) {
+                // Clone pre-cached material for trail
+                const trailMaterial = explosionBaseMaterial.clone();
+                trailMaterial.opacity = 0.8;
+                const trailSprite = new THREE.Sprite(trailMaterial);
+                const trailSize = 0.8 + Math.random() * 0.5;
+                trailSprite.scale.set(trailSize, trailSize, 1);
+                trailSprite.position.copy(fireball.mesh.position);
+                // Offset slightly behind the fireball
+                trailSprite.position.x -= fireball.velocity.x * 2;
+                trailSprite.position.y -= fireball.velocity.y * 2;
+                trailSprite.position.z -= fireball.velocity.z * 2;
+                scene.add(trailSprite);
+                fireball.trail.push({ sprite: trailSprite, life: 15, initialSize: trailSize });
+                fireball.lastTrailTime = now;
+            }
+            
+            // Update trail particles
+            if (fireball.trail) {
+                for (let t = fireball.trail.length - 1; t >= 0; t--) {
+                    const trail = fireball.trail[t];
+                    trail.life--;
+                    const lifeRatio = trail.life / 15;
+                    trail.sprite.material.opacity = lifeRatio * 0.8;
+                    const scale = trail.initialSize * (0.3 + lifeRatio * 0.7);
+                    trail.sprite.scale.set(scale, scale, 1);
+                    if (trail.life <= 0) {
+                        scene.remove(trail.sprite);
+                        fireball.trail.splice(t, 1);
+                    }
+                }
+            }
+            
+            // Pulse the glow effects
+            if (fireball.mesh.children && fireball.mesh.children.length > 1) {
+                const pulseScale = 1 + Math.sin(now * 0.02) * 0.15;
+                fireball.mesh.children[1].scale.set(3 * pulseScale, 3 * pulseScale, 1);
+                fireball.mesh.children[2].scale.set(1.8 * pulseScale, 1.8 * pulseScale, 1);
+            }
             
             // Check collision with player (only host applies damage)
             const distToPlayer = new THREE.Vector2(
@@ -4284,7 +4794,11 @@ function initGame() {
                     }
                 }
                 
-                createExplosion(fireball.mesh.position.x, fireball.mesh.position.y, fireball.mesh.position.z);
+                createFireballExplosion(fireball.mesh.position.x, fireball.mesh.position.y, fireball.mesh.position.z);
+                // Clean up trail particles
+                if (fireball.trail) {
+                    fireball.trail.forEach(t => scene.remove(t.sprite));
+                }
                 scene.remove(fireball.mesh);
                 fireballs.splice(i, 1);
                 continue;
@@ -4303,7 +4817,11 @@ function initGame() {
                         // Notify client of damage
                         multiplayerManager.sendGameEvent('playerDamage', {});
                     }
-                    createExplosion(fireball.mesh.position.x, fireball.mesh.position.y, fireball.mesh.position.z);
+                    createFireballExplosion(fireball.mesh.position.x, fireball.mesh.position.y, fireball.mesh.position.z);
+                    // Clean up trail particles
+                    if (fireball.trail) {
+                        fireball.trail.forEach(t => scene.remove(t.sprite));
+                    }
                     scene.remove(fireball.mesh);
                     fireballs.splice(i, 1);
                     continue;
@@ -4330,7 +4848,11 @@ function initGame() {
             if (fireball.mesh.position.y < terrainHeight || hitMountain ||
                 Math.abs(fireball.mesh.position.x) > GAME_CONFIG.WORLD_BOUND ||
                 Math.abs(fireball.mesh.position.z) > GAME_CONFIG.WORLD_BOUND) {
-                createExplosion(fireball.mesh.position.x, terrainHeight, fireball.mesh.position.z);
+                createFireballExplosion(fireball.mesh.position.x, terrainHeight, fireball.mesh.position.z);
+                // Clean up trail particles
+                if (fireball.trail) {
+                    fireball.trail.forEach(t => scene.remove(t.sprite));
+                }
                 scene.remove(fireball.mesh);
                 fireballs.splice(i, 1);
             }
@@ -5020,6 +5542,105 @@ function initGame() {
             hudCtx.fillText('Gib deine Antwort ein und drücke ENTER', hudCanvas.width / 2, 480);
             hudCtx.textAlign = 'left';
         }
+        
+        // Other player marker/indicator
+        if (multiplayerManager && multiplayerManager.isConnected() && otherPlayerMesh && otherPlayerMesh.visible) {
+            // Project other player's 3D position to 2D screen coordinates
+            const otherPos = otherPlayerMesh.position.clone();
+            otherPos.y += 2; // Slightly above head
+            otherPos.project(camera);
+            
+            // Convert from normalized device coordinates (-1 to 1) to screen pixels
+            const screenX = (otherPos.x * 0.5 + 0.5) * hudCanvas.width;
+            const screenY = (-otherPos.y * 0.5 + 0.5) * hudCanvas.height;
+            
+            // Check if behind camera (z > 1 means behind)
+            const isBehindCamera = otherPos.z > 1;
+            
+            // Check if on screen (with margin)
+            const margin = 60;
+            const isOnScreen = !isBehindCamera && 
+                               screenX >= margin && screenX <= hudCanvas.width - margin &&
+                               screenY >= margin && screenY <= hudCanvas.height - margin;
+            
+            // Player label
+            const playerLabel = multiplayerManager.isHost ? "Spieler 2" : "Spieler 1";
+            const markerColor = multiplayerManager.isHost ? '#4488FF' : '#FF6B9D';
+            
+            if (isOnScreen) {
+                // Draw marker above player when visible
+                hudCtx.fillStyle = markerColor;
+                hudCtx.beginPath();
+                hudCtx.moveTo(screenX, screenY - 25);
+                hudCtx.lineTo(screenX - 10, screenY - 40);
+                hudCtx.lineTo(screenX + 10, screenY - 40);
+                hudCtx.closePath();
+                hudCtx.fill();
+                
+                // Draw label
+                hudCtx.font = 'bold 14px Arial';
+                hudCtx.textAlign = 'center';
+                hudCtx.fillStyle = '#FFF';
+                hudCtx.strokeStyle = '#000';
+                hudCtx.lineWidth = 3;
+                hudCtx.strokeText(playerLabel, screenX, screenY - 45);
+                hudCtx.fillText(playerLabel, screenX, screenY - 45);
+                hudCtx.textAlign = 'left';
+            } else {
+                // Draw arrow at edge of screen pointing to other player
+                let edgeX = screenX;
+                let edgeY = screenY;
+                
+                // If behind camera, flip the direction
+                if (isBehindCamera) {
+                    edgeX = hudCanvas.width - screenX;
+                    edgeY = hudCanvas.height - screenY;
+                }
+                
+                // Clamp to screen edges with margin
+                edgeX = Math.max(margin, Math.min(hudCanvas.width - margin, edgeX));
+                edgeY = Math.max(margin, Math.min(hudCanvas.height - margin, edgeY));
+                
+                // Calculate direction from center to clamped position for arrow rotation
+                const centerX = hudCanvas.width / 2;
+                const centerY = hudCanvas.height / 2;
+                const dirX = isBehindCamera ? (hudCanvas.width - screenX) - centerX : screenX - centerX;
+                const dirY = isBehindCamera ? (hudCanvas.height - screenY) - centerY : screenY - centerY;
+                const angle = Math.atan2(dirY, dirX);
+                
+                // Draw arrow indicator at edge
+                hudCtx.save();
+                hudCtx.translate(edgeX, edgeY);
+                hudCtx.rotate(angle);
+                
+                // Arrow shape pointing right (will be rotated)
+                hudCtx.fillStyle = markerColor;
+                hudCtx.strokeStyle = '#000';
+                hudCtx.lineWidth = 2;
+                hudCtx.beginPath();
+                hudCtx.moveTo(20, 0);         // Tip
+                hudCtx.lineTo(-10, -12);      // Top back
+                hudCtx.lineTo(-5, 0);         // Notch
+                hudCtx.lineTo(-10, 12);       // Bottom back
+                hudCtx.closePath();
+                hudCtx.fill();
+                hudCtx.stroke();
+                
+                hudCtx.restore();
+                
+                // Draw label near arrow
+                hudCtx.font = 'bold 12px Arial';
+                hudCtx.textAlign = 'center';
+                hudCtx.fillStyle = '#FFF';
+                hudCtx.strokeStyle = '#000';
+                hudCtx.lineWidth = 3;
+                const labelOffsetX = Math.cos(angle + Math.PI) * 35;
+                const labelOffsetY = Math.sin(angle + Math.PI) * 35;
+                hudCtx.strokeText(playerLabel, edgeX + labelOffsetX, edgeY + labelOffsetY);
+                hudCtx.fillText(playerLabel, edgeX + labelOffsetX, edgeY + labelOffsetY);
+                hudCtx.textAlign = 'left';
+            }
+        }
     }
 
     // Start background music
@@ -5061,6 +5682,32 @@ function initGame() {
             const sway = Math.sin(time * 2 + grass.phase) * 0.1;
             grass.mesh.rotation.z = sway;
         });
+        
+        // Animate player kites with natural sway movement
+        if (kiteGroup.visible) {
+            // Subtle random-looking movement using multiple sine waves
+            const kiteSwayX = Math.sin(time * 1.5) * 0.15 + Math.sin(time * 2.3) * 0.1;
+            const kiteSwayY = Math.sin(time * 1.8 + 1) * 0.1 + Math.cos(time * 2.1) * 0.08;
+            const kiteSwayZ = Math.sin(time * 1.2 + 2) * 0.12;
+            // Tilt forward/back from upright position with nose up - subtle rotation
+            kiteGroup.rotation.x = -Math.PI / 2 + 0.3 + Math.sin(time * 1.5) * 0.05;
+            kiteGroup.rotation.z = kiteSwayY * 0.05;
+            kiteGroup.position.x = kiteSwayZ * 0.5;
+            kiteGroup.position.y = 3.5 + Math.sin(time * 0.8) * 0.3;  // Gentle bobbing
+        }
+        if (otherPlayerMesh.kiteGroup && otherPlayerMesh.kiteGroup.visible) {
+            const otherKiteSwayX = Math.sin(time * 1.6 + 0.5) * 0.15 + Math.sin(time * 2.4 + 1) * 0.1;
+            const otherKiteSwayY = Math.sin(time * 1.9 + 1.5) * 0.1 + Math.cos(time * 2.2 + 0.5) * 0.08;
+            const otherKiteSwayZ = Math.sin(time * 1.3 + 2.5) * 0.12;
+            // Tilt forward/back from upright position with nose up - subtle rotation
+            otherPlayerMesh.kiteGroup.rotation.x = -Math.PI / 2 + 0.3 + Math.sin(time * 1.6 + 0.5) * 0.05;
+            otherPlayerMesh.kiteGroup.rotation.z = otherKiteSwayY * 0.05;
+            otherPlayerMesh.kiteGroup.position.x = otherKiteSwayZ * 0.5;
+            otherPlayerMesh.kiteGroup.position.y = 3.5 + Math.sin(time * 0.9 + 1) * 0.3;
+        }
+        
+        // Animate clouds (visual only)
+        updateClouds();
         
         // Animate health pickups (visual only)
         healthPickups.forEach(pickup => {
@@ -5150,6 +5797,8 @@ function initGame() {
                 if (!mathExerciseActive) {
                     updateBullets();
                     updateExplosions();
+                    updateSmoke();
+                    updateScorchMarks();
                     updateFireballs();
                 }
                 
