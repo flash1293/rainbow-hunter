@@ -47,205 +47,563 @@ const GAME_CONFIG = {
     TREASURE_RADIUS: 0.8
 };
 
-// Hill positions and dimensions
-const HILLS = [
-    { x: -30, z: -30, radius: 8, height: 4 },
-    { x: 40, z: -50, radius: 10, height: 5 },
-    { x: -60, z: 20, radius: 7, height: 3.5 },
-    { x: 60, z: 30, radius: 9, height: 4.5 },
-    { x: -20, z: 60, radius: 6, height: 3 },
-    { x: 20, z: -70, radius: 8, height: 4 },
-    { x: -80, z: -60, radius: 7, height: 3.5 },
-    { x: 80, z: -20, radius: 8, height: 4 },
-    { x: -40, z: 80, radius: 9, height: 4.5 },
-    { x: 50, z: 70, radius: 7, height: 3.5 },
-    { x: 10, z: 40, radius: 6, height: 3 },
-    { x: -70, z: -30, radius: 8, height: 4 },
-    { x: 70, z: 60, radius: 7, height: 3.5 },
-    { x: -50, z: 50, radius: 9, height: 4.5 },
-    { x: 30, z: -20, radius: 6, height: 3 },
-    // Hills behind the gap (treasure area)
-    { x: -40, z: -100, radius: 8, height: 4 },
-    { x: 25, z: -105, radius: 7, height: 3.5 },
-    { x: -15, z: -130, radius: 9, height: 4.5 },
-    { x: 50, z: -125, radius: 8, height: 4 },
-    { x: 0, z: -95, radius: 6, height: 3 },
-    { x: 60, z: -150, radius: 7, height: 3.5 },
-    { x: -60, z: -140, radius: 8, height: 4 },
-    // Dragon boss area hills - many in CENTER behind dragon
-    { x: -25, z: -212, radius: 8, height: 3.5 },
-    { x: 20, z: -220, radius: 9, height: 4 },
-    { x: -15, z: -228, radius: 7, height: 3 },
-    { x: 30, z: -236, radius: 8, height: 3.5 },
-    { x: -35, z: -244, radius: 9, height: 4 },
-    { x: 10, z: -252, radius: 8, height: 3.5 },
-    { x: -20, z: -258, radius: 7, height: 3 },
-    { x: 35, z: -215, radius: 6, height: 2.5 },
-    { x: -30, z: -225, radius: 8, height: 3.5 },
-    { x: 5, z: -235, radius: 7, height: 3 },
-    { x: 25, z: -248, radius: 9, height: 4 }
-];
+// Level configurations - each level contains all spawn positions and settings
+const LEVELS = {
+    1: {
+        name: "Level 1 - Dragon's Lair",
+        
+        // Theme colors
+        hillColor: 0x228B22,       // Forest green hills
+        treeColor: 0x228B22,       // Forest green foliage
+        grassColor: 0x228B22,      // Forest green grass
+        
+        // Level features
+        hasRiver: true,
+        hasMaterials: true,
+        
+        // Player start position
+        playerStart: { x: 0, z: 40 },
+        
+        // Portal to next level (near spawn for testing)
+        portal: { x: 15, z: 30, destinationLevel: 2 },
+        
+        // World Kite position
+        worldKite: { x: 0, z: -10 },
+        
+        // Ice Berg position
+        iceBerg: { x: 80, z: -40 },
+        
+        // Dragon spawn position (only used in hard mode)
+        dragon: { x: 0, z: -200 },
+        
+        // Rainbow position (near treasure)
+        rainbow: { x: -120, z: -215 },
+        
+        // Hill positions and dimensions
+        hills: [
+            { x: -30, z: -30, radius: 8, height: 4 },
+            { x: 40, z: -50, radius: 10, height: 5 },
+            { x: -60, z: 20, radius: 7, height: 3.5 },
+            { x: 60, z: 30, radius: 9, height: 4.5 },
+            { x: -20, z: 60, radius: 6, height: 3 },
+            { x: 20, z: -70, radius: 8, height: 4 },
+            { x: -80, z: -60, radius: 7, height: 3.5 },
+            { x: 80, z: -20, radius: 8, height: 4 },
+            { x: -40, z: 80, radius: 9, height: 4.5 },
+            { x: 50, z: 70, radius: 7, height: 3.5 },
+            { x: 10, z: 40, radius: 6, height: 3 },
+            { x: -70, z: -30, radius: 8, height: 4 },
+            { x: 70, z: 60, radius: 7, height: 3.5 },
+            { x: -50, z: 50, radius: 9, height: 4.5 },
+            { x: 30, z: -20, radius: 6, height: 3 },
+            // Hills behind the gap (treasure area)
+            { x: -40, z: -100, radius: 8, height: 4 },
+            { x: 25, z: -105, radius: 7, height: 3.5 },
+            { x: -15, z: -130, radius: 9, height: 4.5 },
+            { x: 50, z: -125, radius: 8, height: 4 },
+            { x: 0, z: -95, radius: 6, height: 3 },
+            { x: 60, z: -150, radius: 7, height: 3.5 },
+            { x: -60, z: -140, radius: 8, height: 4 },
+            // Dragon boss area hills - many in CENTER behind dragon
+            { x: -25, z: -212, radius: 8, height: 3.5 },
+            { x: 20, z: -220, radius: 9, height: 4 },
+            { x: -15, z: -228, radius: 7, height: 3 },
+            { x: 30, z: -236, radius: 8, height: 3.5 },
+            { x: -35, z: -244, radius: 9, height: 4 },
+            { x: 10, z: -252, radius: 8, height: 3.5 },
+            { x: -20, z: -258, radius: 7, height: 3 },
+            { x: 35, z: -215, radius: 6, height: 2.5 },
+            { x: -30, z: -225, radius: 8, height: 3.5 },
+            { x: 5, z: -235, radius: 7, height: 3 },
+            { x: 25, z: -248, radius: 9, height: 4 }
+        ],
+        
+        // Mountain positions (world boundaries)
+        mountains: [
+            // Far north wall (behind treasure at z: -210) - solid wall
+            { x: -160, z: -270, width: 80, height: 30 },
+            { x: -120, z: -270, width: 80, height: 30 },
+            { x: -80, z: -270, width: 80, height: 30 },
+            { x: -40, z: -270, width: 80, height: 30 },
+            { x: 0, z: -270, width: 80, height: 30 },
+            { x: 40, z: -270, width: 80, height: 30 },
+            { x: 80, z: -270, width: 80, height: 30 },
+            { x: 120, z: -270, width: 80, height: 30 },
+            { x: 160, z: -270, width: 80, height: 30 },
+            // Second row for solid wall
+            { x: -140, z: -260, width: 60, height: 28 },
+            { x: -80, z: -260, width: 60, height: 28 },
+            { x: -20, z: -260, width: 60, height: 28 },
+            { x: 20, z: -260, width: 60, height: 28 },
+            { x: 80, z: -260, width: 60, height: 28 },
+            { x: 140, z: -260, width: 60, height: 28 },
+            // Back area side walls (z: -180 to z: -270) - widest area for dragon
+            { x: -190, z: -260, width: 50, height: 28 },
+            { x: -190, z: -240, width: 50, height: 28 },
+            { x: -190, z: -220, width: 50, height: 28 },
+            { x: -190, z: -200, width: 50, height: 28 },
+            { x: -190, z: -190, width: 50, height: 28 },
+            { x: 190, z: -260, width: 50, height: 28 },
+            { x: 190, z: -240, width: 50, height: 28 },
+            { x: 190, z: -220, width: 50, height: 28 },
+            { x: 190, z: -200, width: 50, height: 28 },
+            { x: 190, z: -190, width: 50, height: 28 },
+            // Second gap entrance at z: -180 (narrow passage leading to back area)
+            { x: -120, z: -180, width: 60, height: 28 },
+            { x: -70, z: -180, width: 50, height: 28 },
+            { x: -35, z: -180, width: 40, height: 28 },
+            { x: 35, z: -180, width: 40, height: 28 },
+            { x: 70, z: -180, width: 50, height: 28 },
+            { x: 120, z: -180, width: 60, height: 28 },
+            // Middle area side walls (z: -85 to z: -180) - medium width for guardians
+            { x: -150, z: -170, width: 50, height: 28 },
+            { x: -150, z: -150, width: 50, height: 28 },
+            { x: -150, z: -130, width: 50, height: 28 },
+            { x: -150, z: -110, width: 50, height: 28 },
+            { x: -150, z: -95, width: 50, height: 28 },
+            { x: 150, z: -170, width: 50, height: 28 },
+            { x: 150, z: -150, width: 50, height: 28 },
+            { x: 150, z: -130, width: 50, height: 28 },
+            { x: 150, z: -110, width: 50, height: 28 },
+            { x: 150, z: -95, width: 50, height: 28 },
+            // First gap entrance at z: -85 (narrow passage leading to middle area)
+            { x: -120, z: -85, width: 60, height: 28 },
+            { x: -70, z: -85, width: 50, height: 28 },
+            { x: -35, z: -85, width: 40, height: 28 },
+            { x: 35, z: -85, width: 40, height: 28 },
+            { x: 70, z: -85, width: 50, height: 28 },
+            { x: 120, z: -85, width: 60, height: 28 },
+            // Front area corners (before first gap)
+            { x: -170, z: -70, width: 60, height: 28 },
+            { x: -170, z: -50, width: 60, height: 28 },
+            { x: 170, z: -70, width: 60, height: 28 },
+            { x: 170, z: -50, width: 60, height: 28 },
+            // West wall (left side) - front area
+            { x: -190, z: -80, width: 50, height: 28 },
+            { x: -190, z: -40, width: 50, height: 28 },
+            { x: -190, z: 0, width: 50, height: 28 },
+            { x: -190, z: 40, width: 50, height: 28 },
+            { x: -190, z: 80, width: 50, height: 28 },
+            { x: -190, z: 120, width: 50, height: 28 },
+            // East wall (right side) - front area
+            { x: 190, z: -80, width: 50, height: 28 },
+            { x: 190, z: -40, width: 50, height: 28 },
+            { x: 190, z: 0, width: 50, height: 28 },
+            { x: 190, z: 40, width: 50, height: 28 },
+            { x: 190, z: 80, width: 50, height: 28 },
+            { x: 190, z: -80, width: 50, height: 28 },
+            { x: 190, z: -40, width: 50, height: 28 },
+            { x: 190, z: 0, width: 50, height: 28 },
+            { x: 190, z: 40, width: 50, height: 28 },
+            { x: 190, z: 80, width: 50, height: 28 },
+            { x: 190, z: 120, width: 50, height: 28 },
+            // Southwest corner
+            { x: -170, z: 140, width: 60, height: 26 },
+            { x: -170, z: 100, width: 60, height: 26 },
+            // Southeast corner
+            { x: 170, z: 140, width: 60, height: 26 },
+            { x: 170, z: 100, width: 60, height: 26 },
+            // South wall (player side) - complete coverage
+            { x: -120, z: 180, width: 80, height: 26 },
+            { x: -40, z: 180, width: 80, height: 26 },
+            { x: 40, z: 180, width: 80, height: 26 },
+            { x: 120, z: 180, width: 80, height: 26 },
+            { x: -80, z: 165, width: 60, height: 24 },
+            { x: 0, z: 165, width: 60, height: 24 },
+            { x: 80, z: 165, width: 60, height: 24 }
+        ],
+        
+        // Goblin spawn positions [x, z, patrolLeft, patrolRight, speed]
+        goblins: [
+            [-40, -20, -45, -35, 0.012],
+            [50, 10, 45, 55, 0.014],
+            [-30, 30, -35, -25, 0.013],
+            [40, -40, 35, 45, 0.016],
+            [10, -30, 5, 15, 0.013],
+            [-70, 50, -75, -65, 0.013],
+            [80, -30, 75, 85, 0.014],
+            [-50, -70, -55, -45, 0.015],
+            [20, 60, 15, 25, 0.013],
+            [60, -70, 55, 65, 0.016],
+            [-80, -40, -85, -75, 0.013],
+            [90, 40, 85, 95, 0.014],
+            [-15, -25, -20, -10, 0.013],
+            [45, 15, 40, 50, 0.014],
+            [-25, 50, -30, -20, 0.012],
+            [55, -45, 50, 60, 0.015],
+            [-65, 35, -70, -60, 0.013],
+            [75, -10, 70, 80, 0.014],
+            [-55, 65, -60, -50, 0.014],
+            [70, 55, 65, 75, 0.015],
+            [-45, -55, -50, -40, 0.013],
+            [60, -60, 55, 65, 0.014],
+            [-85, 25, -90, -80, 0.013],
+            [95, -20, 90, 100, 0.016],
+            [5, -70, 0, 10, 0.014],
+            [-35, 75, -40, -30, 0.013],
+            [48, 70, 43, 53, 0.015],
+            [-75, -55, -80, -70, 0.013],
+            [85, -65, 80, 90, 0.014],
+            [-20, -65, -25, -15, 0.014],
+            [32, 80, 27, 37, 0.013],
+            [-90, -25, -95, -85, 0.013],
+            [100, 30, 95, 105, 0.016],
+            [-10, -80, -15, -5, 0.014],
+            [25, -75, 20, 30, 0.014],
+            [-95, 10, -100, -90, 0.013],
+            [105, -10, 100, 110, 0.016],
+            [-60, -30, -65, -55, 0.014],
+            [65, 25, 60, 70, 0.014],
+            [-38, -45, -43, -33, 0.013],
+            [52, -55, 47, 57, 0.015],
+            [-72, 65, -77, -67, 0.014],
+            [82, 70, 77, 87, 0.016],
+            [-28, -85, -33, -23, 0.014],
+            [38, 85, 33, 43, 0.014],
+            [-100, -15, -105, -95, 0.013],
+            [110, 15, 105, 115, 0.016],
+            [-12, 55, -17, -7, 0.014],
+            [28, -50, 23, 33, 0.014],
+            [-82, -65, -87, -77, 0.013],
+            [92, -75, 87, 97, 0.016],
+            [-48, 82, -53, -43, 0.014],
+            [58, -82, 53, 63, 0.016]
+        ],
+        
+        // Guardian goblin positions (hard mode) [x, z, patrolLeft, patrolRight, speed]
+        guardians: [
+            // Early area (just past the first gap)
+            [-45, -15, -50, -40, 0.012],
+            [50, -25, 45, 55, 0.012],
+            [-15, -40, -20, -10, 0.010],
+            [35, -55, 30, 40, 0.011],
+            // Middle area (before second gap and dragon)
+            [-70, -95, -75, -65, 0.013],
+            [60, -105, 55, 65, 0.012],
+            [-30, -125, -35, -25, 0.011],
+            [80, -135, 75, 85, 0.013],
+            [-85, -150, -90, -80, 0.012],
+            [40, -165, 35, 45, 0.011],
+            // Dragon area (scattered around the boss)
+            [-90, -195, -95, -85, 0.013],
+            [85, -205, 80, 90, 0.012],
+            [-50, -215, -55, -45, 0.011],
+            [60, -230, 55, 65, 0.013]
+        ],
+        
+        // Giant goblin positions (hard mode) [x, z, patrolLeft, patrolRight]
+        giants: [
+            [0, -85, -8, 8],        // Giant guardian at the gap
+            [-40, -50, -50, -30],   // Additional giant
+            [40, -110, 30, 50],     // Additional giant
+            [-25, -115, -35, -15]   // Additional giant
+        ],
+        
+        // Additional regular goblins for hard mode [x, z, patrolLeft, patrolRight, speed]
+        hardModeGoblins: [
+            // Middle area
+            [-50, -100, -60, -40, 0.013],
+            [45, -120, 35, 55, 0.012],
+            [-15, -145, -25, -5, 0.011],
+            [65, -160, 55, 75, 0.013],
+            // Dragon area
+            [-75, -210, -85, -65, 0.012],
+            [70, -220, 60, 80, 0.013],
+            [-30, -235, -40, -20, 0.011],
+            [40, -245, 30, 50, 0.012],
+            [0, -225, -10, 10, 0.013]
+        ],
+        
+        // Bird positions (hard mode) [centerX, centerZ, radius, speed]
+        birds: [
+            [0, -85, 35, 0.006],
+            [0, -85, 42, 0.007],
+            [5, -80, 38, 0.0065],
+            [60, -130, 22, 0.007],
+            [60, -130, 28, 0.006]
+        ],
+        
+        // Ammo pickup positions
+        ammoPositions: [
+            { x: -15, z: 20 }, { x: 35, z: 15 }, { x: -25, z: -10 },
+            { x: 15, z: -25 }, { x: -40, z: 40 }, { x: 45, z: -35 },
+            { x: 5, z: 25 }, { x: -30, z: -30 }, { x: 20, z: -15 },
+            { x: -10, z: -40 }, { x: 40, z: 35 }, { x: -35, z: 5 },
+            { x: -50, z: -15 }, { x: 55, z: -20 }, { x: -18, z: 50 },
+            { x: 25, z: 55 }, { x: -45, z: -50 }, { x: 50, z: -55 },
+            // Behind the gap
+            { x: -20, z: -100 }, { x: 30, z: -110 }, { x: -10, z: -125 },
+            { x: 40, z: -135 },
+            // Additional ammo for harder difficulty
+            { x: 10, z: -70 }, { x: -35, z: -75 }, { x: 45, z: -90 },
+            { x: -15, z: -105 }, { x: 25, z: -120 }, { x: -30, z: -118 },
+            { x: 52, z: -125 }, { x: 15, z: 45 },
+            // Dragon boss area
+            { x: -90, z: -195 }, { x: 100, z: -205 }, { x: -70, z: -220 },
+            { x: 85, z: -235 }, { x: 0, z: -245 }, { x: -110, z: -250 },
+            { x: 120, z: -215 }
+        ],
+        
+        // Bomb pickup positions
+        bombPositions: [
+            // Early area
+            { x: -35, z: 30 }, { x: 42, z: -10 }, { x: -18, z: -35 },
+            { x: 30, z: 45 }, { x: -48, z: -18 }, { x: 15, z: -50 },
+            { x: -25, z: 55 }, { x: 50, z: 25 }, { x: -55, z: -45 },
+            // Middle area
+            { x: -65, z: -110 }, { x: 55, z: -115 }, { x: -25, z: -140 },
+            { x: 70, z: -155 }, { x: -80, z: -125 }, { x: 35, z: -130 },
+            { x: -45, z: -165 }, { x: 60, z: -145 },
+            // Dragon area
+            { x: -95, z: -200 }, { x: 90, z: -210 }, { x: -60, z: -225 },
+            { x: 75, z: -195 }, { x: -110, z: -215 }, { x: 105, z: -230 },
+            { x: -40, z: -240 }, { x: 50, z: -220 }
+        ],
+        
+        // Health pickup positions (hearts)
+        healthPositions: [
+            { x: -8, z: 50 }, { x: 32, z: -18 }, { x: -48, z: -25 },
+            { x: 55, z: 22 }, { x: -22, z: 65 },
+            // Middle area (before second gap and dragon)
+            { x: -80, z: -100 }, { x: 75, z: -110 }, { x: 0, z: -120 },
+            { x: -60, z: -140 }, { x: 65, z: -160 },
+            // Dragon boss area
+            { x: -100, z: -210 }, { x: 95, z: -225 }, { x: -60, z: -240 },
+            { x: 70, z: -255 }
+        ],
+        
+        // Bridge repair materials
+        materials: [
+            { x: -20, z: 35, type: 'wood', color: 0x8B4513, glowColor: 0xFFAA00 },
+            { x: 25, z: 30, type: 'glass', color: 0x87CEEB, glowColor: 0x00FFFF },
+            { x: 10, z: 15, type: 'metal', color: 0xC0C0C0, glowColor: 0xFFFFFF }
+        ],
+        
+        // Trap positions
+        trapPositions: [
+            { x: -5, z: 12 }, { x: 12, z: 11 }, { x: -15, z: 9 },
+            { x: -8, z: -5 }, { x: 10, z: -6 }, { x: -2, z: -20 },
+            { x: 25, z: 15 }, { x: -30, z: 20 }, { x: 18, z: -15 },
+            { x: -22, z: -25 }, { x: 35, z: -10 }, { x: -28, z: -40 },
+            { x: -38, z: 28 }, { x: 40, z: 32 }, { x: -12, z: 50 },
+            { x: 15, z: 52 }, { x: -48, z: -18 }, { x: 50, z: -22 },
+            { x: -25, z: -50 }, { x: 28, z: -52 }, { x: -55, z: 40 },
+            { x: 58, z: 42 }, { x: 5, z: -55 }, { x: -8, z: -58 },
+            { x: -42, z: 55 }
+        ]
+    },
+    
+    2: {
+        name: "Level 2 - The Frozen Wastes",
+        
+        // Player start position - bottom of the L (south end)
+        playerStart: { x: 0, z: 100 },
+        
+        // No portal in level 2 (final level for now)
+        portal: null,
+        
+        // Unique elements for level 2
+        iceTheme: true,
+        skyColor: 0x4a6fa5,  // Darker blue sky
+        groundColor: 0xc8e6f5,  // Icy ground
+        fogDensity: 0.008,
+        
+        // No river or materials in level 2
+        hasRiver: false,
+        hasMaterials: false,
+        
+        // Theme colors for ice level
+        hillColor: 0x88bbdd,       // Icy blue-gray hills
+        treeColor: 0x667788,       // Frosted gray-blue foliage
+        grassColor: 0x99aacc,      // Frosted pale blue grass
+        
+        // Treasure position - at the end of the L (west end)
+        treasurePosition: { x: -180, z: -100 },
+        
+        // Rainbow position - above the treasure
+        rainbow: { x: -180, z: -95 },
+        
+        // Dragon spawn position - guarding the treasure
+        dragon: { x: -120, z: -100 },
+        
+        // World Kite position - not needed since carried over
+        worldKite: null,
+        
+        // Ice Berg position
+        iceBerg: { x: 40, z: -50 },
+        
+        // L-shaped layout hills - scattered along the L path
+        // The L goes: South (player start) -> North (corner) -> West (treasure)
+        hills: [
+            // Southern corridor (player start area, z: 100 to z: 0)
+            { x: -20, z: 80, radius: 8, height: 4 },
+            { x: 25, z: 60, radius: 9, height: 4.5 },
+            { x: -15, z: 40, radius: 7, height: 3.5 },
+            { x: 30, z: 20, radius: 8, height: 4 },
+            { x: -25, z: 10, radius: 9, height: 4.5 },
+            { x: 20, z: -10, radius: 7, height: 3.5 },
+            // Corner area (z: -20 to z: -60)
+            { x: -10, z: -30, radius: 10, height: 5 },
+            { x: 25, z: -45, radius: 8, height: 4 },
+            { x: -30, z: -55, radius: 9, height: 4.5 },
+            // Western corridor (x: -40 to x: -180, z: -80 to z: -120)
+            { x: -50, z: -90, radius: 8, height: 4 },
+            { x: -80, z: -105, radius: 9, height: 4.5 },
+            { x: -110, z: -95, radius: 7, height: 3.5 },
+            { x: -140, z: -110, radius: 8, height: 4 },
+            { x: -160, z: -85, radius: 9, height: 4.5 }
+        ],
+        
+        // L-shaped mountain layout - walls forming the L corridor
+        mountains: [
+            // === SOUTHERN CORRIDOR (vertical part of L) ===
+            // East wall of southern corridor (x: 60)
+            { x: 60, z: 120, width: 50, height: 28 },
+            { x: 60, z: 80, width: 50, height: 28 },
+            { x: 60, z: 40, width: 50, height: 28 },
+            { x: 60, z: 0, width: 50, height: 28 },
+            { x: 60, z: -40, width: 50, height: 28 },
+            // West wall of southern corridor (x: -60) - only goes to corner
+            { x: -60, z: 120, width: 50, height: 28 },
+            { x: -60, z: 80, width: 50, height: 28 },
+            { x: -60, z: 40, width: 50, height: 28 },
+            { x: -60, z: 0, width: 50, height: 28 },
+            // South wall (behind player start)
+            { x: -40, z: 140, width: 60, height: 26 },
+            { x: 20, z: 140, width: 60, height: 26 },
+            
+            // === CORNER AREA ===
+            // East wall continues down
+            { x: 60, z: -80, width: 50, height: 28 },
+            { x: 60, z: -120, width: 50, height: 28 },
+            // North-east corner wall (blocking direct path north)
+            { x: 30, z: -140, width: 60, height: 28 },
+            { x: -30, z: -140, width: 60, height: 28 },
+            
+            // === WESTERN CORRIDOR (horizontal part of L) ===
+            // North wall of western corridor (z: -60)
+            { x: -60, z: -60, width: 50, height: 28 },
+            { x: -100, z: -60, width: 50, height: 28 },
+            { x: -140, z: -60, width: 50, height: 28 },
+            { x: -180, z: -60, width: 50, height: 28 },
+            // South wall of western corridor (z: -140)
+            { x: -60, z: -140, width: 50, height: 28 },
+            { x: -100, z: -140, width: 50, height: 28 },
+            { x: -140, z: -140, width: 50, height: 28 },
+            { x: -180, z: -140, width: 50, height: 28 },
+            // West wall (treasure area end)
+            { x: -220, z: -80, width: 50, height: 28 },
+            { x: -220, z: -120, width: 50, height: 28 }
+        ],
+        
+        // Goblin spawn positions - along the L-shaped path
+        goblins: [
+            // Southern corridor
+            [-20, 70, -25, -15, 0.014],
+            [25, 50, 20, 30, 0.016],
+            [-15, 30, -20, -10, 0.015],
+            [30, 10, 25, 35, 0.015],
+            [-25, -5, -30, -20, 0.014],
+            // Corner area
+            [10, -35, 5, 15, 0.016],
+            [-20, -50, -25, -15, 0.015],
+            // Western corridor
+            [-60, -100, -65, -55, 0.015],
+            [-90, -95, -95, -85, 0.016],
+            [-120, -105, -125, -115, 0.014],
+            [-150, -90, -155, -145, 0.015]
+        ],
+        
+        // Guardians along the L path
+        guardians: [
+            // Southern corridor
+            [0, 60, -5, 5, 0.012],
+            [-10, 20, -15, -5, 0.013],
+            [15, -20, 10, 20, 0.012],
+            // Corner area
+            [-30, -70, -35, -25, 0.014],
+            // Western corridor - near dragon
+            [-80, -100, -85, -75, 0.013],
+            [-110, -90, -115, -105, 0.014],
+            [-140, -100, -145, -135, 0.013],
+            [-165, -95, -170, -160, 0.015]
+        ],
+        
+        // Giants guarding key positions
+        giants: [
+            [0, -40, -10, 10],           // Corner entrance
+            [-100, -100, -110, -90],     // Western corridor
+            [-160, -100, -170, -150]     // Near treasure
+        ],
+        
+        hardModeGoblins: [
+            // Extra goblins in hard mode
+            [20, 80, 15, 25, 0.015],
+            [-30, 40, -35, -25, 0.014],
+            [25, -10, 20, 30, 0.016],
+            [-45, -90, -50, -40, 0.015],
+            [-130, -110, -135, -125, 0.014]
+        ],
+        
+        // More birds in level 2
+        birds: [
+            [0, -30, 25, 0.007],
+            [-80, -100, 30, 0.008]
+        ],
+        
+        // Ammo pickups along the L path
+        ammoPositions: [
+            // Southern corridor
+            { x: -15, z: 75 }, { x: 20, z: 55 }, { x: -10, z: 35 },
+            { x: 25, z: 15 }, { x: -20, z: -5 },
+            // Corner area
+            { x: 15, z: -40 }, { x: -25, z: -60 },
+            // Western corridor
+            { x: -55, z: -95 }, { x: -85, z: -105 }, { x: -115, z: -90 },
+            { x: -145, z: -100 }, { x: -170, z: -95 }
+        ],
+        
+        bombPositions: [
+            // Southern corridor
+            { x: 20, z: 80 }, { x: -15, z: 45 },
+            // Corner
+            { x: -20, z: -45 },
+            // Western corridor
+            { x: -70, z: -90 }, { x: -100, z: -110 }, { x: -135, z: -85 },
+            { x: -165, z: -105 }
+        ],
+        
+        healthPositions: [
+            // Southern corridor
+            { x: -10, z: 60 }, { x: 15, z: 25 },
+            // Corner
+            { x: 5, z: -50 },
+            // Western corridor
+            { x: -75, z: -105 }, { x: -125, z: -95 }, { x: -155, z: -100 }
+        ],
+        
+        // No materials in Level 2
+        materials: [],
+        
+        trapPositions: [
+            // Southern corridor
+            { x: -5, z: 65 }, { x: 10, z: 45 }, { x: -15, z: 20 },
+            { x: 15, z: 5 }, { x: -10, z: -15 },
+            // Corner area
+            { x: 20, z: -35 }, { x: -15, z: -55 }, { x: 5, z: -65 },
+            // Western corridor
+            { x: -50, z: -85 }, { x: -75, z: -110 }, { x: -95, z: -90 },
+            { x: -125, z: -105 }, { x: -150, z: -95 }, { x: -175, z: -110 }
+        ]
+    }
+};
 
-// Mountain positions (world boundaries)
-const MOUNTAINS = [
-    // Far north wall (behind treasure at z: -210) - solid wall
-    { x: -160, z: -270, width: 80, height: 30 },
-    { x: -120, z: -270, width: 80, height: 30 },
-    { x: -80, z: -270, width: 80, height: 30 },
-    { x: -40, z: -270, width: 80, height: 30 },
-    { x: 0, z: -270, width: 80, height: 30 },
-    { x: 40, z: -270, width: 80, height: 30 },
-    { x: 80, z: -270, width: 80, height: 30 },
-    { x: 120, z: -270, width: 80, height: 30 },
-    { x: 160, z: -270, width: 80, height: 30 },
-    // Second row for solid wall
-    { x: -140, z: -260, width: 60, height: 28 },
-    { x: -80, z: -260, width: 60, height: 28 },
-    { x: -20, z: -260, width: 60, height: 28 },
-    { x: 20, z: -260, width: 60, height: 28 },
-    { x: 80, z: -260, width: 60, height: 28 },
-    { x: 140, z: -260, width: 60, height: 28 },
-    
-    // Back area side walls (z: -180 to z: -270) - widest area for dragon
-    { x: -190, z: -260, width: 50, height: 28 },
-    { x: -190, z: -240, width: 50, height: 28 },
-    { x: -190, z: -220, width: 50, height: 28 },
-    { x: -190, z: -200, width: 50, height: 28 },
-    { x: -190, z: -190, width: 50, height: 28 },
-    { x: 190, z: -260, width: 50, height: 28 },
-    { x: 190, z: -240, width: 50, height: 28 },
-    { x: 190, z: -220, width: 50, height: 28 },
-    { x: 190, z: -200, width: 50, height: 28 },
-    { x: 190, z: -190, width: 50, height: 28 },
-    
-    // Second gap entrance at z: -180 (narrow passage leading to back area)
-    { x: -120, z: -180, width: 60, height: 28 },
-    { x: -70, z: -180, width: 50, height: 28 },
-    { x: -35, z: -180, width: 40, height: 28 },   // Left of gap
-    { x: 35, z: -180, width: 40, height: 28 },    // Right of gap
-    { x: 70, z: -180, width: 50, height: 28 },
-    { x: 120, z: -180, width: 60, height: 28 },
-    // Gap at x: -10 to 10, z: -180 (20 unit wide gap)
-    
-    // Middle area side walls (z: -85 to z: -180) - medium width for guardians
-    { x: -150, z: -170, width: 50, height: 28 },
-    { x: -150, z: -150, width: 50, height: 28 },
-    { x: -150, z: -130, width: 50, height: 28 },
-    { x: -150, z: -110, width: 50, height: 28 },
-    { x: -150, z: -95, width: 50, height: 28 },
-    { x: 150, z: -170, width: 50, height: 28 },
-    { x: 150, z: -150, width: 50, height: 28 },
-    { x: 150, z: -130, width: 50, height: 28 },
-    { x: 150, z: -110, width: 50, height: 28 },
-    { x: 150, z: -95, width: 50, height: 28 },
-    
-    // First gap entrance at z: -85 (narrow passage leading to middle area)
-    { x: -120, z: -85, width: 60, height: 28 },
-    { x: -70, z: -85, width: 50, height: 28 },
-    { x: -35, z: -85, width: 40, height: 28 },   // Left of gap
-    { x: 35, z: -85, width: 40, height: 28 },    // Right of gap
-    { x: 70, z: -85, width: 50, height: 28 },
-    { x: 120, z: -85, width: 60, height: 28 },
-    // Gap at x: -10 to 10, z: -85 (20 unit wide gap)
-    
-    // Front area corners (before first gap)
-    { x: -170, z: -70, width: 60, height: 28 },
-    { x: -170, z: -50, width: 60, height: 28 },
-    { x: 170, z: -70, width: 60, height: 28 },
-    { x: 170, z: -50, width: 60, height: 28 },
-    
-    // West wall (left side) - front area
-    { x: -190, z: -80, width: 50, height: 28 },
-    { x: -190, z: -40, width: 50, height: 28 },
-    { x: -190, z: 0, width: 50, height: 28 },
-    { x: -190, z: 40, width: 50, height: 28 },
-    { x: -190, z: 80, width: 50, height: 28 },
-    { x: -190, z: 120, width: 50, height: 28 },
-    
-    // East wall (right side) - front area
-    { x: 190, z: -80, width: 50, height: 28 },
-    { x: 190, z: -40, width: 50, height: 28 },
-    { x: 190, z: 0, width: 50, height: 28 },
-    { x: 190, z: 40, width: 50, height: 28 },
-    { x: 190, z: 80, width: 50, height: 28 },
-    { x: 190, z: -80, width: 50, height: 28 },
-    { x: 190, z: -40, width: 50, height: 28 },
-    { x: 190, z: 0, width: 50, height: 28 },
-    { x: 190, z: 40, width: 50, height: 28 },
-    { x: 190, z: 80, width: 50, height: 28 },
-    { x: 190, z: 120, width: 50, height: 28 },
-    
-    // Southwest corner
-    { x: -170, z: 140, width: 60, height: 26 },
-    { x: -170, z: 100, width: 60, height: 26 },
-    
-    // Southeast corner
-    { x: 170, z: 140, width: 60, height: 26 },
-    { x: 170, z: 100, width: 60, height: 26 },
-    
-    // South wall (player side) - complete coverage
-    { x: -120, z: 180, width: 80, height: 26 },
-    { x: -40, z: 180, width: 80, height: 26 },
-    { x: 40, z: 180, width: 80, height: 26 },
-    { x: 120, z: 180, width: 80, height: 26 },
-    { x: -80, z: 165, width: 60, height: 24 },
-    { x: 0, z: 165, width: 60, height: 24 },
-    { x: 80, z: 165, width: 60, height: 24 }
-];
+// Helper to get current level config
+function getLevelConfig(levelNumber) {
+    return LEVELS[levelNumber] || LEVELS[1];
+}
 
-// Goblin spawn positions [x, z, patrolLeft, patrolRight, speed]
-const GOBLIN_POSITIONS = [
-    [-40, -20, -45, -35, 0.012],
-    [50, 10, 45, 55, 0.014],
-    [-30, 30, -35, -25, 0.013],
-    [40, -40, 35, 45, 0.016],
-    [10, -30, 5, 15, 0.013],
-    [-70, 50, -75, -65, 0.013],
-    [80, -30, 75, 85, 0.014],
-    [-50, -70, -55, -45, 0.015],
-    [20, 60, 15, 25, 0.013],
-    [60, -70, 55, 65, 0.016],
-    [-80, -40, -85, -75, 0.013],
-    [90, 40, 85, 95, 0.014],
-    [-15, -25, -20, -10, 0.013],
-    [45, 15, 40, 50, 0.014],
-    [-25, 50, -30, -20, 0.012],
-    [55, -45, 50, 60, 0.015],
-    [-65, 35, -70, -60, 0.013],
-    [75, -10, 70, 80, 0.014],
-    [-55, 65, -60, -50, 0.014],
-    [70, 55, 65, 75, 0.015],
-    [-45, -55, -50, -40, 0.013],
-    [60, -60, 55, 65, 0.014],
-    [-85, 25, -90, -80, 0.013],
-    [95, -20, 90, 100, 0.016],
-    [5, -70, 0, 10, 0.014],
-    [-35, 75, -40, -30, 0.013],
-    [48, 70, 43, 53, 0.015],
-    [-75, -55, -80, -70, 0.013],
-    [85, -65, 80, 90, 0.014],
-    [-20, -65, -25, -15, 0.014],
-    [32, 80, 27, 37, 0.013],
-    [-90, -25, -95, -85, 0.013],
-    [100, 30, 95, 105, 0.016],
-    [-10, -80, -15, -5, 0.014],
-    [25, -75, 20, 30, 0.014],
-    [-95, 10, -100, -90, 0.013],
-    [105, -10, 100, 110, 0.016],
-    [-60, -30, -65, -55, 0.014],
-    [65, 25, 60, 70, 0.014],
-    [-38, -45, -43, -33, 0.013],
-    [52, -55, 47, 57, 0.015],
-    [-72, 65, -77, -67, 0.014],
-    [82, 70, 77, 87, 0.016],
-    [-28, -85, -33, -23, 0.014],
-    [38, 85, 33, 43, 0.014],
-    [-100, -15, -105, -95, 0.013],
-    [110, 15, 105, 115, 0.016],
-    [-12, 55, -17, -7, 0.014],
-    [28, -50, 23, 33, 0.014],
-    [-82, -65, -87, -77, 0.013],
-    [92, -75, 87, 97, 0.016],
-    [-48, 82, -53, -43, 0.014],
-    [58, -82, 53, 63, 0.016]
-];
+// Backward compatibility - these point to level 1 for any code that still uses them
+const GOBLIN_POSITIONS = LEVELS[1].goblins;
+const HILLS = LEVELS[1].hills;
+const MOUNTAINS = LEVELS[1].mountains;

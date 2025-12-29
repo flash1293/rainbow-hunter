@@ -1,54 +1,103 @@
 // Terrain and environment utilities
 
+// Current level hills (set by main.js when level loads)
+let currentLevelHills = null;
+
+function setCurrentLevelHills(hills) {
+    currentLevelHills = hills;
+}
+
 // ============================================
 // PROCEDURAL TEXTURE GENERATION
 // ============================================
 
 // Generate a grass/ground texture
-function generateGrassTexture(THREE) {
+function generateGrassTexture(THREE, iceTheme = false) {
     const canvas = document.createElement('canvas');
     canvas.width = 512;
     canvas.height = 512;
     const ctx = canvas.getContext('2d');
     
-    // Base green color
-    ctx.fillStyle = '#4a8f3c';
-    ctx.fillRect(0, 0, 512, 512);
-    
-    // Add noise and grass variation
-    for (let i = 0; i < 8000; i++) {
-        const x = Math.random() * 512;
-        const y = Math.random() * 512;
-        const brightness = 0.7 + Math.random() * 0.6;
-        const r = Math.floor(60 * brightness);
-        const g = Math.floor(120 + Math.random() * 40);
-        const b = Math.floor(40 * brightness);
-        ctx.fillStyle = `rgb(${r}, ${g}, ${b})`;
-        ctx.fillRect(x, y, 2, 2);
-    }
-    
-    // Add darker patches
-    for (let i = 0; i < 50; i++) {
-        const x = Math.random() * 512;
-        const y = Math.random() * 512;
-        const radius = 10 + Math.random() * 30;
-        const gradient = ctx.createRadialGradient(x, y, 0, x, y, radius);
-        gradient.addColorStop(0, 'rgba(30, 80, 20, 0.3)');
-        gradient.addColorStop(1, 'rgba(30, 80, 20, 0)');
-        ctx.fillStyle = gradient;
-        ctx.fillRect(x - radius, y - radius, radius * 2, radius * 2);
-    }
-    
-    // Add lighter patches
-    for (let i = 0; i < 30; i++) {
-        const x = Math.random() * 512;
-        const y = Math.random() * 512;
-        const radius = 15 + Math.random() * 25;
-        const gradient = ctx.createRadialGradient(x, y, 0, x, y, radius);
-        gradient.addColorStop(0, 'rgba(120, 180, 80, 0.25)');
-        gradient.addColorStop(1, 'rgba(120, 180, 80, 0)');
-        ctx.fillStyle = gradient;
-        ctx.fillRect(x - radius, y - radius, radius * 2, radius * 2);
+    if (iceTheme) {
+        // Ice/snow base color
+        ctx.fillStyle = '#c8dde8';
+        ctx.fillRect(0, 0, 512, 512);
+        
+        // Add snow/ice variation
+        for (let i = 0; i < 8000; i++) {
+            const x = Math.random() * 512;
+            const y = Math.random() * 512;
+            const brightness = 0.85 + Math.random() * 0.15;
+            const r = Math.floor(200 * brightness);
+            const g = Math.floor(220 * brightness);
+            const b = Math.floor(240 * brightness);
+            ctx.fillStyle = `rgb(${r}, ${g}, ${b})`;
+            ctx.fillRect(x, y, 2, 2);
+        }
+        
+        // Add icy patches
+        for (let i = 0; i < 50; i++) {
+            const x = Math.random() * 512;
+            const y = Math.random() * 512;
+            const radius = 10 + Math.random() * 30;
+            const gradient = ctx.createRadialGradient(x, y, 0, x, y, radius);
+            gradient.addColorStop(0, 'rgba(180, 200, 230, 0.4)');
+            gradient.addColorStop(1, 'rgba(180, 200, 230, 0)');
+            ctx.fillStyle = gradient;
+            ctx.fillRect(x - radius, y - radius, radius * 2, radius * 2);
+        }
+        
+        // Add brighter snow patches
+        for (let i = 0; i < 30; i++) {
+            const x = Math.random() * 512;
+            const y = Math.random() * 512;
+            const radius = 15 + Math.random() * 25;
+            const gradient = ctx.createRadialGradient(x, y, 0, x, y, radius);
+            gradient.addColorStop(0, 'rgba(255, 255, 255, 0.35)');
+            gradient.addColorStop(1, 'rgba(255, 255, 255, 0)');
+            ctx.fillStyle = gradient;
+            ctx.fillRect(x - radius, y - radius, radius * 2, radius * 2);
+        }
+    } else {
+        // Base green color
+        ctx.fillStyle = '#4a8f3c';
+        ctx.fillRect(0, 0, 512, 512);
+        
+        // Add noise and grass variation
+        for (let i = 0; i < 8000; i++) {
+            const x = Math.random() * 512;
+            const y = Math.random() * 512;
+            const brightness = 0.7 + Math.random() * 0.6;
+            const r = Math.floor(60 * brightness);
+            const g = Math.floor(120 + Math.random() * 40);
+            const b = Math.floor(40 * brightness);
+            ctx.fillStyle = `rgb(${r}, ${g}, ${b})`;
+            ctx.fillRect(x, y, 2, 2);
+        }
+        
+        // Add darker patches
+        for (let i = 0; i < 50; i++) {
+            const x = Math.random() * 512;
+            const y = Math.random() * 512;
+            const radius = 10 + Math.random() * 30;
+            const gradient = ctx.createRadialGradient(x, y, 0, x, y, radius);
+            gradient.addColorStop(0, 'rgba(30, 80, 20, 0.3)');
+            gradient.addColorStop(1, 'rgba(30, 80, 20, 0)');
+            ctx.fillStyle = gradient;
+            ctx.fillRect(x - radius, y - radius, radius * 2, radius * 2);
+        }
+        
+        // Add lighter patches
+        for (let i = 0; i < 30; i++) {
+            const x = Math.random() * 512;
+            const y = Math.random() * 512;
+            const radius = 15 + Math.random() * 25;
+            const gradient = ctx.createRadialGradient(x, y, 0, x, y, radius);
+            gradient.addColorStop(0, 'rgba(120, 180, 80, 0.25)');
+            gradient.addColorStop(1, 'rgba(120, 180, 80, 0)');
+            ctx.fillStyle = gradient;
+            ctx.fillRect(x - radius, y - radius, radius * 2, radius * 2);
+        }
     }
     
     const texture = new THREE.CanvasTexture(canvas);
@@ -107,49 +156,90 @@ function generateBarkTexture(THREE) {
 }
 
 // Generate a foliage/leaves texture
-function generateFoliageTexture(THREE) {
+function generateFoliageTexture(THREE, iceTheme = false) {
     const canvas = document.createElement('canvas');
     canvas.width = 256;
     canvas.height = 256;
     const ctx = canvas.getContext('2d');
     
-    // Base green
-    ctx.fillStyle = '#2d6b22';
-    ctx.fillRect(0, 0, 256, 256);
-    
-    // Add leaf clusters
-    for (let i = 0; i < 200; i++) {
-        const x = Math.random() * 256;
-        const y = Math.random() * 256;
-        const size = 5 + Math.random() * 15;
-        const hue = 80 + Math.random() * 40; // Green range
-        const lightness = 25 + Math.random() * 25;
-        ctx.fillStyle = `hsl(${hue}, 60%, ${lightness}%)`;
-        ctx.beginPath();
-        ctx.ellipse(x, y, size, size * 0.7, Math.random() * Math.PI, 0, Math.PI * 2);
-        ctx.fill();
-    }
-    
-    // Add highlights
-    for (let i = 0; i < 50; i++) {
-        const x = Math.random() * 256;
-        const y = Math.random() * 256;
-        const size = 3 + Math.random() * 8;
-        ctx.fillStyle = `rgba(150, 220, 100, ${0.3 + Math.random() * 0.3})`;
-        ctx.beginPath();
-        ctx.arc(x, y, size, 0, Math.PI * 2);
-        ctx.fill();
-    }
-    
-    // Add shadows
-    for (let i = 0; i < 40; i++) {
-        const x = Math.random() * 256;
-        const y = Math.random() * 256;
-        const size = 8 + Math.random() * 15;
-        ctx.fillStyle = `rgba(20, 60, 10, ${0.2 + Math.random() * 0.2})`;
-        ctx.beginPath();
-        ctx.arc(x, y, size, 0, Math.PI * 2);
-        ctx.fill();
+    if (iceTheme) {
+        // Frosted blue-gray base
+        ctx.fillStyle = '#6688aa';
+        ctx.fillRect(0, 0, 256, 256);
+        
+        // Add frosted leaf clusters
+        for (let i = 0; i < 200; i++) {
+            const x = Math.random() * 256;
+            const y = Math.random() * 256;
+            const size = 5 + Math.random() * 15;
+            const hue = 200 + Math.random() * 30; // Blue range
+            const lightness = 45 + Math.random() * 25;
+            ctx.fillStyle = `hsl(${hue}, 25%, ${lightness}%)`;
+            ctx.beginPath();
+            ctx.ellipse(x, y, size, size * 0.7, Math.random() * Math.PI, 0, Math.PI * 2);
+            ctx.fill();
+        }
+        
+        // Add frost highlights
+        for (let i = 0; i < 50; i++) {
+            const x = Math.random() * 256;
+            const y = Math.random() * 256;
+            const size = 3 + Math.random() * 8;
+            ctx.fillStyle = `rgba(200, 220, 255, ${0.3 + Math.random() * 0.3})`;
+            ctx.beginPath();
+            ctx.arc(x, y, size, 0, Math.PI * 2);
+            ctx.fill();
+        }
+        
+        // Add icy shadows
+        for (let i = 0; i < 40; i++) {
+            const x = Math.random() * 256;
+            const y = Math.random() * 256;
+            const size = 8 + Math.random() * 15;
+            ctx.fillStyle = `rgba(60, 80, 120, ${0.2 + Math.random() * 0.2})`;
+            ctx.beginPath();
+            ctx.arc(x, y, size, 0, Math.PI * 2);
+            ctx.fill();
+        }
+    } else {
+        // Base green
+        ctx.fillStyle = '#2d6b22';
+        ctx.fillRect(0, 0, 256, 256);
+        
+        // Add leaf clusters
+        for (let i = 0; i < 200; i++) {
+            const x = Math.random() * 256;
+            const y = Math.random() * 256;
+            const size = 5 + Math.random() * 15;
+            const hue = 80 + Math.random() * 40; // Green range
+            const lightness = 25 + Math.random() * 25;
+            ctx.fillStyle = `hsl(${hue}, 60%, ${lightness}%)`;
+            ctx.beginPath();
+            ctx.ellipse(x, y, size, size * 0.7, Math.random() * Math.PI, 0, Math.PI * 2);
+            ctx.fill();
+        }
+        
+        // Add highlights
+        for (let i = 0; i < 50; i++) {
+            const x = Math.random() * 256;
+            const y = Math.random() * 256;
+            const size = 3 + Math.random() * 8;
+            ctx.fillStyle = `rgba(150, 220, 100, ${0.3 + Math.random() * 0.3})`;
+            ctx.beginPath();
+            ctx.arc(x, y, size, 0, Math.PI * 2);
+            ctx.fill();
+        }
+        
+        // Add shadows
+        for (let i = 0; i < 40; i++) {
+            const x = Math.random() * 256;
+            const y = Math.random() * 256;
+            const size = 8 + Math.random() * 15;
+            ctx.fillStyle = `rgba(20, 60, 10, ${0.2 + Math.random() * 0.2})`;
+            ctx.beginPath();
+            ctx.arc(x, y, size, 0, Math.PI * 2);
+            ctx.fill();
+        }
     }
     
     const texture = new THREE.CanvasTexture(canvas);
@@ -619,56 +709,103 @@ function generateHairTexture(THREE, baseColor) {
     return texture;
 }
 
-// Generate dragon scale texture (deep red with scale pattern)
-function generateDragonScaleTexture(THREE) {
+// Generate dragon scale texture (deep red with scale pattern, or icy blue)
+function generateDragonScaleTexture(THREE, iceTheme = false) {
     const canvas = document.createElement('canvas');
     canvas.width = 256;
     canvas.height = 256;
     const ctx = canvas.getContext('2d');
     
-    // Base dark red
-    ctx.fillStyle = '#8B0000';
-    ctx.fillRect(0, 0, 256, 256);
-    
-    // Add scale pattern
-    for (let row = 0; row < 32; row++) {
-        for (let col = 0; col < 32; col++) {
-            const offsetX = (row % 2 === 0) ? 4 : 0;
-            const x = col * 8 + offsetX;
-            const y = row * 8;
-            const brightness = 0.7 + Math.random() * 0.4;
-            const r = Math.floor(139 * brightness);
-            const g = Math.floor(10 * brightness);
-            const b = Math.floor(10 * brightness);
-            
-            ctx.fillStyle = `rgb(${r}, ${g}, ${b})`;
-            ctx.beginPath();
-            ctx.ellipse(x + 4, y + 4, 3.5, 3, 0, 0, Math.PI * 2);
-            ctx.fill();
-            
-            // Add highlight on each scale
-            ctx.fillStyle = `rgba(180, 50, 50, 0.3)`;
-            ctx.beginPath();
-            ctx.ellipse(x + 3, y + 3, 1.5, 1, 0, 0, Math.PI * 2);
-            ctx.fill();
+    if (iceTheme) {
+        // Base icy blue
+        ctx.fillStyle = '#1E4D6B';
+        ctx.fillRect(0, 0, 256, 256);
+        
+        // Add scale pattern
+        for (let row = 0; row < 32; row++) {
+            for (let col = 0; col < 32; col++) {
+                const offsetX = (row % 2 === 0) ? 4 : 0;
+                const x = col * 8 + offsetX;
+                const y = row * 8;
+                const brightness = 0.7 + Math.random() * 0.4;
+                const r = Math.floor(50 * brightness);
+                const g = Math.floor(120 * brightness);
+                const b = Math.floor(160 * brightness);
+                
+                ctx.fillStyle = `rgb(${r}, ${g}, ${b})`;
+                ctx.beginPath();
+                ctx.ellipse(x + 4, y + 4, 3.5, 3, 0, 0, Math.PI * 2);
+                ctx.fill();
+                
+                // Add frost highlight on each scale
+                ctx.fillStyle = `rgba(180, 220, 255, 0.4)`;
+                ctx.beginPath();
+                ctx.ellipse(x + 3, y + 3, 1.5, 1, 0, 0, Math.PI * 2);
+                ctx.fill();
+            }
         }
-    }
-    
-    // Add darker vein patterns
-    for (let i = 0; i < 15; i++) {
-        const startX = Math.random() * 256;
-        const startY = Math.random() * 256;
-        ctx.strokeStyle = `rgba(50, 0, 0, 0.4)`;
-        ctx.lineWidth = 1 + Math.random() * 2;
-        ctx.beginPath();
-        ctx.moveTo(startX, startY);
-        let x = startX, y = startY;
-        for (let j = 0; j < 5; j++) {
-            x += (Math.random() - 0.5) * 40;
-            y += (Math.random() - 0.5) * 40;
-            ctx.lineTo(x, y);
+        
+        // Add lighter frost vein patterns
+        for (let i = 0; i < 15; i++) {
+            const startX = Math.random() * 256;
+            const startY = Math.random() * 256;
+            ctx.strokeStyle = `rgba(200, 230, 255, 0.3)`;
+            ctx.lineWidth = 1 + Math.random() * 2;
+            ctx.beginPath();
+            ctx.moveTo(startX, startY);
+            let x = startX, y = startY;
+            for (let j = 0; j < 5; j++) {
+                x += (Math.random() - 0.5) * 40;
+                y += (Math.random() - 0.5) * 40;
+                ctx.lineTo(x, y);
+            }
+            ctx.stroke();
         }
-        ctx.stroke();
+    } else {
+        // Base dark red
+        ctx.fillStyle = '#8B0000';
+        ctx.fillRect(0, 0, 256, 256);
+        
+        // Add scale pattern
+        for (let row = 0; row < 32; row++) {
+            for (let col = 0; col < 32; col++) {
+                const offsetX = (row % 2 === 0) ? 4 : 0;
+                const x = col * 8 + offsetX;
+                const y = row * 8;
+                const brightness = 0.7 + Math.random() * 0.4;
+                const r = Math.floor(139 * brightness);
+                const g = Math.floor(10 * brightness);
+                const b = Math.floor(10 * brightness);
+                
+                ctx.fillStyle = `rgb(${r}, ${g}, ${b})`;
+                ctx.beginPath();
+                ctx.ellipse(x + 4, y + 4, 3.5, 3, 0, 0, Math.PI * 2);
+                ctx.fill();
+                
+                // Add highlight on each scale
+                ctx.fillStyle = `rgba(180, 50, 50, 0.3)`;
+                ctx.beginPath();
+                ctx.ellipse(x + 3, y + 3, 1.5, 1, 0, 0, Math.PI * 2);
+                ctx.fill();
+            }
+        }
+        
+        // Add darker vein patterns
+        for (let i = 0; i < 15; i++) {
+            const startX = Math.random() * 256;
+            const startY = Math.random() * 256;
+            ctx.strokeStyle = `rgba(50, 0, 0, 0.4)`;
+            ctx.lineWidth = 1 + Math.random() * 2;
+            ctx.beginPath();
+            ctx.moveTo(startX, startY);
+            let x = startX, y = startY;
+            for (let j = 0; j < 5; j++) {
+                x += (Math.random() - 0.5) * 40;
+                y += (Math.random() - 0.5) * 40;
+                ctx.lineTo(x, y);
+            }
+            ctx.stroke();
+        }
     }
     
     const texture = new THREE.CanvasTexture(canvas);
@@ -709,94 +846,169 @@ function generateDragonBellyTexture(THREE) {
     return texture;
 }
 
-// Generate fireball texture (fiery plasma)
-function generateFireballTexture(THREE) {
+// Generate fireball texture (fiery plasma, or icy blue)
+function generateFireballTexture(THREE, iceTheme = false) {
     const canvas = document.createElement('canvas');
     canvas.width = 64;
     canvas.height = 64;
     const ctx = canvas.getContext('2d');
     
-    // Create radial gradient for fire core
-    const gradient = ctx.createRadialGradient(32, 32, 0, 32, 32, 32);
-    gradient.addColorStop(0, '#FFFFFF');
-    gradient.addColorStop(0.2, '#FFFF00');
-    gradient.addColorStop(0.4, '#FFA500');
-    gradient.addColorStop(0.6, '#FF4500');
-    gradient.addColorStop(0.8, '#FF0000');
-    gradient.addColorStop(1, '#8B0000');
-    ctx.fillStyle = gradient;
-    ctx.fillRect(0, 0, 64, 64);
-    
-    // Add flame tendrils
-    for (let i = 0; i < 20; i++) {
-        const angle = Math.random() * Math.PI * 2;
-        const startR = 10 + Math.random() * 10;
-        const endR = 25 + Math.random() * 10;
-        const startX = 32 + Math.cos(angle) * startR;
-        const startY = 32 + Math.sin(angle) * startR;
-        const endX = 32 + Math.cos(angle) * endR;
-        const endY = 32 + Math.sin(angle) * endR;
+    if (iceTheme) {
+        // Create radial gradient for ice core
+        const gradient = ctx.createRadialGradient(32, 32, 0, 32, 32, 32);
+        gradient.addColorStop(0, '#FFFFFF');
+        gradient.addColorStop(0.2, '#E0FFFF');
+        gradient.addColorStop(0.4, '#87CEEB');
+        gradient.addColorStop(0.6, '#4169E1');
+        gradient.addColorStop(0.8, '#0000CD');
+        gradient.addColorStop(1, '#00008B');
+        ctx.fillStyle = gradient;
+        ctx.fillRect(0, 0, 64, 64);
         
-        const flameGrad = ctx.createLinearGradient(startX, startY, endX, endY);
-        flameGrad.addColorStop(0, 'rgba(255, 200, 0, 0.8)');
-        flameGrad.addColorStop(1, 'rgba(255, 0, 0, 0)');
-        ctx.strokeStyle = flameGrad;
-        ctx.lineWidth = 2 + Math.random() * 3;
-        ctx.beginPath();
-        ctx.moveTo(startX, startY);
-        ctx.lineTo(endX, endY);
-        ctx.stroke();
+        // Add ice shard tendrils
+        for (let i = 0; i < 20; i++) {
+            const angle = Math.random() * Math.PI * 2;
+            const startR = 10 + Math.random() * 10;
+            const endR = 25 + Math.random() * 10;
+            const startX = 32 + Math.cos(angle) * startR;
+            const startY = 32 + Math.sin(angle) * startR;
+            const endX = 32 + Math.cos(angle) * endR;
+            const endY = 32 + Math.sin(angle) * endR;
+            
+            const iceGrad = ctx.createLinearGradient(startX, startY, endX, endY);
+            iceGrad.addColorStop(0, 'rgba(200, 240, 255, 0.8)');
+            iceGrad.addColorStop(1, 'rgba(100, 150, 255, 0)');
+            ctx.strokeStyle = iceGrad;
+            ctx.lineWidth = 2 + Math.random() * 3;
+            ctx.beginPath();
+            ctx.moveTo(startX, startY);
+            ctx.lineTo(endX, endY);
+            ctx.stroke();
+        }
+    } else {
+        // Create radial gradient for fire core
+        const gradient = ctx.createRadialGradient(32, 32, 0, 32, 32, 32);
+        gradient.addColorStop(0, '#FFFFFF');
+        gradient.addColorStop(0.2, '#FFFF00');
+        gradient.addColorStop(0.4, '#FFA500');
+        gradient.addColorStop(0.6, '#FF4500');
+        gradient.addColorStop(0.8, '#FF0000');
+        gradient.addColorStop(1, '#8B0000');
+        ctx.fillStyle = gradient;
+        ctx.fillRect(0, 0, 64, 64);
+        
+        // Add flame tendrils
+        for (let i = 0; i < 20; i++) {
+            const angle = Math.random() * Math.PI * 2;
+            const startR = 10 + Math.random() * 10;
+            const endR = 25 + Math.random() * 10;
+            const startX = 32 + Math.cos(angle) * startR;
+            const startY = 32 + Math.sin(angle) * startR;
+            const endX = 32 + Math.cos(angle) * endR;
+            const endY = 32 + Math.sin(angle) * endR;
+            
+            const flameGrad = ctx.createLinearGradient(startX, startY, endX, endY);
+            flameGrad.addColorStop(0, 'rgba(255, 200, 0, 0.8)');
+            flameGrad.addColorStop(1, 'rgba(255, 0, 0, 0)');
+            ctx.strokeStyle = flameGrad;
+            ctx.lineWidth = 2 + Math.random() * 3;
+            ctx.beginPath();
+            ctx.moveTo(startX, startY);
+            ctx.lineTo(endX, endY);
+            ctx.stroke();
+        }
     }
     
     const texture = new THREE.CanvasTexture(canvas);
     return texture;
 }
 
-// Generate explosion particle texture - SUPER BRIGHT
-function generateExplosionTexture(THREE) {
+// Generate explosion particle texture - SUPER BRIGHT (or icy blue)
+function generateExplosionTexture(THREE, iceTheme = false) {
     const canvas = document.createElement('canvas');
     canvas.width = 64;
     canvas.height = 64;
     const ctx = canvas.getContext('2d');
     
-    // Multiple layered gradients for intense glow
-    // Outer glow layer
-    const outerGlow = ctx.createRadialGradient(32, 32, 0, 32, 32, 32);
-    outerGlow.addColorStop(0, '#FFFFFF');
-    outerGlow.addColorStop(0.1, '#FFFFAA');
-    outerGlow.addColorStop(0.25, '#FFFF00');
-    outerGlow.addColorStop(0.4, '#FFAA00');
-    outerGlow.addColorStop(0.6, '#FF6600');
-    outerGlow.addColorStop(0.8, '#FF2200');
-    outerGlow.addColorStop(1, 'rgba(200, 0, 0, 0)');
-    ctx.fillStyle = outerGlow;
-    ctx.fillRect(0, 0, 64, 64);
-    
-    // Inner super bright core
-    const innerGlow = ctx.createRadialGradient(32, 32, 0, 32, 32, 12);
-    innerGlow.addColorStop(0, '#FFFFFF');
-    innerGlow.addColorStop(0.5, '#FFFFCC');
-    innerGlow.addColorStop(1, '#FFFF00');
-    ctx.fillStyle = innerGlow;
-    ctx.beginPath();
-    ctx.arc(32, 32, 16, 0, Math.PI * 2);
-    ctx.fill();
-    
-    // Add bright sparks
-    for (let i = 0; i < 16; i++) {
-        const angle = Math.random() * Math.PI * 2;
-        const r = 8 + Math.random() * 20;
-        const x = 32 + Math.cos(angle) * r;
-        const y = 32 + Math.sin(angle) * r;
+    if (iceTheme) {
+        // Icy blue explosion
+        const outerGlow = ctx.createRadialGradient(32, 32, 0, 32, 32, 32);
+        outerGlow.addColorStop(0, '#FFFFFF');
+        outerGlow.addColorStop(0.1, '#E0FFFF');
+        outerGlow.addColorStop(0.25, '#87CEEB');
+        outerGlow.addColorStop(0.4, '#6495ED');
+        outerGlow.addColorStop(0.6, '#4169E1');
+        outerGlow.addColorStop(0.8, '#0000CD');
+        outerGlow.addColorStop(1, 'rgba(0, 0, 139, 0)');
+        ctx.fillStyle = outerGlow;
+        ctx.fillRect(0, 0, 64, 64);
         
-        const sparkGrad = ctx.createRadialGradient(x, y, 0, x, y, 3);
-        sparkGrad.addColorStop(0, 'rgba(255, 255, 255, 1)');
-        sparkGrad.addColorStop(0.5, 'rgba(255, 255, 100, 0.8)');
-        sparkGrad.addColorStop(1, 'rgba(255, 200, 0, 0)');
-        ctx.fillStyle = sparkGrad;
+        // Inner bright ice core
+        const innerGlow = ctx.createRadialGradient(32, 32, 0, 32, 32, 12);
+        innerGlow.addColorStop(0, '#FFFFFF');
+        innerGlow.addColorStop(0.5, '#E0FFFF');
+        innerGlow.addColorStop(1, '#87CEEB');
+        ctx.fillStyle = innerGlow;
         ctx.beginPath();
-        ctx.arc(x, y, 3 + Math.random() * 2, 0, Math.PI * 2);
+        ctx.arc(32, 32, 16, 0, Math.PI * 2);
         ctx.fill();
+        
+        // Add ice crystal sparks
+        for (let i = 0; i < 16; i++) {
+            const angle = Math.random() * Math.PI * 2;
+            const r = 8 + Math.random() * 20;
+            const x = 32 + Math.cos(angle) * r;
+            const y = 32 + Math.sin(angle) * r;
+            
+            const sparkGrad = ctx.createRadialGradient(x, y, 0, x, y, 3);
+            sparkGrad.addColorStop(0, 'rgba(255, 255, 255, 1)');
+            sparkGrad.addColorStop(0.5, 'rgba(200, 230, 255, 0.8)');
+            sparkGrad.addColorStop(1, 'rgba(100, 180, 255, 0)');
+            ctx.fillStyle = sparkGrad;
+            ctx.beginPath();
+            ctx.arc(x, y, 3 + Math.random() * 2, 0, Math.PI * 2);
+            ctx.fill();
+        }
+    } else {
+        // Multiple layered gradients for intense glow
+        // Outer glow layer
+        const outerGlow = ctx.createRadialGradient(32, 32, 0, 32, 32, 32);
+        outerGlow.addColorStop(0, '#FFFFFF');
+        outerGlow.addColorStop(0.1, '#FFFFAA');
+        outerGlow.addColorStop(0.25, '#FFFF00');
+        outerGlow.addColorStop(0.4, '#FFAA00');
+        outerGlow.addColorStop(0.6, '#FF6600');
+        outerGlow.addColorStop(0.8, '#FF2200');
+        outerGlow.addColorStop(1, 'rgba(200, 0, 0, 0)');
+        ctx.fillStyle = outerGlow;
+        ctx.fillRect(0, 0, 64, 64);
+        
+        // Inner super bright core
+        const innerGlow = ctx.createRadialGradient(32, 32, 0, 32, 32, 12);
+        innerGlow.addColorStop(0, '#FFFFFF');
+        innerGlow.addColorStop(0.5, '#FFFFCC');
+        innerGlow.addColorStop(1, '#FFFF00');
+        ctx.fillStyle = innerGlow;
+        ctx.beginPath();
+        ctx.arc(32, 32, 16, 0, Math.PI * 2);
+        ctx.fill();
+        
+        // Add bright sparks
+        for (let i = 0; i < 16; i++) {
+            const angle = Math.random() * Math.PI * 2;
+            const r = 8 + Math.random() * 20;
+            const x = 32 + Math.cos(angle) * r;
+            const y = 32 + Math.sin(angle) * r;
+            
+            const sparkGrad = ctx.createRadialGradient(x, y, 0, x, y, 3);
+            sparkGrad.addColorStop(0, 'rgba(255, 255, 255, 1)');
+            sparkGrad.addColorStop(0.5, 'rgba(255, 255, 100, 0.8)');
+            sparkGrad.addColorStop(1, 'rgba(255, 200, 0, 0)');
+            ctx.fillStyle = sparkGrad;
+            ctx.beginPath();
+            ctx.arc(x, y, 3 + Math.random() * 2, 0, Math.PI * 2);
+            ctx.fill();
+        }
     }
     
     const texture = new THREE.CanvasTexture(canvas);
@@ -1011,9 +1223,11 @@ let cachedTextures = null;
 function getTerrainTextures(THREE) {
     if (!cachedTextures) {
         cachedTextures = {
-            grass: generateGrassTexture(THREE),
+            grass: generateGrassTexture(THREE, false),
+            grassIce: generateGrassTexture(THREE, true),
             bark: generateBarkTexture(THREE),
-            foliage: generateFoliageTexture(THREE),
+            foliage: generateFoliageTexture(THREE, false),
+            foliageIce: generateFoliageTexture(THREE, true),
             mountain: generateMountainTexture(THREE),
             snow: generateSnowTexture(THREE),
             sky: generateSkyTexture(THREE),
@@ -1026,10 +1240,13 @@ function getTerrainTextures(THREE) {
             playerClothingBlue: generatePlayerClothingTexture(THREE, 0x4169E1),
             hairBrown: generateHairTexture(THREE, 0x8B4513),
             hairBlack: generateHairTexture(THREE, 0x1a1a1a),
-            dragonScale: generateDragonScaleTexture(THREE),
+            dragonScale: generateDragonScaleTexture(THREE, false),
+            dragonScaleIce: generateDragonScaleTexture(THREE, true),
             dragonBelly: generateDragonBellyTexture(THREE),
-            fireball: generateFireballTexture(THREE),
-            explosion: generateExplosionTexture(THREE),
+            fireball: generateFireballTexture(THREE, false),
+            fireballIce: generateFireballTexture(THREE, true),
+            explosion: generateExplosionTexture(THREE, false),
+            explosionIce: generateExplosionTexture(THREE, true),
             smoke: generateSmokeTexture(THREE),
             scorch: generateScorchTexture(THREE),
             kitePink: generateKiteTexture(THREE, 0xFF1493),
@@ -1037,7 +1254,8 @@ function getTerrainTextures(THREE) {
             goblinEye: generateGlowingEyeTexture(THREE, 0xFF0000),
             guardianEye: generateGlowingEyeTexture(THREE, 0xFFFF00),
             giantEye: generateGlowingEyeTexture(THREE, 0xFF6600),
-            dragonEye: generateGlowingEyeTexture(THREE, 0xFF6600)
+            dragonEye: generateGlowingEyeTexture(THREE, 0xFF6600),
+            dragonEyeIce: generateGlowingEyeTexture(THREE, 0x00BFFF)
         };
     }
     return cachedTextures;
@@ -1051,8 +1269,11 @@ function getTerrainTextures(THREE) {
 function getTerrainHeight(x, z) {
     let y = 0;
     
+    // Use current level hills if set, otherwise fall back to global HILLS
+    const hills = currentLevelHills || HILLS;
+    
     // Check each hill
-    HILLS.forEach(hill => {
+    hills.forEach(hill => {
         const dist = Math.sqrt(
             Math.pow(x - hill.x, 2) + Math.pow(z - hill.z, 2)
         );
@@ -1068,13 +1289,16 @@ function getTerrainHeight(x, z) {
 }
 
 // Create visual hill meshes
-function createHills(scene, THREE) {
+function createHills(scene, THREE, hillPositions, hillColor, iceTheme) {
     const textures = getTerrainTextures(THREE);
-    HILLS.forEach(hill => {
+    const hills = hillPositions || HILLS;
+    const color = hillColor || 0x88cc88;
+    const textureToUse = iceTheme ? textures.grassIce : textures.grass;
+    hills.forEach(hill => {
         const hillGeometry = new THREE.ConeGeometry(hill.radius, hill.height, 32);
         const hillMaterial = new THREE.MeshLambertMaterial({ 
-            map: textures.grass,
-            color: 0x88cc88
+            map: textureToUse,
+            color: color
         });
         const hillMesh = new THREE.Mesh(hillGeometry, hillMaterial);
         hillMesh.position.set(hill.x, hill.height / 2, hill.z);
@@ -1110,11 +1334,14 @@ function createMountains(scene, THREE, mountainPositions) {
 }
 
 // Create ground plane
-function createGround(scene, THREE) {
+function createGround(scene, THREE, groundColor, iceTheme) {
     const textures = getTerrainTextures(THREE);
+    const color = groundColor || 0xffffff; // Tint color applied over texture
+    const textureToUse = iceTheme ? textures.grassIce : textures.grass;
     const groundGeometry = new THREE.PlaneGeometry(600, 600, 1, 1);
     const groundMaterial = new THREE.MeshLambertMaterial({ 
-        map: textures.grass
+        map: textureToUse,
+        color: color
     });
     const ground = new THREE.Mesh(groundGeometry, groundMaterial);
     ground.rotation.x = -Math.PI / 2;
