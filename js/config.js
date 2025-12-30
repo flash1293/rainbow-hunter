@@ -69,8 +69,11 @@ const LEVELS = {
         // Player start position
         playerStart: { x: 0, z: 40 },
         
-        // Portal to next level (near spawn for testing)
-        portal: { x: 15, z: 30, destinationLevel: 2 },
+        // No treasure in Level 1 - portal is at treasure location
+        hasTreasure: false,
+        
+        // Portal to next level (at treasure position)
+        portal: { x: -120, z: -220, destinationLevel: 2 },
         
         // World Kite position
         worldKite: { x: 0, z: -10 },
@@ -504,6 +507,9 @@ const LEVELS = {
         hillColor: 0x88bbdd,       // Icy blue-gray hills
         treeColor: 0x667788,       // Frosted gray-blue foliage
         grassColor: 0x99aacc,      // Frosted pale blue grass
+        
+        // Level 2 has the treasure
+        hasTreasure: true,
         
         // Treasure position - at the end of the L (west end)
         treasurePosition: { x: -180, z: -100 },

@@ -2549,14 +2549,16 @@ function initGame() {
             goblins.push(createGoblin(goblin[0], goblin[1], goblin[2], goblin[3], goblin[4]));
         });
         
-        // Guardians in a ring around treasure (using level-specific position)
-        const treasureGuardX = levelConfig.treasurePosition?.x ?? GAME_CONFIG.TREASURE_X;
-        const treasureGuardZ = levelConfig.treasurePosition?.z ?? GAME_CONFIG.TREASURE_Z;
-        for (let i = 0; i < GAME_CONFIG.HARD_GUARDIAN_COUNT; i++) {
-            const angle = (i / GAME_CONFIG.HARD_GUARDIAN_COUNT) * Math.PI * 2;
-            const x = treasureGuardX + Math.cos(angle) * 8;
-            const z = treasureGuardZ + Math.sin(angle) * 8;
-            goblins.push(createGuardianGoblin(x, z, x - 3, x + 3, 0.014));
+        // Guardians in a ring around treasure (only if level has treasure)
+        if (levelConfig.hasTreasure !== false) {
+            const treasureGuardX = levelConfig.treasurePosition?.x ?? GAME_CONFIG.TREASURE_X;
+            const treasureGuardZ = levelConfig.treasurePosition?.z ?? GAME_CONFIG.TREASURE_Z;
+            for (let i = 0; i < GAME_CONFIG.HARD_GUARDIAN_COUNT; i++) {
+                const angle = (i / GAME_CONFIG.HARD_GUARDIAN_COUNT) * Math.PI * 2;
+                const x = treasureGuardX + Math.cos(angle) * 8;
+                const z = treasureGuardZ + Math.sin(angle) * 8;
+                goblins.push(createGuardianGoblin(x, z, x - 3, x + 3, 0.014));
+            }
         }
     }
 
@@ -2667,9 +2669,14 @@ function initGame() {
     const treasureX = levelConfig.treasurePosition?.x ?? GAME_CONFIG.TREASURE_X;
     const treasureZ = levelConfig.treasurePosition?.z ?? GAME_CONFIG.TREASURE_Z;
     treasureGroup.position.set(treasureX, 0, treasureZ);
-    scene.add(treasureGroup);
+    
+    // Only add treasure if level has it (default true for backwards compatibility)
+    const hasTreasure = levelConfig.hasTreasure !== false;
+    if (hasTreasure) {
+        scene.add(treasureGroup);
+    }
 
-    const treasure = { mesh: treasureGroup, radius: 1 };
+    const treasure = hasTreasure ? { mesh: treasureGroup, radius: 1 } : null;
 
     // Ice Berg - optional per level
     const iceBergGroup = new THREE.Group();
@@ -5948,17 +5955,19 @@ function initGame() {
             }
         }
         
-        // Treasure collection
-        const dist = playerGroup.position.distanceTo(treasureGroup.position);
-        if (dist < treasure.radius + 0.8) {
-            // Only host decides win state
-            if (!multiplayerManager || multiplayerManager.isHost) {
-                gameWon = true;
-                Audio.playWinSound();
-            } else {
-                // Client notifies host they reached treasure
-                if (multiplayerManager && multiplayerManager.isConnected()) {
-                    multiplayerManager.sendGameEvent('playerWin', {});
+        // Treasure collection - only if this level has treasure
+        if (treasure) {
+            const dist = playerGroup.position.distanceTo(treasureGroup.position);
+            if (dist < treasure.radius + 0.8) {
+                // Only host decides win state
+                if (!multiplayerManager || multiplayerManager.isHost) {
+                    gameWon = true;
+                    Audio.playWinSound();
+                } else {
+                    // Client notifies host they reached treasure
+                    if (multiplayerManager && multiplayerManager.isConnected()) {
+                        multiplayerManager.sendGameEvent('playerWin', {});
+                    }
                 }
             }
         }
