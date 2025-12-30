@@ -201,6 +201,9 @@ window.addEventListener('keydown', (e) => {
 // Current level (can be changed for multi-level support)
 let currentLevel = 1;
 let currentAnimationId = null;
+let currentScene = null;
+let currentRenderer = null;
+let currentEventAbortController = null;
 
 // Switch to a different level
 function switchLevel(newLevel) {
@@ -218,6 +221,41 @@ function switchLevel(newLevel) {
         multiplayerManager.stopHostSync();
         multiplayerManager.clearCallbacks();
     }
+    
+    // Properly dispose Three.js resources
+    if (currentScene) {
+        // Recursively dispose all objects in scene
+        currentScene.traverse((object) => {
+            if (object.geometry) {
+                object.geometry.dispose();
+            }
+            if (object.material) {
+                if (Array.isArray(object.material)) {
+                    object.material.forEach(mat => mat.dispose());
+                } else {
+                    object.material.dispose();
+                }
+            }
+        });
+        currentScene.clear();
+        currentScene = null;
+    }
+    
+    // Dispose renderer
+    if (currentRenderer) {
+        currentRenderer.dispose();
+        currentRenderer.forceContextLoss();
+        currentRenderer = null;
+    }
+    
+    // Abort all event listeners from previous level
+    if (currentEventAbortController) {
+        currentEventAbortController.abort();
+        currentEventAbortController = null;
+    }
+    
+    // Clear global mesh references
+    otherPlayerMesh = null;
     
     // Clear container
     const container = document.getElementById('gameCanvas');
@@ -240,6 +278,10 @@ function switchLevel(newLevel) {
 window.switchLevel = switchLevel;
 
 function initGame() {
+    // Create AbortController for managing event listeners
+    currentEventAbortController = new AbortController();
+    const eventSignal = currentEventAbortController.signal;
+    
     // Get level configuration
     const levelConfig = getLevelConfig(currentLevel);
     
@@ -249,6 +291,7 @@ function initGame() {
     // Three.js setup
     const container = document.getElementById('gameCanvas');
     const scene = new THREE.Scene();
+    currentScene = scene; // Store for cleanup
     
     // Use sky texture as background
     const skyTextures = getTerrainTextures(THREE);
@@ -280,6 +323,7 @@ function initGame() {
     camera.lookAt(0, 0, 0);
 
     const renderer = new THREE.WebGLRenderer({ antialias: true });
+    currentRenderer = renderer; // Store for cleanup
     renderer.setSize(window.innerWidth, window.innerHeight);
     renderer.shadowMap.enabled = true;
     renderer.shadowMap.type = THREE.PCFSoftShadowMap;
@@ -294,7 +338,7 @@ function initGame() {
         camera.aspect = window.innerWidth / window.innerHeight;
         camera.updateProjectionMatrix();
         renderer.setSize(window.innerWidth, window.innerHeight);
-    });
+    }, { signal: eventSignal });
 
     // Lighting
     const ambientLight = new THREE.AmbientLight(0xffffff, 0.6);
@@ -504,6 +548,51 @@ function initGame() {
     hair.castShadow = true;
     playerGroup.add(hair);
 
+    // Bicycle helmet
+    const helmetGroup = new THREE.Group();
+    
+    // Main helmet shell (elongated dome) with texture
+    const helmetShellGeometry = new THREE.SphereGeometry(0.32, 24, 16, 0, Math.PI * 2, 0, Math.PI * 0.6);
+    const helmetTexture = isHost ? playerTextures.helmetPink.clone() : playerTextures.helmetBlue.clone();
+    helmetTexture.offset.x = 0.5; // Rotate texture so vents are at back
+    helmetTexture.needsUpdate = true;
+    const helmetMaterial = new THREE.MeshLambertMaterial({ map: helmetTexture });
+    const helmetShell = new THREE.Mesh(helmetShellGeometry, helmetMaterial);
+    helmetShell.scale.set(1, 0.85, 1.15); // Flatten and elongate
+    helmetShell.position.y = 0;
+    helmetShell.castShadow = true;
+    helmetGroup.add(helmetShell);
+    
+    // Helmet visor/brim
+    const visorGeometry = new THREE.BoxGeometry(0.35, 0.05, 0.15);
+    const visorMaterial = new THREE.MeshLambertMaterial({ color: 0x333333 });
+    const visor = new THREE.Mesh(visorGeometry, visorMaterial);
+    visor.position.set(0, 0.05, 0.28);
+    visor.rotation.x = -0.3;
+    visor.castShadow = true;
+    helmetGroup.add(visor);
+    
+    // Helmet straps (simple lines under chin)
+    const strapMaterial = new THREE.MeshLambertMaterial({ color: 0x111111 });
+    const leftStrap = new THREE.Mesh(
+        new THREE.CylinderGeometry(0.015, 0.015, 0.25, 6),
+        strapMaterial
+    );
+    leftStrap.position.set(-0.22, -0.1, 0.1);
+    leftStrap.rotation.z = 0.4;
+    helmetGroup.add(leftStrap);
+    
+    const rightStrap = new THREE.Mesh(
+        new THREE.CylinderGeometry(0.015, 0.015, 0.25, 6),
+        strapMaterial
+    );
+    rightStrap.position.set(0.22, -0.1, 0.1);
+    rightStrap.rotation.z = -0.4;
+    helmetGroup.add(rightStrap);
+    
+    helmetGroup.position.set(0, 1.95, 0);
+    playerGroup.add(helmetGroup);
+
     // Direction indicator
     const coneGeometry = new THREE.ConeGeometry(0.15, 0.4, 8);
     const coneMaterial = new THREE.MeshLambertMaterial({ color: 0xFFFF00 });
@@ -681,6 +770,51 @@ function initGame() {
         hair.position.set(0, 1.95, 0);
         hair.castShadow = true;
         otherPlayerGroup.add(hair);
+
+        // Bicycle helmet for other player
+        const otherHelmetGroup = new THREE.Group();
+        
+        // Main helmet shell (elongated dome) with texture
+        const otherHelmetShellGeometry = new THREE.SphereGeometry(0.32, 24, 16, 0, Math.PI * 2, 0, Math.PI * 0.6);
+        const otherHelmetTexture = otherIsGirl ? playerTextures.helmetPink.clone() : playerTextures.helmetBlue.clone();
+        otherHelmetTexture.offset.x = 0.5; // Rotate texture so vents are at back
+        otherHelmetTexture.needsUpdate = true;
+        const otherHelmetMaterial = new THREE.MeshLambertMaterial({ map: otherHelmetTexture });
+        const otherHelmetShell = new THREE.Mesh(otherHelmetShellGeometry, otherHelmetMaterial);
+        otherHelmetShell.scale.set(1, 0.85, 1.15); // Flatten and elongate
+        otherHelmetShell.position.y = 0;
+        otherHelmetShell.castShadow = true;
+        otherHelmetGroup.add(otherHelmetShell);
+        
+        // Helmet visor/brim
+        const otherVisorGeometry = new THREE.BoxGeometry(0.35, 0.05, 0.15);
+        const otherVisorMaterial = new THREE.MeshLambertMaterial({ color: 0x333333 });
+        const otherVisor = new THREE.Mesh(otherVisorGeometry, otherVisorMaterial);
+        otherVisor.position.set(0, 0.05, 0.28);
+        otherVisor.rotation.x = -0.3;
+        otherVisor.castShadow = true;
+        otherHelmetGroup.add(otherVisor);
+        
+        // Helmet straps (simple lines under chin)
+        const otherStrapMaterial = new THREE.MeshLambertMaterial({ color: 0x111111 });
+        const otherLeftStrap = new THREE.Mesh(
+            new THREE.CylinderGeometry(0.015, 0.015, 0.25, 6),
+            otherStrapMaterial
+        );
+        otherLeftStrap.position.set(-0.22, -0.1, 0.1);
+        otherLeftStrap.rotation.z = 0.4;
+        otherHelmetGroup.add(otherLeftStrap);
+        
+        const otherRightStrap = new THREE.Mesh(
+            new THREE.CylinderGeometry(0.015, 0.015, 0.25, 6),
+            otherStrapMaterial
+        );
+        otherRightStrap.position.set(0.22, -0.1, 0.1);
+        otherRightStrap.rotation.z = -0.4;
+        otherHelmetGroup.add(otherRightStrap);
+        
+        otherHelmetGroup.position.set(0, 1.95, 0);
+        otherPlayerGroup.add(otherHelmetGroup);
 
         // Direction indicator
         const coneGeometry = new THREE.ConeGeometry(0.15, 0.4, 8);
@@ -894,6 +1028,19 @@ function initGame() {
                 health: dragon.health,
                 isFlying: dragon.isFlying
             } : null,
+            extraDragons: extraDragons.map(d => ({
+                x: d.mesh.position.x,
+                y: d.mesh.position.y,
+                z: d.mesh.position.z,
+                rotation: d.mesh.rotation.y,
+                rotationX: d.mesh.rotation.x,
+                rotationZ: d.mesh.rotation.z,
+                alive: d.alive,
+                health: d.health,
+                isFlying: d.isFlying,
+                frozen: d.frozen,
+                frozenUntil: d.frozenUntil
+            })),
             fireballs: fireballs.map(f => ({
                 x: f.mesh.position.x,
                 y: f.mesh.position.y,
@@ -1160,6 +1307,59 @@ function initGame() {
             }
         }
         
+        // Update extra dragons state
+        if (data.extraDragons && extraDragons.length > 0) {
+            data.extraDragons.forEach((dragonData, i) => {
+                if (i >= extraDragons.length) return;
+                const extraDragon = extraDragons[i];
+                
+                extraDragon.mesh.position.set(dragonData.x, dragonData.y, dragonData.z);
+                extraDragon.mesh.rotation.y = dragonData.rotation;
+                extraDragon.mesh.rotation.x = dragonData.rotationX || 0;
+                extraDragon.mesh.rotation.z = dragonData.rotationZ || 0;
+                
+                // Handle dragon death on client
+                const wasAlive = extraDragon.alive;
+                extraDragon.alive = dragonData.alive;
+                extraDragon.health = dragonData.health;
+                extraDragon.isFlying = dragonData.isFlying || false;
+                extraDragon.frozen = dragonData.frozen || false;
+                extraDragon.frozenUntil = dragonData.frozenUntil || 0;
+                
+                // If extra dragon just died, trigger death effects on client
+                if (wasAlive && !extraDragon.alive && !extraDragon.deathTime) {
+                    extraDragon.deathTime = Date.now();
+                    Audio.playGoblinDeathSound();
+                    
+                    // Smaller camera shake for extra dragons
+                    dragonDeathShakeUntil = Date.now() + 600;
+                    dragonDeathShakeIntensity = 0.5;
+                    
+                    // Capture position before hiding mesh
+                    const deathX = extraDragon.mesh.position.x;
+                    const deathY = extraDragon.mesh.position.y;
+                    const deathZ = extraDragon.mesh.position.z;
+                    
+                    // Create smaller explosions
+                    for (let j = 0; j < 4; j++) {
+                        const offsetX = (Math.random() - 0.5) * 8;
+                        const offsetY = Math.random() * 6;
+                        const offsetZ = (Math.random() - 0.5) * 8;
+                        setTimeout(() => {
+                            createDragonExplosion(
+                                deathX + offsetX,
+                                deathY + offsetY + 1,
+                                deathZ + offsetZ
+                            );
+                        }, j * 100);
+                    }
+                    
+                    // Hide dragon mesh immediately
+                    extraDragon.mesh.visible = false;
+                }
+            });
+        }
+        
         // Update fireballs
         if (data.fireballs) {
             // Remove old fireballs
@@ -1322,13 +1522,13 @@ function initGame() {
         } else {
             gamepad = e.gamepad;
         }
-    });
+    }, { signal: eventSignal });
 
     window.addEventListener('gamepaddisconnected', (e) => {
         if (!isSplitscreen || e.gamepad.index === controllerIndex) {
             gamepad = null;
         }
-    });
+    }, { signal: eventSignal });
 
     function updateGamepad() {
         // In splitscreen mode, use specific controller index
@@ -1337,9 +1537,16 @@ function initGame() {
             gamepad = gamepads[controllerIndex];
         } else if (gamepad) {
             gamepad = gamepads[gamepad.index];
+        } else {
+            // In single player, poll for any connected gamepad if we don't have one
+            // This handles the case where the game reinitializes (level change) after gamepad was connected
+            for (let i = 0; i < gamepads.length; i++) {
+                if (gamepads[i]) {
+                    gamepad = gamepads[i];
+                    break;
+                }
+            }
         }
-        
-        if (!gamepad) return;
         
         if (!gamepad) return;
         
@@ -1444,7 +1651,7 @@ function initGame() {
         if (e.key === 'x' || e.key === 'X') {
             keys.bombKeyPressed = false;
         }
-    });
+    }, { signal: eventSignal });
 
     document.addEventListener('keydown', (e) => {
         if (keys.hasOwnProperty(e.key)) {
@@ -1515,14 +1722,14 @@ function initGame() {
             }
             e.preventDefault();
         }
-    });
+    }, { signal: eventSignal });
 
     document.addEventListener('keyup', (e) => {
         if (keys.hasOwnProperty(e.key)) {
             keys[e.key] = false;
             e.preventDefault();
         }
-    });
+    }, { signal: eventSignal });
 
     // Mouse controls for rotation
     let isPointerLocked = false;
@@ -1534,55 +1741,27 @@ function initGame() {
                                            container.webkitRequestPointerLock;
             container.requestPointerLock();
         }
-    });
+    }, { signal: eventSignal });
 
     document.addEventListener('pointerlockchange', () => {
         isPointerLocked = document.pointerLockElement === container;
-    });
+    }, { signal: eventSignal });
 
     document.addEventListener('mousemove', (e) => {
         if (isPointerLocked) {
             const deltaX = e.movementX || e.mozMovementX || e.webkitMovementX || 0;
             player.rotation -= deltaX * 0.003;
         }
-    });
+    }, { signal: eventSignal });
 
-    // Trees
+    // Trees - use level config if available, otherwise use default positions
     const trees = [];
-    const treePositions = [
+    const treePositions = levelConfig.treePositions || [
         { x: -10, z: -15 }, { x: 10, z: -16 }, { x: 0, z: -18 },
         { x: -25, z: -30 }, { x: 20, z: -35 }, { x: -15, z: -45 },
         { x: 30, z: -25 }, { x: -35, z: 15 }, { x: 40, z: 20 },
         { x: -45, z: 25 }, { x: 50, z: 30 }, { x: -20, z: 40 },
-        { x: 35, z: 45 }, { x: -50, z: -20 }, { x: 55, z: -25 },
-        { x: -30, z: -50 }, { x: 25, z: -55 }, { x: -60, z: 10 },
-        { x: 65, z: 5 }, { x: 15, z: 55 }, { x: -40, z: 60 },
-        { x: 45, z: -60 }, { x: -55, z: -55 }, { x: 60, z: 60 },
-        { x: 5, z: -65 }, { x: -65, z: 35 },
-        // Trees behind the gap (treasure area)
-        { x: -20, z: -95 }, { x: 15, z: -100 }, { x: -35, z: -110 },
-        { x: 40, z: -115 }, { x: -10, z: -125 }, { x: 25, z: -130 },
-        { x: -50, z: -135 }, { x: 55, z: -140 }, { x: 0, z: -145 },
-        { x: -30, z: -150 }, { x: 35, z: -155 }, { x: 10, z: -160 },
-        // Dragon boss area trees - MANY MORE in the back and CENTER
-        { x: -130, z: -195 }, { x: 140, z: -205 }, { x: -100, z: -220 },
-        { x: 110, z: -230 }, { x: -140, z: -245 }, { x: 130, z: -255 },
-        { x: -80, z: -200 }, { x: 90, z: -215 }, { x: -70, z: -260 },
-        { x: 115, z: -240 }, { x: -95, z: -235 }, { x: 105, z: -250 },
-        { x: -150, z: -220 }, { x: 145, z: -225 }, { x: 75, z: -195 },
-        { x: -50, z: -210 }, { x: 55, z: -235 }, { x: -85, z: -247 },
-        { x: 95, z: -258 }, { x: -120, z: -262 }, { x: 125, z: -248 },
-        { x: -60, z: -225 }, { x: 65, z: -252 }, { x: -110, z: -238 },
-        { x: 100, z: -222 }, { x: -75, z: -254 }, { x: 85, z: -245 },
-        { x: -135, z: -232 }, { x: 135, z: -260 }, { x: -45, z: -218 },
-        { x: 50, z: -243 }, { x: -105, z: -256 }, { x: 120, z: -217 },
-        // CENTER area behind dragon (x: -40 to 40, z: -210 to -260)
-        { x: -30, z: -210 }, { x: -15, z: -215 }, { x: 0, z: -220 },
-        { x: 15, z: -225 }, { x: 30, z: -230 }, { x: -35, z: -235 },
-        { x: -20, z: -240 }, { x: 10, z: -245 }, { x: 25, z: -250 },
-        { x: -25, z: -255 }, { x: 5, z: -260 }, { x: 35, z: -212 },
-        { x: -40, z: -222 }, { x: 20, z: -233 }, { x: -10, z: -248 },
-        { x: 40, z: -258 }, { x: -5, z: -228 }, { x: 12, z: -238 }
+        { x: 35, z: 45 }, { x: -50, z: -20 }, { x: 55, z: -25 }
     ];
 
     treePositions.forEach(pos => {
@@ -1617,42 +1796,12 @@ function initGame() {
         trees.push({ mesh: treeGroup, type: 'tree', radius: 1.5 });
     });
 
-    // Rocks
+    // Rocks - use level config if available, otherwise use default positions
     const rocks = [];
-    const rockPositions = [
+    const rockPositions = levelConfig.rockPositions || [
         { x: -8, z: 8 }, { x: -3, z: 7 }, { x: 5, z: 8 }, { x: 10, z: 7 },
         { x: -20, z: 25 }, { x: 15, z: 30 }, { x: -10, z: 35 },
-        { x: -18, z: 5 }, { x: 22, z: 10 }, { x: -25, z: -5 }, { x: 30, z: -2 },
-        { x: -12, z: -8 }, { x: -6, z: -9 }, { x: 7, z: -8 }, { x: 12, z: -9 },
-        { x: -30, z: -20 }, { x: 35, z: -25 }, { x: -20, z: -35 }, { x: 25, z: -40 },
-        { x: -40, z: 15 }, { x: 42, z: 12 }, { x: -15, z: 45 }, { x: 18, z: 48 },
-        { x: -50, z: -10 }, { x: 52, z: -15 }, { x: -35, z: -45 }, { x: 38, z: -48 },
-        { x: -45, z: 50 }, { x: 48, z: 55 }, { x: -55, z: -30 }, { x: 58, z: -35 },
-        { x: 8, z: 60 }, { x: -12, z: 65 }, { x: 15, z: -60 }, { x: -18, z: -65 },
-        { x: -60, z: 20 }, { x: 62, z: 25 }, { x: -28, z: 70 }, { x: 32, z: 72 },
-        { x: -65, z: -50 }, { x: 68, z: -55 }, { x: 25, z: 75 },
-        { x: 0, z: 30 },
-        // Dragon boss area rocks - MANY MORE in the back
-        { x: -110, z: -200 }, { x: 125, z: -210 }, { x: -85, z: -225 },
-        { x: 95, z: -235 }, { x: -135, z: -250 }, { x: 120, z: -245 },
-        { x: -75, z: -205 }, { x: 100, z: -220 }, { x: -115, z: -255 },
-        { x: 130, z: -230 }, { x: -90, z: -240 }, { x: 110, z: -260 },
-        { x: -140, z: -215 }, { x: 135, z: -250 }, { x: -65, z: -260 },
-        { x: 85, z: -200 }, { x: -125, z: -225 }, { x: 105, z: -255 },
-        { x: -55, z: -218 }, { x: 70, z: -238 }, { x: -98, z: -248 },
-        { x: 115, z: -252 }, { x: -82, z: -233 }, { x: 92, z: -258 },
-        { x: -122, z: -243 }, { x: 128, z: -222 }, { x: -68, z: -246 },
-        { x: 88, z: -228 }, { x: -102, z: -262 }, { x: 118, z: -236 },
-        { x: -78, z: -214 }, { x: 82, z: -254 }, { x: -132, z: -257 },
-        { x: 138, z: -241 }, { x: -72, z: -222 }, { x: 78, z: -248 },
-        // CENTER area rocks behind dragon (x: -40 to 40, z: -210 to -260)
-        { x: -35, z: -212 }, { x: -20, z: -218 }, { x: -8, z: -224 },
-        { x: 5, z: -230 }, { x: 18, z: -236 }, { x: 32, z: -242 },
-        { x: -28, z: -248 }, { x: -15, z: -254 }, { x: 0, z: -260 },
-        { x: 12, z: -216 }, { x: 25, z: -222 }, { x: -38, z: -228 },
-        { x: -25, z: -234 }, { x: -10, z: -240 }, { x: 8, z: -246 },
-        { x: 22, z: -252 }, { x: 35, z: -258 }, { x: -32, z: -215 },
-        { x: -18, z: -225 }, { x: 15, z: -235 }, { x: 28, z: -245 }
+        { x: -18, z: 5 }, { x: 22, z: 10 }, { x: -25, z: -5 }, { x: 30, z: -2 }
     ];
 
     rockPositions.forEach(pos => {
@@ -2227,6 +2376,145 @@ function initGame() {
         };
     }
 
+    // Wizard goblin helper - large magic-wielding enemy that shoots fireballs
+    function createWizard(x, z, patrolLeft, patrolRight, speed = 0.008) {
+        const textures = getTerrainTextures(THREE);
+        const wizardGrp = new THREE.Group();
+        
+        // Use ice theme robe texture if in ice level
+        const robeTexture = iceTheme ? textures.wizardRobeIce : textures.wizardRobe;
+        
+        // Tall robed body (bigger than guardians)
+        const bodyGeometry = new THREE.CylinderGeometry(0.6, 1.0, 2.5, 12);
+        const bodyMaterial = new THREE.MeshLambertMaterial({ 
+            map: robeTexture,
+            color: iceTheme ? 0x6688aa : 0x8866aa  // Tint to enhance texture
+        });
+        const body = new THREE.Mesh(bodyGeometry, bodyMaterial);
+        body.position.y = 1.5;
+        body.castShadow = true;
+        wizardGrp.add(body);
+        
+        // Robe details - glowing trim
+        const trimGeometry = new THREE.TorusGeometry(0.75, 0.1, 8, 16);
+        const trimMaterial = new THREE.MeshBasicMaterial({ 
+            color: iceTheme ? 0x00FFFF : 0xFF00FF,
+            transparent: true,
+            opacity: 0.8
+        });
+        const bottomTrim = new THREE.Mesh(trimGeometry, trimMaterial);
+        bottomTrim.rotation.x = Math.PI / 2;
+        bottomTrim.position.y = 0.3;
+        wizardGrp.add(bottomTrim);
+        
+        // Head (larger than guardian)
+        const headGeometry = new THREE.SphereGeometry(0.6, 16, 16);
+        const headMaterial = new THREE.MeshLambertMaterial({ map: textures.goblinSkin });
+        const head = new THREE.Mesh(headGeometry, headMaterial);
+        head.position.y = 3.0;
+        head.castShadow = true;
+        wizardGrp.add(head);
+        
+        // Wizard hat with texture
+        const hatGeometry = new THREE.ConeGeometry(0.7, 1.5, 8);
+        const hatMaterial = new THREE.MeshLambertMaterial({ 
+            map: robeTexture,
+            color: iceTheme ? 0x5577aa : 0x7755aa
+        });
+        const hat = new THREE.Mesh(hatGeometry, hatMaterial);
+        hat.position.y = 4.0;
+        hat.castShadow = true;
+        wizardGrp.add(hat);
+        
+        // Hat brim with glow
+        const brimGeometry = new THREE.TorusGeometry(0.75, 0.15, 8, 16);
+        const brimMaterial = new THREE.MeshLambertMaterial({ 
+            map: robeTexture,
+            color: iceTheme ? 0x4466aa : 0x6644aa
+        });
+        const brim = new THREE.Mesh(brimGeometry, brimMaterial);
+        brim.rotation.x = Math.PI / 2;
+        brim.position.y = 3.4;
+        wizardGrp.add(brim);
+        
+        // Glowing purple/cyan eyes
+        const eyeGeometry = new THREE.SphereGeometry(0.12, 16, 16);
+        const eyeMaterial = new THREE.MeshBasicMaterial({ 
+            color: iceTheme ? 0x00FFFF : 0xFF00FF,
+            transparent: true,
+            blending: THREE.AdditiveBlending
+        });
+        const e1 = new THREE.Mesh(eyeGeometry, eyeMaterial);
+        e1.position.set(-0.22, 3.0, 0.52);
+        wizardGrp.add(e1);
+        
+        const e2 = new THREE.Mesh(eyeGeometry, eyeMaterial);
+        e2.position.set(0.22, 3.0, 0.52);
+        wizardGrp.add(e2);
+        
+        // Pointy ears
+        const earGeometry = new THREE.ConeGeometry(0.2, 0.6, 4);
+        const earMaterial = new THREE.MeshLambertMaterial({ map: textures.goblinSkin });
+        const er1 = new THREE.Mesh(earGeometry, earMaterial);
+        er1.rotation.z = Math.PI / 2;
+        er1.position.set(-0.7, 3.0, 0);
+        er1.castShadow = true;
+        wizardGrp.add(er1);
+        
+        const er2 = new THREE.Mesh(earGeometry, earMaterial);
+        er2.rotation.z = -Math.PI / 2;
+        er2.position.set(0.7, 3.0, 0);
+        er2.castShadow = true;
+        wizardGrp.add(er2);
+        
+        // Magic staff
+        const staffGeometry = new THREE.CylinderGeometry(0.06, 0.08, 3.0, 8);
+        const staffMaterial = new THREE.MeshLambertMaterial({ color: 0x8B4513 });
+        const staff = new THREE.Mesh(staffGeometry, staffMaterial);
+        staff.position.set(0.8, 1.5, 0.3);
+        staff.rotation.z = -0.2;
+        staff.castShadow = true;
+        wizardGrp.add(staff);
+        
+        // Glowing orb on staff
+        const orbGeometry = new THREE.SphereGeometry(0.25, 12, 12);
+        const orbMaterial = new THREE.MeshBasicMaterial({ 
+            color: iceTheme ? 0x00FFFF : 0xFF4500,
+            transparent: true,
+            opacity: 0.8,
+            blending: THREE.AdditiveBlending
+        });
+        const orb = new THREE.Mesh(orbGeometry, orbMaterial);
+        orb.position.set(0.9, 3.2, 0.3);
+        wizardGrp.add(orb);
+        wizardGrp.staffOrb = orb; // Store for animation
+        
+        wizardGrp.position.set(x, getTerrainHeight(x, z), z);
+        scene.add(wizardGrp);
+        
+        const health = 7;
+        
+        return {
+            mesh: wizardGrp,
+            speed: speed * speedMultiplier,
+            direction: 1,
+            patrolLeft: patrolLeft,
+            patrolRight: patrolRight,
+            alive: true,
+            radius: 2.0,
+            health: health,
+            maxHealth: health,
+            isWizard: true,
+            lastFireTime: Date.now() - Math.random() * 3000,
+            isChasing: false,
+            initialX: x,
+            initialZ: z,
+            initialPatrolLeft: patrolLeft,
+            initialPatrolRight: patrolRight,
+            orbGlowPhase: Math.random() * Math.PI * 2
+        };
+    }
+
     // Create goblins
     const goblins = [];
     const goblinPositions = levelConfig.goblins;
@@ -2249,6 +2537,13 @@ function initGame() {
             goblins.push(createGuardianGoblin(guardian[0], guardian[1], guardian[2], guardian[3], guardian[4]));
         });
         
+        // Create wizard goblins from level config
+        if (levelConfig.wizards) {
+            levelConfig.wizards.forEach(wizard => {
+                goblins.push(createWizard(wizard[0], wizard[1], wizard[2], wizard[3], wizard[4]));
+            });
+        }
+        
         // Additional regular goblins for hard mode
         levelConfig.hardModeGoblins.forEach(goblin => {
             goblins.push(createGoblin(goblin[0], goblin[1], goblin[2], goblin[3], goblin[4]));
@@ -2268,12 +2563,29 @@ function initGame() {
     // Rainbow
     const rainbowGroup = new THREE.Group();
     const rainbowColors = [0xFF0000, 0xFF7F00, 0xFFFF00, 0x00FF00, 0x0000FF, 0x4B0082, 0x9400D3];
+    const rainbowLights = [];
     rainbowColors.forEach((color, i) => {
         const radius = 5 - (i * 0.3);
         const arcGeometry = new THREE.TorusGeometry(radius, 0.3, 8, 32, Math.PI);
-        const arcMaterial = new THREE.MeshLambertMaterial({ color: color });
+        const arcMaterial = new THREE.MeshBasicMaterial({ 
+            color: color,
+            transparent: true,
+            opacity: 0.9
+        });
         const arc = new THREE.Mesh(arcGeometry, arcMaterial);
         rainbowGroup.add(arc);
+        
+        // Add a point light for each rainbow color
+        const light = new THREE.PointLight(color, 0.8, 25);
+        // Position lights along the arc
+        const angle = Math.PI * (i / (rainbowColors.length - 1)); // Spread across the arc
+        light.position.set(
+            Math.cos(angle) * radius,
+            Math.sin(angle) * radius,
+            0
+        );
+        rainbowGroup.add(light);
+        rainbowLights.push(light);
     });
     rainbowGroup.position.set(levelConfig.rainbow.x, 5, levelConfig.rainbow.z + 5);
     rainbowGroup.rotation.y = Math.PI / 2; // Rotate 90 degrees to face player
@@ -2673,7 +2985,7 @@ function initGame() {
     }
 
     // Create Dragon (boss enemy)
-    function createDragon() {
+    function createDragon(posConfig, scale = 1, health = 50) {
         const textures = getTerrainTextures(THREE);
         const dragonGroup = new THREE.Group();
         
@@ -2853,11 +3165,14 @@ function initGame() {
         belly.castShadow = true;
         dragonGroup.add(belly);
         
-        // Position dragon from level config (or default position)
-        const dragonConfig = levelConfig.dragon || { x: 0, z: -200 };
+        // Position dragon from provided config or level config
+        const dragonConfig = posConfig || levelConfig.dragon || { x: 0, z: -200 };
         const dragonX = dragonConfig.x;
         const dragonZ = dragonConfig.z;
-        dragonGroup.position.set(dragonX, getTerrainHeight(dragonX, dragonZ) + 3, dragonZ);
+        
+        // Apply scale to the entire dragon
+        dragonGroup.scale.set(scale, scale, scale);
+        dragonGroup.position.set(dragonX, getTerrainHeight(dragonX, dragonZ) + 3 * scale, dragonZ);
         scene.add(dragonGroup);
         
         return {
@@ -2870,17 +3185,18 @@ function initGame() {
             rightEye: rightEye,
             leftEyeGlow: leftEyeGlow,
             rightEyeGlow: rightEyeGlow,
-            health: 50,
-            maxHealth: 50,
+            health: health,
+            maxHealth: health,
+            scale: scale,
             alive: true,
-            speed: 0.08 * speedMultiplier,
-            patrolLeft: -30,
-            patrolRight: 30,
-            patrolFront: -210,
-            patrolBack: -190,
+            speed: 0.08 * speedMultiplier * scale,
+            patrolLeft: dragonX - 30,
+            patrolRight: dragonX + 30,
+            patrolFront: dragonZ - 20,
+            patrolBack: dragonZ + 20,
             direction: 1,
             lastFireTime: Date.now(),
-            fireInterval: 4000, // Fire every 4 seconds
+            fireInterval: scale < 1 ? 5000 : 4000, // Smaller dragons fire less often
             wingFlapPhase: 0,
             isFlying: false,
             flyStartTime: 0,
@@ -2893,10 +3209,19 @@ function initGame() {
     }
     
     let dragon = null;
+    let extraDragons = [];
     const fireballs = [];
     
     if (difficulty === 'hard') {
         dragon = createDragon();
+        
+        // Create extra dragons for Level 2
+        if (levelConfig.extraDragons) {
+            levelConfig.extraDragons.forEach(pos => {
+                const extraDragon = createDragon(pos, 0.6, 25); // 60% size, 25 health
+                extraDragons.push(extraDragon);
+            });
+        }
     }
 
     // Game arrays
@@ -3433,6 +3758,28 @@ function initGame() {
                 createFreezeEffect(dragon.mesh.position.x, dragon.mesh.position.y + 5, dragon.mesh.position.z);
             }
         }
+        
+        // Freeze extra dragons
+        extraDragons.forEach(extraDragon => {
+            if (!extraDragon.alive) return;
+            const dist = Math.sqrt(
+                (extraDragon.mesh.position.x - playerPos.x) ** 2 +
+                (extraDragon.mesh.position.z - playerPos.z) ** 2
+            );
+            const extraRadius = freezeRadius + 10 * (extraDragon.scale || 1); // Smaller bonus for smaller dragons
+            if (dist <= extraRadius) {
+                extraDragon.frozen = true;
+                extraDragon.frozenUntil = now + freezeDuration;
+                // Apply blue tint
+                extraDragon.mesh.children.forEach(child => {
+                    if (child.material && child.material.emissive !== undefined) {
+                        child.material.emissive = new THREE.Color(0x0088FF);
+                        child.material.emissiveIntensity = 0.5;
+                    }
+                });
+                createFreezeEffect(extraDragon.mesh.position.x, extraDragon.mesh.position.y + 3, extraDragon.mesh.position.z);
+            }
+        });
         
         // Send ice power activation to other player in multiplayer
         if (multiplayerManager && multiplayerManager.isConnected()) {
@@ -4093,10 +4440,11 @@ function initGame() {
                 }
             }
             
-            // Check collision with dragon
+            // Check collision with dragon (main dragon)
             if (!bulletHit && dragon && dragon.alive) {
                 const dist = bullet.mesh.position.distanceTo(dragon.mesh.position);
-                if (dist < 8) {
+                const hitRadius = 8 * (dragon.scale || 1);
+                if (dist < hitRadius) {
                     // Visual feedback
                     createExplosion(bullet.mesh.position.x, bullet.mesh.position.y, bullet.mesh.position.z);
                     
@@ -4136,6 +4484,57 @@ function initGame() {
                         }
                     }
                     bulletHit = true;
+                }
+            }
+            
+            // Check collision with extra dragons
+            if (!bulletHit) {
+                for (const extraDragon of extraDragons) {
+                    if (!extraDragon.alive) continue;
+                    const dist = bullet.mesh.position.distanceTo(extraDragon.mesh.position);
+                    const hitRadius = 8 * (extraDragon.scale || 1);
+                    if (dist < hitRadius) {
+                        // Visual feedback
+                        createExplosion(bullet.mesh.position.x, bullet.mesh.position.y, bullet.mesh.position.z);
+                        
+                        // Only host applies damage
+                        if (!multiplayerManager || !multiplayerManager.isConnected() || multiplayerManager.isHost) {
+                            extraDragon.health--;
+                            if (extraDragon.health <= 0 && extraDragon.alive) {
+                                extraDragon.alive = false;
+                                extraDragon.deathTime = Date.now();
+                                Audio.playGoblinDeathSound();
+                                
+                                // Smaller camera shake for extra dragons
+                                dragonDeathShakeUntil = Date.now() + 600;
+                                dragonDeathShakeIntensity = 0.5;
+                                
+                                // Capture position before hiding mesh
+                                const deathX = extraDragon.mesh.position.x;
+                                const deathY = extraDragon.mesh.position.y;
+                                const deathZ = extraDragon.mesh.position.z;
+                                
+                                // Create smaller explosions (fewer, smaller)
+                                for (let i = 0; i < 4; i++) {
+                                    const offsetX = (Math.random() - 0.5) * 8;
+                                    const offsetY = Math.random() * 6;
+                                    const offsetZ = (Math.random() - 0.5) * 8;
+                                    setTimeout(() => {
+                                        createDragonExplosion(
+                                            deathX + offsetX,
+                                            deathY + offsetY + 1,
+                                            deathZ + offsetZ
+                                        );
+                                    }, i * 100);
+                                }
+                                
+                                // Hide dragon mesh immediately
+                                extraDragon.mesh.visible = false;
+                            }
+                        }
+                        bulletHit = true;
+                        break;
+                    }
                 }
             }
             
@@ -4479,6 +4878,26 @@ function initGame() {
                     });
                 }
             }
+            
+            // Wizard fireballs
+            if (gob.isWizard && distToTarget < GAME_CONFIG.WIZARD_RANGE && !gob.frozen) {
+                const now = Date.now();
+                const fireInterval = GAME_CONFIG.WIZARD_FIRE_INTERVAL_MIN + Math.random() * (GAME_CONFIG.WIZARD_FIRE_INTERVAL_MAX - GAME_CONFIG.WIZARD_FIRE_INTERVAL_MIN);
+                if (now - gob.lastFireTime > fireInterval) {
+                    gob.lastFireTime = now;
+                    
+                    // Create wizard fireball (smaller than dragon's)
+                    createWizardFireball(gob, targetPlayer);
+                }
+                
+                // Animate staff orb glow
+                gob.orbGlowPhase += 0.05;
+                if (gob.mesh.staffOrb) {
+                    const glowIntensity = 0.6 + 0.4 * Math.sin(gob.orbGlowPhase);
+                    gob.mesh.staffOrb.material.opacity = glowIntensity;
+                    gob.mesh.staffOrb.scale.setScalar(1 + 0.2 * Math.sin(gob.orbGlowPhase * 2));
+                }
+            }
         });
     }
 
@@ -4745,162 +5164,68 @@ function initGame() {
         
         const now = Date.now();
         
-        // Check if freeze effect should end
-        if (dragon.frozen && now >= dragon.frozenUntil) {
-            dragon.frozen = false;
-            // Remove blue tint
-            dragon.mesh.children.forEach(child => {
-                if (child.material && child.material.emissive !== undefined) {
-                    child.material.emissive = new THREE.Color(0x000000);
-                    child.material.emissiveIntensity = 0;
-                }
-            });
+        // Helper function to update visuals for a single dragon
+        function updateSingleDragonVisuals(d) {
+            if (!d || !d.alive) return;
+            
+            // Check if freeze effect should end
+            if (d.frozen && now >= d.frozenUntil) {
+                d.frozen = false;
+                // Remove blue tint
+                d.mesh.children.forEach(child => {
+                    if (child.material && child.material.emissive !== undefined) {
+                        child.material.emissive = new THREE.Color(0x000000);
+                        child.material.emissiveIntensity = 0;
+                    }
+                });
+            }
+            
+            // Wing flap animation
+            d.wingFlapPhase += 0.15;
+            const flapAngle = Math.sin(d.wingFlapPhase) * 0.5;
+            d.leftWing.rotation.x = flapAngle;
+            d.rightWing.rotation.x = -flapAngle;
+            d.leftWing.rotation.z = 0.3 + flapAngle * 0.3;
+            d.rightWing.rotation.z = -0.3 - flapAngle * 0.3;
+            
+            // Tail sway
+            if (d.tailSegments) {
+                d.tailSegments.forEach((segment, i) => {
+                    const sway = Math.sin(now * 0.003 + i * 0.5) * (0.15 + i * 0.05);
+                    segment.rotation.y = sway;
+                });
+            }
         }
         
-        // Wing flap animation
-        dragon.wingFlapPhase += 0.15;
-        const flapAngle = Math.sin(dragon.wingFlapPhase) * 0.5;
-        dragon.leftWing.rotation.x = flapAngle;
-        dragon.rightWing.rotation.x = -flapAngle;
-        dragon.leftWing.rotation.z = 0.3 + flapAngle * 0.3;
-        dragon.rightWing.rotation.z = -0.3 - flapAngle * 0.3;
+        // Update main dragon
+        updateSingleDragonVisuals(dragon);
         
-        // Tail sway
-        if (dragon.tailSegments) {
-            dragon.tailSegments.forEach((segment, i) => {
-                const sway = Math.sin(now * 0.003 + i * 0.5) * (0.15 + i * 0.05);
-                segment.rotation.y = sway;
-            });
-        }
+        // Update extra dragons
+        extraDragons.forEach(d => updateSingleDragonVisuals(d));
     }
 
     function updateDragon() {
-        if (!dragon) return;
+        if (!dragon && extraDragons.length === 0) return;
         
         const now = Date.now();
         
-        // Handle death - dragon is hidden after explosion
-        if (!dragon.alive) {
-            return; // Don't update behavior when dead
-        }
-        
-        // Find closest player for targeting
-        const distToPlayer = Math.sqrt(
-            (playerGroup.position.x - dragon.mesh.position.x) ** 2 +
-            (playerGroup.position.z - dragon.mesh.position.z) ** 2
-        );
-        
-        let targetPlayer = playerGroup;
-        let targetDist = distToPlayer;
-        
-        if (multiplayerManager && multiplayerManager.isConnected() && otherPlayerMesh.visible) {
-            const distToOther = Math.sqrt(
-                (otherPlayerMesh.position.x - dragon.mesh.position.x) ** 2 +
-                (otherPlayerMesh.position.z - dragon.mesh.position.z) ** 2
-            );
-            if (distToOther < targetDist) {
-                targetPlayer = otherPlayerMesh;
-                targetDist = distToOther;
-            }
-        }
-        
-        // Look at the closest player (add Math.PI/2 offset to fix 90-degree rotation)
-        const angleToPlayer = Math.atan2(
-            targetPlayer.position.x - dragon.mesh.position.x,
-            targetPlayer.position.z - dragon.mesh.position.z
-        );
-        dragon.mesh.rotation.y = angleToPlayer - Math.PI / 2;
-        
-        // Make eye glows pulse menacingly
-        const eyePulse = 0.4 + Math.sin(now * 0.005) * 0.2;
-        if (dragon.leftEyeGlow) dragon.leftEyeGlow.material.opacity = eyePulse;
-        if (dragon.rightEyeGlow) dragon.rightEyeGlow.material.opacity = eyePulse;
-        
-        // Check collision damage with host player (host only handles damage)
-        if (distToPlayer < 5 && !godMode) { // Dragon body radius ~5 units
-            if (now - lastDamageTime > damageCooldown) {
-                playerHealth--;
-                lastDamageTime = now;
-                damageFlashTime = now;
-                Audio.playStuckSound();
-                
-                if (playerHealth <= 0) {
-                    if (!gameDead) {
-                        gameDead = true;
-                        Audio.stopBackgroundMusic();
-                        Audio.playDeathSound();
-                    }
-                }
-            }
-        }
-        
-        // Check collision damage with other player (multiplayer) - HOST ONLY
-        if (multiplayerManager && multiplayerManager.isHost && multiplayerManager.isConnected() && otherPlayerMesh.visible) {
-            const distToOther = Math.sqrt(
-                (otherPlayerMesh.position.x - dragon.mesh.position.x) ** 2 +
-                (otherPlayerMesh.position.z - dragon.mesh.position.z) ** 2
+        // Helper function to update a single dragon
+        function updateSingleDragon(d) {
+            if (!d || !d.alive) return;
+            
+            // Find closest player for targeting
+            const distToPlayer = Math.sqrt(
+                (playerGroup.position.x - d.mesh.position.x) ** 2 +
+                (playerGroup.position.z - d.mesh.position.z) ** 2
             );
             
-            if (distToOther < 5) {
-                // Initialize cooldown tracker if needed
-                if (!dragon.lastOtherPlayerDamageTime) dragon.lastOtherPlayerDamageTime = 0;
-                
-                if (now - dragon.lastOtherPlayerDamageTime > damageCooldown) {
-                    multiplayerManager.sendGameEvent('playerDamage', {});
-                    dragon.lastOtherPlayerDamageTime = now;
-                }
-            }
-        }
-        
-        // Flying behavior - randomly fly up sometimes
-        if (!dragon.isFlying && Math.random() < 0.0005) { // 0.05% chance per frame (4x less frequent)
-            dragon.isFlying = true;
-            dragon.flyStartTime = now;
-            dragon.flyDuration = 3000 + Math.random() * 2000; // 3-5 seconds
-            dragon.groundY = dragon.mesh.position.y;
-            dragon.flyTargetY = dragon.groundY + 15 + Math.random() * 10; // Fly 15-25 units up
-        }
-        
-        // Handle flying state
-        if (dragon.isFlying) {
-            const flyElapsed = now - dragon.flyStartTime;
-            const flyProgress = flyElapsed / dragon.flyDuration;
-            
-            if (flyProgress < 0.3) {
-                // Ascending
-                const ascendProgress = flyProgress / 0.3;
-                dragon.mesh.position.y = dragon.groundY + (dragon.flyTargetY - dragon.groundY) * ascendProgress;
-            } else if (flyProgress < 0.7) {
-                // Flying at height
-                dragon.mesh.position.y = dragon.flyTargetY;
-            } else if (flyProgress < 1.0) {
-                // Descending
-                const descendProgress = (flyProgress - 0.7) / 0.3;
-                dragon.mesh.position.y = dragon.flyTargetY - (dragon.flyTargetY - dragon.groundY) * descendProgress;
-            } else {
-                // Landing complete
-                dragon.mesh.position.y = dragon.groundY;
-                dragon.isFlying = false;
-            }
-        }
-        
-        // Patrol movement
-        dragon.mesh.position.x += dragon.speed * dragon.direction;
-        
-        if (dragon.mesh.position.x <= dragon.patrolLeft) {
-            dragon.direction = 1;
-        } else if (dragon.mesh.position.x >= dragon.patrolRight) {
-            dragon.direction = -1;
-        }
-        
-        // Fire fireballs at players (not when frozen)
-        if (!dragon.frozen && now - dragon.lastFireTime > dragon.fireInterval) {            let targetPlayer = playerGroup;
+            let targetPlayer = playerGroup;
             let targetDist = distToPlayer;
             
             if (multiplayerManager && multiplayerManager.isConnected() && otherPlayerMesh.visible) {
                 const distToOther = Math.sqrt(
-                    (otherPlayerMesh.position.x - dragon.mesh.position.x) ** 2 +
-                    (otherPlayerMesh.position.z - dragon.mesh.position.z) ** 2
+                    (otherPlayerMesh.position.x - d.mesh.position.x) ** 2 +
+                    (otherPlayerMesh.position.z - d.mesh.position.z) ** 2
                 );
                 if (distToOther < targetDist) {
                     targetPlayer = otherPlayerMesh;
@@ -4908,74 +5233,271 @@ function initGame() {
                 }
             }
             
-            // Only fire if player is in range
-            if (targetDist < 100) {
-                const fbTextures = getTerrainTextures(THREE);
+            // Look at the closest player (add Math.PI/2 offset to fix 90-degree rotation)
+            const angleToPlayer = Math.atan2(
+                targetPlayer.position.x - d.mesh.position.x,
+                targetPlayer.position.z - d.mesh.position.z
+            );
+            d.mesh.rotation.y = angleToPlayer - Math.PI / 2;
+            
+            // Make eye glows pulse menacingly
+            const eyePulse = 0.4 + Math.sin(now * 0.005) * 0.2;
+            if (d.leftEyeGlow) d.leftEyeGlow.material.opacity = eyePulse;
+            if (d.rightEyeGlow) d.rightEyeGlow.material.opacity = eyePulse;
+            
+            // Check collision damage with host player (host only handles damage)
+            const collisionRadius = 5 * (d.scale || 1);
+            if (distToPlayer < collisionRadius && !godMode) {
+                if (now - lastDamageTime > damageCooldown) {
+                    playerHealth--;
+                    lastDamageTime = now;
+                    damageFlashTime = now;
+                    Audio.playStuckSound();
+                    
+                    if (playerHealth <= 0) {
+                        if (!gameDead) {
+                            gameDead = true;
+                            Audio.stopBackgroundMusic();
+                            Audio.playDeathSound();
+                        }
+                    }
+                }
+            }
+            
+            // Check collision damage with other player (multiplayer) - HOST ONLY
+            if (multiplayerManager && multiplayerManager.isHost && multiplayerManager.isConnected() && otherPlayerMesh.visible) {
+                const distToOther = Math.sqrt(
+                    (otherPlayerMesh.position.x - d.mesh.position.x) ** 2 +
+                    (otherPlayerMesh.position.z - d.mesh.position.z) ** 2
+                );
                 
-                // Use ice-themed textures for winter level
-                const fireballTexture = iceTheme ? fbTextures.fireballIce : fbTextures.fireball;
-                const explosionTexture = iceTheme ? fbTextures.explosionIce : fbTextures.explosion;
+                if (distToOther < collisionRadius) {
+                    // Initialize cooldown tracker if needed
+                    if (!d.lastOtherPlayerDamageTime) d.lastOtherPlayerDamageTime = 0;
+                    
+                    if (now - d.lastOtherPlayerDamageTime > damageCooldown) {
+                        multiplayerManager.sendGameEvent('playerDamage', {});
+                        d.lastOtherPlayerDamageTime = now;
+                    }
+                }
+            }
+            
+            // Flying behavior - randomly fly up sometimes
+            const flyHeight = (d.scale || 1) * 15;
+            if (!d.isFlying && Math.random() < 0.0005) {
+                d.isFlying = true;
+                d.flyStartTime = now;
+                d.flyDuration = 3000 + Math.random() * 2000;
+                d.groundY = d.mesh.position.y;
+                d.flyTargetY = d.groundY + flyHeight + Math.random() * 10;
+            }
+            
+            // Handle flying state
+            if (d.isFlying) {
+                const flyElapsed = now - d.flyStartTime;
+                const flyProgress = flyElapsed / d.flyDuration;
                 
-                // Create fireball group with core, glow, and flames
-                const fireballGroup = new THREE.Group();
+                if (flyProgress < 0.3) {
+                    const ascendProgress = flyProgress / 0.3;
+                    d.mesh.position.y = d.groundY + (d.flyTargetY - d.groundY) * ascendProgress;
+                } else if (flyProgress < 0.7) {
+                    d.mesh.position.y = d.flyTargetY;
+                } else if (flyProgress < 1.0) {
+                    const descendProgress = (flyProgress - 0.7) / 0.3;
+                    d.mesh.position.y = d.flyTargetY - (d.flyTargetY - d.groundY) * descendProgress;
+                } else {
+                    d.mesh.position.y = d.groundY;
+                    d.isFlying = false;
+                }
+            }
+            
+            // Patrol movement
+            d.mesh.position.x += d.speed * d.direction;
+            
+            if (d.mesh.position.x <= d.patrolLeft) {
+                d.direction = 1;
+            } else if (d.mesh.position.x >= d.patrolRight) {
+                d.direction = -1;
+            }
+            
+            // Fire fireballs at players (not when frozen)
+            if (!d.frozen && now - d.lastFireTime > d.fireInterval) {
+                let fireTargetPlayer = playerGroup;
+                let fireTargetDist = distToPlayer;
                 
-                // Core sphere
-                const coreGeometry = new THREE.SphereGeometry(0.6, 12, 12);
-                const coreMaterial = new THREE.MeshBasicMaterial({ 
-                    map: fireballTexture,
-                    transparent: true
-                });
-                const core = new THREE.Mesh(coreGeometry, coreMaterial);
-                fireballGroup.add(core);
+                if (multiplayerManager && multiplayerManager.isConnected() && otherPlayerMesh.visible) {
+                    const distToOther = Math.sqrt(
+                        (otherPlayerMesh.position.x - d.mesh.position.x) ** 2 +
+                        (otherPlayerMesh.position.z - d.mesh.position.z) ** 2
+                    );
+                    if (distToOther < fireTargetDist) {
+                        fireTargetPlayer = otherPlayerMesh;
+                        fireTargetDist = distToOther;
+                    }
+                }
                 
-                // Outer glow sprite
-                const glowMaterial = new THREE.SpriteMaterial({
-                    map: explosionTexture,
-                    transparent: true,
-                    blending: THREE.AdditiveBlending,
-                    depthWrite: false,
-                    opacity: 0.7
-                });
-                const glow = new THREE.Sprite(glowMaterial);
-                glow.scale.set(3, 3, 1);
-                fireballGroup.add(glow);
-                
-                // Inner bright glow
-                const innerGlowMaterial = new THREE.SpriteMaterial({
-                    map: explosionTexture,
-                    transparent: true,
-                    blending: THREE.AdditiveBlending,
-                    depthWrite: false,
-                    opacity: 0.9
-                });
-                const innerGlow = new THREE.Sprite(innerGlowMaterial);
-                innerGlow.scale.set(1.8, 1.8, 1);
-                fireballGroup.add(innerGlow);
-                
-                fireballGroup.position.copy(dragon.mesh.position);
-                fireballGroup.position.x += dragon.direction > 0 ? 14 : -14;
-                fireballGroup.position.y += 1;
-                scene.add(fireballGroup);
-                
-                // Calculate direction to target (including Y axis)
-                const dirX = targetPlayer.position.x - fireballGroup.position.x;
-                const dirY = targetPlayer.position.y - fireballGroup.position.y;
-                const dirZ = targetPlayer.position.z - fireballGroup.position.z;
-                const length = Math.sqrt(dirX * dirX + dirY * dirY + dirZ * dirZ);
-                
-                fireballs.push({
-                    mesh: fireballGroup,
-                    velocity: new THREE.Vector3(dirX / length * 0.4, dirY / length * 0.4, dirZ / length * 0.4),
-                    radius: 1.5,
-                    damage: 1,
-                    trail: [],
-                    lastTrailTime: 0
-                });
-                
-                dragon.lastFireTime = now;
-                Audio.playExplosionSound();
+                // Only fire if player is in range
+                if (fireTargetDist < 100) {
+                    createDragonFireball(d, fireTargetPlayer);
+                    d.lastFireTime = now;
+                    Audio.playExplosionSound();
+                }
             }
         }
+        
+        // Update main dragon
+        if (dragon && dragon.alive) {
+            updateSingleDragon(dragon);
+        }
+        
+        // Update extra dragons
+        extraDragons.forEach(d => updateSingleDragon(d));
+    }
+    
+    // Helper function to create a fireball from a dragon
+    function createDragonFireball(d, targetPlayer) {
+        const fbTextures = getTerrainTextures(THREE);
+        
+        // Use ice-themed textures for winter level
+        const fireballTexture = iceTheme ? fbTextures.fireballIce : fbTextures.fireball;
+        const explosionTexture = iceTheme ? fbTextures.explosionIce : fbTextures.explosion;
+        
+        // Create fireball group with core, glow, and flames
+        const fireballGroup = new THREE.Group();
+        
+        // Scale fireball based on dragon size
+        const fbScale = d.scale || 1;
+        
+        // Core sphere
+        const coreGeometry = new THREE.SphereGeometry(0.6 * fbScale, 12, 12);
+        const coreMaterial = new THREE.MeshBasicMaterial({ 
+            map: fireballTexture,
+            transparent: true
+        });
+        const core = new THREE.Mesh(coreGeometry, coreMaterial);
+        fireballGroup.add(core);
+        
+        // Outer glow sprite
+        const glowMaterial = new THREE.SpriteMaterial({
+            map: explosionTexture,
+            transparent: true,
+            blending: THREE.AdditiveBlending,
+            depthWrite: false,
+            opacity: 0.7
+        });
+        const glow = new THREE.Sprite(glowMaterial);
+        glow.scale.set(3 * fbScale, 3 * fbScale, 1);
+        fireballGroup.add(glow);
+        
+        // Inner bright glow
+        const innerGlowMaterial = new THREE.SpriteMaterial({
+            map: explosionTexture,
+            transparent: true,
+            blending: THREE.AdditiveBlending,
+            depthWrite: false,
+            opacity: 0.9
+        });
+        const innerGlow = new THREE.Sprite(innerGlowMaterial);
+        innerGlow.scale.set(1.8 * fbScale, 1.8 * fbScale, 1);
+        fireballGroup.add(innerGlow);
+        
+        fireballGroup.position.copy(d.mesh.position);
+        fireballGroup.position.x += d.direction > 0 ? 14 * fbScale : -14 * fbScale;
+        fireballGroup.position.y += 1;
+        scene.add(fireballGroup);
+        
+        // Calculate direction to target (including Y axis)
+        const dirX = targetPlayer.position.x - fireballGroup.position.x;
+        const dirY = targetPlayer.position.y - fireballGroup.position.y;
+        const dirZ = targetPlayer.position.z - fireballGroup.position.z;
+        const length = Math.sqrt(dirX * dirX + dirY * dirY + dirZ * dirZ);
+        
+        fireballs.push({
+            mesh: fireballGroup,
+            velocity: new THREE.Vector3(dirX / length * 0.4, dirY / length * 0.4, dirZ / length * 0.4),
+            radius: 1.5 * fbScale,
+            damage: 1,
+            trail: [],
+            lastTrailTime: 0
+        });
+    }
+
+    // Helper function to create a fireball from a wizard goblin
+    function createWizardFireball(wizard, targetPlayer) {
+        const fbTextures = getTerrainTextures(THREE);
+        
+        // Use ice-themed textures for winter level
+        const fireballTexture = iceTheme ? fbTextures.fireballIce : fbTextures.fireball;
+        const explosionTexture = iceTheme ? fbTextures.explosionIce : fbTextures.explosion;
+        
+        // Create smaller fireball group (60% size of dragon's)
+        const fireballGroup = new THREE.Group();
+        const fbScale = 0.4;
+        
+        // Core sphere - purple/magenta tint for wizard magic
+        const coreGeometry = new THREE.SphereGeometry(0.6 * fbScale, 12, 12);
+        const coreMaterial = new THREE.MeshBasicMaterial({ 
+            map: fireballTexture,
+            transparent: true,
+            color: iceTheme ? 0x00FFFF : 0xFF00FF // Magenta or cyan tint
+        });
+        const core = new THREE.Mesh(coreGeometry, coreMaterial);
+        fireballGroup.add(core);
+        
+        // Outer glow sprite
+        const glowMaterial = new THREE.SpriteMaterial({
+            map: explosionTexture,
+            transparent: true,
+            blending: THREE.AdditiveBlending,
+            depthWrite: false,
+            opacity: 0.7,
+            color: iceTheme ? 0x00FFFF : 0xFF00FF
+        });
+        const glow = new THREE.Sprite(glowMaterial);
+        glow.scale.set(2 * fbScale, 2 * fbScale, 1);
+        fireballGroup.add(glow);
+        
+        // Inner bright glow
+        const innerGlowMaterial = new THREE.SpriteMaterial({
+            map: explosionTexture,
+            transparent: true,
+            blending: THREE.AdditiveBlending,
+            depthWrite: false,
+            opacity: 0.9,
+            color: iceTheme ? 0x88FFFF : 0xFF88FF
+        });
+        const innerGlow = new THREE.Sprite(innerGlowMaterial);
+        innerGlow.scale.set(1.2 * fbScale, 1.2 * fbScale, 1);
+        fireballGroup.add(innerGlow);
+        
+        // Position fireball at wizard's staff position
+        fireballGroup.position.copy(wizard.mesh.position);
+        fireballGroup.position.x += 0.9;
+        fireballGroup.position.y += 3.2;
+        fireballGroup.position.z += 0.3;
+        scene.add(fireballGroup);
+        
+        // Calculate direction to target (including Y axis)
+        const dirX = targetPlayer.position.x - fireballGroup.position.x;
+        const dirY = (targetPlayer.position.y + 1) - fireballGroup.position.y; // Aim at player center
+        const dirZ = targetPlayer.position.z - fireballGroup.position.z;
+        const length = Math.sqrt(dirX * dirX + dirY * dirY + dirZ * dirZ);
+        
+        // Wizard fireballs are slower but still dangerous
+        const speed = 0.25;
+        
+        fireballs.push({
+            mesh: fireballGroup,
+            velocity: new THREE.Vector3(dirX / length * speed, dirY / length * speed, dirZ / length * speed),
+            radius: 0.8,
+            damage: 1,
+            trail: [],
+            lastTrailTime: 0,
+            isWizardFireball: true
+        });
+        
+        // Play a sound effect
+        Audio.playExplosionSound();
     }
 
     function updateFireballs() {
@@ -5676,7 +6198,7 @@ function initGame() {
     window.addEventListener('resize', () => {
         hudCanvas.width = window.innerWidth;
         hudCanvas.height = window.innerHeight;
-    });
+    }, { signal: eventSignal });
 
     function drawHUD() {
         hudCtx.clearRect(0, 0, hudCanvas.width, hudCanvas.height);

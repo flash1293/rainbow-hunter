@@ -470,6 +470,149 @@ function generateGoblinArmorTexture(THREE) {
     return texture;
 }
 
+// Generate wizard robe texture with magical patterns
+function generateWizardRobeTexture(THREE, iceTheme = false) {
+    const canvas = document.createElement('canvas');
+    canvas.width = 256;
+    canvas.height = 256;
+    const ctx = canvas.getContext('2d');
+    
+    // Base deep purple or icy blue
+    const baseColor = iceTheme ? '#1a3a5a' : '#2a1a4a';
+    const accentColor = iceTheme ? '#00FFFF' : '#FF00FF';
+    const secondaryColor = iceTheme ? '#88CCFF' : '#9400D3';
+    
+    ctx.fillStyle = baseColor;
+    ctx.fillRect(0, 0, 256, 256);
+    
+    // Add fabric texture variation
+    for (let i = 0; i < 1500; i++) {
+        const x = Math.random() * 256;
+        const y = Math.random() * 256;
+        const brightness = 0.7 + Math.random() * 0.4;
+        if (iceTheme) {
+            const r = Math.floor(30 * brightness);
+            const g = Math.floor(60 * brightness);
+            const b = Math.floor(100 * brightness);
+            ctx.fillStyle = `rgb(${r}, ${g}, ${b})`;
+        } else {
+            const r = Math.floor(50 * brightness);
+            const g = Math.floor(30 * brightness);
+            const b = Math.floor(80 * brightness);
+            ctx.fillStyle = `rgb(${r}, ${g}, ${b})`;
+        }
+        ctx.fillRect(x, y, 2, 3);
+    }
+    
+    // Draw magical runes/symbols scattered across the robe
+    ctx.strokeStyle = accentColor;
+    ctx.lineWidth = 1.5;
+    ctx.shadowColor = accentColor;
+    ctx.shadowBlur = 4;
+    
+    // Draw arcane circles
+    for (let i = 0; i < 6; i++) {
+        const cx = 40 + Math.random() * 180;
+        const cy = 40 + Math.random() * 180;
+        const radius = 8 + Math.random() * 15;
+        
+        ctx.beginPath();
+        ctx.arc(cx, cy, radius, 0, Math.PI * 2);
+        ctx.stroke();
+        
+        // Inner circle
+        ctx.beginPath();
+        ctx.arc(cx, cy, radius * 0.6, 0, Math.PI * 2);
+        ctx.stroke();
+        
+        // Cross lines through circle
+        ctx.beginPath();
+        ctx.moveTo(cx - radius, cy);
+        ctx.lineTo(cx + radius, cy);
+        ctx.moveTo(cx, cy - radius);
+        ctx.lineTo(cx, cy + radius);
+        ctx.stroke();
+    }
+    
+    // Draw star patterns
+    for (let i = 0; i < 12; i++) {
+        const cx = Math.random() * 256;
+        const cy = Math.random() * 256;
+        const size = 4 + Math.random() * 8;
+        
+        ctx.beginPath();
+        for (let j = 0; j < 5; j++) {
+            const angle = (j * Math.PI * 2 / 5) - Math.PI / 2;
+            const x = cx + Math.cos(angle) * size;
+            const y = cy + Math.sin(angle) * size;
+            if (j === 0) ctx.moveTo(x, y);
+            else ctx.lineTo(x, y);
+        }
+        ctx.closePath();
+        ctx.stroke();
+    }
+    
+    // Draw flowing magical lines
+    ctx.strokeStyle = secondaryColor;
+    ctx.lineWidth = 1;
+    ctx.shadowBlur = 2;
+    
+    for (let i = 0; i < 8; i++) {
+        ctx.beginPath();
+        let x = Math.random() * 256;
+        let y = Math.random() * 256;
+        ctx.moveTo(x, y);
+        
+        for (let j = 0; j < 5; j++) {
+            x += (Math.random() - 0.5) * 60;
+            y += (Math.random() - 0.5) * 60;
+            ctx.quadraticCurveTo(
+                x + (Math.random() - 0.5) * 20,
+                y + (Math.random() - 0.5) * 20,
+                x, y
+            );
+        }
+        ctx.stroke();
+    }
+    
+    // Draw vertical trim lines (robe edges)
+    ctx.strokeStyle = accentColor;
+    ctx.lineWidth = 3;
+    ctx.shadowBlur = 6;
+    ctx.setLineDash([8, 4]);
+    
+    ctx.beginPath();
+    ctx.moveTo(20, 0);
+    ctx.lineTo(20, 256);
+    ctx.stroke();
+    
+    ctx.beginPath();
+    ctx.moveTo(236, 0);
+    ctx.lineTo(236, 256);
+    ctx.stroke();
+    
+    ctx.setLineDash([]);
+    
+    // Add glowing particles/sparkles
+    ctx.shadowBlur = 8;
+    for (let i = 0; i < 30; i++) {
+        const x = Math.random() * 256;
+        const y = Math.random() * 256;
+        const size = 1 + Math.random() * 2;
+        ctx.fillStyle = accentColor;
+        ctx.beginPath();
+        ctx.arc(x, y, size, 0, Math.PI * 2);
+        ctx.fill();
+    }
+    
+    ctx.shadowBlur = 0;
+    
+    const texture = new THREE.CanvasTexture(canvas);
+    texture.wrapS = THREE.RepeatWrapping;
+    texture.wrapT = THREE.RepeatWrapping;
+    return texture;
+}
+
 // Generate giant skin texture (rough, brownish)
 function generateGiantSkinTexture(THREE) {
     const canvas = document.createElement('canvas');
@@ -1217,6 +1360,73 @@ function generateGlowingEyeTexture(THREE, baseColor) {
     return texture;
 }
 
+// Generate bicycle helmet texture with vents and patterns
+function generateHelmetTexture(THREE, baseColor) {
+    const canvas = document.createElement('canvas');
+    canvas.width = 256;
+    canvas.height = 256;
+    const ctx = canvas.getContext('2d');
+    
+    // Extract RGB from hex color
+    const r = (baseColor >> 16) & 255;
+    const g = (baseColor >> 8) & 255;
+    const b = baseColor & 255;
+    
+    // Base helmet color
+    ctx.fillStyle = `rgb(${r}, ${g}, ${b})`;
+    ctx.fillRect(0, 0, 256, 256);
+    
+    // Add subtle plastic/matte texture variation
+    for (let i = 0; i < 1500; i++) {
+        const x = Math.random() * 256;
+        const y = Math.random() * 256;
+        const brightness = 0.9 + Math.random() * 0.2;
+        const nr = Math.floor(Math.min(255, r * brightness));
+        const ng = Math.floor(Math.min(255, g * brightness));
+        const nb = Math.floor(Math.min(255, b * brightness));
+        ctx.fillStyle = `rgb(${nr}, ${ng}, ${nb})`;
+        ctx.fillRect(x, y, 2, 2);
+    }
+    
+    // Draw vent slots at the back of helmet
+    ctx.fillStyle = '#1a1a1a';
+    for (let i = 0; i < 7; i++) {
+        const y = 30 + i * 25;
+        // Short vent slots at back (x=0 wraps to back of sphere)
+        ctx.beginPath();
+        ctx.roundRect(2, y, 12, 6, 3);
+        ctx.fill();
+        
+        // Inner vent shadow
+        ctx.fillStyle = '#333333';
+        ctx.beginPath();
+        ctx.roundRect(4, y + 2, 8, 2, 1);
+        ctx.fill();
+        ctx.fillStyle = '#1a1a1a';
+    }
+    
+    // Add edge highlight on top
+    const gradient = ctx.createLinearGradient(0, 0, 0, 60);
+    gradient.addColorStop(0, `rgba(255, 255, 255, 0.3)`);
+    gradient.addColorStop(1, `rgba(255, 255, 255, 0)`);
+    ctx.fillStyle = gradient;
+    ctx.fillRect(0, 0, 256, 60);
+    
+    // Add bottom shadow
+    const shadowGradient = ctx.createLinearGradient(0, 200, 0, 256);
+    shadowGradient.addColorStop(0, `rgba(0, 0, 0, 0)`);
+    shadowGradient.addColorStop(1, `rgba(0, 0, 0, 0.2)`);
+    ctx.fillStyle = shadowGradient;
+    ctx.fillRect(0, 200, 256, 56);
+    
+    // Add manufacturer logo area (small rectangle)
+    ctx.fillStyle = `rgba(0, 0, 0, 0.15)`;
+    ctx.fillRect(100, 220, 56, 20);
+    
+    const texture = new THREE.CanvasTexture(canvas);
+    return texture;
+}
+
 // Store generated textures to reuse
 let cachedTextures = null;
 
@@ -1255,7 +1465,11 @@ function getTerrainTextures(THREE) {
             guardianEye: generateGlowingEyeTexture(THREE, 0xFFFF00),
             giantEye: generateGlowingEyeTexture(THREE, 0xFF6600),
             dragonEye: generateGlowingEyeTexture(THREE, 0xFF6600),
-            dragonEyeIce: generateGlowingEyeTexture(THREE, 0x00BFFF)
+            dragonEyeIce: generateGlowingEyeTexture(THREE, 0x00BFFF),
+            wizardRobe: generateWizardRobeTexture(THREE, false),
+            wizardRobeIce: generateWizardRobeTexture(THREE, true),
+            helmetPink: generateHelmetTexture(THREE, 0xFF69B4),
+            helmetBlue: generateHelmetTexture(THREE, 0x4169E1)
         };
     }
     return cachedTextures;
