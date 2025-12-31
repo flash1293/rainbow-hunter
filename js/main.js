@@ -288,14 +288,22 @@ function initGame() {
     // Check if this is an ice-themed level (used for dragon/fireball textures)
     const iceTheme = levelConfig.iceTheme || false;
     
+    // Check if this is a desert-themed level
+    const desertTheme = levelConfig.desertTheme || false;
+    
     // Three.js setup
     const container = document.getElementById('gameCanvas');
     const scene = new THREE.Scene();
     currentScene = scene; // Store for cleanup
     
-    // Use sky texture as background
+    // Use sky texture as background (only for non-themed levels)
     const skyTextures = getTerrainTextures(THREE);
-    scene.background = skyTextures.sky;
+    if (levelConfig.skyColor) {
+        // For themed levels, use solid color background
+        scene.background = new THREE.Color(levelConfig.skyColor);
+    } else {
+        scene.background = skyTextures.sky;
+    }
     
     // Pre-cache explosion and smoke materials to avoid texture loading glitches
     const explosionTextureCached = iceTheme ? skyTextures.explosionIce : skyTextures.explosion;
@@ -364,9 +372,13 @@ function initGame() {
     const grassColor = levelConfig.grassColor || 0x228B22;
 
     // Create terrain (use level-specific ground color and theme)
-    createGround(scene, THREE, levelConfig.groundColor, iceTheme);
-    createHills(scene, THREE, levelConfig.hills, hillColor, iceTheme);
-    createMountains(scene, THREE, levelConfig.mountains);
+    createGround(scene, THREE, levelConfig.groundColor, iceTheme, desertTheme);
+    createHills(scene, THREE, levelConfig.hills, hillColor, iceTheme, desertTheme);
+    
+    // Mountains are optional (disabled in desert)
+    if (levelConfig.hasMountains !== false && levelConfig.mountains && levelConfig.mountains.length > 0) {
+        createMountains(scene, THREE, levelConfig.mountains);
+    }
     
     // River and bridge are optional per level
     const hasRiver = levelConfig.hasRiver !== false; // Default true for backward compat
@@ -462,6 +474,11 @@ function initGame() {
     let lastDamageTime = 0;
     const damageCooldown = 2500; // ms between damage from goblins
     let damageFlashTime = 0;
+    let tornadoSpinActive = false;
+    let tornadoSpinStartTime = 0;
+    let tornadoSpinDuration = 800; // ms for the spin effect
+    let tornadoSpinRotations = 3; // number of full rotations
+    let tornadoSpinLiftHeight = 2.5; // how high to lift the player
     let lastClientStateSend = 0;
     const clientStateSendInterval = 50; // Send client state at 20Hz to match host sync
     
@@ -1049,16 +1066,26 @@ function initGame() {
                 vy: f.velocity.y,
                 vz: f.velocity.z
             })),
+            tornados: mummyTornados.map(t => ({
+                x: t.mesh.position.x,
+                y: t.mesh.position.y,
+                z: t.mesh.position.z,
+                vx: t.velocity.x,
+                vz: t.velocity.z,
+                spinPhase: t.spinPhase
+            })),
             items: {
                 materials: materials.map(m => m.collected),
                 ammoPickups: ammoPickups.map(a => a.collected),
                 healthPickups: healthPickups.map(h => h.collected),
+                scarabs: scarabPickups.map(s => s.collected),
                 kiteCollected: worldKiteCollected,
                 icePowerCollected: icePowerCollected
             },
             gameState: {
                 bridgeRepaired: bridgeRepaired,
                 materialsCollected: materialsCollected,
+                scarabsCollected: scarabsCollected,
                 gameWon: gameWon,
                 gameDead: gameDead,
                 currentLevel: currentLevel
@@ -1429,6 +1456,81 @@ function initGame() {
             });
         }
         
+        // Update tornados (mummy projectiles)
+        if (data.tornados) {
+            // Remove old tornados
+            while (mummyTornados.length > data.tornados.length) {
+                const t = mummyTornados.pop();
+                scene.remove(t.mesh);
+            }
+            // Update existing and create new tornados
+            data.tornados.forEach((tData, i) => {
+                if (i < mummyTornados.length) {
+                    mummyTornados[i].mesh.position.set(tData.x, tData.y, tData.z);
+                    mummyTornados[i].velocity.set(tData.vx, 0, tData.vz);
+                    mummyTornados[i].spinPhase = tData.spinPhase;
+                } else {
+                    // Create new tornado visually for client
+                    const tornadoGroup = new THREE.Group();
+                    
+                    const coneGeometry = new THREE.ConeGeometry(0.8, 3.0, 12, 4, true);
+                    const coneMaterial = new THREE.MeshBasicMaterial({ 
+                        color: 0xc4a14a,
+                        transparent: true,
+                        opacity: 0.7,
+                        side: THREE.DoubleSide
+                    });
+                    const cone = new THREE.Mesh(coneGeometry, coneMaterial);
+                    cone.rotation.x = Math.PI;
+                    cone.position.y = 1.5;
+                    tornadoGroup.add(cone);
+                    
+                    const innerConeGeometry = new THREE.ConeGeometry(0.5, 2.5, 12, 4, true);
+                    const innerConeMaterial = new THREE.MeshBasicMaterial({ 
+                        color: 0xe8c36a,
+                        transparent: true,
+                        opacity: 0.8,
+                        side: THREE.DoubleSide
+                    });
+                    const innerCone = new THREE.Mesh(innerConeGeometry, innerConeMaterial);
+                    innerCone.rotation.x = Math.PI;
+                    innerCone.position.y = 1.25;
+                    tornadoGroup.add(innerCone);
+                    
+                    const dustGroup = new THREE.Group();
+                    for (let d = 0; d < 25; d++) {
+                        const dustGeometry = new THREE.SphereGeometry(0.1 + Math.random() * 0.1, 4, 4);
+                        const dustMaterial = new THREE.MeshBasicMaterial({ 
+                            color: 0xc4a14a,
+                            transparent: true,
+                            opacity: 0.6 + Math.random() * 0.3
+                        });
+                        const dust = new THREE.Mesh(dustGeometry, dustMaterial);
+                        const angle = Math.random() * Math.PI * 2;
+                        const height = Math.random() * 3.0;
+                        const radius = 0.2 + (height / 3.0) * 0.7;
+                        dust.position.set(Math.cos(angle) * radius, height, Math.sin(angle) * radius);
+                        dustGroup.add(dust);
+                    }
+                    tornadoGroup.add(dustGroup);
+                    tornadoGroup.dustGroup = dustGroup;
+                    tornadoGroup.innerCone = innerCone;
+                    tornadoGroup.outerCone = cone;
+                    
+                    tornadoGroup.position.set(tData.x, tData.y, tData.z);
+                    scene.add(tornadoGroup);
+                    
+                    mummyTornados.push({
+                        mesh: tornadoGroup,
+                        velocity: new THREE.Vector3(tData.vx, 0, tData.vz),
+                        radius: 1.0,
+                        damage: 1,
+                        spinPhase: tData.spinPhase || 0
+                    });
+                }
+            });
+        }
+        
         // Update item collection states
         if (data.items) {
             if (data.items.materials) {
@@ -1471,6 +1573,21 @@ function initGame() {
                     hasIcePower = true;
                 }
             }
+            
+            // Update scarab collection state
+            if (data.items.scarabs) {
+                data.items.scarabs.forEach((collected, i) => {
+                    if (scarabPickups[i] && collected && !scarabPickups[i].collected) {
+                        scarabPickups[i].collected = true;
+                        scene.remove(scarabPickups[i].mesh);
+                    }
+                });
+            }
+        }
+        
+        // Update scarab count from game state
+        if (data.gameState && data.gameState.scarabsCollected !== undefined) {
+            scarabsCollected = data.gameState.scarabsCollected;
         }
     }
 
@@ -1770,30 +1887,106 @@ function initGame() {
         // Get cached textures from terrain.js
         const textures = getTerrainTextures(THREE);
         
-        const trunkGeometry = new THREE.CylinderGeometry(0.3, 0.4, 2, 8);
-        const trunkMaterial = new THREE.MeshLambertMaterial({ 
-            map: textures.bark,
-            color: iceTheme ? 0x889999 : 0xccbbaa
-        });
-        const trunk = new THREE.Mesh(trunkGeometry, trunkMaterial);
-        trunk.position.y = 1;
-        trunk.castShadow = true;
-        treeGroup.add(trunk);
+        const treeType = pos.type || 'tree';
         
-        const foliageGeometry = new THREE.SphereGeometry(1.5, 8, 8);
-        const foliageMaterial = new THREE.MeshLambertMaterial({ 
-            map: iceTheme ? textures.foliageIce : textures.foliage,
-            color: treeColor
-        });
-        const foliage = new THREE.Mesh(foliageGeometry, foliageMaterial);
-        foliage.position.y = 2.5;
-        foliage.castShadow = true;
-        treeGroup.add(foliage);
+        if (treeType === 'cactus') {
+            // Desert cactus
+            const cactusColor = 0x2d5a27;
+            
+            // Main cactus body
+            const bodyGeometry = new THREE.CylinderGeometry(0.25, 0.3, 2.5, 8);
+            const cactusMaterial = new THREE.MeshLambertMaterial({ color: cactusColor });
+            const body = new THREE.Mesh(bodyGeometry, cactusMaterial);
+            body.position.y = 1.25;
+            body.castShadow = true;
+            treeGroup.add(body);
+            
+            // Left arm
+            const armGeometry = new THREE.CylinderGeometry(0.15, 0.18, 1.2, 6);
+            const leftArm = new THREE.Mesh(armGeometry, cactusMaterial);
+            leftArm.position.set(-0.5, 1.8, 0);
+            leftArm.rotation.z = Math.PI / 3;
+            leftArm.castShadow = true;
+            treeGroup.add(leftArm);
+            
+            // Right arm
+            const rightArm = new THREE.Mesh(armGeometry, cactusMaterial);
+            rightArm.position.set(0.5, 1.4, 0);
+            rightArm.rotation.z = -Math.PI / 3;
+            rightArm.castShadow = true;
+            treeGroup.add(rightArm);
+            
+        } else if (treeType === 'palm') {
+            // Palm tree
+            const trunkGeometry = new THREE.CylinderGeometry(0.15, 0.25, 3.5, 8);
+            const trunkMaterial = new THREE.MeshLambertMaterial({ color: 0x8B5A2B });
+            const trunk = new THREE.Mesh(trunkGeometry, trunkMaterial);
+            trunk.position.y = 1.75;
+            trunk.rotation.z = 0.1; // Slight lean
+            trunk.castShadow = true;
+            treeGroup.add(trunk);
+            
+            // Palm fronds
+            const frondMaterial = new THREE.MeshLambertMaterial({ color: 0x228B22 });
+            for (let i = 0; i < 7; i++) {
+                const frondGeometry = new THREE.ConeGeometry(0.15, 2, 4);
+                const frond = new THREE.Mesh(frondGeometry, frondMaterial);
+                const angle = (i / 7) * Math.PI * 2;
+                frond.position.set(
+                    Math.cos(angle) * 0.8,
+                    3.8,
+                    Math.sin(angle) * 0.8
+                );
+                frond.rotation.x = Math.PI / 2 + 0.3;
+                frond.rotation.z = angle;
+                frond.castShadow = true;
+                treeGroup.add(frond);
+            }
+            
+            // Add coconuts
+            const coconutMaterial = new THREE.MeshLambertMaterial({ color: 0x8B4513 });
+            for (let i = 0; i < 3; i++) {
+                const coconut = new THREE.Mesh(
+                    new THREE.SphereGeometry(0.12, 6, 6),
+                    coconutMaterial
+                );
+                const angle = (i / 3) * Math.PI * 2;
+                coconut.position.set(
+                    Math.cos(angle) * 0.2,
+                    3.4,
+                    Math.sin(angle) * 0.2
+                );
+                coconut.castShadow = true;
+                treeGroup.add(coconut);
+            }
+            
+        } else {
+            // Regular tree
+            const trunkGeometry = new THREE.CylinderGeometry(0.3, 0.4, 2, 8);
+            const trunkMaterial = new THREE.MeshLambertMaterial({ 
+                map: textures.bark,
+                color: iceTheme ? 0x889999 : 0xccbbaa
+            });
+            const trunk = new THREE.Mesh(trunkGeometry, trunkMaterial);
+            trunk.position.y = 1;
+            trunk.castShadow = true;
+            treeGroup.add(trunk);
+            
+            const foliageGeometry = new THREE.SphereGeometry(1.5, 8, 8);
+            const foliageMaterial = new THREE.MeshLambertMaterial({ 
+                map: iceTheme ? textures.foliageIce : textures.foliage,
+                color: treeColor
+            });
+            const foliage = new THREE.Mesh(foliageGeometry, foliageMaterial);
+            foliage.position.y = 2.5;
+            foliage.castShadow = true;
+            treeGroup.add(foliage);
+        }
         
         const terrainHeight = getTerrainHeight(pos.x, pos.z);
         treeGroup.position.set(pos.x, terrainHeight, pos.z);
         scene.add(treeGroup);
-        trees.push({ mesh: treeGroup, type: 'tree', radius: 1.5 });
+        trees.push({ mesh: treeGroup, type: treeType, radius: treeType === 'cactus' ? 0.5 : 1.5 });
     });
 
     // Rocks - use level config if available, otherwise use default positions
@@ -1806,7 +1999,8 @@ function initGame() {
 
     rockPositions.forEach(pos => {
         const rockGeometry = new THREE.DodecahedronGeometry(0.6, 0);
-        const rockMaterial = new THREE.MeshLambertMaterial({ color: 0x808080 });
+        const rockColor = desertTheme ? 0xa08060 : 0x808080; // Sandstone color for desert
+        const rockMaterial = new THREE.MeshLambertMaterial({ color: rockColor });
         const rock = new THREE.Mesh(rockGeometry, rockMaterial);
         const terrainHeight = getTerrainHeight(pos.x, pos.z);
         rock.position.set(pos.x, terrainHeight + 0.6, pos.z);
@@ -1815,10 +2009,267 @@ function initGame() {
         scene.add(rock);
         rocks.push({ mesh: rock, type: 'rock', radius: 0.8 });
     });
+    
+    // Boulders - large rocks for desert level
+    const boulders = [];
+    const boulderPositions = levelConfig.boulderPositions || [];
+    
+    boulderPositions.forEach(pos => {
+        const boulderGroup = new THREE.Group();
+        
+        // Main boulder - large irregular rock
+        const mainBoulderGeometry = new THREE.DodecahedronGeometry(2.5, 1);
+        const boulderColor = 0xb08050; // Sandy brown
+        const boulderMaterial = new THREE.MeshLambertMaterial({ color: boulderColor });
+        const mainBoulder = new THREE.Mesh(mainBoulderGeometry, boulderMaterial);
+        mainBoulder.scale.set(1, 0.7, 1.2); // Flatten and stretch
+        mainBoulder.rotation.y = Math.random() * Math.PI;
+        mainBoulder.castShadow = true;
+        mainBoulder.receiveShadow = true;
+        boulderGroup.add(mainBoulder);
+        
+        // Smaller rocks around base
+        for (let i = 0; i < 4; i++) {
+            const smallRockGeometry = new THREE.DodecahedronGeometry(0.5 + Math.random() * 0.3, 0);
+            const smallRock = new THREE.Mesh(smallRockGeometry, boulderMaterial);
+            const angle = (i / 4) * Math.PI * 2 + Math.random() * 0.5;
+            smallRock.position.set(
+                Math.cos(angle) * 2,
+                0,
+                Math.sin(angle) * 2
+            );
+            smallRock.rotation.set(Math.random(), Math.random(), Math.random());
+            smallRock.castShadow = true;
+            boulderGroup.add(smallRock);
+        }
+        
+        const terrainHeight = getTerrainHeight(pos.x, pos.z);
+        boulderGroup.position.set(pos.x, terrainHeight + 1.5, pos.z);
+        scene.add(boulderGroup);
+        boulders.push({ mesh: boulderGroup, type: 'boulder', radius: 3.0 });
+    });
 
-    // Grass bushels
+    // Scarab and canyon wall tracking
+    const scarabPickups = [];
+    const canyonWalls = [];
+    let scarabsCollected = 0;
+    let totalScarabs = 0;
+
+    // Canyon walls - create impassable rock walls for chokepoints
+    const canyonWallPositions = levelConfig.canyonWalls || [];
+    canyonWallPositions.forEach(wall => {
+        const wallGroup = new THREE.Group();
+        
+        // Main wall - rocky cliff face
+        const wallWidth = wall.width || 40;
+        const wallDepth = wall.depth || 8;
+        const wallHeight = wall.height || 12;
+        
+        // Generate a procedural rock texture for canyon walls
+        const rockCanvas = document.createElement('canvas');
+        rockCanvas.width = 128;
+        rockCanvas.height = 128;
+        const rockCtx = rockCanvas.getContext('2d');
+        
+        // Base sandy rock color
+        rockCtx.fillStyle = '#a08060';
+        rockCtx.fillRect(0, 0, 128, 128);
+        
+        // Add layered striations (like real canyon walls)
+        for (let y = 0; y < 128; y += 4) {
+            const shade = 0.85 + Math.random() * 0.3;
+            const r = Math.floor(160 * shade);
+            const g = Math.floor(128 * shade);
+            const b = Math.floor(96 * shade);
+            rockCtx.fillStyle = `rgb(${r},${g},${b})`;
+            rockCtx.fillRect(0, y, 128, 2 + Math.random() * 3);
+        }
+        
+        // Add cracks and texture
+        rockCtx.strokeStyle = 'rgba(80, 60, 40, 0.4)';
+        rockCtx.lineWidth = 1;
+        for (let i = 0; i < 15; i++) {
+            rockCtx.beginPath();
+            rockCtx.moveTo(Math.random() * 128, Math.random() * 128);
+            rockCtx.lineTo(Math.random() * 128, Math.random() * 128);
+            rockCtx.stroke();
+        }
+        
+        // Add some darker spots
+        for (let i = 0; i < 30; i++) {
+            const x = Math.random() * 128;
+            const y = Math.random() * 128;
+            const size = 2 + Math.random() * 6;
+            rockCtx.fillStyle = `rgba(80, 60, 40, ${0.2 + Math.random() * 0.3})`;
+            rockCtx.beginPath();
+            rockCtx.arc(x, y, size, 0, Math.PI * 2);
+            rockCtx.fill();
+        }
+        
+        const rockTexture = new THREE.CanvasTexture(rockCanvas);
+        rockTexture.wrapS = THREE.RepeatWrapping;
+        rockTexture.wrapT = THREE.RepeatWrapping;
+        rockTexture.repeat.set(2, 2);
+        
+        // Create irregular cliff using multiple jagged shapes
+        const segmentCount = Math.floor(wallWidth / 3);
+        for (let s = 0; s < segmentCount; s++) {
+            const segWidth = 3 + Math.random() * 2;
+            const segHeight = wallHeight * (0.6 + Math.random() * 0.5);
+            const segDepth = wallDepth * (0.5 + Math.random() * 0.5);
+            
+            // Use irregular dodecahedron for more rugged look
+            const segGeometry = s % 3 === 0 
+                ? new THREE.DodecahedronGeometry(segWidth * 0.8, 0)
+                : new THREE.BoxGeometry(segWidth, segHeight, segDepth);
+            
+            const segMaterial = new THREE.MeshLambertMaterial({ 
+                map: rockTexture,
+                color: 0xc0a080  // Consistent sandy color
+            });
+            const segment = new THREE.Mesh(segGeometry, segMaterial);
+            
+            segment.position.x = (s - segmentCount / 2) * 3 + (Math.random() - 0.5) * 2;
+            segment.position.y = s % 3 === 0 ? segWidth * 0.8 : segHeight / 2;
+            segment.position.z = (Math.random() - 0.5) * 2;
+            segment.rotation.y = (Math.random() - 0.5) * 0.4;
+            segment.rotation.z = (Math.random() - 0.5) * 0.15;
+            segment.scale.y = s % 3 === 0 ? segHeight / (segWidth * 1.6) : 1;
+            segment.castShadow = true;
+            segment.receiveShadow = true;
+            wallGroup.add(segment);
+        }
+        
+        // Add jagged rocks on top for rugged silhouette
+        for (let t = 0; t < wallWidth / 5; t++) {
+            const topRockGeometry = new THREE.ConeGeometry(1 + Math.random() * 1.5, 2 + Math.random() * 3, 5);
+            const topRockMaterial = new THREE.MeshLambertMaterial({ 
+                map: rockTexture,
+                color: 0xb09070
+            });
+            const topRock = new THREE.Mesh(topRockGeometry, topRockMaterial);
+            topRock.position.set(
+                (t - wallWidth / 10) * 5 + (Math.random() - 0.5) * 3,
+                wallHeight * (0.8 + Math.random() * 0.3),
+                (Math.random() - 0.5) * 3
+            );
+            topRock.rotation.set(
+                (Math.random() - 0.5) * 0.3,
+                Math.random() * Math.PI,
+                (Math.random() - 0.5) * 0.3
+            );
+            topRock.castShadow = true;
+            wallGroup.add(topRock);
+        }
+        
+        // Add fallen rocks at the base
+        for (let r = 0; r < wallWidth / 4; r++) {
+            const rockGeometry = new THREE.DodecahedronGeometry(0.8 + Math.random() * 1.2, 0);
+            const rockMaterial = new THREE.MeshLambertMaterial({ 
+                map: rockTexture,
+                color: 0xa08060
+            });
+            const rock = new THREE.Mesh(rockGeometry, rockMaterial);
+            rock.position.set(
+                (r - wallWidth / 8) * 4 + (Math.random() - 0.5) * 3,
+                0.4 + Math.random() * 0.4,
+                wallDepth / 2 + Math.random() * 2  // In front of wall
+            );
+            rock.rotation.set(Math.random(), Math.random(), Math.random());
+            rock.castShadow = true;
+            wallGroup.add(rock);
+        }
+        
+        const terrainHeight = getTerrainHeight(wall.x, wall.z);
+        wallGroup.position.set(wall.x, terrainHeight, wall.z);
+        wallGroup.rotation.y = wall.rotation || 0;
+        scene.add(wallGroup);
+        
+        // Store for collision - approximate as box
+        canyonWalls.push({
+            mesh: wallGroup,
+            x: wall.x,
+            z: wall.z,
+            width: wallWidth,
+            depth: wallDepth,
+            height: wallHeight,
+            rotation: wall.rotation || 0
+        });
+    });
+    
+    // Scarab collectibles - ancient gems needed to unlock treasure
+    const scarabPositions = levelConfig.scarabs || [];
+    totalScarabs = scarabPositions.length;
+    scarabsCollected = 0;
+    
+    scarabPositions.forEach((pos, idx) => {
+        const scarabGroup = new THREE.Group();
+        
+        // Scarab body - beetle shape
+        const bodyGeometry = new THREE.SphereGeometry(0.5, 8, 6);
+        const bodyMaterial = new THREE.MeshPhongMaterial({
+            color: 0x00cc88,
+            emissive: 0x004422,
+            shininess: 100,
+            specular: 0xffffff
+        });
+        const body = new THREE.Mesh(bodyGeometry, bodyMaterial);
+        body.scale.set(1, 0.5, 1.3);
+        body.position.y = 0.3;
+        scarabGroup.add(body);
+        
+        // Head
+        const headGeometry = new THREE.SphereGeometry(0.25, 6, 6);
+        const head = new THREE.Mesh(headGeometry, bodyMaterial);
+        head.position.set(0, 0.3, 0.6);
+        scarabGroup.add(head);
+        
+        // Wings (shell)
+        const wingGeometry = new THREE.SphereGeometry(0.45, 8, 6);
+        const wingMaterial = new THREE.MeshPhongMaterial({
+            color: 0x00ffaa,
+            emissive: 0x005533,
+            shininess: 150,
+            specular: 0xffffff,
+            transparent: true,
+            opacity: 0.9
+        });
+        const wings = new THREE.Mesh(wingGeometry, wingMaterial);
+        wings.scale.set(1.1, 0.3, 1.2);
+        wings.position.y = 0.5;
+        scarabGroup.add(wings);
+        
+        // Glowing aura
+        const auraGeometry = new THREE.RingGeometry(0.8, 1.2, 16);
+        const auraMaterial = new THREE.MeshBasicMaterial({
+            color: 0x00ffcc,
+            transparent: true,
+            opacity: 0.5,
+            side: THREE.DoubleSide
+        });
+        const aura = new THREE.Mesh(auraGeometry, auraMaterial);
+        aura.rotation.x = -Math.PI / 2;
+        aura.position.y = 0.1;
+        scarabGroup.add(aura);
+        scarabGroup.aura = aura;
+        
+        const terrainHeight = getTerrainHeight(pos.x, pos.z);
+        scarabGroup.position.set(pos.x, terrainHeight + 0.5, pos.z);
+        scene.add(scarabGroup);
+        
+        scarabPickups.push({
+            mesh: scarabGroup,
+            collected: false,
+            x: pos.x,
+            z: pos.z,
+            bobPhase: idx * 0.5 // Different phase for each
+        });
+    });
+
+    // Grass bushels (fewer or none in desert)
     const grassBushels = [];
-    for (let i = 0; i < 400; i++) {
+    const grassCount = desertTheme ? 50 : 400; // Sparse grass in desert
+    for (let i = 0; i < grassCount; i++) {
         const x = (Math.random() - 0.5) * 280;
         const z = (Math.random() - 0.5) * 280;
         
@@ -1827,18 +2278,19 @@ function initGame() {
         
         const grassGroup = new THREE.Group();
         
-        // Create 5-8 grass blades per bushel
-        const bladeCount = 5 + Math.floor(Math.random() * 4);
+        // Create 5-8 grass blades per bushel (smaller in desert)
+        const bladeCount = desertTheme ? 2 + Math.floor(Math.random() * 2) : 5 + Math.floor(Math.random() * 4);
         for (let j = 0; j < bladeCount; j++) {
-            const bladeGeometry = new THREE.ConeGeometry(0.05, 0.4 + Math.random() * 0.3, 3);
+            const bladeHeight = desertTheme ? 0.2 + Math.random() * 0.15 : 0.4 + Math.random() * 0.3;
+            const bladeGeometry = new THREE.ConeGeometry(0.05, bladeHeight, 3);
             const bladeMaterial = new THREE.MeshLambertMaterial({ 
-                color: grassColor,
+                color: desertTheme ? 0x8B7355 : grassColor, // Brown-ish dead grass in desert
                 flatShading: true
             });
             const blade = new THREE.Mesh(bladeGeometry, bladeMaterial);
             blade.position.x = (Math.random() - 0.5) * 0.2;
             blade.position.z = (Math.random() - 0.5) * 0.2;
-            blade.position.y = 0.25;
+            blade.position.y = bladeHeight / 2;
             blade.rotation.z = (Math.random() - 0.5) * 0.3;
             blade.castShadow = true;
             grassGroup.add(blade);
@@ -1854,35 +2306,37 @@ function initGame() {
         });
     }
     
-    // Extra grass in dragon boss area
-    for (let i = 0; i < 150; i++) {
-        const x = (Math.random() - 0.5) * 80; // x: -40 to 40
-        const z = -210 - Math.random() * 55; // z: -210 to -265
-        
-        const grassGroup = new THREE.Group();
-        const bladeCount = 5 + Math.floor(Math.random() * 4);
-        for (let j = 0; j < bladeCount; j++) {
-            const bladeGeometry = new THREE.ConeGeometry(0.05, 0.4 + Math.random() * 0.3, 3);
-            const bladeMaterial = new THREE.MeshLambertMaterial({ 
-                color: grassColor,
-                flatShading: true
+    // Extra grass in dragon boss area (skip for desert)
+    if (!desertTheme) {
+        for (let i = 0; i < 150; i++) {
+            const x = (Math.random() - 0.5) * 80; // x: -40 to 40
+            const z = -210 - Math.random() * 55; // z: -210 to -265
+            
+            const grassGroup = new THREE.Group();
+            const bladeCount = 5 + Math.floor(Math.random() * 4);
+            for (let j = 0; j < bladeCount; j++) {
+                const bladeGeometry = new THREE.ConeGeometry(0.05, 0.4 + Math.random() * 0.3, 3);
+                const bladeMaterial = new THREE.MeshLambertMaterial({ 
+                    color: grassColor,
+                    flatShading: true
+                });
+                const blade = new THREE.Mesh(bladeGeometry, bladeMaterial);
+                blade.position.x = (Math.random() - 0.5) * 0.2;
+                blade.position.z = (Math.random() - 0.5) * 0.2;
+                blade.rotation.x = (Math.random() - 0.5) * 0.3;
+                blade.rotation.z = (Math.random() - 0.5) * 0.3;
+                grassGroup.add(blade);
+            }
+            
+            const terrainHeight = getTerrainHeight(x, z);
+            grassGroup.position.set(x, terrainHeight, z);
+            scene.add(grassGroup);
+            grassBushels.push({
+                mesh: grassGroup,
+                baseHeight: terrainHeight,
+                phase: Math.random() * Math.PI * 2
             });
-            const blade = new THREE.Mesh(bladeGeometry, bladeMaterial);
-            blade.position.x = (Math.random() - 0.5) * 0.2;
-            blade.position.z = (Math.random() - 0.5) * 0.2;
-            blade.rotation.x = (Math.random() - 0.5) * 0.3;
-            blade.rotation.z = (Math.random() - 0.5) * 0.3;
-            grassGroup.add(blade);
         }
-        
-        const terrainHeight = getTerrainHeight(x, z);
-        grassGroup.position.set(x, terrainHeight, z);
-        scene.add(grassGroup);
-        grassBushels.push({
-            mesh: grassGroup,
-            baseHeight: terrainHeight,
-            phase: Math.random() * Math.PI * 2
-        });
     }
 
     // Ammo pickups
@@ -2515,6 +2969,113 @@ function initGame() {
         };
     }
 
+    // Mummy helper - desert enemy that casts tornados
+    function createMummy(x, z, patrolLeft, patrolRight, speed = 0.008) {
+        const textures = getTerrainTextures(THREE);
+        const mummyGrp = new THREE.Group();
+        
+        // Wrapped body
+        const bodyGeometry = new THREE.CylinderGeometry(0.5, 0.6, 2.2, 12);
+        const bandageMaterial = new THREE.MeshLambertMaterial({ 
+            color: 0xd4c4a0,  // Aged bandage color
+            map: textures.goblinSkin
+        });
+        const body = new THREE.Mesh(bodyGeometry, bandageMaterial);
+        body.position.y = 1.3;
+        body.castShadow = true;
+        mummyGrp.add(body);
+        
+        // Bandage strips wrapping around body
+        for (let i = 0; i < 6; i++) {
+            const stripGeometry = new THREE.TorusGeometry(0.55, 0.05, 4, 16);
+            const stripMaterial = new THREE.MeshLambertMaterial({ color: 0xc4b490 });
+            const strip = new THREE.Mesh(stripGeometry, stripMaterial);
+            strip.rotation.x = Math.PI / 2;
+            strip.rotation.z = (i * 0.3);
+            strip.position.y = 0.5 + i * 0.35;
+            mummyGrp.add(strip);
+        }
+        
+        // Head wrapped in bandages
+        const headGeometry = new THREE.SphereGeometry(0.5, 16, 16);
+        const headMaterial = new THREE.MeshLambertMaterial({ color: 0xd4c4a0 });
+        const head = new THREE.Mesh(headGeometry, headMaterial);
+        head.position.y = 2.7;
+        head.castShadow = true;
+        mummyGrp.add(head);
+        
+        // Glowing eyes peeking through bandages
+        const eyeGeometry = new THREE.SphereGeometry(0.1, 16, 16);
+        const eyeMaterial = new THREE.MeshBasicMaterial({ 
+            color: 0x00FF88,  // Eerie green glow
+            transparent: true,
+            blending: THREE.AdditiveBlending
+        });
+        const e1 = new THREE.Mesh(eyeGeometry, eyeMaterial);
+        e1.position.set(-0.18, 2.75, 0.42);
+        mummyGrp.add(e1);
+        
+        const e2 = new THREE.Mesh(eyeGeometry, eyeMaterial);
+        e2.position.set(0.18, 2.75, 0.42);
+        mummyGrp.add(e2);
+        
+        // Tattered bandage arm pieces
+        const armGeometry = new THREE.CylinderGeometry(0.12, 0.15, 1.2, 8);
+        const arm1 = new THREE.Mesh(armGeometry, bandageMaterial);
+        arm1.position.set(-0.65, 1.5, 0);
+        arm1.rotation.z = 0.3;
+        arm1.castShadow = true;
+        mummyGrp.add(arm1);
+        
+        const arm2 = new THREE.Mesh(armGeometry, bandageMaterial);
+        arm2.position.set(0.65, 1.5, 0);
+        arm2.rotation.z = -0.3;
+        arm2.castShadow = true;
+        mummyGrp.add(arm2);
+        
+        // Floating sand particles around mummy
+        const sandGroup = new THREE.Group();
+        for (let i = 0; i < 8; i++) {
+            const sandGeometry = new THREE.SphereGeometry(0.05, 4, 4);
+            const sandMaterial = new THREE.MeshBasicMaterial({ 
+                color: 0xc4a14a,
+                transparent: true,
+                opacity: 0.6
+            });
+            const sand = new THREE.Mesh(sandGeometry, sandMaterial);
+            const angle = (i / 8) * Math.PI * 2;
+            sand.position.set(Math.cos(angle) * 0.8, 1.5 + Math.random(), Math.sin(angle) * 0.8);
+            sandGroup.add(sand);
+        }
+        mummyGrp.add(sandGroup);
+        mummyGrp.sandParticles = sandGroup;
+        
+        mummyGrp.position.set(x, getTerrainHeight(x, z), z);
+        scene.add(mummyGrp);
+        
+        const health = 6;
+        
+        return {
+            mesh: mummyGrp,
+            speed: speed * speedMultiplier,
+            direction: 1,
+            patrolLeft: patrolLeft,
+            patrolRight: patrolRight,
+            alive: true,
+            radius: 1.9,
+            health: health,
+            maxHealth: health,
+            isMummy: true,
+            lastFireTime: Date.now() - Math.random() * 4000,
+            isChasing: false,
+            initialX: x,
+            initialZ: z,
+            initialPatrolLeft: patrolLeft,
+            initialPatrolRight: patrolRight,
+            sandPhase: Math.random() * Math.PI * 2
+        };
+    }
+
     // Create goblins
     const goblins = [];
     const goblinPositions = levelConfig.goblins;
@@ -2541,6 +3102,13 @@ function initGame() {
         if (levelConfig.wizards) {
             levelConfig.wizards.forEach(wizard => {
                 goblins.push(createWizard(wizard[0], wizard[1], wizard[2], wizard[3], wizard[4]));
+            });
+        }
+        
+        // Create mummies from level config (desert enemies)
+        if (levelConfig.mummies) {
+            levelConfig.mummies.forEach(mummy => {
+                goblins.push(createMummy(mummy[0], mummy[1], mummy[2], mummy[3], mummy[4]));
             });
         }
         
@@ -2983,12 +3551,10 @@ function initGame() {
         });
     }
     
-    // Apply level-specific theme (sky color, fog, etc.)
-    if (levelConfig.skyColor) {
-        scene.background = new THREE.Color(levelConfig.skyColor);
-    }
+    // Apply level-specific fog
     if (levelConfig.fogDensity) {
-        scene.fog = new THREE.FogExp2(levelConfig.skyColor || 0x87CEEB, levelConfig.fogDensity);
+        const fogColor = levelConfig.fogColor || levelConfig.skyColor || 0x87CEEB;
+        scene.fog = new THREE.FogExp2(fogColor, levelConfig.fogDensity);
     }
 
     // Create Dragon (boss enemy)
@@ -3237,6 +3803,7 @@ function initGame() {
     const smokeParticles = [];
     const scorchMarks = [];
     const guardianArrows = [];
+    const mummyTornados = [];
     const birds = [];
     const bombs = [];
 
@@ -3996,6 +4563,11 @@ function initGame() {
                 bombPickups[data.index].collected = true;
                 bombPickups[data.index].mesh.visible = false;
                 Audio.playCollectSound();
+            } else if (data.type === 'scarab' && scarabPickups[data.index]) {
+                scarabPickups[data.index].collected = true;
+                scene.remove(scarabPickups[data.index].mesh);
+                scarabsCollected++;
+                Audio.playCollectSound();
             }
         } else if (eventType === 'bridgeRepaired') {
             // Other player repaired the bridge
@@ -4129,6 +4701,20 @@ function initGame() {
                 damageFlashTime = Date.now();
                 // Don't check for death here - client will send updated health to host
                 // and host will sync gameDead status back via fullSync
+                if (playerHealth > 0) {
+                    Audio.playStuckSound();
+                }
+            }
+        } else if (eventType === 'tornadoHit') {
+            // Client was hit by a tornado (from host)
+            if (!godMode) {
+                playerHealth--;
+                damageFlashTime = Date.now();
+                
+                // Trigger tornado spin visual effect
+                tornadoSpinActive = true;
+                tornadoSpinStartTime = Date.now();
+                
                 if (playerHealth > 0) {
                     Audio.playStuckSound();
                 }
@@ -4345,6 +4931,32 @@ function initGame() {
         }
         
         playerGroup.rotation.y = player.rotation;
+        
+        // Tornado spin visual effect (purely visual, doesn't affect gameplay position)
+        if (tornadoSpinActive) {
+            const elapsed = Date.now() - tornadoSpinStartTime;
+            const progress = Math.min(elapsed / tornadoSpinDuration, 1);
+            
+            if (progress < 1) {
+                // Spin rotation - ease out
+                const spinProgress = 1 - Math.pow(1 - progress, 2); // ease out quad
+                const extraRotation = spinProgress * tornadoSpinRotations * Math.PI * 2;
+                playerGroup.rotation.y = player.rotation + extraRotation;
+                
+                // Lift up and down - parabolic arc
+                const liftProgress = Math.sin(progress * Math.PI); // 0 -> 1 -> 0
+                playerGroup.position.y += liftProgress * tornadoSpinLiftHeight;
+                
+                // Slight wobble
+                playerGroup.rotation.x = Math.sin(elapsed * 0.02) * 0.2 * (1 - progress);
+                playerGroup.rotation.z = Math.cos(elapsed * 0.025) * 0.15 * (1 - progress);
+            } else {
+                // Effect finished, reset
+                tornadoSpinActive = false;
+                playerGroup.rotation.x = 0;
+                playerGroup.rotation.z = 0;
+            }
+        }
         
         const isStuck = godMode ? false : checkCollisions(prevPos);
         
@@ -4903,6 +5515,30 @@ function initGame() {
                     const glowIntensity = 0.6 + 0.4 * Math.sin(gob.orbGlowPhase);
                     gob.mesh.staffOrb.material.opacity = glowIntensity;
                     gob.mesh.staffOrb.scale.setScalar(1 + 0.2 * Math.sin(gob.orbGlowPhase * 2));
+                }
+            }
+            
+            // Mummy tornados
+            if (gob.isMummy && distToTarget < GAME_CONFIG.MUMMY_RANGE && !gob.frozen) {
+                const now = Date.now();
+                const fireInterval = GAME_CONFIG.MUMMY_FIRE_INTERVAL_MIN + Math.random() * (GAME_CONFIG.MUMMY_FIRE_INTERVAL_MAX - GAME_CONFIG.MUMMY_FIRE_INTERVAL_MIN);
+                if (now - gob.lastFireTime > fireInterval) {
+                    gob.lastFireTime = now;
+                    
+                    // Create mummy tornado
+                    createMummyTornado(gob, targetPlayer);
+                }
+                
+                // Animate sand particles floating around mummy
+                gob.sandPhase += 0.03;
+                if (gob.mesh.sandParticles) {
+                    gob.mesh.sandParticles.children.forEach((sand, idx) => {
+                        const baseAngle = (idx / 8) * Math.PI * 2;
+                        const angle = baseAngle + gob.sandPhase;
+                        sand.position.x = Math.cos(angle) * 0.8;
+                        sand.position.z = Math.sin(angle) * 0.8;
+                        sand.position.y = 1.5 + Math.sin(gob.sandPhase + idx) * 0.3;
+                    });
                 }
             }
         });
@@ -5507,6 +6143,190 @@ function initGame() {
         Audio.playExplosionSound();
     }
 
+    // Helper function to create a tornado from a mummy
+    function createMummyTornado(mummy, targetPlayer) {
+        const tornadoGroup = new THREE.Group();
+        
+        // Create tornado cone shape - larger size
+        const coneGeometry = new THREE.ConeGeometry(0.8, 3.0, 12, 4, true);
+        const coneMaterial = new THREE.MeshBasicMaterial({ 
+            color: 0xc4a14a,  // Sandy color
+            transparent: true,
+            opacity: 0.7,
+            side: THREE.DoubleSide
+        });
+        const cone = new THREE.Mesh(coneGeometry, coneMaterial);
+        cone.rotation.x = Math.PI; // Point up
+        cone.position.y = 1.5;
+        tornadoGroup.add(cone);
+        
+        // Inner spinning cone
+        const innerConeGeometry = new THREE.ConeGeometry(0.5, 2.5, 12, 4, true);
+        const innerConeMaterial = new THREE.MeshBasicMaterial({ 
+            color: 0xe8c36a,
+            transparent: true,
+            opacity: 0.8,
+            side: THREE.DoubleSide
+        });
+        const innerCone = new THREE.Mesh(innerConeGeometry, innerConeMaterial);
+        innerCone.rotation.x = Math.PI;
+        innerCone.position.y = 1.25;
+        tornadoGroup.add(innerCone);
+        
+        // Add dust particles - more and larger
+        const dustGroup = new THREE.Group();
+        for (let i = 0; i < 25; i++) {
+            const dustGeometry = new THREE.SphereGeometry(0.1 + Math.random() * 0.1, 4, 4);
+            const dustMaterial = new THREE.MeshBasicMaterial({ 
+                color: 0xc4a14a,
+                transparent: true,
+                opacity: 0.6 + Math.random() * 0.3
+            });
+            const dust = new THREE.Mesh(dustGeometry, dustMaterial);
+            const angle = Math.random() * Math.PI * 2;
+            const height = Math.random() * 3.0;
+            const radius = 0.2 + (height / 3.0) * 0.7; // Wider at top
+            dust.position.set(Math.cos(angle) * radius, height, Math.sin(angle) * radius);
+            dustGroup.add(dust);
+        }
+        tornadoGroup.add(dustGroup);
+        tornadoGroup.dustGroup = dustGroup;
+        tornadoGroup.innerCone = innerCone;
+        tornadoGroup.outerCone = cone;
+        
+        // Position at mummy
+        tornadoGroup.position.copy(mummy.mesh.position);
+        tornadoGroup.position.y += 0.5;
+        scene.add(tornadoGroup);
+        
+        // Calculate direction to target
+        const dirX = targetPlayer.position.x - tornadoGroup.position.x;
+        const dirZ = targetPlayer.position.z - tornadoGroup.position.z;
+        const length = Math.sqrt(dirX * dirX + dirZ * dirZ);
+        
+        const speed = 0.18;
+        
+        mummyTornados.push({
+            mesh: tornadoGroup,
+            velocity: new THREE.Vector3(dirX / length * speed, 0, dirZ / length * speed),
+            radius: 1.0,
+            damage: 1,
+            spinPhase: 0
+        });
+        
+        // Play a whoosh sound
+        Audio.playExplosionSound();
+    }
+
+    // Update tornados
+    function updateMummyTornados() {
+        for (let i = mummyTornados.length - 1; i >= 0; i--) {
+            const tornado = mummyTornados[i];
+            tornado.mesh.position.add(tornado.velocity);
+            
+            // Spin the tornado continuously
+            tornado.spinPhase += 0.35;
+            tornado.mesh.outerCone.rotation.y = tornado.spinPhase;
+            if (tornado.mesh.innerCone) {
+                tornado.mesh.innerCone.rotation.y = -tornado.spinPhase * 1.8;
+            }
+            
+            // Animate dust particles
+            if (tornado.mesh.dustGroup) {
+                tornado.mesh.dustGroup.children.forEach((dust, idx) => {
+                    const baseAngle = (idx / 25) * Math.PI * 2;
+                    const angle = baseAngle + tornado.spinPhase;
+                    const height = dust.position.y;
+                    const radius = 0.25 + (height / 3.0) * 0.8;
+                    dust.position.x = Math.cos(angle) * radius;
+                    dust.position.z = Math.sin(angle) * radius;
+                });
+            }
+            
+            // Check collision with player
+            const px = playerGroup.position.x;
+            const pz = playerGroup.position.z;
+            const dist = Math.sqrt(
+                (tornado.mesh.position.x - px) ** 2 +
+                (tornado.mesh.position.z - pz) ** 2
+            );
+            
+            if (dist < tornado.radius + 0.8) {
+                // Player hit by tornado
+                if (!godMode) {
+                    playerHealth -= tornado.damage;
+                    damageFlashTime = Date.now();
+                    
+                    // Start tornado spin visual effect
+                    tornadoSpinActive = true;
+                    tornadoSpinStartTime = Date.now();
+                    
+                    if (playerHealth <= 0) {
+                        if (!gameDead) {
+                            gameDead = true;
+                            Audio.stopBackgroundMusic();
+                            Audio.playDeathSound();
+                        }
+                    }
+                }
+                scene.remove(tornado.mesh);
+                mummyTornados.splice(i, 1);
+                continue;
+            }
+            
+            // Check collision with other player in multiplayer
+            if (multiplayerManager && multiplayerManager.isConnected() && otherPlayerMesh && otherPlayerMesh.visible) {
+                const otherDist = Math.sqrt(
+                    (tornado.mesh.position.x - otherPlayerMesh.position.x) ** 2 +
+                    (tornado.mesh.position.z - otherPlayerMesh.position.z) ** 2
+                );
+                if (otherDist < tornado.radius + 0.8) {
+                    // Host notifies client of tornado hit damage
+                    if (multiplayerManager.isHost) {
+                        multiplayerManager.sendGameEvent('tornadoHit', {});
+                    }
+                    scene.remove(tornado.mesh);
+                    mummyTornados.splice(i, 1);
+                    continue;
+                }
+            }
+            
+            // Check collision with canyon walls
+            let hitCanyonWall = false;
+            for (const wall of canyonWalls) {
+                const cos = Math.cos(-wall.rotation);
+                const sin = Math.sin(-wall.rotation);
+                const dx = tornado.mesh.position.x - wall.x;
+                const dz = tornado.mesh.position.z - wall.z;
+                const localX = dx * cos - dz * sin;
+                const localZ = dx * sin + dz * cos;
+                
+                const halfWidth = wall.width / 2;
+                const halfDepth = wall.depth / 2;
+                
+                if (Math.abs(localX) < halfWidth && Math.abs(localZ) < halfDepth) {
+                    hitCanyonWall = true;
+                    break;
+                }
+            }
+            
+            if (hitCanyonWall) {
+                scene.remove(tornado.mesh);
+                mummyTornados.splice(i, 1);
+                continue;
+            }
+            
+            // Remove if out of bounds or too far
+            const tornadoDistFromOrigin = Math.sqrt(
+                tornado.mesh.position.x ** 2 + tornado.mesh.position.z ** 2
+            );
+            if (tornadoDistFromOrigin > 300) {
+                scene.remove(tornado.mesh);
+                mummyTornados.splice(i, 1);
+            }
+        }
+    }
+
     function updateFireballs() {
         const now = Date.now();
         
@@ -5615,21 +6435,44 @@ function initGame() {
             // Remove if out of bounds or hit ground
             const terrainHeight = getTerrainHeight(fireball.mesh.position.x, fireball.mesh.position.z);
             
-            // Check collision with mountains
+            // Check collision with mountains (if level has them)
             let hitMountain = false;
-            for (const mtn of levelConfig.mountains) {
-                const distToMountain = Math.sqrt(
-                    (fireball.mesh.position.x - mtn.x) ** 2 +
-                    (fireball.mesh.position.z - mtn.z) ** 2
-                );
-                // Mountain radius is half its width
-                if (distToMountain < mtn.width / 2) {
-                    hitMountain = true;
+            if (levelConfig.mountains && levelConfig.mountains.length > 0) {
+                for (const mtn of levelConfig.mountains) {
+                    const distToMountain = Math.sqrt(
+                        (fireball.mesh.position.x - mtn.x) ** 2 +
+                        (fireball.mesh.position.z - mtn.z) ** 2
+                    );
+                    // Mountain radius is half its width
+                    if (distToMountain < mtn.width / 2) {
+                        hitMountain = true;
+                        break;
+                    }
+                }
+            }
+            
+            // Check collision with canyon walls
+            let hitCanyonWall = false;
+            for (const wall of canyonWalls) {
+                // Transform fireball position into wall's local space
+                const cos = Math.cos(-wall.rotation);
+                const sin = Math.sin(-wall.rotation);
+                const dx = fireball.mesh.position.x - wall.x;
+                const dz = fireball.mesh.position.z - wall.z;
+                const localX = dx * cos - dz * sin;
+                const localZ = dx * sin + dz * cos;
+                
+                // Check if inside wall bounds
+                const halfWidth = wall.width / 2;
+                const halfDepth = wall.depth / 2;
+                
+                if (Math.abs(localX) < halfWidth && Math.abs(localZ) < halfDepth && fireball.mesh.position.y < wall.height) {
+                    hitCanyonWall = true;
                     break;
                 }
             }
             
-            if (fireball.mesh.position.y < terrainHeight || hitMountain ||
+            if (fireball.mesh.position.y < terrainHeight || hitMountain || hitCanyonWall ||
                 Math.abs(fireball.mesh.position.x) > GAME_CONFIG.WORLD_BOUND ||
                 Math.abs(fireball.mesh.position.z) > GAME_CONFIG.WORLD_BOUND) {
                 createFireballExplosion(fireball.mesh.position.x, terrainHeight, fireball.mesh.position.z);
@@ -5648,17 +6491,19 @@ function initGame() {
         const px = playerGroup.position.x;
         const pz = playerGroup.position.z;
         
-        // Mountains
-        levelConfig.mountains.forEach(mtn => {
-            const dist = new THREE.Vector2(
-                playerGroup.position.x - mtn.x,
-                playerGroup.position.z - mtn.z
-            ).length();
-            if (dist < mtn.width/2 + 1.5) {
-                playerGroup.position.copy(prevPos);
-                isStuck = true;
-            }
-        });
+        // Mountains (only if level has them)
+        if (levelConfig.mountains && levelConfig.mountains.length > 0) {
+            levelConfig.mountains.forEach(mtn => {
+                const dist = new THREE.Vector2(
+                    playerGroup.position.x - mtn.x,
+                    playerGroup.position.z - mtn.z
+                ).length();
+                if (dist < mtn.width/2 + 1.5) {
+                    playerGroup.position.copy(prevPos);
+                    isStuck = true;
+                }
+            });
+        }
         
         // Rocks
         rocks.forEach(rock => {
@@ -5667,6 +6512,38 @@ function initGame() {
                 playerGroup.position.z - rock.mesh.position.z
             ).length();
             if (dist < rock.radius + 0.8) {
+                playerGroup.position.copy(prevPos);
+                isStuck = true;
+            }
+        });
+        
+        // Boulders
+        boulders.forEach(boulder => {
+            const dist = new THREE.Vector2(
+                playerGroup.position.x - boulder.mesh.position.x,
+                playerGroup.position.z - boulder.mesh.position.z
+            ).length();
+            if (dist < boulder.radius + 0.8) {
+                playerGroup.position.copy(prevPos);
+                isStuck = true;
+            }
+        });
+        
+        // Canyon walls - box collision
+        canyonWalls.forEach(wall => {
+            // Transform player position into wall's local space (accounting for rotation)
+            const cos = Math.cos(-wall.rotation);
+            const sin = Math.sin(-wall.rotation);
+            const dx = playerGroup.position.x - wall.x;
+            const dz = playerGroup.position.z - wall.z;
+            const localX = dx * cos - dz * sin;
+            const localZ = dx * sin + dz * cos;
+            
+            // Check if inside wall bounds (with player radius buffer)
+            const halfWidth = wall.width / 2 + 1.0;
+            const halfDepth = wall.depth / 2 + 1.0;
+            
+            if (Math.abs(localX) < halfWidth && Math.abs(localZ) < halfDepth) {
                 playerGroup.position.copy(prevPos);
                 isStuck = true;
             }
@@ -5876,6 +6753,53 @@ function initGame() {
             }
         });
         
+        // Collect scarabs
+        scarabPickups.forEach((pickup, idx) => {
+            if (!pickup.collected) {
+                const dist = Math.sqrt(
+                    Math.pow(playerGroup.position.x - pickup.x, 2) +
+                    Math.pow(playerGroup.position.z - pickup.z, 2)
+                );
+                if (dist < 1.5) {
+                    pickup.collected = true;
+                    scene.remove(pickup.mesh);
+                    scarabsCollected++;
+                    Audio.playCollectSound();
+                    
+                    // Show collection message
+                    if (totalScarabs > 0) {
+                        const remaining = totalScarabs - scarabsCollected;
+                        if (remaining > 0) {
+                            console.log(`Scarab collected! ${remaining} more to find.`);
+                        } else {
+                            console.log('All scarabs collected! The treasure is now accessible!');
+                        }
+                    }
+                    
+                    // Notify other player
+                    if (multiplayerManager && multiplayerManager.isConnected()) {
+                        multiplayerManager.sendGameEvent('itemCollected', { type: 'scarab', index: idx });
+                    }
+                }
+            }
+        });
+        
+        // Animate uncollected scarabs (bob and rotate)
+        scarabPickups.forEach((pickup) => {
+            if (!pickup.collected && pickup.mesh) {
+                pickup.bobPhase += 0.05;
+                const baseHeight = getTerrainHeight(pickup.x, pickup.z) + 0.5;
+                pickup.mesh.position.y = baseHeight + Math.sin(pickup.bobPhase) * 0.2;
+                pickup.mesh.rotation.y += 0.02;
+                
+                // Pulse the aura
+                if (pickup.mesh.aura) {
+                    pickup.mesh.aura.material.opacity = 0.3 + Math.sin(pickup.bobPhase * 2) * 0.2;
+                    pickup.mesh.aura.scale.setScalar(1 + Math.sin(pickup.bobPhase) * 0.1);
+                }
+            }
+        });
+        
         // Portal collision - level switching (only if portal exists)
         if (portal && portalCooldown <= 0) {
             const distToPortal = Math.sqrt(
@@ -5959,14 +6883,28 @@ function initGame() {
         if (treasure) {
             const dist = playerGroup.position.distanceTo(treasureGroup.position);
             if (dist < treasure.radius + 0.8) {
-                // Only host decides win state
-                if (!multiplayerManager || multiplayerManager.isHost) {
-                    gameWon = true;
-                    Audio.playWinSound();
+                // Check if scarabs are required and collected
+                const scarabsRequired = totalScarabs > 0;
+                const allScarabsCollected = scarabsCollected >= totalScarabs;
+                
+                if (scarabsRequired && !allScarabsCollected) {
+                    // Can't collect treasure yet - need more scarabs
+                    // Only show message occasionally to avoid spam
+                    if (!treasure.lastWarningTime || Date.now() - treasure.lastWarningTime > 2000) {
+                        treasure.lastWarningTime = Date.now();
+                        const remaining = totalScarabs - scarabsCollected;
+                        console.log(`Collect ${remaining} more Ancient Scarab${remaining > 1 ? 's' : ''} to unlock the treasure!`);
+                    }
                 } else {
-                    // Client notifies host they reached treasure
-                    if (multiplayerManager && multiplayerManager.isConnected()) {
-                        multiplayerManager.sendGameEvent('playerWin', {});
+                    // Only host decides win state
+                    if (!multiplayerManager || multiplayerManager.isHost) {
+                        gameWon = true;
+                        Audio.playWinSound();
+                    } else {
+                        // Client notifies host they reached treasure
+                        if (multiplayerManager && multiplayerManager.isConnected()) {
+                            multiplayerManager.sendGameEvent('playerWin', {});
+                        }
                     }
                 }
             }
@@ -6085,12 +7023,17 @@ function initGame() {
         playerGroup.position.set(startX, getTerrainHeight(startX, startZ), startZ);
         player.rotation = Math.PI;
         playerGroup.rotation.y = Math.PI;
+        playerGroup.rotation.x = 0;
+        playerGroup.rotation.z = 0;
         player.isGliding = false;
         player.glideCharge = 100;
         player.glideState = 'none';
         player.glideLiftProgress = 0;
         player.hasKite = false;
         kiteGroup.visible = false;
+        
+        // Reset tornado spin effect
+        tornadoSpinActive = false;
         
         // Reset other player gliding state
         otherPlayerIsGliding = false;
@@ -6159,8 +7102,12 @@ function initGame() {
         worldBananaPowerCollected = false;
         bananaInventory = 0;
         bombInventory = 0;
-        bridgeObj.mesh.visible = false;
-        brokenBridgeGroup.visible = true;
+        if (bridgeObj) {
+            bridgeObj.mesh.visible = false;
+        }
+        if (brokenBridgeGroup) {
+            brokenBridgeGroup.visible = true;
+        }
         
         // Remove all placed bananas
         placedBananas.forEach(banana => scene.remove(banana.mesh));
@@ -6243,8 +7190,18 @@ function initGame() {
         
         hudCtx.fillText(`Material: ${materialsCollected}/${materialsNeeded}`, 10, 75);
         
+        // Scarab display (only if level has scarabs)
+        let nextYPos = 100;
+        if (totalScarabs > 0) {
+            hudCtx.fillStyle = scarabsCollected >= totalScarabs ? '#00ff88' : '#00ccaa';
+            hudCtx.fillText(`Scarabs: ${scarabsCollected}/${totalScarabs}`, 10, nextYPos);
+            hudCtx.fillStyle = '#000';
+            nextYPos += 25;
+        }
+        
         // Health display
-        hudCtx.fillText(`Leben: ${playerHealth}/${maxPlayerHealth}`, 10, 100);
+        hudCtx.fillText(`Leben: ${playerHealth}/${maxPlayerHealth}`, 10, nextYPos);
+        nextYPos += 25;
         
         // Damage flash effect
         const now = Date.now();
@@ -6256,50 +7213,55 @@ function initGame() {
         
         // Kite charge bar or collection status
         if (player.hasKite) {
-            hudCtx.fillText(`Drachen: ${Math.floor(player.glideCharge)}%`, 10, 125);
+            hudCtx.fillText(`Drachen: ${Math.floor(player.glideCharge)}%`, 10, nextYPos);
             hudCtx.fillStyle = player.glideCharge >= 20 ? '#00FF00' : '#FF0000';
-            hudCtx.fillRect(10, 130, player.glideCharge * 2, 10);
+            hudCtx.fillRect(10, nextYPos + 5, player.glideCharge * 2, 10);
             hudCtx.strokeStyle = '#000';
-            hudCtx.strokeRect(10, 130, 200, 10);
+            hudCtx.strokeRect(10, nextYPos + 5, 200, 10);
             hudCtx.fillStyle = '#000';
+            nextYPos += 25;
         } else {
             hudCtx.fillStyle = '#FFD700';
-            hudCtx.fillText('Finde den Drachen auf der anderen Seite!', 10, 125);
+            hudCtx.fillText('Finde den Drachen auf der anderen Seite!', 10, nextYPos);
             hudCtx.fillStyle = '#000';
+            nextYPos += 25;
         }
         
         // Ice power status
         if (hasIcePower) {
-            const now = Date.now();
             const cooldownRemaining = Math.max(0, icePowerCooldown - (now - lastIcePowerTime));
             if (cooldownRemaining > 0) {
                 hudCtx.fillStyle = '#666';
-                hudCtx.fillText('Eis-Kraft: ' + Math.ceil(cooldownRemaining / 1000) + 's', 10, 155);
+                hudCtx.fillText('Eis-Kraft: ' + Math.ceil(cooldownRemaining / 1000) + 's', 10, nextYPos);
             } else {
                 hudCtx.fillStyle = '#00BFFF';
-                hudCtx.fillText('Eis-Kraft: Drücke E zum Einfrieren!', 10, 155);
+                hudCtx.fillText('Eis-Kraft: Drücke E zum Einfrieren!', 10, nextYPos);
             }
             hudCtx.fillStyle = '#000';
+            nextYPos += 25;
         } else if (!icePowerCollected) {
             hudCtx.fillStyle = '#87CEEB';
-            hudCtx.fillText('Finde den Eisberg für Eis-Kraft!', 10, 155);
+            hudCtx.fillText('Finde den Eisberg für Eis-Kraft!', 10, nextYPos);
             hudCtx.fillStyle = '#000';
+            nextYPos += 25;
         }
         
         // Banana power status
         if (hasBananaPower) {
             hudCtx.fillStyle = '#FFD700';
-            hudCtx.fillText(`🍌 Bananen: ${bananaInventory}/${maxBananas} (Drücke B)`, 10, 180);
+            hudCtx.fillText(`🍌 Bananen: ${bananaInventory}/${maxBananas} (Drücke B)`, 10, nextYPos);
             hudCtx.fillStyle = '#000';
+            nextYPos += 25;
         } else if (!worldBananaPowerCollected) {
             hudCtx.fillStyle = '#FFFF99';
-            hudCtx.fillText('Finde den Bananen-Eisberg!', 10, 180);
+            hudCtx.fillText('Finde den Bananen-Eisberg!', 10, nextYPos);
             hudCtx.fillStyle = '#000';
+            nextYPos += 25;
         }
         
         // Bomb inventory
         hudCtx.fillStyle = '#FF4500';
-        hudCtx.fillText(`💣 Bomben: ${bombInventory}/${maxBombs} (Drücke X)`, 10, 210);
+        hudCtx.fillText(`💣 Bomben: ${bombInventory}/${maxBombs} (Drücke X)`, 10, nextYPos);
         hudCtx.fillStyle = '#000';
         
         if (!bridgeRepaired && materialsCollected >= materialsNeeded) {
@@ -6738,6 +7700,7 @@ function initGame() {
                     
                     updateGoblins();
                     updateGuardianArrows();
+                    updateMummyTornados();
                     updateBirds();
                     updateBombs();
                     updateDragon();

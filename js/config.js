@@ -36,6 +36,11 @@ const GAME_CONFIG = {
     WIZARD_FIRE_INTERVAL_MAX: 5000,
     WIZARD_RANGE: 30,
     
+    // Mummy settings
+    MUMMY_FIRE_INTERVAL_MIN: 2000,
+    MUMMY_FIRE_INTERVAL_MAX: 3500,
+    MUMMY_RANGE: 28,
+    
     // Difficulty settings
     EASY_GOBLIN_COUNT: 20,
     HARD_GOBLIN_COUNT: 53,
@@ -72,8 +77,8 @@ const LEVELS = {
         // No treasure in Level 1 - portal is at treasure location
         hasTreasure: false,
         
-        // Portal to next level (at treasure position)
-        portal: { x: -120, z: -220, destinationLevel: 2 },
+        // Portal to next level (near spawn for testing)
+        portal: { x: 15, z: 30, destinationLevel: 3 },
         
         // World Kite position
         worldKite: { x: 0, z: -10 },
@@ -490,8 +495,8 @@ const LEVELS = {
         // Player start position - bottom of the L (south end) - EXTENDED
         playerStart: { x: 0, z: 200 },
         
-        // No portal in level 2 (final level for now)
-        portal: null,
+        // No portal in level 2 - portal to level 3
+        portal: { x: -180, z: -100, destinationLevel: 3 },
         
         // Unique elements for level 2
         iceTheme: true,
@@ -508,8 +513,8 @@ const LEVELS = {
         treeColor: 0x667788,       // Frosted gray-blue foliage
         grassColor: 0x99aacc,      // Frosted pale blue grass
         
-        // Level 2 has the treasure
-        hasTreasure: true,
+        // Level 2 has no treasure - portal leads to level 3
+        hasTreasure: false,
         
         // Treasure position - at the end of the L (west end)
         treasurePosition: { x: -180, z: -100 },
@@ -805,6 +810,280 @@ const LEVELS = {
             // Near treasure
             { x: -185, z: -88 }, { x: -185, z: -112 }, { x: -195, z: -100 }
         ]
+    },
+    
+    3: {
+        name: "Level 3 - The Scorching Sands",
+        
+        // Player start position - south side of desert
+        playerStart: { x: 0, z: 180 },
+        
+        // No portal in level 3 (final level)
+        portal: null,
+        
+        // Unique elements for level 3
+        desertTheme: true,
+        skyColor: 0xffcc66,  // Warm sunset sky
+        groundColor: 0xe8c36a,  // Sandy ground
+        fogDensity: 0.005,
+        fogColor: 0xffe4b3,  // Dusty yellow fog
+        
+        // No river or materials in desert
+        hasRiver: false,
+        hasMaterials: false,
+        
+        // No mountains in desert
+        hasMountains: false,
+        
+        // Theme colors for desert level
+        hillColor: 0xc4a14a,       // Sandy dune color
+        treeColor: 0x2d5a27,       // Cactus/palm green
+        grassColor: 0xc4a14a,      // Sandy grass
+        
+        // Level 3 has the treasure
+        hasTreasure: true,
+        
+        // Treasure position - at the oasis at the north
+        treasurePosition: { x: 0, z: -180 },
+        
+        // Rainbow position - above the treasure
+        rainbow: { x: 0, z: -175 },
+        
+        // Dragon spawn position
+        dragon: { x: 0, z: -120 },
+        extraDragons: [
+            { x: -80, z: -60 },
+            { x: 80, z: -60 }
+        ],
+        
+        // World Kite position - not needed since carried over
+        worldKite: null,
+        
+        // No Ice Berg in desert
+        iceBerg: null,
+        
+        // Sand dunes instead of hills
+        hills: [
+            // Scattered dunes across the desert
+            { x: -60, z: 150, radius: 12, height: 3 },
+            { x: 60, z: 140, radius: 14, height: 3.5 },
+            { x: -40, z: 100, radius: 10, height: 2.5 },
+            { x: 80, z: 80, radius: 15, height: 4 },
+            { x: -80, z: 60, radius: 13, height: 3 },
+            { x: 40, z: 40, radius: 11, height: 2.5 },
+            { x: -60, z: 0, radius: 12, height: 3 },
+            { x: 60, z: -20, radius: 14, height: 3.5 },
+            { x: -40, z: -60, radius: 10, height: 2.5 },
+            { x: 80, z: -80, radius: 15, height: 4 },
+            { x: -80, z: -100, radius: 13, height: 3 },
+            { x: 40, z: -140, radius: 11, height: 2.5 }
+        ],
+        
+        // No mountains
+        mountains: [],
+        
+        // Goblins scattered through desert [x, z, patrolLeft, patrolRight, speed]
+        goblins: [
+            // Near spawn area
+            [30, 160, 25, 35, 0.012],
+            [-35, 150, -40, -30, 0.013],
+            [20, 120, 15, 25, 0.014],
+            [-25, 100, -30, -20, 0.012],
+            // Mid desert
+            [40, 60, 35, 45, 0.013],
+            [-50, 40, -55, -45, 0.014],
+            [35, 0, 30, 40, 0.012],
+            [-45, -30, -50, -40, 0.013],
+            // Near treasure
+            [30, -100, 25, 35, 0.014],
+            [-35, -120, -40, -30, 0.013],
+            [25, -150, 20, 30, 0.012]
+        ],
+        
+        // Guardians protecting key areas [x, z, patrolLeft, patrolRight, speed]
+        guardians: [
+            [60, 80, 55, 65, 0.01],
+            [-70, 50, -75, -65, 0.011],
+            [50, -40, 45, 55, 0.01],
+            [-60, -80, -65, -55, 0.011]
+        ],
+        
+        // Giants in the desert
+        giants: [
+            [0, 60, -10, 10],
+            [-60, -40, -70, -50],
+            [60, -100, 50, 70]
+        ],
+        
+        // Wizards casting fireballs [x, z, patrolLeft, patrolRight, speed]
+        wizards: [
+            [50, 120, 45, 55, 0.007],
+            [-55, 70, -60, -50, 0.008],
+            [45, 10, 40, 50, 0.007],
+            [-50, -50, -55, -45, 0.008],
+            [40, -110, 35, 45, 0.007]
+        ],
+        
+        // Mummies - guarding chokepoints, scarabs nearby [x, z, patrolLeft, patrolRight, speed]
+        mummies: [
+            // Guard first chokepoint gap at z=120 (center opening)
+            [0, 120, -10, 10, 0.01],
+            [20, 115, 15, 25, 0.008],
+            [-20, 125, -25, -15, 0.008],
+            // Guard second chokepoint at z=40
+            [0, 45, -10, 10, 0.009],
+            // Guard third chokepoint at z=-40 (left opening)
+            [-35, -35, -45, -25, 0.01],
+            // Guard fourth chokepoint at z=-100 (right opening)
+            [35, -95, 25, 45, 0.01],
+            // Guard final approach at z=-150
+            [0, -145, -10, 10, 0.01]
+        ],
+        
+        hardModeGoblins: [
+            // Extra goblins in hard mode
+            [45, 170, 40, 50, 0.016],
+            [-50, 130, -55, -45, 0.015],
+            [55, 90, 50, 60, 0.016],
+            [-45, 50, -50, -40, 0.015],
+            [50, -10, 45, 55, 0.016],
+            [-55, -70, -60, -50, 0.015],
+            [45, -130, 40, 50, 0.016],
+            [-50, -160, -55, -45, 0.015]
+        ],
+        
+        // Birds flying over desert
+        birds: [
+            [0, 80, 35, 0.006],
+            [-40, -40, 30, 0.007],
+            [40, -120, 32, 0.006]
+        ],
+        
+        // Ammo pickups across the desert
+        ammoPositions: [
+            { x: 20, z: 170 }, { x: -25, z: 140 }, { x: 30, z: 110 },
+            { x: -35, z: 80 }, { x: 25, z: 50 }, { x: -30, z: 20 },
+            { x: 35, z: -10 }, { x: -25, z: -40 }, { x: 30, z: -70 },
+            { x: -35, z: -100 }, { x: 25, z: -130 }, { x: -30, z: -160 },
+            { x: 60, z: 130 }, { x: -65, z: 100 }, { x: 55, z: 30 },
+            { x: -60, z: -30 }, { x: 50, z: -90 }, { x: -55, z: -140 }
+        ],
+        
+        // Bomb pickups across the desert
+        bombPositions: [
+            { x: 0, z: 150 },
+            { x: -40, z: 90 },
+            { x: 45, z: 40 },
+            { x: -35, z: -20 },
+            { x: 40, z: -80 },
+            { x: 0, z: -130 }
+        ],
+        
+        // Health pickups - more scattered throughout for survivability
+        healthPositions: [
+            { x: 0, z: 170 },
+            { x: 30, z: 140 },
+            { x: -35, z: 110 },
+            { x: 0, z: 120 },
+            { x: -50, z: 80 },
+            { x: 45, z: 60 },
+            { x: -50, z: 40 },
+            { x: 50, z: 20 },
+            { x: -40, z: -10 },
+            { x: 40, z: -35 },
+            { x: 50, z: -50 },
+            { x: -45, z: -70 },
+            { x: 0, z: -100 },
+            { x: 45, z: -120 },
+            { x: -40, z: -150 },
+            { x: 0, z: -165 }
+        ],
+        
+        // Trap positions (quicksand pits in desert)
+        trapPositions: [
+            { x: 30, z: 140 },
+            { x: -40, z: 110 },
+            { x: 50, z: 60 },
+            { x: -30, z: 10 },
+            { x: 40, z: -40 },
+            { x: -50, z: -80 },
+            { x: 30, z: -110 },
+            { x: -40, z: -140 }
+        ],
+        
+        // Cacti and palm positions (replaces trees)
+        treePositions: [
+            // Cacti scattered around
+            { x: -30, z: 160, type: 'cactus' }, { x: 45, z: 145, type: 'cactus' },
+            { x: -55, z: 120, type: 'cactus' }, { x: 70, z: 100, type: 'cactus' },
+            { x: -40, z: 70, type: 'cactus' }, { x: 50, z: 55, type: 'cactus' },
+            { x: -65, z: 30, type: 'cactus' }, { x: 35, z: 10, type: 'cactus' },
+            { x: -45, z: -25, type: 'cactus' }, { x: 60, z: -45, type: 'cactus' },
+            { x: -55, z: -75, type: 'cactus' }, { x: 45, z: -95, type: 'cactus' },
+            { x: -35, z: -125, type: 'cactus' }, { x: 55, z: -145, type: 'cactus' },
+            // Palms near oasis (treasure area)
+            { x: -15, z: -165, type: 'palm' }, { x: 15, z: -170, type: 'palm' },
+            { x: -20, z: -185, type: 'palm' }, { x: 20, z: -185, type: 'palm' },
+            { x: 0, z: -195, type: 'palm' }
+        ],
+        
+        // Boulder positions (large rocks instead of mountains)
+        boulderPositions: [
+            { x: -70, z: 170 }, { x: 75, z: 160 }, { x: -80, z: 130 },
+            { x: 85, z: 110 }, { x: -90, z: 80 }, { x: 90, z: 60 },
+            { x: -85, z: 20 }, { x: 80, z: -10 }, { x: -75, z: -50 },
+            { x: 85, z: -70 }, { x: -90, z: -110 }, { x: 75, z: -130 },
+            { x: -80, z: -160 }, { x: 80, z: -170 },
+            // Some in the middle
+            { x: -20, z: 90 }, { x: 25, z: 70 }, { x: -15, z: -20 },
+            { x: 20, z: -60 }, { x: -25, z: -90 }
+        ],
+        
+        // Regular rock positions
+        rockPositions: [
+            { x: -25, z: 175 }, { x: 30, z: 165 }, { x: -35, z: 135 },
+            { x: 40, z: 115 }, { x: -30, z: 85 }, { x: 35, z: 65 },
+            { x: -40, z: 35 }, { x: 30, z: 5 }, { x: -35, z: -35 },
+            { x: 40, z: -65 }, { x: -30, z: -95 }, { x: 35, z: -125 },
+            { x: -25, z: -155 }, { x: 30, z: -175 }
+        ],
+        
+        // Canyon walls - create chokepoints forcing player through mummy areas
+        // Each wall has: x, z, width, depth, height, rotation (in radians)
+        canyonWalls: [
+            // First chokepoint around z=120 - walls on sides, gap in middle guarded by mummies
+            { x: -60, z: 120, width: 80, depth: 8, height: 12, rotation: 0 },
+            { x: 60, z: 120, width: 80, depth: 8, height: 12, rotation: 0 },
+            
+            // Second chokepoint around z=40 - narrower passage
+            { x: -55, z: 40, width: 70, depth: 8, height: 14, rotation: 0 },
+            { x: 55, z: 40, width: 70, depth: 8, height: 14, rotation: 0 },
+            
+            // Third chokepoint around z=-40 - offset to create winding path
+            { x: -70, z: -40, width: 60, depth: 8, height: 12, rotation: 0 },
+            { x: 50, z: -40, width: 90, depth: 8, height: 12, rotation: 0 },
+            
+            // Fourth chokepoint around z=-100 - opposite side
+            { x: -50, z: -100, width: 90, depth: 8, height: 14, rotation: 0 },
+            { x: 70, z: -100, width: 60, depth: 8, height: 14, rotation: 0 },
+            
+            // Final approach to treasure - narrow canyon
+            { x: -40, z: -150, width: 50, depth: 8, height: 16, rotation: 0 },
+            { x: 40, z: -150, width: 50, depth: 8, height: 16, rotation: 0 }
+        ],
+        
+        // Scarab gems - must collect all 5 to activate the treasure/win
+        // Placed at chokepoints guarded by mummies
+        scarabs: [
+            { x: 10, z: 120 },   // First chokepoint - guarded by mummies
+            { x: -15, z: 45 },   // Second chokepoint
+            { x: -30, z: -40 },  // Third chokepoint (left opening)
+            { x: 40, z: -95 },   // Fourth chokepoint (right opening)
+            { x: 0, z: -150 }    // Final approach
+        ],
+        
+        // Message to show player about scarabs
+        scarabMessage: "Collect all 5 Ancient Scarabs to unlock the treasure!"
     }
 };
 

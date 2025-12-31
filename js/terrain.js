@@ -107,6 +107,76 @@ function generateGrassTexture(THREE, iceTheme = false) {
     return texture;
 }
 
+// Generate a sand texture for desert levels
+function generateSandTexture(THREE) {
+    const canvas = document.createElement('canvas');
+    canvas.width = 512;
+    canvas.height = 512;
+    const ctx = canvas.getContext('2d');
+    
+    // Base sandy color
+    ctx.fillStyle = '#d4b86a';
+    ctx.fillRect(0, 0, 512, 512);
+    
+    // Add sand grain variation
+    for (let i = 0; i < 10000; i++) {
+        const x = Math.random() * 512;
+        const y = Math.random() * 512;
+        const brightness = 0.85 + Math.random() * 0.3;
+        const r = Math.floor(210 * brightness);
+        const g = Math.floor(180 * brightness);
+        const b = Math.floor(100 * brightness);
+        ctx.fillStyle = `rgb(${r}, ${g}, ${b})`;
+        ctx.fillRect(x, y, 1.5, 1.5);
+    }
+    
+    // Add darker sand patches (shadows of dunes)
+    for (let i = 0; i < 40; i++) {
+        const x = Math.random() * 512;
+        const y = Math.random() * 512;
+        const radius = 20 + Math.random() * 40;
+        const gradient = ctx.createRadialGradient(x, y, 0, x, y, radius);
+        gradient.addColorStop(0, 'rgba(180, 150, 80, 0.3)');
+        gradient.addColorStop(1, 'rgba(180, 150, 80, 0)');
+        ctx.fillStyle = gradient;
+        ctx.fillRect(x - radius, y - radius, radius * 2, radius * 2);
+    }
+    
+    // Add lighter sand patches (sun highlights)
+    for (let i = 0; i < 30; i++) {
+        const x = Math.random() * 512;
+        const y = Math.random() * 512;
+        const radius = 15 + Math.random() * 35;
+        const gradient = ctx.createRadialGradient(x, y, 0, x, y, radius);
+        gradient.addColorStop(0, 'rgba(255, 240, 180, 0.25)');
+        gradient.addColorStop(1, 'rgba(255, 240, 180, 0)');
+        ctx.fillStyle = gradient;
+        ctx.fillRect(x - radius, y - radius, radius * 2, radius * 2);
+    }
+    
+    // Add subtle wind ripple lines
+    ctx.strokeStyle = 'rgba(200, 170, 90, 0.15)';
+    ctx.lineWidth = 1;
+    for (let i = 0; i < 80; i++) {
+        const y = Math.random() * 512;
+        const startX = Math.random() * 200;
+        ctx.beginPath();
+        ctx.moveTo(startX, y);
+        ctx.bezierCurveTo(
+            startX + 100, y + 5,
+            startX + 200, y - 5,
+            startX + 300, y
+        );
+        ctx.stroke();
+    }
+    
+    const texture = new THREE.CanvasTexture(canvas);
+    texture.wrapS = THREE.RepeatWrapping;
+    texture.wrapT = THREE.RepeatWrapping;
+    texture.repeat.set(30, 30);
+    return texture;
+}
+
 // Generate a tree bark texture
 function generateBarkTexture(THREE) {
     const canvas = document.createElement('canvas');
@@ -1435,6 +1505,7 @@ function getTerrainTextures(THREE) {
         cachedTextures = {
             grass: generateGrassTexture(THREE, false),
             grassIce: generateGrassTexture(THREE, true),
+            sand: generateSandTexture(THREE),
             bark: generateBarkTexture(THREE),
             foliage: generateFoliageTexture(THREE, false),
             foliageIce: generateFoliageTexture(THREE, true),
@@ -1503,11 +1574,18 @@ function getTerrainHeight(x, z) {
 }
 
 // Create visual hill meshes
-function createHills(scene, THREE, hillPositions, hillColor, iceTheme) {
+function createHills(scene, THREE, hillPositions, hillColor, iceTheme, desertTheme) {
     const textures = getTerrainTextures(THREE);
     const hills = hillPositions || HILLS;
     const color = hillColor || 0x88cc88;
-    const textureToUse = iceTheme ? textures.grassIce : textures.grass;
+    let textureToUse;
+    if (desertTheme) {
+        textureToUse = textures.sand;
+    } else if (iceTheme) {
+        textureToUse = textures.grassIce;
+    } else {
+        textureToUse = textures.grass;
+    }
     hills.forEach(hill => {
         const hillGeometry = new THREE.ConeGeometry(hill.radius, hill.height, 32);
         const hillMaterial = new THREE.MeshLambertMaterial({ 
@@ -1548,10 +1626,17 @@ function createMountains(scene, THREE, mountainPositions) {
 }
 
 // Create ground plane
-function createGround(scene, THREE, groundColor, iceTheme) {
+function createGround(scene, THREE, groundColor, iceTheme, desertTheme) {
     const textures = getTerrainTextures(THREE);
     const color = groundColor || 0xffffff; // Tint color applied over texture
-    const textureToUse = iceTheme ? textures.grassIce : textures.grass;
+    let textureToUse;
+    if (desertTheme) {
+        textureToUse = textures.sand || textures.grass; // Fall back to grass if no sand texture
+    } else if (iceTheme) {
+        textureToUse = textures.grassIce;
+    } else {
+        textureToUse = textures.grass;
+    }
     const groundGeometry = new THREE.PlaneGeometry(600, 600, 1, 1);
     const groundMaterial = new THREE.MeshLambertMaterial({ 
         map: textureToUse,
