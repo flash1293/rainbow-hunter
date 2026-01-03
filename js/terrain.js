@@ -177,6 +177,72 @@ function generateSandTexture(THREE) {
     return texture;
 }
 
+// Generate a volcanic rock texture for lava caves
+function generateRockTexture(THREE) {
+    const canvas = document.createElement('canvas');
+    canvas.width = 512;
+    canvas.height = 512;
+    const ctx = canvas.getContext('2d');
+    
+    // Base rock color - medium brown for cave floor
+    ctx.fillStyle = '#6a5040';
+    ctx.fillRect(0, 0, 512, 512);
+    
+    // Add rock grain variation
+    for (let i = 0; i < 12000; i++) {
+        const x = Math.random() * 512;
+        const y = Math.random() * 512;
+        const brightness = 0.7 + Math.random() * 0.3;
+        const r = Math.floor(120 * brightness);
+        const g = Math.floor(95 * brightness);
+        const b = Math.floor(75 * brightness);
+        ctx.fillStyle = `rgb(${r}, ${g}, ${b})`;
+        ctx.fillRect(x, y, 2, 2);
+    }
+    
+    // Add darker cracks
+    ctx.strokeStyle = 'rgba(30, 20, 10, 0.7)';
+    ctx.lineWidth = 2;
+    for (let i = 0; i < 50; i++) {
+        const x = Math.random() * 512;
+        const y = Math.random() * 512;
+        ctx.beginPath();
+        ctx.moveTo(x, y);
+        ctx.lineTo(x + (Math.random() - 0.5) * 60, y + (Math.random() - 0.5) * 60);
+        ctx.stroke();
+    }
+    
+    // Add reddish glow spots (heat from lava below)
+    for (let i = 0; i < 30; i++) {
+        const x = Math.random() * 512;
+        const y = Math.random() * 512;
+        const radius = 20 + Math.random() * 40;
+        const gradient = ctx.createRadialGradient(x, y, 0, x, y, radius);
+        gradient.addColorStop(0, 'rgba(180, 60, 0, 0.35)');
+        gradient.addColorStop(1, 'rgba(180, 60, 0, 0)');
+        ctx.fillStyle = gradient;
+        ctx.fillRect(x - radius, y - radius, radius * 2, radius * 2);
+    }
+    
+    // Add lighter rock patches
+    for (let i = 0; i < 35; i++) {
+        const x = Math.random() * 512;
+        const y = Math.random() * 512;
+        const radius = 15 + Math.random() * 30;
+        const gradient = ctx.createRadialGradient(x, y, 0, x, y, radius);
+        gradient.addColorStop(0, 'rgba(140, 110, 80, 0.35)');
+        gradient.addColorStop(1, 'rgba(140, 110, 80, 0)');
+        ctx.fillStyle = gradient;
+        ctx.fillRect(x - radius, y - radius, radius * 2, radius * 2);
+    }
+    
+    const texture = new THREE.CanvasTexture(canvas);
+    texture.wrapS = THREE.RepeatWrapping;
+    texture.wrapT = THREE.RepeatWrapping;
+    texture.repeat.set(30, 30);
+    return texture;
+}
+
 // Generate a tree bark texture
 function generateBarkTexture(THREE) {
     const canvas = document.createElement('canvas');
@@ -739,6 +805,112 @@ function generateGiantSkinTexture(THREE) {
     return texture;
 }
 
+// Generate lava giant skin texture (molten rock with glowing cracks)
+function generateGiantSkinTextureLava(THREE) {
+    const canvas = document.createElement('canvas');
+    canvas.width = 256;
+    canvas.height = 256;
+    const ctx = canvas.getContext('2d');
+    
+    // Base dark volcanic rock
+    ctx.fillStyle = '#2a1a10';
+    ctx.fillRect(0, 0, 256, 256);
+    
+    // Add rough volcanic texture
+    for (let i = 0; i < 2000; i++) {
+        const x = Math.random() * 256;
+        const y = Math.random() * 256;
+        const brightness = 0.5 + Math.random() * 0.5;
+        const r = Math.floor(50 * brightness);
+        const g = Math.floor(30 * brightness);
+        const b = Math.floor(20 * brightness);
+        ctx.fillStyle = `rgb(${r}, ${g}, ${b})`;
+        ctx.fillRect(x, y, 3 + Math.random() * 4, 3 + Math.random() * 4);
+    }
+    
+    // Add glowing lava cracks
+    for (let i = 0; i < 25; i++) {
+        const startX = Math.random() * 256;
+        const startY = Math.random() * 256;
+        ctx.strokeStyle = `rgba(255, ${100 + Math.random() * 100}, 0, ${0.6 + Math.random() * 0.4})`;
+        ctx.lineWidth = 2 + Math.random() * 3;
+        ctx.beginPath();
+        ctx.moveTo(startX, startY);
+        let x = startX, y = startY;
+        for (let j = 0; j < 5; j++) {
+            x += (Math.random() - 0.5) * 40;
+            y += (Math.random() - 0.5) * 40;
+            ctx.lineTo(x, y);
+        }
+        ctx.stroke();
+    }
+    
+    // Add glowing spots
+    for (let i = 0; i < 15; i++) {
+        const x = Math.random() * 256;
+        const y = Math.random() * 256;
+        const radius = 5 + Math.random() * 15;
+        const gradient = ctx.createRadialGradient(x, y, 0, x, y, radius);
+        gradient.addColorStop(0, 'rgba(255, 150, 0, 0.6)');
+        gradient.addColorStop(0.5, 'rgba(255, 80, 0, 0.3)');
+        gradient.addColorStop(1, 'rgba(255, 50, 0, 0)');
+        ctx.fillStyle = gradient;
+        ctx.fillRect(x - radius, y - radius, radius * 2, radius * 2);
+    }
+    
+    const texture = new THREE.CanvasTexture(canvas);
+    return texture;
+}
+
+// Generate lava giant armor texture (obsidian with lava veins)
+function generateGiantArmorTextureLava(THREE) {
+    const canvas = document.createElement('canvas');
+    canvas.width = 128;
+    canvas.height = 128;
+    const ctx = canvas.getContext('2d');
+    
+    // Base obsidian black
+    ctx.fillStyle = '#1a1a1a';
+    ctx.fillRect(0, 0, 128, 128);
+    
+    // Add obsidian shimmer
+    for (let i = 0; i < 500; i++) {
+        const x = Math.random() * 128;
+        const y = Math.random() * 128;
+        const brightness = 0.3 + Math.random() * 0.3;
+        ctx.fillStyle = `rgba(${60 * brightness}, ${50 * brightness}, ${70 * brightness}, 0.8)`;
+        ctx.fillRect(x, y, 2, 2);
+    }
+    
+    // Add glowing lava seams between plates
+    for (let i = 0; i < 8; i++) {
+        const y = i * 16;
+        ctx.strokeStyle = `rgba(255, ${80 + Math.random() * 80}, 0, 0.8)`;
+        ctx.lineWidth = 2;
+        ctx.beginPath();
+        ctx.moveTo(0, y);
+        for (let x = 0; x < 128; x += 10) {
+            ctx.lineTo(x, y + (Math.random() - 0.5) * 4);
+        }
+        ctx.stroke();
+    }
+    
+    // Add hot spots at edges
+    for (let i = 0; i < 12; i++) {
+        const x = Math.random() * 128;
+        const y = Math.random() * 128;
+        const radius = 3 + Math.random() * 6;
+        const gradient = ctx.createRadialGradient(x, y, 0, x, y, radius);
+        gradient.addColorStop(0, 'rgba(255, 200, 50, 0.5)');
+        gradient.addColorStop(1, 'rgba(255, 100, 0, 0)');
+        ctx.fillStyle = gradient;
+        ctx.fillRect(x - radius, y - radius, radius * 2, radius * 2);
+    }
+    
+    const texture = new THREE.CanvasTexture(canvas);
+    return texture;
+}
+
 // Generate giant armor texture (heavy metal plates)
 function generateGiantArmorTexture(THREE) {
     const canvas = document.createElement('canvas');
@@ -1019,6 +1191,76 @@ function generateDragonScaleTexture(THREE, iceTheme = false) {
             }
             ctx.stroke();
         }
+    }
+    
+    const texture = new THREE.CanvasTexture(canvas);
+    return texture;
+}
+
+// Generate lava dragon scale texture (black obsidian with glowing orange cracks)
+function generateDragonScaleTextureLava(THREE) {
+    const canvas = document.createElement('canvas');
+    canvas.width = 256;
+    canvas.height = 256;
+    const ctx = canvas.getContext('2d');
+    
+    // Base obsidian black
+    ctx.fillStyle = '#1a1008';
+    ctx.fillRect(0, 0, 256, 256);
+    
+    // Add scale pattern - dark obsidian with orange glow edges
+    for (let row = 0; row < 32; row++) {
+        for (let col = 0; col < 32; col++) {
+            const offsetX = (row % 2 === 0) ? 4 : 0;
+            const x = col * 8 + offsetX;
+            const y = row * 8;
+            const brightness = 0.4 + Math.random() * 0.3;
+            const r = Math.floor(40 * brightness);
+            const g = Math.floor(25 * brightness);
+            const b = Math.floor(15 * brightness);
+            
+            ctx.fillStyle = `rgb(${r}, ${g}, ${b})`;
+            ctx.beginPath();
+            ctx.ellipse(x + 4, y + 4, 3.5, 3, 0, 0, Math.PI * 2);
+            ctx.fill();
+            
+            // Add glowing orange edge on each scale
+            ctx.strokeStyle = `rgba(255, ${100 + Math.random() * 80}, 0, ${0.3 + Math.random() * 0.3})`;
+            ctx.lineWidth = 0.8;
+            ctx.beginPath();
+            ctx.ellipse(x + 4, y + 4, 3.5, 3, 0, 0, Math.PI * 2);
+            ctx.stroke();
+        }
+    }
+    
+    // Add glowing lava vein patterns
+    for (let i = 0; i < 20; i++) {
+        const startX = Math.random() * 256;
+        const startY = Math.random() * 256;
+        ctx.strokeStyle = `rgba(255, ${80 + Math.random() * 100}, 0, ${0.5 + Math.random() * 0.4})`;
+        ctx.lineWidth = 1 + Math.random() * 2;
+        ctx.beginPath();
+        ctx.moveTo(startX, startY);
+        let x = startX, y = startY;
+        for (let j = 0; j < 5; j++) {
+            x += (Math.random() - 0.5) * 40;
+            y += (Math.random() - 0.5) * 40;
+            ctx.lineTo(x, y);
+        }
+        ctx.stroke();
+    }
+    
+    // Add hot spots
+    for (let i = 0; i < 15; i++) {
+        const x = Math.random() * 256;
+        const y = Math.random() * 256;
+        const radius = 8 + Math.random() * 15;
+        const gradient = ctx.createRadialGradient(x, y, 0, x, y, radius);
+        gradient.addColorStop(0, 'rgba(255, 200, 50, 0.4)');
+        gradient.addColorStop(0.5, 'rgba(255, 100, 0, 0.2)');
+        gradient.addColorStop(1, 'rgba(255, 50, 0, 0)');
+        ctx.fillStyle = gradient;
+        ctx.fillRect(x - radius, y - radius, radius * 2, radius * 2);
     }
     
     const texture = new THREE.CanvasTexture(canvas);
@@ -1506,6 +1748,7 @@ function getTerrainTextures(THREE) {
             grass: generateGrassTexture(THREE, false),
             grassIce: generateGrassTexture(THREE, true),
             sand: generateSandTexture(THREE),
+            rock: generateRockTexture(THREE),
             bark: generateBarkTexture(THREE),
             foliage: generateFoliageTexture(THREE, false),
             foliageIce: generateFoliageTexture(THREE, true),
@@ -1515,7 +1758,9 @@ function getTerrainTextures(THREE) {
             goblinSkin: generateGoblinSkinTexture(THREE),
             goblinArmor: generateGoblinArmorTexture(THREE),
             giantSkin: generateGiantSkinTexture(THREE),
+            giantSkinLava: generateGiantSkinTextureLava(THREE),
             giantArmor: generateGiantArmorTexture(THREE),
+            giantArmorLava: generateGiantArmorTextureLava(THREE),
             playerSkin: generatePlayerSkinTexture(THREE),
             playerClothingPink: generatePlayerClothingTexture(THREE, 0xFF69B4),
             playerClothingBlue: generatePlayerClothingTexture(THREE, 0x4169E1),
@@ -1523,6 +1768,7 @@ function getTerrainTextures(THREE) {
             hairBlack: generateHairTexture(THREE, 0x1a1a1a),
             dragonScale: generateDragonScaleTexture(THREE, false),
             dragonScaleIce: generateDragonScaleTexture(THREE, true),
+            dragonScaleLava: generateDragonScaleTextureLava(THREE),
             dragonBelly: generateDragonBellyTexture(THREE),
             fireball: generateFireballTexture(THREE, false),
             fireballIce: generateFireballTexture(THREE, true),
@@ -1537,6 +1783,8 @@ function getTerrainTextures(THREE) {
             giantEye: generateGlowingEyeTexture(THREE, 0xFF6600),
             dragonEye: generateGlowingEyeTexture(THREE, 0xFF6600),
             dragonEyeIce: generateGlowingEyeTexture(THREE, 0x00BFFF),
+            dragonEyeLava: generateGlowingEyeTexture(THREE, 0xFFFF00),
+            giantEyeLava: generateGlowingEyeTexture(THREE, 0xFF4400),
             wizardRobe: generateWizardRobeTexture(THREE, false),
             wizardRobeIce: generateWizardRobeTexture(THREE, true),
             helmetPink: generateHelmetTexture(THREE, 0xFF69B4),
@@ -1574,12 +1822,14 @@ function getTerrainHeight(x, z) {
 }
 
 // Create visual hill meshes
-function createHills(scene, THREE, hillPositions, hillColor, iceTheme, desertTheme) {
+function createHills(scene, THREE, hillPositions, hillColor, iceTheme, desertTheme, lavaTheme) {
     const textures = getTerrainTextures(THREE);
     const hills = hillPositions || HILLS;
     const color = hillColor || 0x88cc88;
     let textureToUse;
-    if (desertTheme) {
+    if (lavaTheme) {
+        textureToUse = textures.rock || textures.grass;
+    } else if (desertTheme) {
         textureToUse = textures.sand;
     } else if (iceTheme) {
         textureToUse = textures.grassIce;
@@ -1626,11 +1876,13 @@ function createMountains(scene, THREE, mountainPositions) {
 }
 
 // Create ground plane
-function createGround(scene, THREE, groundColor, iceTheme, desertTheme) {
+function createGround(scene, THREE, groundColor, iceTheme, desertTheme, lavaTheme) {
     const textures = getTerrainTextures(THREE);
     const color = groundColor || 0xffffff; // Tint color applied over texture
     let textureToUse;
-    if (desertTheme) {
+    if (lavaTheme) {
+        textureToUse = textures.rock || textures.grass; // Use rock texture for lava caves
+    } else if (desertTheme) {
         textureToUse = textures.sand || textures.grass; // Fall back to grass if no sand texture
     } else if (iceTheme) {
         textureToUse = textures.grassIce;

@@ -137,11 +137,12 @@ class MultiplayerManager {
     }
     
     // Host: Send game start command
-    sendGameStart(difficulty) {
+    sendGameStart(difficulty, level) {
         if (this.isHost && this.conn && this.conn.open) {
             this.conn.send({
                 type: 'gameStart',
-                difficulty: difficulty
+                difficulty: difficulty,
+                level: level || 1
             });
         }
     }

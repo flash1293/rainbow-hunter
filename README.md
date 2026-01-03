@@ -9,7 +9,11 @@ A 3D bicycle adventure game built with Three.js where you navigate terrain, coll
 ### Play Now (Easiest Way)
 **Just click this link to play instantly in your browser:**
 
-👉 **[Play Fahrrad-Abenteuer Now!](https://raw.githack.com/flash1293/rainbow-hunter/main/index.html)** 👈
+**Play Fahrrad-Abenteuer Now!**
+
+👉 **[One player](https://raw.githack.com/flash1293/rainbow-hunter/main/index.html)** 👈
+
+👉 **[Splitscreen](https://raw.githack.com/flash1293/rainbow-hunter/main/splitscreen.html)** 👈
 
 No installation, no setup needed!
 

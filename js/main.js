@@ -80,8 +80,8 @@ window.addEventListener('DOMContentLoaded', () => {
     // Handle multiplayer callbacks
     multiplayerManager.onUpdate((type, data) => {
         if (type === 'gameStart') {
-            // Client receives game start from host
-            startGame(data.difficulty);
+            // Client receives game start from host with level
+            startGame(data.difficulty, data.level || 1);
         }
     });
     
@@ -112,7 +112,7 @@ if (!isSplitscreen || isSplitscreen === 'host') {
     document.getElementById('hard-btn').addEventListener('click', () => startGame('hard'));
 }
 
-function startGame(selectedDifficulty) {
+function startGame(selectedDifficulty, startLevel = null) {
     difficulty = selectedDifficulty;
     speedMultiplier = difficulty === 'hard' ? GAME_CONFIG.HARD_SPEED_MULTIPLIER : GAME_CONFIG.EASY_SPEED_MULTIPLIER;
     
@@ -123,14 +123,21 @@ function startGame(selectedDifficulty) {
         health: null,
         hasKite: false
     };
-    currentLevel = 1; // Start from level 1
+    
+    // Get selected level from dropdown or use provided startLevel
+    if (startLevel !== null) {
+        currentLevel = startLevel;
+    } else {
+        const levelSelect = document.getElementById('start-level');
+        currentLevel = levelSelect ? parseInt(levelSelect.value) : 1;
+    }
     
     document.getElementById('difficulty-menu').style.display = 'none';
     document.getElementById('game-container').style.display = 'block';
     
-    // Host sends game start to client
+    // Host sends game start to client with level info
     if (multiplayerManager && multiplayerManager.isHost && multiplayerManager.isConnected()) {
-        multiplayerManager.sendGameStart(selectedDifficulty);
+        multiplayerManager.sendGameStart(selectedDifficulty, currentLevel);
     }
     
     initGame();
@@ -291,10 +298,14 @@ function initGame() {
     // Check if this is a desert-themed level
     const desertTheme = levelConfig.desertTheme || false;
     
+    // Check if this is a lava-themed level
+    const lavaTheme = levelConfig.lavaTheme || false;
+    
     // Three.js setup
     const container = document.getElementById('gameCanvas');
     const scene = new THREE.Scene();
     currentScene = scene; // Store for cleanup
+
     
     // Use sky texture as background (only for non-themed levels)
     const skyTextures = getTerrainTextures(THREE);
@@ -372,8 +383,8 @@ function initGame() {
     const grassColor = levelConfig.grassColor || 0x228B22;
 
     // Create terrain (use level-specific ground color and theme)
-    createGround(scene, THREE, levelConfig.groundColor, iceTheme, desertTheme);
-    createHills(scene, THREE, levelConfig.hills, hillColor, iceTheme, desertTheme);
+    createGround(scene, THREE, levelConfig.groundColor, iceTheme, desertTheme, lavaTheme);
+    createHills(scene, THREE, levelConfig.hills, hillColor, iceTheme, desertTheme, lavaTheme);
     
     // Mountains are optional (disabled in desert)
     if (levelConfig.hasMountains !== false && levelConfig.mountains && levelConfig.mountains.length > 0) {
@@ -470,7 +481,7 @@ function initGame() {
     const materialsNeeded = GAME_CONFIG.MATERIALS_NEEDED;
     let playerHealth = persistentInventory.health !== null ? persistentInventory.health : 1;
     let otherPlayerHealth = 1;
-    const maxPlayerHealth = 3;
+    const maxPlayerHealth = 4;
     let lastDamageTime = 0;
     const damageCooldown = 2500; // ms between damage from goblins
     let damageFlashTime = 0;
@@ -1074,6 +1085,13 @@ function initGame() {
                 vz: t.velocity.z,
                 spinPhase: t.spinPhase
             })),
+            lavaTrails: lavaTrails.map(lt => ({
+                id: lt.id,
+                x: lt.x,
+                z: lt.z,
+                createdAt: lt.createdAt,
+                creatorId: lt.creatorId
+            })),
             items: {
                 materials: materials.map(m => m.collected),
                 ammoPickups: ammoPickups.map(a => a.collected),
@@ -1526,6 +1544,83 @@ function initGame() {
                         radius: 1.0,
                         damage: 1,
                         spinPhase: tData.spinPhase || 0
+                    });
+                }
+            });
+        }
+        
+        // Update lava trails
+        if (data.lavaTrails) {
+            // Get existing trail IDs
+            const existingIds = new Set(lavaTrails.map(lt => lt.id));
+            const newIds = new Set(data.lavaTrails.map(lt => lt.id));
+            
+            // Remove trails that no longer exist
+            for (let i = lavaTrails.length - 1; i >= 0; i--) {
+                if (!newIds.has(lavaTrails[i].id)) {
+                    scene.remove(lavaTrails[i].mesh);
+                    lavaTrails.splice(i, 1);
+                }
+            }
+            
+            // Add new trails that don't exist yet
+            data.lavaTrails.forEach(ltData => {
+                if (!existingIds.has(ltData.id)) {
+                    // Create lava trail visually for client
+                    const trailGroup = new THREE.Group();
+                    
+                    const poolGeometry = new THREE.CircleGeometry(GAME_CONFIG.LAVA_TRAIL_RADIUS, 16);
+                    const poolMaterial = new THREE.MeshBasicMaterial({ 
+                        color: 0xff4400,
+                        transparent: true,
+                        opacity: 0.9,
+                        side: THREE.DoubleSide,
+                        blending: THREE.AdditiveBlending
+                    });
+                    const pool = new THREE.Mesh(poolGeometry, poolMaterial);
+                    pool.rotation.x = -Math.PI / 2;
+                    pool.position.y = 0.15;
+                    trailGroup.add(pool);
+                    
+                    const crustGeometry = new THREE.RingGeometry(GAME_CONFIG.LAVA_TRAIL_RADIUS * 0.7, GAME_CONFIG.LAVA_TRAIL_RADIUS, 16);
+                    const crustMaterial = new THREE.MeshBasicMaterial({ 
+                        color: 0x4a2010,
+                        transparent: true,
+                        opacity: 0.6,
+                        side: THREE.DoubleSide
+                    });
+                    const crust = new THREE.Mesh(crustGeometry, crustMaterial);
+                    crust.rotation.x = -Math.PI / 2;
+                    crust.position.y = 0.16;
+                    trailGroup.add(crust);
+                    
+                    const bubbleGeometry = new THREE.SphereGeometry(0.15, 8, 8);
+                    const bubbleMaterial = new THREE.MeshBasicMaterial({ 
+                        color: 0xffaa00,
+                        transparent: true,
+                        opacity: 0.8,
+                        blending: THREE.AdditiveBlending
+                    });
+                    const bubble = new THREE.Mesh(bubbleGeometry, bubbleMaterial);
+                    bubble.position.y = 0.2;
+                    trailGroup.add(bubble);
+                    trailGroup.bubble = bubble;
+                    
+                    const terrainHeight = getTerrainHeight(ltData.x, ltData.z);
+                    trailGroup.position.set(ltData.x, terrainHeight, ltData.z);
+                    scene.add(trailGroup);
+                    
+                    lavaTrails.push({
+                        id: ltData.id,
+                        mesh: trailGroup,
+                        x: ltData.x,
+                        z: ltData.z,
+                        radius: GAME_CONFIG.LAVA_TRAIL_RADIUS,
+                        createdAt: ltData.createdAt || Date.now(),
+                        duration: GAME_CONFIG.LAVA_TRAIL_DURATION,
+                        pool: pool,
+                        crust: crust,
+                        creatorId: ltData.creatorId
                     });
                 }
             });
@@ -2047,6 +2142,89 @@ function initGame() {
         boulderGroup.position.set(pos.x, terrainHeight + 1.5, pos.z);
         scene.add(boulderGroup);
         boulders.push({ mesh: boulderGroup, type: 'boulder', radius: 3.0 });
+    });
+
+    // Pyramids for desert atmosphere
+    const pyramidPositions = levelConfig.pyramids || [];
+    pyramidPositions.forEach(pyramid => {
+        const pyramidGroup = new THREE.Group();
+        
+        // Generate sandy stone texture for pyramids
+        const pyramidCanvas = document.createElement('canvas');
+        pyramidCanvas.width = 128;
+        pyramidCanvas.height = 128;
+        const pyramidCtx = pyramidCanvas.getContext('2d');
+        
+        // Base sandstone color
+        pyramidCtx.fillStyle = '#d4a84b';
+        pyramidCtx.fillRect(0, 0, 128, 128);
+        
+        // Add stone block pattern
+        pyramidCtx.strokeStyle = 'rgba(100, 70, 30, 0.4)';
+        pyramidCtx.lineWidth = 2;
+        for (let y = 0; y < 128; y += 16) {
+            pyramidCtx.beginPath();
+            pyramidCtx.moveTo(0, y);
+            pyramidCtx.lineTo(128, y);
+            pyramidCtx.stroke();
+        }
+        for (let x = 0; x < 128; x += 24) {
+            for (let y = 0; y < 128; y += 16) {
+                const offsetX = (Math.floor(y / 16) % 2) * 12;
+                pyramidCtx.beginPath();
+                pyramidCtx.moveTo(x + offsetX, y);
+                pyramidCtx.lineTo(x + offsetX, y + 16);
+                pyramidCtx.stroke();
+            }
+        }
+        
+        // Add weathering and variation
+        for (let i = 0; i < 50; i++) {
+            const x = Math.random() * 128;
+            const y = Math.random() * 128;
+            const size = 3 + Math.random() * 8;
+            pyramidCtx.fillStyle = `rgba(${100 + Math.random() * 50}, ${70 + Math.random() * 40}, ${30 + Math.random() * 30}, 0.3)`;
+            pyramidCtx.beginPath();
+            pyramidCtx.arc(x, y, size, 0, Math.PI * 2);
+            pyramidCtx.fill();
+        }
+        
+        const pyramidTexture = new THREE.CanvasTexture(pyramidCanvas);
+        pyramidTexture.wrapS = THREE.RepeatWrapping;
+        pyramidTexture.wrapT = THREE.RepeatWrapping;
+        
+        const size = pyramid.size || 20;
+        const height = pyramid.height || 30;
+        
+        // Main pyramid body
+        const pyramidGeometry = new THREE.ConeGeometry(size * 0.7, height, 4);
+        const pyramidMaterial = new THREE.MeshLambertMaterial({ 
+            map: pyramidTexture,
+            color: 0xd4a84b
+        });
+        const pyramidMesh = new THREE.Mesh(pyramidGeometry, pyramidMaterial);
+        pyramidMesh.rotation.y = Math.PI / 4; // Rotate so sides face cardinal directions
+        pyramidMesh.position.y = height / 2;
+        pyramidMesh.castShadow = true;
+        pyramidMesh.receiveShadow = true;
+        pyramidGroup.add(pyramidMesh);
+        
+        // Add some fallen stones at base
+        for (let i = 0; i < 8; i++) {
+            const stoneGeometry = new THREE.DodecahedronGeometry(1 + Math.random() * 2, 0);
+            const stoneMaterial = new THREE.MeshLambertMaterial({ color: 0xc49a3b });
+            const stone = new THREE.Mesh(stoneGeometry, stoneMaterial);
+            const angle = (i / 8) * Math.PI * 2 + Math.random() * 0.5;
+            const dist = size * 0.7 + Math.random() * 3;
+            stone.position.set(Math.cos(angle) * dist, 0.5, Math.sin(angle) * dist);
+            stone.rotation.set(Math.random(), Math.random(), Math.random());
+            stone.castShadow = true;
+            pyramidGroup.add(stone);
+        }
+        
+        const terrainHeight = getTerrainHeight(pyramid.x, pyramid.z);
+        pyramidGroup.position.set(pyramid.x, terrainHeight, pyramid.z);
+        scene.add(pyramidGroup);
     });
 
     // Scarab and canyon wall tracking
@@ -2702,9 +2880,14 @@ function initGame() {
         const textures = getTerrainTextures(THREE);
         const giantGrp = new THREE.Group();
         
+        // Use theme-appropriate textures
+        const giantSkinTexture = lavaTheme ? textures.giantSkinLava : textures.giantSkin;
+        const giantArmorTexture = lavaTheme ? textures.giantArmorLava : textures.giantArmor;
+        const giantEyeTexture = lavaTheme ? textures.giantEyeLava : textures.giantEye;
+        
         // Massive cylindrical body
         const bodyGeometry = new THREE.CylinderGeometry(1.5, 1.8, 5.0, 12);
-        const bodyMaterial = new THREE.MeshLambertMaterial({ map: textures.giantSkin });
+        const bodyMaterial = new THREE.MeshLambertMaterial({ map: giantSkinTexture });
         const body = new THREE.Mesh(bodyGeometry, bodyMaterial);
         body.position.y = 3.5;
         body.castShadow = true;
@@ -2712,7 +2895,7 @@ function initGame() {
         
         // Add armor plates on body
         const plateGeometry = new THREE.BoxGeometry(2.0, 0.4, 2.2);
-        const plateMaterial = new THREE.MeshLambertMaterial({ map: textures.giantArmor });
+        const plateMaterial = new THREE.MeshLambertMaterial({ map: giantArmorTexture });
         for (let i = 0; i < 4; i++) {
             const plate = new THREE.Mesh(plateGeometry, plateMaterial);
             plate.position.y = 2.0 + (i * 1.2);
@@ -2744,10 +2927,10 @@ function initGame() {
         rightHorn.castShadow = true;
         giantGrp.add(rightHorn);
         
-        // Glowing orange eyes with texture
+        // Glowing eyes with texture
         const eyeGeometry = new THREE.SphereGeometry(0.4, 16, 16);
         const eyeMaterial = new THREE.MeshBasicMaterial({ 
-            map: textures.giantEye,
+            map: giantEyeTexture,
             transparent: true,
             blending: THREE.AdditiveBlending,
             depthWrite: false
@@ -2762,7 +2945,7 @@ function initGame() {
         
         // Massive club-like arms
         const armGeometry = new THREE.CylinderGeometry(0.4, 0.8, 4.0, 8);
-        const armMaterial = new THREE.MeshLambertMaterial({ map: textures.giantSkin });
+        const armMaterial = new THREE.MeshLambertMaterial({ map: giantSkinTexture });
         
         const leftArm = new THREE.Mesh(armGeometry, armMaterial);
         leftArm.position.set(-2.2, 4.0, 0);
@@ -2780,7 +2963,7 @@ function initGame() {
         
         // Giant fists
         const fistGeometry = new THREE.BoxGeometry(0.8, 0.8, 0.8);
-        const fistMaterial = new THREE.MeshLambertMaterial({ map: textures.giantSkin });
+        const fistMaterial = new THREE.MeshLambertMaterial({ map: giantSkinTexture });
         
         const leftFist = new THREE.Mesh(fistGeometry, fistMaterial);
         leftFist.position.set(-2.8, 1.8, 0);
@@ -3076,6 +3259,302 @@ function initGame() {
         };
     }
 
+    // Lava Monster helper - lava caves enemy that shoots fireballs and leaves lava trails
+    function createLavaMonster(x, z, patrolLeft, patrolRight, speed = 0.009) {
+        const lavaGrp = new THREE.Group();
+        
+        // Torso - larger, more menacing molten core
+        const torsoGeometry = new THREE.SphereGeometry(1.0, 16, 12);
+        torsoGeometry.scale(1.0, 1.3, 0.9); // Elongated torso
+        const torsoMaterial = new THREE.MeshBasicMaterial({ 
+            color: 0xff3300,
+            transparent: true,
+            opacity: 0.9
+        });
+        const torso = new THREE.Mesh(torsoGeometry, torsoMaterial);
+        torso.position.y = 2.2;
+        torso.castShadow = true;
+        lavaGrp.add(torso);
+        
+        // Outer rocky armor shell (cracked and jagged)
+        const shellGeometry = new THREE.DodecahedronGeometry(1.25, 1);
+        shellGeometry.scale(1.0, 1.3, 0.9);
+        const shellMaterial = new THREE.MeshLambertMaterial({ 
+            color: 0x1a0a05,
+            transparent: true,
+            opacity: 0.75
+        });
+        const shell = new THREE.Mesh(shellGeometry, shellMaterial);
+        shell.position.y = 2.2;
+        shell.castShadow = true;
+        lavaGrp.add(shell);
+        
+        // Head - angular and intimidating
+        const headGeometry = new THREE.DodecahedronGeometry(0.6, 0);
+        const headMaterial = new THREE.MeshLambertMaterial({ color: 0x2a1208 });
+        const head = new THREE.Mesh(headGeometry, headMaterial);
+        head.position.y = 3.5;
+        head.castShadow = true;
+        lavaGrp.add(head);
+        
+        // Glowing lava cracks on head
+        const headGlowGeometry = new THREE.DodecahedronGeometry(0.55, 0);
+        const headGlowMaterial = new THREE.MeshBasicMaterial({ 
+            color: 0xff4400,
+            transparent: true,
+            opacity: 0.6,
+            blending: THREE.AdditiveBlending
+        });
+        const headGlow = new THREE.Mesh(headGlowGeometry, headGlowMaterial);
+        headGlow.position.y = 3.5;
+        lavaGrp.add(headGlow);
+        
+        // Horns - demonic appearance
+        const hornMaterial = new THREE.MeshLambertMaterial({ color: 0x1a0805 });
+        const hornGeometry = new THREE.ConeGeometry(0.15, 0.6, 6);
+        const leftHorn = new THREE.Mesh(hornGeometry, hornMaterial);
+        leftHorn.position.set(-0.35, 3.9, 0);
+        leftHorn.rotation.z = 0.4;
+        leftHorn.rotation.x = -0.2;
+        lavaGrp.add(leftHorn);
+        
+        const rightHorn = new THREE.Mesh(hornGeometry, hornMaterial);
+        rightHorn.position.set(0.35, 3.9, 0);
+        rightHorn.rotation.z = -0.4;
+        rightHorn.rotation.x = -0.2;
+        lavaGrp.add(rightHorn);
+        
+        // Eyes - menacing, slitted, glowing
+        const eyeGeometry = new THREE.SphereGeometry(0.18, 12, 12);
+        eyeGeometry.scale(1.3, 0.7, 1); // Slitted eyes
+        const eyeMaterial = new THREE.MeshBasicMaterial({ 
+            color: 0xffff00,
+            transparent: true,
+            opacity: 0.95,
+            blending: THREE.AdditiveBlending
+        });
+        const leftEye = new THREE.Mesh(eyeGeometry, eyeMaterial);
+        leftEye.position.set(-0.25, 3.55, 0.45);
+        lavaGrp.add(leftEye);
+        
+        const rightEye = new THREE.Mesh(eyeGeometry, eyeMaterial);
+        rightEye.position.set(0.25, 3.55, 0.45);
+        lavaGrp.add(rightEye);
+        
+        // Eye glow aura
+        const eyeGlowMaterial = new THREE.SpriteMaterial({
+            color: 0xff4400,
+            transparent: true,
+            opacity: 0.5,
+            blending: THREE.AdditiveBlending
+        });
+        const leftEyeGlow = new THREE.Sprite(eyeGlowMaterial);
+        leftEyeGlow.scale.set(0.5, 0.3, 1);
+        leftEyeGlow.position.set(-0.25, 3.55, 0.5);
+        lavaGrp.add(leftEyeGlow);
+        
+        const rightEyeGlow = new THREE.Sprite(eyeGlowMaterial.clone());
+        rightEyeGlow.scale.set(0.5, 0.3, 1);
+        rightEyeGlow.position.set(0.25, 3.55, 0.5);
+        lavaGrp.add(rightEyeGlow);
+        
+        // Mouth - jagged opening with lava glow
+        const mouthGeometry = new THREE.BoxGeometry(0.5, 0.15, 0.2);
+        const mouthMaterial = new THREE.MeshBasicMaterial({ 
+            color: 0xff2200,
+            transparent: true,
+            opacity: 0.9,
+            blending: THREE.AdditiveBlending
+        });
+        const mouth = new THREE.Mesh(mouthGeometry, mouthMaterial);
+        mouth.position.set(0, 3.25, 0.5);
+        lavaGrp.add(mouth);
+        
+        // ARMS - bulky, molten rock
+        const armMaterial = new THREE.MeshLambertMaterial({ color: 0x2a1510 });
+        const armGlowMaterial = new THREE.MeshBasicMaterial({ 
+            color: 0xff4400,
+            transparent: true,
+            opacity: 0.7,
+            blending: THREE.AdditiveBlending
+        });
+        
+        // Left arm
+        const leftArmGroup = new THREE.Group();
+        const leftUpperArm = new THREE.Mesh(new THREE.CylinderGeometry(0.25, 0.3, 1.0, 8), armMaterial);
+        leftUpperArm.position.y = -0.3;
+        leftUpperArm.rotation.z = 0.5;
+        leftArmGroup.add(leftUpperArm);
+        
+        const leftForearm = new THREE.Mesh(new THREE.CylinderGeometry(0.2, 0.25, 0.9, 8), armMaterial);
+        leftForearm.position.set(-0.4, -0.9, 0);
+        leftForearm.rotation.z = 0.3;
+        leftArmGroup.add(leftForearm);
+        
+        // Left hand - claw-like
+        const leftHand = new THREE.Mesh(new THREE.DodecahedronGeometry(0.25, 0), armMaterial);
+        leftHand.position.set(-0.6, -1.5, 0);
+        leftArmGroup.add(leftHand);
+        
+        // Lava glow on arm
+        const leftArmGlow = new THREE.Mesh(new THREE.CylinderGeometry(0.15, 0.18, 0.6, 6), armGlowMaterial);
+        leftArmGlow.position.set(-0.2, -0.6, 0);
+        leftArmGlow.rotation.z = 0.4;
+        leftArmGroup.add(leftArmGlow);
+        
+        leftArmGroup.position.set(-1.1, 2.5, 0);
+        lavaGrp.add(leftArmGroup);
+        lavaGrp.leftArm = leftArmGroup;
+        
+        // Right arm (mirrored)
+        const rightArmGroup = new THREE.Group();
+        const rightUpperArm = new THREE.Mesh(new THREE.CylinderGeometry(0.25, 0.3, 1.0, 8), armMaterial);
+        rightUpperArm.position.y = -0.3;
+        rightUpperArm.rotation.z = -0.5;
+        rightArmGroup.add(rightUpperArm);
+        
+        const rightForearm = new THREE.Mesh(new THREE.CylinderGeometry(0.2, 0.25, 0.9, 8), armMaterial);
+        rightForearm.position.set(0.4, -0.9, 0);
+        rightForearm.rotation.z = -0.3;
+        rightArmGroup.add(rightForearm);
+        
+        const rightHand = new THREE.Mesh(new THREE.DodecahedronGeometry(0.25, 0), armMaterial);
+        rightHand.position.set(0.6, -1.5, 0);
+        rightArmGroup.add(rightHand);
+        
+        const rightArmGlow = new THREE.Mesh(new THREE.CylinderGeometry(0.15, 0.18, 0.6, 6), armGlowMaterial);
+        rightArmGlow.position.set(0.2, -0.6, 0);
+        rightArmGlow.rotation.z = -0.4;
+        rightArmGroup.add(rightArmGlow);
+        
+        rightArmGroup.position.set(1.1, 2.5, 0);
+        lavaGrp.add(rightArmGroup);
+        lavaGrp.rightArm = rightArmGroup;
+        
+        // LEGS - thick, powerful
+        const legMaterial = new THREE.MeshLambertMaterial({ color: 0x2a1510 });
+        
+        // Left leg
+        const leftLegGroup = new THREE.Group();
+        const leftThigh = new THREE.Mesh(new THREE.CylinderGeometry(0.35, 0.3, 0.9, 8), legMaterial);
+        leftThigh.position.y = -0.4;
+        leftLegGroup.add(leftThigh);
+        
+        const leftShin = new THREE.Mesh(new THREE.CylinderGeometry(0.28, 0.35, 0.8, 8), legMaterial);
+        leftShin.position.y = -1.1;
+        leftLegGroup.add(leftShin);
+        
+        const leftFoot = new THREE.Mesh(new THREE.BoxGeometry(0.5, 0.2, 0.7), legMaterial);
+        leftFoot.position.set(0, -1.6, 0.1);
+        leftLegGroup.add(leftFoot);
+        
+        // Lava glow in leg cracks
+        const leftLegGlow = new THREE.Mesh(new THREE.CylinderGeometry(0.12, 0.15, 0.5, 6), armGlowMaterial);
+        leftLegGlow.position.y = -0.75;
+        leftLegGroup.add(leftLegGlow);
+        
+        leftLegGroup.position.set(-0.5, 1.1, 0);
+        lavaGrp.add(leftLegGroup);
+        lavaGrp.leftLeg = leftLegGroup;
+        
+        // Right leg (mirrored)
+        const rightLegGroup = new THREE.Group();
+        const rightThigh = new THREE.Mesh(new THREE.CylinderGeometry(0.35, 0.3, 0.9, 8), legMaterial);
+        rightThigh.position.y = -0.4;
+        rightLegGroup.add(rightThigh);
+        
+        const rightShin = new THREE.Mesh(new THREE.CylinderGeometry(0.28, 0.35, 0.8, 8), legMaterial);
+        rightShin.position.y = -1.1;
+        rightLegGroup.add(rightShin);
+        
+        const rightFoot = new THREE.Mesh(new THREE.BoxGeometry(0.5, 0.2, 0.7), legMaterial);
+        rightFoot.position.set(0, -1.6, 0.1);
+        rightLegGroup.add(rightFoot);
+        
+        const rightLegGlow = new THREE.Mesh(new THREE.CylinderGeometry(0.12, 0.15, 0.5, 6), armGlowMaterial);
+        rightLegGlow.position.y = -0.75;
+        rightLegGroup.add(rightLegGlow);
+        
+        rightLegGroup.position.set(0.5, 1.1, 0);
+        lavaGrp.add(rightLegGroup);
+        lavaGrp.rightLeg = rightLegGroup;
+        
+        // Glowing lava veins across body
+        for (let i = 0; i < 10; i++) {
+            const veinGeometry = new THREE.BoxGeometry(0.1, 0.6 + Math.random() * 0.5, 0.1);
+            const veinMaterial = new THREE.MeshBasicMaterial({ 
+                color: 0xff5500,
+                transparent: true,
+                opacity: 0.85,
+                blending: THREE.AdditiveBlending
+            });
+            const vein = new THREE.Mesh(veinGeometry, veinMaterial);
+            const angle = (i / 10) * Math.PI * 2;
+            vein.position.set(
+                Math.cos(angle) * 0.95,
+                2.2 + (Math.random() - 0.5) * 0.8,
+                Math.sin(angle) * 0.85
+            );
+            vein.rotation.set(Math.random() * 0.5, Math.random(), Math.random() * 0.5);
+            lavaGrp.add(vein);
+        }
+        
+        // Floating ember particles around the monster
+        const emberGroup = new THREE.Group();
+        for (let i = 0; i < 16; i++) {
+            const emberGeometry = new THREE.SphereGeometry(0.06 + Math.random() * 0.08, 6, 6);
+            const emberMaterial = new THREE.MeshBasicMaterial({ 
+                color: Math.random() > 0.5 ? 0xff4400 : 0xff8800,
+                transparent: true,
+                opacity: 0.85,
+                blending: THREE.AdditiveBlending
+            });
+            const ember = new THREE.Mesh(emberGeometry, emberMaterial);
+            const angle = (i / 16) * Math.PI * 2;
+            ember.position.set(
+                Math.cos(angle) * (1.5 + Math.random() * 0.5),
+                1.5 + Math.random() * 2.5,
+                Math.sin(angle) * (1.5 + Math.random() * 0.5)
+            );
+            emberGroup.add(ember);
+        }
+        lavaGrp.add(emberGroup);
+        lavaGrp.emberParticles = emberGroup;
+        
+        // Store body parts for animation
+        lavaGrp.innerBody = torso;
+        lavaGrp.outerShell = shell;
+        lavaGrp.head = head;
+        lavaGrp.headGlow = headGlow;
+        
+        lavaGrp.position.set(x, getTerrainHeight(x, z), z);
+        scene.add(lavaGrp);
+        
+        const health = 7;
+        
+        return {
+            mesh: lavaGrp,
+            speed: speed * speedMultiplier,
+            direction: 1,
+            patrolLeft: patrolLeft,
+            patrolRight: patrolRight,
+            alive: true,
+            radius: 2.2,
+            health: health,
+            maxHealth: health,
+            isLavaMonster: true,
+            lastFireTime: Date.now() - Math.random() * 3000,
+            lastTrailTime: Date.now() - Math.random() * 500,
+            isChasing: false,
+            initialX: x,
+            initialZ: z,
+            initialPatrolLeft: patrolLeft,
+            initialPatrolRight: patrolRight,
+            emberPhase: Math.random() * Math.PI * 2,
+            pulsePhase: Math.random() * Math.PI * 2
+        };
+    }
+
     // Create goblins
     const goblins = [];
     const goblinPositions = levelConfig.goblins;
@@ -3086,16 +3565,28 @@ function initGame() {
         goblins.push(createGoblin(pos[0], pos[1], pos[2], pos[3], pos[4]));
     }
     
-    // Create guardian goblins on hard
+    // Create guardian goblins from level config (both difficulties)
+    levelConfig.guardians.forEach(guardian => {
+        goblins.push(createGuardianGoblin(guardian[0], guardian[1], guardian[2], guardian[3], guardian[4]));
+    });
+    
+    // Guardians in a ring around treasure (both difficulties, only if level has treasure)
+    if (levelConfig.hasTreasure !== false) {
+        const treasureGuardX = levelConfig.treasurePosition?.x ?? GAME_CONFIG.TREASURE_X;
+        const treasureGuardZ = levelConfig.treasurePosition?.z ?? GAME_CONFIG.TREASURE_Z;
+        for (let i = 0; i < GAME_CONFIG.HARD_GUARDIAN_COUNT; i++) {
+            const angle = (i / GAME_CONFIG.HARD_GUARDIAN_COUNT) * Math.PI * 2;
+            const x = treasureGuardX + Math.cos(angle) * 8;
+            const z = treasureGuardZ + Math.sin(angle) * 8;
+            goblins.push(createGuardianGoblin(x, z, x - 3, x + 3, 0.014));
+        }
+    }
+    
+    // Create special enemies on hard mode only
     if (difficulty === 'hard') {
         // Create giants from level config
         levelConfig.giants.forEach(giant => {
             goblins.push(createGiant(giant[0], giant[1], giant[2], giant[3]));
-        });
-        
-        // Create guardian goblins from level config
-        levelConfig.guardians.forEach(guardian => {
-            goblins.push(createGuardianGoblin(guardian[0], guardian[1], guardian[2], guardian[3], guardian[4]));
         });
         
         // Create wizard goblins from level config
@@ -3112,22 +3603,17 @@ function initGame() {
             });
         }
         
+        // Create lava monsters from level config (lava caves enemies)
+        if (levelConfig.lavaMonsters) {
+            levelConfig.lavaMonsters.forEach(monster => {
+                goblins.push(createLavaMonster(monster[0], monster[1], monster[2], monster[3], monster[4]));
+            });
+        }
+        
         // Additional regular goblins for hard mode
         levelConfig.hardModeGoblins.forEach(goblin => {
             goblins.push(createGoblin(goblin[0], goblin[1], goblin[2], goblin[3], goblin[4]));
         });
-        
-        // Guardians in a ring around treasure (only if level has treasure)
-        if (levelConfig.hasTreasure !== false) {
-            const treasureGuardX = levelConfig.treasurePosition?.x ?? GAME_CONFIG.TREASURE_X;
-            const treasureGuardZ = levelConfig.treasurePosition?.z ?? GAME_CONFIG.TREASURE_Z;
-            for (let i = 0; i < GAME_CONFIG.HARD_GUARDIAN_COUNT; i++) {
-                const angle = (i / GAME_CONFIG.HARD_GUARDIAN_COUNT) * Math.PI * 2;
-                const x = treasureGuardX + Math.cos(angle) * 8;
-                const z = treasureGuardZ + Math.sin(angle) * 8;
-                goblins.push(createGuardianGoblin(x, z, x - 3, x + 3, 0.014));
-            }
-        }
     }
 
     // Rainbow
@@ -3551,6 +4037,107 @@ function initGame() {
         });
     }
     
+    // Level 4 unique elements - lava pools and cave ceiling
+    const lavaPools = [];
+    let caveCeiling = null;
+    
+    if (levelConfig.lavaPools) {
+        levelConfig.lavaPools.forEach(pool => {
+            const poolGroup = new THREE.Group();
+            
+            // Main lava surface - positioned above ground
+            const poolGeometry = new THREE.CircleGeometry(pool.radius, 32);
+            const poolMaterial = new THREE.MeshBasicMaterial({
+                color: 0xff4400,
+                transparent: true,
+                opacity: 0.95
+            });
+            const poolMesh = new THREE.Mesh(poolGeometry, poolMaterial);
+            poolMesh.rotation.x = -Math.PI / 2;
+            poolMesh.position.y = 0.3;
+            poolGroup.add(poolMesh);
+            
+            // Inner brighter core
+            const coreGeometry = new THREE.CircleGeometry(pool.radius * 0.6, 32);
+            const coreMaterial = new THREE.MeshBasicMaterial({
+                color: 0xffaa00,
+                transparent: true,
+                opacity: 0.9
+            });
+            const coreMesh = new THREE.Mesh(coreGeometry, coreMaterial);
+            coreMesh.rotation.x = -Math.PI / 2;
+            coreMesh.position.y = 0.35;
+            poolGroup.add(coreMesh);
+            
+            // Hottest center
+            const centerGeometry = new THREE.CircleGeometry(pool.radius * 0.25, 32);
+            const centerMaterial = new THREE.MeshBasicMaterial({
+                color: 0xffff00,
+                transparent: true,
+                opacity: 0.85
+            });
+            const centerMesh = new THREE.Mesh(centerGeometry, centerMaterial);
+            centerMesh.rotation.x = -Math.PI / 2;
+            centerMesh.position.y = 0.4;
+            poolGroup.add(centerMesh);
+            
+            // Add point light for glow - brighter
+            const lavaLight = new THREE.PointLight(0xff4400, 1.5, pool.radius * 4);
+            lavaLight.position.y = 3;
+            poolGroup.add(lavaLight);
+            
+            poolGroup.position.set(pool.x, getTerrainHeight(pool.x, pool.z) + 0.1, pool.z);
+            scene.add(poolGroup);
+            lavaPools.push({ 
+                mesh: poolGroup, 
+                x: pool.x, 
+                z: pool.z, 
+                radius: pool.radius,
+                pulsePhase: Math.random() * Math.PI * 2
+            });
+        });
+    }
+    
+    // Create cave ceiling for underground level
+    if (levelConfig.hasCeiling) {
+        const ceilingHeight = levelConfig.ceilingHeight || 25;
+        
+        // Large ceiling plane
+        const ceilingGeometry = new THREE.PlaneGeometry(600, 600);
+        const ceilingMaterial = new THREE.MeshLambertMaterial({
+            color: 0x1a0f0a,
+            side: THREE.DoubleSide
+        });
+        caveCeiling = new THREE.Mesh(ceilingGeometry, ceilingMaterial);
+        caveCeiling.rotation.x = Math.PI / 2;
+        caveCeiling.position.y = ceilingHeight;
+        scene.add(caveCeiling);
+        
+        // Add stalactites hanging from ceiling
+        for (let i = 0; i < 100; i++) {
+            const x = (Math.random() - 0.5) * 400;
+            const z = (Math.random() - 0.5) * 400;
+            const size = 0.5 + Math.random() * 1.5;
+            const height = 2 + Math.random() * 4;
+            
+            const stalactiteGeometry = new THREE.ConeGeometry(size, height, 6);
+            const stalactiteMaterial = new THREE.MeshLambertMaterial({
+                color: 0x2a1a0a
+            });
+            const stalactite = new THREE.Mesh(stalactiteGeometry, stalactiteMaterial);
+            stalactite.rotation.x = Math.PI; // Point downward
+            stalactite.position.set(x, ceilingHeight - height / 2, z);
+            scene.add(stalactite);
+        }
+        
+        // Adjust ambient light for cave atmosphere - balanced visibility
+        scene.children.forEach(child => {
+            if (child.isAmbientLight) {
+                child.intensity = 0.5; // Balanced cave lighting
+            }
+        });
+    }
+    
     // Apply level-specific fog
     if (levelConfig.fogDensity) {
         const fogColor = levelConfig.fogColor || levelConfig.skyColor || 0x87CEEB;
@@ -3562,9 +4149,18 @@ function initGame() {
         const textures = getTerrainTextures(THREE);
         const dragonGroup = new THREE.Group();
         
-        // Use ice-themed textures for winter level
-        const dragonScaleTexture = iceTheme ? textures.dragonScaleIce : textures.dragonScale;
-        const dragonEyeTexture = iceTheme ? textures.dragonEyeIce : textures.dragonEye;
+        // Use theme-appropriate textures
+        let dragonScaleTexture, dragonEyeTexture;
+        if (lavaTheme) {
+            dragonScaleTexture = textures.dragonScaleLava;
+            dragonEyeTexture = textures.dragonEyeLava;
+        } else if (iceTheme) {
+            dragonScaleTexture = textures.dragonScaleIce;
+            dragonEyeTexture = textures.dragonEyeIce;
+        } else {
+            dragonScaleTexture = textures.dragonScale;
+            dragonEyeTexture = textures.dragonEye;
+        }
         
         // Body - long segmented shape
         const bodyGeometry = new THREE.CylinderGeometry(2, 2.5, 10, 12);
@@ -3804,6 +4400,7 @@ function initGame() {
     const scorchMarks = [];
     const guardianArrows = [];
     const mummyTornados = [];
+    const lavaTrails = [];
     const birds = [];
     const bombs = [];
 
@@ -4829,6 +5426,71 @@ function initGame() {
             persistentInventory.hasKite = worldKiteCollected || player.hasKite;
             
             switchLevel(data.level);
+        } else if (eventType === 'lavaTrailCreate') {
+            // Host created a lava trail, client needs to show it
+            const trailGroup = new THREE.Group();
+            
+            const poolGeometry = new THREE.CircleGeometry(GAME_CONFIG.LAVA_TRAIL_RADIUS, 16);
+            const poolMaterial = new THREE.MeshBasicMaterial({ 
+                color: 0xff4400,
+                transparent: true,
+                opacity: 0.9,
+                side: THREE.DoubleSide,
+                blending: THREE.AdditiveBlending
+            });
+            const pool = new THREE.Mesh(poolGeometry, poolMaterial);
+            pool.rotation.x = -Math.PI / 2;
+            pool.position.y = 0.15;
+            trailGroup.add(pool);
+            
+            const crustGeometry = new THREE.RingGeometry(GAME_CONFIG.LAVA_TRAIL_RADIUS * 0.7, GAME_CONFIG.LAVA_TRAIL_RADIUS, 16);
+            const crustMaterial = new THREE.MeshBasicMaterial({ 
+                color: 0x4a2010,
+                transparent: true,
+                opacity: 0.6,
+                side: THREE.DoubleSide
+            });
+            const crust = new THREE.Mesh(crustGeometry, crustMaterial);
+            crust.rotation.x = -Math.PI / 2;
+            crust.position.y = 0.16;
+            trailGroup.add(crust);
+            
+            const bubbleGeometry = new THREE.SphereGeometry(0.15, 8, 8);
+            const bubbleMaterial = new THREE.MeshBasicMaterial({ 
+                color: 0xffaa00,
+                transparent: true,
+                opacity: 0.8,
+                blending: THREE.AdditiveBlending
+            });
+            const bubble = new THREE.Mesh(bubbleGeometry, bubbleMaterial);
+            bubble.position.y = 0.2;
+            trailGroup.add(bubble);
+            trailGroup.bubble = bubble;
+            
+            const terrainHeight = getTerrainHeight(data.x, data.z);
+            trailGroup.position.set(data.x, terrainHeight, data.z);
+            scene.add(trailGroup);
+            
+            lavaTrails.push({
+                id: data.id,
+                mesh: trailGroup,
+                x: data.x,
+                z: data.z,
+                radius: GAME_CONFIG.LAVA_TRAIL_RADIUS,
+                createdAt: Date.now(),
+                duration: GAME_CONFIG.LAVA_TRAIL_DURATION,
+                pool: pool,
+                crust: crust,
+                creatorId: data.creatorId
+            });
+        } else if (eventType === 'lavaTrailDeath') {
+            // Client was killed by lava trail
+            if (!gameDead) {
+                playerHealth = 0;
+                gameDead = true;
+                Audio.stopBackgroundMusic();
+                Audio.playDeathSound();
+            }
         }
     }
 
@@ -5045,12 +5707,6 @@ function initGame() {
                                 gob.mesh.rotation.z = Math.PI / 2;
                                 const terrainH = getTerrainHeight(gob.mesh.position.x, gob.mesh.position.z);
                                 gob.mesh.position.y = terrainH + 0.5;
-                                
-                                // Show math exercise(s) only in easy mode
-                                if (difficulty === 'easy') {
-                                    const exerciseCount = gob.isGiant ? 3 : 1;
-                                    showMathExercise(exerciseCount);
-                                }
                             }
                         }
                         bulletHit = true;
@@ -5369,12 +6025,6 @@ function initGame() {
                     gob.mesh.rotation.z = Math.PI / 2;
                     gob.mesh.position.y = terrainHeight + 0.5;
                     createExplosion(gob.mesh.position.x, gob.mesh.position.y + 1, gob.mesh.position.z);
-                    
-                    // Show math exercise(s) only in easy mode
-                    if (difficulty === 'easy') {
-                        const exerciseCount = gob.isGiant ? 3 : 1;
-                        showMathExercise(exerciseCount);
-                    }
                 }
             });
             
@@ -5389,12 +6039,6 @@ function initGame() {
                     gob.mesh.rotation.z = Math.PI / 2;
                     gob.mesh.position.y = terrainHeight + 0.5;
                     createExplosion(gob.mesh.position.x, gob.mesh.position.y + 1, gob.mesh.position.z);
-                    
-                    // Show math exercise(s) only in easy mode
-                    if (difficulty === 'easy') {
-                        const exerciseCount = gob.isGiant ? 3 : 1;
-                        showMathExercise(exerciseCount);
-                    }
                 }
             });
             
@@ -5539,6 +6183,72 @@ function initGame() {
                         sand.position.z = Math.sin(angle) * 0.8;
                         sand.position.y = 1.5 + Math.sin(gob.sandPhase + idx) * 0.3;
                     });
+                }
+            }
+            
+            // Lava monster fireballs and lava trails
+            if (gob.isLavaMonster && !gob.frozen) {
+                const now = Date.now();
+                
+                // Shoot fireballs at player in range
+                if (distToTarget < GAME_CONFIG.LAVA_MONSTER_RANGE) {
+                    const fireInterval = GAME_CONFIG.LAVA_MONSTER_FIRE_INTERVAL_MIN + Math.random() * (GAME_CONFIG.LAVA_MONSTER_FIRE_INTERVAL_MAX - GAME_CONFIG.LAVA_MONSTER_FIRE_INTERVAL_MIN);
+                    if (now - gob.lastFireTime > fireInterval) {
+                        gob.lastFireTime = now;
+                        createLavaMonsterFireball(gob, targetPlayer);
+                    }
+                }
+                
+                // Leave lava trails while moving
+                if (now - gob.lastTrailTime > GAME_CONFIG.LAVA_MONSTER_TRAIL_INTERVAL) {
+                    gob.lastTrailTime = now;
+                    const trailX = gob.mesh.position.x + (Math.random() - 0.5) * 1.5;
+                    const trailZ = gob.mesh.position.z + (Math.random() - 0.5) * 1.5;
+                    createLavaTrail(trailX, trailZ, gob.initialX + '_' + gob.initialZ);
+                }
+                
+                // Animate ember particles
+                gob.emberPhase += 0.04;
+                if (gob.mesh.emberParticles) {
+                    gob.mesh.emberParticles.children.forEach((ember, idx) => {
+                        const baseAngle = (idx / 16) * Math.PI * 2;
+                        const angle = baseAngle + gob.emberPhase;
+                        ember.position.x = Math.cos(angle) * (1.5 + Math.sin(gob.emberPhase * 0.5 + idx) * 0.3);
+                        ember.position.z = Math.sin(angle) * (1.5 + Math.sin(gob.emberPhase * 0.5 + idx) * 0.3);
+                        ember.position.y = 1.5 + Math.sin(gob.emberPhase * 2 + idx) * 1.0 + 1.0;
+                    });
+                }
+                
+                // Pulse the inner body glow
+                gob.pulsePhase += 0.05;
+                if (gob.mesh.innerBody) {
+                    const pulse = 0.7 + Math.sin(gob.pulsePhase) * 0.3;
+                    gob.mesh.innerBody.material.opacity = pulse;
+                }
+                
+                // Animate head glow
+                if (gob.mesh.headGlow) {
+                    gob.mesh.headGlow.material.opacity = 0.4 + Math.sin(gob.pulsePhase * 1.5) * 0.2;
+                }
+                
+                // Animate arms - menacing swinging motion
+                const armSwing = Math.sin(gob.emberPhase * 2) * 0.3;
+                if (gob.mesh.leftArm) {
+                    gob.mesh.leftArm.rotation.x = armSwing;
+                    gob.mesh.leftArm.rotation.z = 0.1 + Math.sin(gob.pulsePhase) * 0.1;
+                }
+                if (gob.mesh.rightArm) {
+                    gob.mesh.rightArm.rotation.x = -armSwing;
+                    gob.mesh.rightArm.rotation.z = -0.1 - Math.sin(gob.pulsePhase) * 0.1;
+                }
+                
+                // Animate legs - walking motion
+                const legSwing = Math.sin(gob.emberPhase * 2.5) * 0.25;
+                if (gob.mesh.leftLeg) {
+                    gob.mesh.leftLeg.rotation.x = legSwing;
+                }
+                if (gob.mesh.rightLeg) {
+                    gob.mesh.rightLeg.rotation.x = -legSwing;
                 }
             }
         });
@@ -6143,6 +6853,153 @@ function initGame() {
         Audio.playExplosionSound();
     }
 
+    // Helper function to create a fireball from a lava monster
+    function createLavaMonsterFireball(monster, targetPlayer) {
+        const fbTextures = getTerrainTextures(THREE);
+        const fireballTexture = fbTextures.fireball;
+        const explosionTexture = fbTextures.explosion;
+        
+        const fireballGroup = new THREE.Group();
+        const fbScale = 0.5;
+        
+        // Core sphere - bright orange/yellow lava
+        const coreGeometry = new THREE.SphereGeometry(0.6 * fbScale, 12, 12);
+        const coreMaterial = new THREE.MeshBasicMaterial({ 
+            map: fireballTexture,
+            transparent: true,
+            color: 0xff6600
+        });
+        const core = new THREE.Mesh(coreGeometry, coreMaterial);
+        fireballGroup.add(core);
+        
+        // Outer glow sprite - orange
+        const glowMaterial = new THREE.SpriteMaterial({
+            map: explosionTexture,
+            transparent: true,
+            blending: THREE.AdditiveBlending,
+            depthWrite: false,
+            opacity: 0.8,
+            color: 0xff4400
+        });
+        const glow = new THREE.Sprite(glowMaterial);
+        glow.scale.set(2.5 * fbScale, 2.5 * fbScale, 1);
+        fireballGroup.add(glow);
+        
+        // Inner bright glow - yellow
+        const innerGlowMaterial = new THREE.SpriteMaterial({
+            map: explosionTexture,
+            transparent: true,
+            blending: THREE.AdditiveBlending,
+            depthWrite: false,
+            opacity: 0.95,
+            color: 0xffaa00
+        });
+        const innerGlow = new THREE.Sprite(innerGlowMaterial);
+        innerGlow.scale.set(1.5 * fbScale, 1.5 * fbScale, 1);
+        fireballGroup.add(innerGlow);
+        
+        // Position fireball at monster's center
+        fireballGroup.position.copy(monster.mesh.position);
+        fireballGroup.position.y += 1.5;
+        scene.add(fireballGroup);
+        
+        // Calculate direction to target
+        const dirX = targetPlayer.position.x - fireballGroup.position.x;
+        const dirY = (targetPlayer.position.y + 1) - fireballGroup.position.y;
+        const dirZ = targetPlayer.position.z - fireballGroup.position.z;
+        const length = Math.sqrt(dirX * dirX + dirY * dirY + dirZ * dirZ);
+        
+        const speed = 0.28;
+        
+        fireballs.push({
+            mesh: fireballGroup,
+            velocity: new THREE.Vector3(dirX / length * speed, dirY / length * speed, dirZ / length * speed),
+            radius: 1.0,
+            damage: 1,
+            trail: [],
+            lastTrailTime: 0,
+            isLavaMonsterFireball: true
+        });
+        
+        Audio.playExplosionSound();
+    }
+
+    // Helper function to create a lava trail (small temporary lava pool)
+    function createLavaTrail(x, z, creatorId) {
+        const trailGroup = new THREE.Group();
+        
+        // Glowing lava pool
+        const poolGeometry = new THREE.CircleGeometry(GAME_CONFIG.LAVA_TRAIL_RADIUS, 16);
+        const poolMaterial = new THREE.MeshBasicMaterial({ 
+            color: 0xff4400,
+            transparent: true,
+            opacity: 0.9,
+            side: THREE.DoubleSide,
+            blending: THREE.AdditiveBlending
+        });
+        const pool = new THREE.Mesh(poolGeometry, poolMaterial);
+        pool.rotation.x = -Math.PI / 2;
+        pool.position.y = 0.15;
+        trailGroup.add(pool);
+        
+        // Darker crust ring
+        const crustGeometry = new THREE.RingGeometry(GAME_CONFIG.LAVA_TRAIL_RADIUS * 0.7, GAME_CONFIG.LAVA_TRAIL_RADIUS, 16);
+        const crustMaterial = new THREE.MeshBasicMaterial({ 
+            color: 0x4a2010,
+            transparent: true,
+            opacity: 0.6,
+            side: THREE.DoubleSide
+        });
+        const crust = new THREE.Mesh(crustGeometry, crustMaterial);
+        crust.rotation.x = -Math.PI / 2;
+        crust.position.y = 0.16;
+        trailGroup.add(crust);
+        
+        // Small bubbling particle
+        const bubbleGeometry = new THREE.SphereGeometry(0.15, 8, 8);
+        const bubbleMaterial = new THREE.MeshBasicMaterial({ 
+            color: 0xffaa00,
+            transparent: true,
+            opacity: 0.8,
+            blending: THREE.AdditiveBlending
+        });
+        const bubble = new THREE.Mesh(bubbleGeometry, bubbleMaterial);
+        bubble.position.y = 0.2;
+        trailGroup.add(bubble);
+        trailGroup.bubble = bubble;
+        
+        const terrainHeight = getTerrainHeight(x, z);
+        trailGroup.position.set(x, terrainHeight, z);
+        scene.add(trailGroup);
+        
+        const trail = {
+            id: Date.now() + Math.random(),
+            mesh: trailGroup,
+            x: x,
+            z: z,
+            radius: GAME_CONFIG.LAVA_TRAIL_RADIUS,
+            createdAt: Date.now(),
+            duration: GAME_CONFIG.LAVA_TRAIL_DURATION,
+            pool: pool,
+            crust: crust,
+            creatorId: creatorId
+        };
+        
+        lavaTrails.push(trail);
+        
+        // Sync to other player in multiplayer
+        if (multiplayerManager && multiplayerManager.isConnected() && multiplayerManager.isHost) {
+            multiplayerManager.sendGameEvent('lavaTrailCreate', {
+                id: trail.id,
+                x: x,
+                z: z,
+                creatorId: creatorId
+            });
+        }
+        
+        return trail;
+    }
+
     // Helper function to create a tornado from a mummy
     function createMummyTornado(mummy, targetPlayer) {
         const tornadoGroup = new THREE.Group();
@@ -6216,6 +7073,116 @@ function initGame() {
         
         // Play a whoosh sound
         Audio.playExplosionSound();
+    }
+
+    // Wild tornado spawning for out-of-bounds players
+    let lastWildTornadoSpawn = 0;
+    const wildTornadoBaseInterval = 2000; // Base spawn interval
+    
+    function spawnWildTornado(targetX, targetZ) {
+        // Spawn tornado from a random direction outside the visible area
+        const angle = Math.random() * Math.PI * 2;
+        const spawnDistance = 40 + Math.random() * 20;
+        const spawnX = targetX + Math.cos(angle) * spawnDistance;
+        const spawnZ = targetZ + Math.sin(angle) * spawnDistance;
+        
+        const tornadoGroup = new THREE.Group();
+        
+        // Create tornado cone shape
+        const coneGeometry = new THREE.ConeGeometry(0.8, 3.0, 12, 4, true);
+        const coneMaterial = new THREE.MeshBasicMaterial({ 
+            color: 0xc4a14a,
+            transparent: true,
+            opacity: 0.7,
+            side: THREE.DoubleSide
+        });
+        const cone = new THREE.Mesh(coneGeometry, coneMaterial);
+        cone.rotation.x = Math.PI;
+        cone.position.y = 1.5;
+        tornadoGroup.add(cone);
+        
+        // Inner spinning cone
+        const innerConeGeometry = new THREE.ConeGeometry(0.5, 2.5, 12, 4, true);
+        const innerConeMaterial = new THREE.MeshBasicMaterial({ 
+            color: 0xe8c36a,
+            transparent: true,
+            opacity: 0.8,
+            side: THREE.DoubleSide
+        });
+        const innerCone = new THREE.Mesh(innerConeGeometry, innerConeMaterial);
+        innerCone.rotation.x = Math.PI;
+        innerCone.position.y = 1.25;
+        tornadoGroup.add(innerCone);
+        
+        // Add dust particles
+        const dustGroup = new THREE.Group();
+        for (let i = 0; i < 25; i++) {
+            const dustGeometry = new THREE.SphereGeometry(0.1 + Math.random() * 0.1, 4, 4);
+            const dustMaterial = new THREE.MeshBasicMaterial({ 
+                color: 0xc4a14a,
+                transparent: true,
+                opacity: 0.6 + Math.random() * 0.3
+            });
+            const dust = new THREE.Mesh(dustGeometry, dustMaterial);
+            const dustAngle = Math.random() * Math.PI * 2;
+            const height = Math.random() * 3.0;
+            const radius = 0.2 + (height / 3.0) * 0.7;
+            dust.position.set(Math.cos(dustAngle) * radius, height, Math.sin(dustAngle) * radius);
+            dustGroup.add(dust);
+        }
+        tornadoGroup.add(dustGroup);
+        tornadoGroup.dustGroup = dustGroup;
+        tornadoGroup.innerCone = innerCone;
+        tornadoGroup.outerCone = cone;
+        
+        const terrainHeight = getTerrainHeight(spawnX, spawnZ);
+        tornadoGroup.position.set(spawnX, terrainHeight + 0.5, spawnZ);
+        scene.add(tornadoGroup);
+        
+        // Calculate direction to target player
+        const dirX = targetX - spawnX;
+        const dirZ = targetZ - spawnZ;
+        const length = Math.sqrt(dirX * dirX + dirZ * dirZ);
+        
+        const speed = 0.22; // Slightly faster than mummy tornados
+        
+        mummyTornados.push({
+            mesh: tornadoGroup,
+            velocity: new THREE.Vector3(dirX / length * speed, 0, dirZ / length * speed),
+            radius: 1.0,
+            damage: 1,
+            spinPhase: 0,
+            isWild: true // Mark as wild tornado
+        });
+    }
+    
+    function checkAndSpawnWildTornados() {
+        if (!levelConfig.safeZoneBounds) return;
+        
+        const bounds = levelConfig.safeZoneBounds;
+        const px = playerGroup.position.x;
+        const pz = playerGroup.position.z;
+        
+        // Check if player is outside safe zone
+        const outsideX = px < bounds.minX ? bounds.minX - px : (px > bounds.maxX ? px - bounds.maxX : 0);
+        const outsideZ = pz < bounds.minZ ? bounds.minZ - pz : (pz > bounds.maxZ ? pz - bounds.maxZ : 0);
+        const distanceOutside = Math.sqrt(outsideX * outsideX + outsideZ * outsideZ);
+        
+        if (distanceOutside > 0) {
+            const now = Date.now();
+            // Spawn rate increases the further out you are
+            // At 10 units out: every 2 seconds, at 50 units out: every 0.4 seconds
+            const spawnInterval = Math.max(400, wildTornadoBaseInterval - distanceOutside * 40);
+            
+            if (now - lastWildTornadoSpawn > spawnInterval) {
+                // Spawn 1-3 tornados based on distance
+                const tornadoCount = Math.min(3, 1 + Math.floor(distanceOutside / 20));
+                for (let i = 0; i < tornadoCount; i++) {
+                    spawnWildTornado(px, pz);
+                }
+                lastWildTornadoSpawn = now;
+            }
+        }
     }
 
     // Update tornados
@@ -6323,6 +7290,70 @@ function initGame() {
             if (tornadoDistFromOrigin > 300) {
                 scene.remove(tornado.mesh);
                 mummyTornados.splice(i, 1);
+            }
+        }
+    }
+
+    // Update lava trails (fade and check collision)
+    function updateLavaTrails() {
+        const now = Date.now();
+        const px = playerGroup.position.x;
+        const pz = playerGroup.position.z;
+        
+        for (let i = lavaTrails.length - 1; i >= 0; i--) {
+            const trail = lavaTrails[i];
+            const elapsed = now - trail.createdAt;
+            const progress = elapsed / trail.duration;
+            
+            // Fade out over time
+            if (progress < 1) {
+                const opacity = 1 - progress;
+                const fadeMultiplier = Math.pow(opacity, 0.5); // Slower initial fade
+                
+                if (trail.pool) {
+                    trail.pool.material.opacity = 0.9 * fadeMultiplier;
+                }
+                if (trail.crust) {
+                    trail.crust.material.opacity = 0.6 * fadeMultiplier;
+                }
+                
+                // Bubble animation
+                if (trail.mesh.bubble) {
+                    trail.mesh.bubble.position.y = 0.2 + Math.sin(now * 0.01 + i) * 0.15;
+                    trail.mesh.bubble.material.opacity = 0.8 * fadeMultiplier;
+                }
+                
+                // Shrink slightly as it fades
+                const scale = 0.7 + 0.3 * fadeMultiplier;
+                trail.mesh.scale.setScalar(scale);
+                
+                // Check collision with local player
+                const dist = Math.sqrt((px - trail.x) ** 2 + (pz - trail.z) ** 2);
+                if (dist < trail.radius * scale - 0.3 && !godMode) {
+                    // Player stepped in lava trail - instant death
+                    if (!gameDead) {
+                        playerHealth = 0;
+                        gameDead = true;
+                        Audio.stopBackgroundMusic();
+                        Audio.playDeathSound();
+                    }
+                }
+                
+                // Check collision with other player in multiplayer (host only)
+                if (multiplayerManager && multiplayerManager.isHost && multiplayerManager.isConnected() && otherPlayerMesh && otherPlayerMesh.visible) {
+                    const otherDist = Math.sqrt(
+                        (otherPlayerMesh.position.x - trail.x) ** 2 +
+                        (otherPlayerMesh.position.z - trail.z) ** 2
+                    );
+                    if (otherDist < trail.radius * scale - 0.3) {
+                        // Notify client of lava trail death
+                        multiplayerManager.sendGameEvent('lavaTrailDeath', {});
+                    }
+                }
+            } else {
+                // Trail expired, remove it
+                scene.remove(trail.mesh);
+                lavaTrails.splice(i, 1);
             }
         }
     }
@@ -6490,6 +7521,23 @@ function initGame() {
         let isStuck = false;
         const px = playerGroup.position.x;
         const pz = playerGroup.position.z;
+        
+        // Lava pool collision - instant death!
+        lavaPools.forEach(pool => {
+            const dist = Math.sqrt(
+                (px - pool.x) ** 2 +
+                (pz - pool.z) ** 2
+            );
+            if (dist < pool.radius - 0.5 && !godMode) {
+                // Player fell into lava - instant death
+                if (!gameDead) {
+                    playerHealth = 0;
+                    gameDead = true;
+                    Audio.stopBackgroundMusic();
+                    Audio.playDeathSound();
+                }
+            }
+        });
         
         // Mountains (only if level has them)
         if (levelConfig.mountains && levelConfig.mountains.length > 0) {
@@ -7117,6 +8165,23 @@ function initGame() {
         placedBombs.forEach(bomb => scene.remove(bomb.mesh));
         placedBombs.length = 0;
         
+        // Remove all lava trails
+        lavaTrails.forEach(trail => scene.remove(trail.mesh));
+        lavaTrails.length = 0;
+        
+        // Remove all mummy tornados
+        mummyTornados.forEach(tornado => scene.remove(tornado.mesh));
+        mummyTornados.length = 0;
+        
+        // Remove all fireballs
+        fireballs.forEach(fb => {
+            if (fb.trail) {
+                fb.trail.forEach(t => scene.remove(t.sprite));
+            }
+            scene.remove(fb.mesh);
+        });
+        fireballs.length = 0;
+        
         materials.forEach(material => {
             material.collected = false;
             material.mesh.visible = true;
@@ -7521,6 +8586,21 @@ function initGame() {
         // Animate portal (visual effects)
         animatePortal();
         
+        // Animate lava pools (pulsing glow effect)
+        lavaPools.forEach(pool => {
+            pool.pulsePhase += 0.05;
+            const pulse = 0.8 + Math.sin(pool.pulsePhase) * 0.15;
+            // Pulse the light intensity
+            if (pool.mesh.children[3]) { // The point light
+                pool.mesh.children[3].intensity = pulse;
+            }
+            // Slight color shift on inner core
+            if (pool.mesh.children[1]) {
+                const coreHue = 0.08 + Math.sin(pool.pulsePhase * 0.5) * 0.02;
+                pool.mesh.children[1].material.color.setHSL(coreHue, 1, 0.5);
+            }
+        });
+        
         // Fixed timestep game logic updates
         while (accumulator >= targetFrameTime) {
             // Update gamepad input
@@ -7641,10 +8721,6 @@ function initGame() {
                                             const terrainH = getTerrainHeight(gob.mesh.position.x, gob.mesh.position.z);
                                             gob.mesh.position.y = terrainH + 0.5;
                                             createExplosion(gob.mesh.position.x, 1, gob.mesh.position.z);
-                                            if (difficulty === 'easy') {
-                                                const exerciseCount = gob.isGiant ? 3 : 1;
-                                                showMathExercise(exerciseCount);
-                                            }
                                         }
                                     }
                                 }
@@ -7701,6 +8777,8 @@ function initGame() {
                     updateGoblins();
                     updateGuardianArrows();
                     updateMummyTornados();
+                    updateLavaTrails();
+                    checkAndSpawnWildTornados();
                     updateBirds();
                     updateBombs();
                     updateDragon();
