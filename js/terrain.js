@@ -554,6 +554,64 @@ function generateGoblinSkinTexture(THREE) {
     }
     
     const texture = new THREE.CanvasTexture(canvas);
+    texture.wrapS = THREE.RepeatWrapping;
+    texture.wrapT = THREE.RepeatWrapping;
+    return texture;
+}
+
+// Generate water texture
+function generateWaterTexture(THREE) {
+    const canvas = document.createElement('canvas');
+    canvas.width = 256;
+    canvas.height = 256;
+    const ctx = canvas.getContext('2d');
+    
+    // Base blue color with gradient
+    const gradient = ctx.createLinearGradient(0, 0, 256, 256);
+    gradient.addColorStop(0, '#1a6fab');
+    gradient.addColorStop(0.5, '#1e7dc4');
+    gradient.addColorStop(1, '#1560a0');
+    ctx.fillStyle = gradient;
+    ctx.fillRect(0, 0, 256, 256);
+    
+    // Add foam/wave patterns - more and smaller
+    for (let i = 0; i < 120; i++) {
+        const x = Math.random() * 256;
+        const y = Math.random() * 256;
+        const size = 2 + Math.random() * 5;
+        const opacity = 0.1 + Math.random() * 0.25;
+        ctx.fillStyle = `rgba(255, 255, 255, ${opacity})`;
+        ctx.beginPath();
+        ctx.ellipse(x, y, size, size * 0.6, Math.random() * Math.PI, 0, Math.PI * 2);
+        ctx.fill();
+    }
+    
+    // Add darker water variations - more detail
+    for (let i = 0; i < 80; i++) {
+        const x = Math.random() * 256;
+        const y = Math.random() * 256;
+        const size = 3 + Math.random() * 10;
+        const opacity = 0.05 + Math.random() * 0.2;
+        ctx.fillStyle = `rgba(10, 40, 80, ${opacity})`;
+        ctx.beginPath();
+        ctx.arc(x, y, size, 0, Math.PI * 2);
+        ctx.fill();
+    }
+    
+    // Add small ripple details - much more
+    for (let i = 0; i < 200; i++) {
+        const x = Math.random() * 256;
+        const y = Math.random() * 256;
+        const size = 0.5 + Math.random() * 1.5;
+        const opacity = 0.2 + Math.random() * 0.4;
+        ctx.fillStyle = `rgba(200, 230, 255, ${opacity})`;
+        ctx.fillRect(x, y, size, size * 0.3);
+    }
+    
+    const texture = new THREE.CanvasTexture(canvas);
+    texture.wrapS = THREE.RepeatWrapping;
+    texture.wrapT = THREE.RepeatWrapping;
+    texture.repeat.set(8, 8);
     return texture;
 }
 
@@ -1805,6 +1863,13 @@ function getTerrainHeight(x, z) {
     // Use current level hills if set, otherwise fall back to global HILLS
     const hills = currentLevelHills || HILLS;
     
+    // In water theme, everything stays at water level (y=0)
+    // Check if we're in water theme by seeing if hills have very low height (islands)
+    const isWaterTheme = hills.length > 0 && hills[0].height <= 2;
+    if (isWaterTheme) {
+        return 0;
+    }
+    
     // Check each hill
     hills.forEach(hill => {
         const dist = Math.sqrt(
@@ -1822,12 +1887,14 @@ function getTerrainHeight(x, z) {
 }
 
 // Create visual hill meshes
-function createHills(scene, THREE, hillPositions, hillColor, iceTheme, desertTheme, lavaTheme) {
+function createHills(scene, THREE, hillPositions, hillColor, iceTheme, desertTheme, lavaTheme, waterTheme) {
     const textures = getTerrainTextures(THREE);
     const hills = hillPositions || HILLS;
     const color = hillColor || 0x88cc88;
     let textureToUse;
-    if (lavaTheme) {
+    if (waterTheme) {
+        textureToUse = textures.sand || textures.grass; // Sandy islands
+    } else if (lavaTheme) {
         textureToUse = textures.rock || textures.grass;
     } else if (desertTheme) {
         textureToUse = textures.sand;
@@ -1876,11 +1943,50 @@ function createMountains(scene, THREE, mountainPositions) {
 }
 
 // Create ground plane
-function createGround(scene, THREE, groundColor, iceTheme, desertTheme, lavaTheme) {
+function createGround(scene, THREE, groundColor, iceTheme, desertTheme, lavaTheme, waterTheme) {
     const textures = getTerrainTextures(THREE);
     const color = groundColor || 0xffffff; // Tint color applied over texture
     let textureToUse;
-    if (lavaTheme) {
+    let groundMaterial;
+    
+    if (waterTheme) {
+        // Water surface with animated waves - higher resolution for more detail
+        const waterGeometry = new THREE.PlaneGeometry(600, 600, 150, 150);
+        
+        // Add wave animation to vertices
+        const vertices = waterGeometry.attributes.position;
+        const waveData = [];
+        for (let i = 0; i < vertices.count; i++) {
+            waveData.push({
+                x: vertices.getX(i),
+                z: vertices.getY(i), // PlaneGeometry Y becomes world Z after rotation
+                randomPhase: Math.random() * Math.PI * 2
+            });
+        }
+        
+        const waterTexture = generateWaterTexture(THREE);
+        groundMaterial = new THREE.MeshLambertMaterial({ 
+            map: waterTexture,
+            color: 0xFFFFFF,
+            transparent: true,
+            opacity: 0.9,
+            side: THREE.DoubleSide,
+            flatShading: true
+        });
+        
+        const water = new THREE.Mesh(waterGeometry, groundMaterial);
+        water.rotation.x = -Math.PI / 2;
+        water.receiveShadow = true;
+        scene.add(water);
+        
+        // Store water data for animation
+        water.userData = { waveData, vertices };
+        
+        // Add to scene for access in game loop
+        scene.userData.water = water;
+        
+        return water;
+    } else if (lavaTheme) {
         textureToUse = textures.rock || textures.grass; // Use rock texture for lava caves
     } else if (desertTheme) {
         textureToUse = textures.sand || textures.grass; // Fall back to grass if no sand texture
@@ -1890,7 +1996,7 @@ function createGround(scene, THREE, groundColor, iceTheme, desertTheme, lavaThem
         textureToUse = textures.grass;
     }
     const groundGeometry = new THREE.PlaneGeometry(600, 600, 1, 1);
-    const groundMaterial = new THREE.MeshLambertMaterial({ 
+    groundMaterial = new THREE.MeshLambertMaterial({ 
         map: textureToUse,
         color: color
     });

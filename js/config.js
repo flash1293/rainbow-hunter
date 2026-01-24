@@ -1419,6 +1419,212 @@ const LEVELS = {
         
         // No scarabs in lava level
         scarabs: []
+    },
+
+    5: {
+        name: "Level 5 - The Deep Waters",
+        
+        // Player start position
+        playerStart: { x: 0, z: 40 },
+        
+        // Portal to next level (or back to Level 1)
+        portal: { x: 0, z: -220, destinationLevel: 1 },
+        
+        // Unique elements for level 5
+        waterTheme: true,
+        hasWaves: true,             // Animated water surface
+        skyColor: 0x87CEEB,         // Sky blue
+        groundColor: 0x1E90FF,      // Dodger blue water
+        fogDensity: 0.003,          // Light fog for distance
+        fogColor: 0xB0E0E6,         // Powder blue mist
+        
+        // No river or materials
+        hasRiver: false,
+        hasMaterials: false,
+        
+        // Mountains as islands
+        hasMountains: true,
+        
+        // Theme colors for water level
+        hillColor: 0x8B7355,        // Sandy islands
+        treeColor: 0x228B22,        // No trees - just decorative
+        grassColor: 0x1E90FF,       // Water color
+        
+        // Level 5 has treasure
+        hasTreasure: true,
+        
+        // Treasure position
+        treasurePosition: { x: 0, z: -200 },
+        
+        // Rainbow position
+        rainbow: { x: 0, z: -195 },
+        
+        // No dragon - water enemies only
+        dragon: null,
+        extraDragons: [],
+        
+        // World Kite - carried over
+        worldKite: null,
+        
+        // No iceberg in water level
+        iceBerg: null,
+        
+        // Hills as small islands
+        hills: [
+            { x: -60, z: 120, radius: 8, height: 2 },
+            { x: 55, z: 100, radius: 7, height: 2 },
+            { x: -50, z: 50, radius: 6, height: 2 },
+            { x: 60, z: 30, radius: 7, height: 2 },
+            { x: -55, z: -20, radius: 8, height: 2 },
+            { x: 50, z: -60, radius: 6, height: 2 },
+            { x: -60, z: -100, radius: 7, height: 2 },
+            { x: 55, z: -140, radius: 8, height: 2 }
+        ],
+        
+        // Mountains as larger islands
+        mountains: [
+            { x: -90, z: 150, radius: 15, height: 8 },
+            { x: 85, z: 140, radius: 14, height: 7 },
+            { x: -80, z: 80, radius: 12, height: 6 },
+            { x: 90, z: 60, radius: 13, height: 7 },
+            { x: -85, z: -30, radius: 14, height: 8 },
+            { x: 80, z: -80, radius: 12, height: 6 },
+            { x: -90, z: -130, radius: 15, height: 7 },
+            { x: 85, z: -170, radius: 13, height: 8 }
+        ],
+        
+        // Goblins as shark fins [x, z, patrolLeft, patrolRight, speed]
+        goblins: [
+            [25, 150, 20, 30, 0.016],
+            [-30, 130, -35, -25, 0.015],
+            [35, 90, 30, 40, 0.016],
+            [-25, 70, -30, -20, 0.015],
+            [30, 30, 25, 35, 0.016],
+            [-35, 10, -40, -30, 0.015],
+            [25, -30, 20, 30, 0.016],
+            [-30, -60, -35, -25, 0.015],
+            [35, -100, 30, 40, 0.016],
+            [-25, -130, -30, -20, 0.015],
+            [30, -160, 25, 35, 0.016],
+            [-35, -180, -40, -30, 0.015],
+            [0, 110, -5, 5, 0.014],
+            [0, 50, -5, 5, 0.014],
+            [0, -10, -5, 5, 0.014],
+            [0, -70, -5, 5, 0.014],
+            [0, -150, -5, 5, 0.014]
+        ],
+        
+        // Guardians as octopuses [x, z, patrolLeft, patrolRight, speed]
+        guardians: [
+            [50, 120, 45, 55, 0.01],
+            [-55, 80, -60, -50, 0.011],
+            [45, 20, 40, 50, 0.01],
+            [-50, -40, -55, -45, 0.011],
+            [55, -110, 50, 60, 0.01],
+            [-50, -150, -55, -45, 0.011]
+        ],
+        
+        // No giants in water level
+        giants: [],
+        
+        // No wizards, mummies, or lava monsters in water level
+        wizards: [],
+        mummies: [],
+        lavaMonsters: [],
+        
+        // Hard mode extra goblins
+        hardModeGoblins: [
+            [45, 165, 40, 50, 0.018],
+            [-50, 145, -55, -45, 0.017],
+            [40, 105, 35, 45, 0.018],
+            [-45, 45, -50, -40, 0.017],
+            [50, -15, 45, 55, 0.018],
+            [-40, -75, -45, -35, 0.017],
+            [45, -125, 40, 50, 0.018],
+            [-50, -165, -55, -45, 0.017]
+        ],
+        
+        // No birds in water level
+        birds: [],
+        
+        // Ammo pickups on floating debris
+        ammoPositions: [
+            { x: 10, z: 155 }, { x: -15, z: 135 }, { x: 20, z: 95 },
+            { x: -10, z: 75 }, { x: 15, z: 35 }, { x: -20, z: 5 },
+            { x: 10, z: -35 }, { x: -15, z: -65 }, { x: 20, z: -105 },
+            { x: -10, z: -135 }, { x: 15, z: -165 },
+            { x: 0, z: 120 }, { x: 0, z: 60 }, { x: 0, z: 0 },
+            { x: 0, z: -90 }, { x: 0, z: -145 }
+        ],
+        
+        // Bomb pickups
+        bombPositions: [
+            { x: 15, z: 140 },
+            { x: -20, z: 80 },
+            { x: 25, z: 20 },
+            { x: -15, z: -50 },
+            { x: 20, z: -115 },
+            { x: -10, z: -170 }
+        ],
+        
+        // Health pickups
+        healthPositions: [
+            { x: 5, z: 165 }, { x: -10, z: 145 }, { x: 15, z: 125 },
+            { x: -5, z: 105 }, { x: 10, z: 85 }, { x: -15, z: 65 },
+            { x: 5, z: 45 }, { x: -10, z: 25 }, { x: 15, z: -5 },
+            { x: -5, z: -25 }, { x: 10, z: -45 }, { x: -15, z: -85 },
+            { x: 5, z: -120 }, { x: -10, z: -155 }, { x: 15, z: -185 },
+            { x: 0, z: 170 }, { x: 0, z: 110 }, { x: 0, z: 50 },
+            { x: 0, z: -80 }, { x: 0, z: -140 }
+        ],
+        
+        // Trap positions (whirlpools)
+        trapPositions: [
+            { x: 40, z: 135 },
+            { x: -35, z: 95 },
+            { x: 30, z: 40 },
+            { x: -40, z: -15 },
+            { x: 35, z: -70 },
+            { x: -30, z: -110 },
+            { x: 40, z: -160 }
+        ],
+        
+        // No trees - water level
+        treePositions: [],
+        
+        // Boulder positions as coral/rocks in water
+        boulderPositions: [
+            { x: -45, z: 175 }, { x: 50, z: 155 },
+            { x: -40, z: 115 }, { x: 45, z: 85 },
+            { x: -50, z: 55 }, { x: 40, z: 15 },
+            { x: -45, z: -25 }, { x: 50, z: -55 },
+            { x: -40, z: -95 }, { x: 45, z: -135 },
+            { x: -50, z: -175 }, { x: 40, z: -195 }
+        ],
+        
+        // Rock positions as smaller debris
+        rockPositions: [
+            { x: -20, z: 170 }, { x: 25, z: 160 },
+            { x: -25, z: 140 }, { x: 30, z: 110 },
+            { x: -30, z: 70 }, { x: 25, z: 40 },
+            { x: -20, z: 10 }, { x: 30, z: -20 },
+            { x: -25, z: -60 }, { x: 25, z: -100 },
+            { x: -30, z: -140 }, { x: 20, z: -175 }
+        ],
+        
+        // No canyon walls - open ocean
+        canyonWalls: [],
+        
+        // No scarabs in water level
+        scarabs: [],
+        
+        // Safe zone bounds for tornado spawning
+        safeZoneBounds: {
+            minX: -110,
+            maxX: 110,
+            minZ: -230,
+            maxZ: 210
+        }
     }
 };
 

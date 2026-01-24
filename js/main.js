@@ -301,6 +301,9 @@ function initGame() {
     // Check if this is a lava-themed level
     const lavaTheme = levelConfig.lavaTheme || false;
     
+    // Check if this is a water-themed level
+    const waterTheme = levelConfig.waterTheme || false;
+    
     // Three.js setup
     const container = document.getElementById('gameCanvas');
     const scene = new THREE.Scene();
@@ -383,8 +386,8 @@ function initGame() {
     const grassColor = levelConfig.grassColor || 0x228B22;
 
     // Create terrain (use level-specific ground color and theme)
-    createGround(scene, THREE, levelConfig.groundColor, iceTheme, desertTheme, lavaTheme);
-    createHills(scene, THREE, levelConfig.hills, hillColor, iceTheme, desertTheme, lavaTheme);
+    createGround(scene, THREE, levelConfig.groundColor, iceTheme, desertTheme, lavaTheme, waterTheme);
+    createHills(scene, THREE, levelConfig.hills, hillColor, iceTheme, desertTheme, lavaTheme, waterTheme);
     
     // Mountains are optional (disabled in desert)
     if (levelConfig.hasMountains !== false && levelConfig.mountains && levelConfig.mountains.length > 0) {
@@ -499,21 +502,71 @@ function initGame() {
     // Create player
     const playerGroup = new THREE.Group();
 
-    // Bicycle wheels
-    const wheelGeometry = new THREE.TorusGeometry(0.3, 0.1, 8, 16);
-    const wheelMaterial = new THREE.MeshLambertMaterial({ color: 0x333333 });
+    if (waterTheme) {
+        // Boat hull
+        const hullGeometry = new THREE.BoxGeometry(1.2, 0.4, 2.5);
+        const hullMaterial = new THREE.MeshLambertMaterial({ color: 0x8B4513 });
+        const hull = new THREE.Mesh(hullGeometry, hullMaterial);
+        hull.position.y = 0.2;
+        hull.castShadow = true;
+        playerGroup.add(hull);
+        
+        // Boat deck
+        const deckGeometry = new THREE.BoxGeometry(1.0, 0.1, 2.3);
+        const deckMaterial = new THREE.MeshLambertMaterial({ color: 0xD2691E });
+        const deck = new THREE.Mesh(deckGeometry, deckMaterial);
+        deck.position.y = 0.45;
+        deck.castShadow = true;
+        playerGroup.add(deck);
+        
+        // Mast
+        const mastGeometry = new THREE.CylinderGeometry(0.08, 0.08, 2.5, 8);
+        const mastMaterial = new THREE.MeshLambertMaterial({ color: 0x654321 });
+        const mast = new THREE.Mesh(mastGeometry, mastMaterial);
+        mast.position.set(0, 1.75, 0);
+        mast.castShadow = true;
+        playerGroup.add(mast);
+        
+        // Sail
+        const sailGeometry = new THREE.BufferGeometry();
+        const sailVertices = new Float32Array([
+            0, 0, 0,
+            0.7, 0.6, 0,
+            0, 1.2, 0
+        ]);
+        sailGeometry.setAttribute('position', new THREE.BufferAttribute(sailVertices, 3));
+        sailGeometry.computeVertexNormals();
+        const sailMaterial = new THREE.MeshLambertMaterial({ 
+            color: 0xFFFFFF,
+            side: THREE.DoubleSide
+        });
+        const sail = new THREE.Mesh(sailGeometry, sailMaterial);
+        sail.position.set(0, 0.9, 0);
+        sail.castShadow = true;
+        playerGroup.add(sail);
+        
+        // Rudder
+        const rudderGeometry = new THREE.BoxGeometry(0.15, 0.6, 0.3);
+        const rudder = new THREE.Mesh(rudderGeometry, hullMaterial);
+        rudder.position.set(0, 0.2, 1.3);
+        rudder.castShadow = true;
+        playerGroup.add(rudder);
+    } else {
+        // Bicycle wheels
+        const wheelGeometry = new THREE.TorusGeometry(0.3, 0.1, 8, 16);
+        const wheelMaterial = new THREE.MeshLambertMaterial({ color: 0x333333 });
 
-    const frontWheel = new THREE.Mesh(wheelGeometry, wheelMaterial);
-    frontWheel.rotation.y = Math.PI / 2;
-    frontWheel.position.set(0, 0.3, -0.7);
-    frontWheel.castShadow = true;
-    playerGroup.add(frontWheel);
+        const frontWheel = new THREE.Mesh(wheelGeometry, wheelMaterial);
+        frontWheel.rotation.y = Math.PI / 2;
+        frontWheel.position.set(0, 0.3, -0.7);
+        frontWheel.castShadow = true;
+        playerGroup.add(frontWheel);
 
-    const backWheel = new THREE.Mesh(wheelGeometry, wheelMaterial);
-    backWheel.rotation.y = Math.PI / 2;
-    backWheel.position.set(0, 0.3, 0.5);
-    backWheel.castShadow = true;
-    playerGroup.add(backWheel);
+        const backWheel = new THREE.Mesh(wheelGeometry, wheelMaterial);
+        backWheel.rotation.y = Math.PI / 2;
+        backWheel.position.set(0, 0.3, 0.5);
+        backWheel.castShadow = true;
+        playerGroup.add(backWheel);
 
     // Bicycle frame
     const frameGeometry = new THREE.CylinderGeometry(0.05, 0.05, 1.3, 8);
@@ -524,27 +577,28 @@ function initGame() {
     frame1.castShadow = true;
     playerGroup.add(frame1);
 
-    // Seat post
-    const seatPostGeometry = new THREE.CylinderGeometry(0.04, 0.04, 0.5, 8);
-    const seatPost = new THREE.Mesh(seatPostGeometry, frameMaterial);
-    seatPost.position.set(0, 0.75, 0.2);
-    seatPost.castShadow = true;
-    playerGroup.add(seatPost);
+        // Seat post
+        const seatPostGeometry = new THREE.CylinderGeometry(0.04, 0.04, 0.5, 8);
+        const seatPost = new THREE.Mesh(seatPostGeometry, frameMaterial);
+        seatPost.position.set(0, 0.75, 0.2);
+        seatPost.castShadow = true;
+        playerGroup.add(seatPost);
 
-    // Handlebar post
-    const handlebarPostGeometry = new THREE.CylinderGeometry(0.04, 0.04, 0.4, 8);
-    const handlebarPost = new THREE.Mesh(handlebarPostGeometry, frameMaterial);
-    handlebarPost.position.set(0, 0.7, -0.5);
-    handlebarPost.castShadow = true;
-    playerGroup.add(handlebarPost);
+        // Handlebar post
+        const handlebarPostGeometry = new THREE.CylinderGeometry(0.04, 0.04, 0.4, 8);
+        const handlebarPost = new THREE.Mesh(handlebarPostGeometry, frameMaterial);
+        handlebarPost.position.set(0, 0.7, -0.5);
+        handlebarPost.castShadow = true;
+        playerGroup.add(handlebarPost);
 
-    // Handlebar
-    const handlebarGeometry = new THREE.CylinderGeometry(0.03, 0.03, 0.5, 8);
-    const handlebar = new THREE.Mesh(handlebarGeometry, frameMaterial);
-    handlebar.rotation.z = Math.PI / 2;
-    handlebar.position.set(0, 0.9, -0.5);
-    handlebar.castShadow = true;
-    playerGroup.add(handlebar);
+        // Handlebar
+        const handlebarGeometry = new THREE.CylinderGeometry(0.03, 0.03, 0.5, 8);
+        const handlebar = new THREE.Mesh(handlebarGeometry, frameMaterial);
+        handlebar.rotation.z = Math.PI / 2;
+        handlebar.position.set(0, 0.9, -0.5);
+        handlebar.castShadow = true;
+        playerGroup.add(handlebar);
+    }
 
     // Player body - Girl for host, Boy for client
     const isHost = !multiplayerManager || multiplayerManager.isHost;
@@ -727,49 +781,93 @@ function initGame() {
         // Opposite gender of main player
         const otherIsGirl = !isHost; // If we're host (girl), other is boy. If we're client (boy), other is girl.
         
-        // Bicycle wheels (same as main player but different color)
-        const wheelGeometry = new THREE.TorusGeometry(0.3, 0.1, 8, 16);
-        const wheelMaterial = new THREE.MeshLambertMaterial({ color: 0x333333 });
+        if (waterTheme) {
+            // Boat hull
+            const hullGeometry = new THREE.BoxGeometry(1.2, 0.4, 2.5);
+            const hullMaterial = new THREE.MeshLambertMaterial({ color: 0x654321 });
+            const hull = new THREE.Mesh(hullGeometry, hullMaterial);
+            hull.position.y = 0.2;
+            hull.castShadow = true;
+            otherPlayerGroup.add(hull);
+            
+            // Boat deck
+            const deckGeometry = new THREE.BoxGeometry(1.0, 0.1, 2.3);
+            const deckMaterial = new THREE.MeshLambertMaterial({ color: 0x8B4513 });
+            const deck = new THREE.Mesh(deckGeometry, deckMaterial);
+            deck.position.y = 0.45;
+            deck.castShadow = true;
+            otherPlayerGroup.add(deck);
+            
+            // Mast
+            const mastGeometry = new THREE.CylinderGeometry(0.08, 0.08, 2.5, 8);
+            const mastMaterial = new THREE.MeshLambertMaterial({ color: 0x3E2723 });
+            const mast = new THREE.Mesh(mastGeometry, mastMaterial);
+            mast.position.set(0, 1.75, 0);
+            mast.castShadow = true;
+            otherPlayerGroup.add(mast);
+            
+            // Sail
+            const sailGeometry = new THREE.BufferGeometry();
+            const sailVertices = new Float32Array([
+                0, 0, 0,
+                0.8, 0.8, 0,
+                0, 1.6, 0
+            ]);
+            sailGeometry.setAttribute('position', new THREE.BufferAttribute(sailVertices, 3));
+            sailGeometry.computeVertexNormals();
+            const sailMaterial = new THREE.MeshLambertMaterial({ 
+                color: otherIsGirl ? 0xFFB6C1 : 0x87CEEB,
+                side: THREE.DoubleSide
+            });
+            const sail = new THREE.Mesh(sailGeometry, sailMaterial);
+            sail.position.set(0, 0.9, 0);
+            sail.castShadow = true;
+            otherPlayerGroup.add(sail);
+        } else {
+            // Bicycle wheels (same as main player but different color)
+            const wheelGeometry = new THREE.TorusGeometry(0.3, 0.1, 8, 16);
+            const wheelMaterial = new THREE.MeshLambertMaterial({ color: 0x333333 });
 
-        const frontWheel = new THREE.Mesh(wheelGeometry, wheelMaterial);
-        frontWheel.rotation.y = Math.PI / 2;
-        frontWheel.position.set(0, 0.3, -0.7);
-        frontWheel.castShadow = true;
-        otherPlayerGroup.add(frontWheel);
+            const frontWheel = new THREE.Mesh(wheelGeometry, wheelMaterial);
+            frontWheel.rotation.y = Math.PI / 2;
+            frontWheel.position.set(0, 0.3, -0.7);
+            frontWheel.castShadow = true;
+            otherPlayerGroup.add(frontWheel);
 
-        const backWheel = new THREE.Mesh(wheelGeometry, wheelMaterial);
-        backWheel.rotation.y = Math.PI / 2;
-        backWheel.position.set(0, 0.3, 0.5);
-        backWheel.castShadow = true;
-        otherPlayerGroup.add(backWheel);
+            const backWheel = new THREE.Mesh(wheelGeometry, wheelMaterial);
+            backWheel.rotation.y = Math.PI / 2;
+            backWheel.position.set(0, 0.3, 0.5);
+            backWheel.castShadow = true;
+            otherPlayerGroup.add(backWheel);
 
-        // Frame (different color)
-        const frameGeometry = new THREE.CylinderGeometry(0.05, 0.05, 1.3, 8);
-        const frameMaterial = new THREE.MeshLambertMaterial({ color: otherIsGirl ? 0xFF6B9D : 0x4169E1 });
-        const frame1 = new THREE.Mesh(frameGeometry, frameMaterial);
-        frame1.rotation.x = Math.PI / 2;
-        frame1.position.set(0, 0.5, -0.1);
-        frame1.castShadow = true;
-        otherPlayerGroup.add(frame1);
+            // Frame (different color)
+            const frameGeometry = new THREE.CylinderGeometry(0.05, 0.05, 1.3, 8);
+            const frameMaterial = new THREE.MeshLambertMaterial({ color: otherIsGirl ? 0xFF6B9D : 0x4169E1 });
+            const frame1 = new THREE.Mesh(frameGeometry, frameMaterial);
+            frame1.rotation.x = Math.PI / 2;
+            frame1.position.set(0, 0.5, -0.1);
+            frame1.castShadow = true;
+            otherPlayerGroup.add(frame1);
 
-        const seatPostGeometry = new THREE.CylinderGeometry(0.04, 0.04, 0.5, 8);
-        const seatPost = new THREE.Mesh(seatPostGeometry, frameMaterial);
-        seatPost.position.set(0, 0.75, 0.2);
-        seatPost.castShadow = true;
-        otherPlayerGroup.add(seatPost);
+            const seatPostGeometry = new THREE.CylinderGeometry(0.04, 0.04, 0.5, 8);
+            const seatPost = new THREE.Mesh(seatPostGeometry, frameMaterial);
+            seatPost.position.set(0, 0.75, 0.2);
+            seatPost.castShadow = true;
+            otherPlayerGroup.add(seatPost);
 
-        const handlebarPostGeometry = new THREE.CylinderGeometry(0.04, 0.04, 0.4, 8);
-        const handlebarPost = new THREE.Mesh(handlebarPostGeometry, frameMaterial);
-        handlebarPost.position.set(0, 0.7, -0.5);
-        handlebarPost.castShadow = true;
-        otherPlayerGroup.add(handlebarPost);
+            const handlebarPostGeometry = new THREE.CylinderGeometry(0.04, 0.04, 0.4, 8);
+            const handlebarPost = new THREE.Mesh(handlebarPostGeometry, frameMaterial);
+            handlebarPost.position.set(0, 0.7, -0.5);
+            handlebarPost.castShadow = true;
+            otherPlayerGroup.add(handlebarPost);
 
-        const handlebarGeometry = new THREE.CylinderGeometry(0.03, 0.03, 0.5, 8);
-        const handlebar = new THREE.Mesh(handlebarGeometry, frameMaterial);
-        handlebar.rotation.z = Math.PI / 2;
-        handlebar.position.set(0, 0.9, -0.5);
-        handlebar.castShadow = true;
-        otherPlayerGroup.add(handlebar);
+            const handlebarGeometry = new THREE.CylinderGeometry(0.03, 0.03, 0.5, 8);
+            const handlebar = new THREE.Mesh(handlebarGeometry, frameMaterial);
+            handlebar.rotation.z = Math.PI / 2;
+            handlebar.position.set(0, 0.9, -0.5);
+            handlebar.castShadow = true;
+            otherPlayerGroup.add(handlebar);
+        }
 
         // Body (opposite gender color) with texture
         const bodyGeometry = new THREE.BoxGeometry(0.35, 0.6, 0.25);
@@ -2444,9 +2542,9 @@ function initGame() {
         });
     });
 
-    // Grass bushels (fewer or none in desert)
+    // Grass bushels (fewer or none in desert, none in water)
     const grassBushels = [];
-    const grassCount = desertTheme ? 50 : 400; // Sparse grass in desert
+    const grassCount = waterTheme ? 0 : (desertTheme ? 50 : 400); // No grass in water, sparse in desert
     for (let i = 0; i < grassCount; i++) {
         const x = (Math.random() - 0.5) * 280;
         const z = (Math.random() - 0.5) * 280;
@@ -2484,8 +2582,8 @@ function initGame() {
         });
     }
     
-    // Extra grass in dragon boss area (skip for desert)
-    if (!desertTheme) {
+    // Extra grass in dragon boss area (skip for desert and water)
+    if (!desertTheme && !waterTheme) {
         for (let i = 0; i < 150; i++) {
             const x = (Math.random() - 0.5) * 80; // x: -40 to 40
             const z = -210 - Math.random() * 55; // z: -210 to -265
@@ -2736,12 +2834,27 @@ function initGame() {
         const textures = getTerrainTextures(THREE);
         const goblinGrp = new THREE.Group();
         
-        const bodyGeometry = new THREE.BoxGeometry(0.6, 0.8, 0.4);
-        const bodyMaterial = new THREE.MeshLambertMaterial({ map: textures.goblinArmor });
-        const goblinBody = new THREE.Mesh(bodyGeometry, bodyMaterial);
-        goblinBody.position.y = 0.8;
-        goblinBody.castShadow = true;
-        goblinGrp.add(goblinBody);
+        if (waterTheme) {
+            // Shark fin - triangle sticking out of water
+            const finGeometry = new THREE.ConeGeometry(0.5, 2.5, 3);
+            const finMaterial = new THREE.MeshLambertMaterial({ color: 0x2a3a4a });
+            const fin = new THREE.Mesh(finGeometry, finMaterial);
+            fin.position.y = 1.0;
+            fin.castShadow = true;
+            goblinGrp.add(fin);
+            
+            // Small dorsal detail
+            const detailGeometry = new THREE.ConeGeometry(0.15, 0.5, 3);
+            const detail = new THREE.Mesh(detailGeometry, finMaterial);
+            detail.position.set(0, 0.3, -0.4);
+            goblinGrp.add(detail);
+        } else {
+            const bodyGeometry = new THREE.BoxGeometry(0.6, 0.8, 0.4);
+            const bodyMaterial = new THREE.MeshLambertMaterial({ map: textures.goblinArmor });
+            const goblinBody = new THREE.Mesh(bodyGeometry, bodyMaterial);
+            goblinBody.position.y = 0.8;
+            goblinBody.castShadow = true;
+            goblinGrp.add(goblinBody);
         
         const headGeometry = new THREE.SphereGeometry(0.4, 16, 16);
         const headMaterial = new THREE.MeshLambertMaterial({ map: textures.goblinSkin });
@@ -2773,11 +2886,12 @@ function initGame() {
         ear1.castShadow = true;
         goblinGrp.add(ear1);
         
-        const ear2 = new THREE.Mesh(earGeometry, earMaterial);
-        ear2.rotation.z = -Math.PI / 2;
-        ear2.position.set(0.5, 1.5, 0);
-        ear2.castShadow = true;
-        goblinGrp.add(ear2);
+            const ear2 = new THREE.Mesh(earGeometry, earMaterial);
+            ear2.rotation.z = -Math.PI / 2;
+            ear2.position.set(0.5, 1.5, 0);
+            ear2.castShadow = true;
+            goblinGrp.add(ear2);
+        }
         
         goblinGrp.position.set(x, getTerrainHeight(x, z), z);
         scene.add(goblinGrp);
@@ -2807,48 +2921,101 @@ function initGame() {
         const textures = getTerrainTextures(THREE);
         const goblinGrp = new THREE.Group();
         
-        const bodyGeometry = new THREE.BoxGeometry(0.8, 1.0, 0.5);
-        const bodyMaterial = new THREE.MeshLambertMaterial({ map: textures.goblinArmor });
-        const body = new THREE.Mesh(bodyGeometry, bodyMaterial);
-        body.position.y = 1.0;
-        body.castShadow = true;
-        goblinGrp.add(body);
+        if (waterTheme) {
+            // Octopus body
+            const bodyGeometry = new THREE.SphereGeometry(0.8, 16, 16);
+            bodyGeometry.scale(1, 1.2, 1);
+            const bodyMaterial = new THREE.MeshLambertMaterial({ color: 0x8B008B });
+            const body = new THREE.Mesh(bodyGeometry, bodyMaterial);
+            body.position.y = 1.2;
+            body.castShadow = true;
+            goblinGrp.add(body);
+            
+            // Eyes
+            const eyeGeometry = new THREE.SphereGeometry(0.15, 12, 12);
+            const eyeMaterial = new THREE.MeshBasicMaterial({ color: 0xFFFFFF });
+            const eye1 = new THREE.Mesh(eyeGeometry, eyeMaterial);
+            eye1.position.set(-0.3, 1.4, 0.6);
+            goblinGrp.add(eye1);
+            
+            const eye2 = new THREE.Mesh(eyeGeometry, eyeMaterial);
+            eye2.position.set(0.3, 1.4, 0.6);
+            goblinGrp.add(eye2);
+            
+            const pupilGeometry = new THREE.SphereGeometry(0.08, 8, 8);
+            const pupilMaterial = new THREE.MeshBasicMaterial({ color: 0x000000 });
+            const pupil1 = new THREE.Mesh(pupilGeometry, pupilMaterial);
+            pupil1.position.set(-0.3, 1.4, 0.68);
+            goblinGrp.add(pupil1);
+            
+            const pupil2 = new THREE.Mesh(pupilGeometry, pupilMaterial);
+            pupil2.position.set(0.3, 1.4, 0.68);
+            goblinGrp.add(pupil2);
+            
+            // 8 Tentacles in a circle
+            const tentacleGeometry = new THREE.CylinderGeometry(0.12, 0.06, 1.5, 6);
+            const tentacleMaterial = new THREE.MeshLambertMaterial({ color: 0x9932CC });
+            for (let i = 0; i < 8; i++) {
+                const angle = (i / 8) * Math.PI * 2;
+                const tentacle = new THREE.Mesh(tentacleGeometry, tentacleMaterial);
+                tentacle.position.set(
+                    Math.cos(angle) * 0.6,
+                    0.3,
+                    Math.sin(angle) * 0.6
+                );
+                tentacle.rotation.z = Math.cos(angle) * 0.3;
+                tentacle.rotation.x = Math.sin(angle) * 0.3;
+                tentacle.castShadow = true;
+                goblinGrp.add(tentacle);
+                
+                // Store tentacle for animation
+                if (!goblinGrp.tentacles) goblinGrp.tentacles = [];
+                goblinGrp.tentacles.push({ mesh: tentacle, angle, baseZ: tentacle.rotation.z, baseX: tentacle.rotation.x });
+            }
+        } else {
+            const bodyGeometry = new THREE.BoxGeometry(0.8, 1.0, 0.5);
+            const bodyMaterial = new THREE.MeshLambertMaterial({ map: textures.goblinArmor });
+            const body = new THREE.Mesh(bodyGeometry, bodyMaterial);
+            body.position.y = 1.0;
+            body.castShadow = true;
+            goblinGrp.add(body);
         
-        const headGeometry = new THREE.SphereGeometry(0.5, 16, 16);
-        const headMaterial = new THREE.MeshLambertMaterial({ map: textures.goblinSkin });
-        const head = new THREE.Mesh(headGeometry, headMaterial);
-        head.position.y = 1.8;
-        head.castShadow = true;
-        goblinGrp.add(head);
+            const headGeometry = new THREE.SphereGeometry(0.5, 16, 16);
+            const headMaterial = new THREE.MeshLambertMaterial({ map: textures.goblinSkin });
+            const head = new THREE.Mesh(headGeometry, headMaterial);
+            head.position.y = 1.8;
+            head.castShadow = true;
+            goblinGrp.add(head);
         
-        const eyeGeometry = new THREE.SphereGeometry(0.12, 16, 16);
-        const eyeMaterial = new THREE.MeshBasicMaterial({ 
-            map: textures.guardianEye,
-            transparent: true,
-            blending: THREE.AdditiveBlending,
-            depthWrite: false
-        });
-        const e1 = new THREE.Mesh(eyeGeometry, eyeMaterial);
-        e1.position.set(-0.18, 1.8, 0.42);
-        goblinGrp.add(e1);
+            const eyeGeometry = new THREE.SphereGeometry(0.12, 16, 16);
+            const eyeMaterial = new THREE.MeshBasicMaterial({ 
+                map: textures.guardianEye,
+                transparent: true,
+                blending: THREE.AdditiveBlending,
+                depthWrite: false
+            });
+            const e1 = new THREE.Mesh(eyeGeometry, eyeMaterial);
+            e1.position.set(-0.18, 1.8, 0.42);
+            goblinGrp.add(e1);
         
-        const e2 = new THREE.Mesh(eyeGeometry, eyeMaterial);
-        e2.position.set(0.18, 1.8, 0.42);
-        goblinGrp.add(e2);
+            const e2 = new THREE.Mesh(eyeGeometry, eyeMaterial);
+            e2.position.set(0.18, 1.8, 0.42);
+                goblinGrp.add(e2);
         
-        const earGeometry = new THREE.ConeGeometry(0.18, 0.5, 4);
-        const earMaterial = new THREE.MeshLambertMaterial({ map: textures.goblinSkin });
-        const er1 = new THREE.Mesh(earGeometry, earMaterial);
-        er1.rotation.z = Math.PI / 2;
-        er1.position.set(-0.6, 1.8, 0);
-        er1.castShadow = true;
-        goblinGrp.add(er1);
+            const earGeometry = new THREE.ConeGeometry(0.18, 0.5, 4);
+            const earMaterial = new THREE.MeshLambertMaterial({ map: textures.goblinSkin });
+            const er1 = new THREE.Mesh(earGeometry, earMaterial);
+            er1.rotation.z = Math.PI / 2;
+            er1.position.set(-0.6, 1.8, 0);
+            er1.castShadow = true;
+            goblinGrp.add(er1);
         
-        const er2 = new THREE.Mesh(earGeometry, earMaterial);
-        er2.rotation.z = -Math.PI / 2;
-        er2.position.set(0.6, 1.8, 0);
-        er2.castShadow = true;
-        goblinGrp.add(er2);
+            const er2 = new THREE.Mesh(earGeometry, earMaterial);
+            er2.rotation.z = -Math.PI / 2;
+            er2.position.set(0.6, 1.8, 0);
+            er2.castShadow = true;
+            goblinGrp.add(er2);
+        }
         
         goblinGrp.position.set(x, getTerrainHeight(x, z), z);
         scene.add(goblinGrp);
@@ -5704,9 +5871,14 @@ function initGame() {
                             if (gob.health <= 0) {
                                 gob.alive = false;
                                 Audio.playGoblinDeathSound();
-                                gob.mesh.rotation.z = Math.PI / 2;
-                                const terrainH = getTerrainHeight(gob.mesh.position.x, gob.mesh.position.z);
-                                gob.mesh.position.y = terrainH + 0.5;
+                                if (waterTheme) {
+                                    // Sharks disappear underwater
+                                    scene.remove(gob.mesh);
+                                } else {
+                                    gob.mesh.rotation.z = Math.PI / 2;
+                                    const terrainH = getTerrainHeight(gob.mesh.position.x, gob.mesh.position.z);
+                                    gob.mesh.position.y = terrainH + 0.5;
+                                }
                             }
                         }
                         bulletHit = true;
@@ -6078,27 +6250,39 @@ function initGame() {
                 }
             }
             
-            // Guardian arrows
+            // Guardian arrows (or ink balls in water theme)
             if (gob.isGuardian && distToTarget < 25) {
                 const now = Date.now();
                 const fireInterval = 4000 + Math.random() * 2000;
                 if (now - gob.lastFireTime > fireInterval) {
                     gob.lastFireTime = now;
                     
-                    const arrowGeometry = new THREE.CylinderGeometry(0.05, 0.05, 0.8, 8);
-                    const arrowMaterial = new THREE.MeshLambertMaterial({ color: 0x8B4513 });
-                    const arrowMesh = new THREE.Mesh(arrowGeometry, arrowMaterial);
-                    arrowMesh.position.copy(gob.mesh.position);
-                    arrowMesh.position.y += 1.5;
-                    scene.add(arrowMesh);
+                    let arrowMesh;
+                    if (waterTheme) {
+                        // Ink ball for octopus guardians
+                        const inkGeometry = new THREE.SphereGeometry(0.3, 12, 12);
+                        const inkMaterial = new THREE.MeshLambertMaterial({ color: 0x000000 });
+                        arrowMesh = new THREE.Mesh(inkGeometry, inkMaterial);
+                        arrowMesh.position.copy(gob.mesh.position);
+                        arrowMesh.position.y += 1.2;
+                        scene.add(arrowMesh);
+                    } else {
+                        // Regular arrow
+                        const arrowGeometry = new THREE.CylinderGeometry(0.05, 0.05, 0.8, 8);
+                        const arrowMaterial = new THREE.MeshLambertMaterial({ color: 0x8B4513 });
+                        arrowMesh = new THREE.Mesh(arrowGeometry, arrowMaterial);
+                        arrowMesh.position.copy(gob.mesh.position);
+                        arrowMesh.position.y += 1.5;
+                        scene.add(arrowMesh);
+                        
+                        const tipGeometry = new THREE.ConeGeometry(0.1, 0.2, 8);
+                        const tipMaterial = new THREE.MeshLambertMaterial({ color: 0x696969 });
+                        const tipMesh = new THREE.Mesh(tipGeometry, tipMaterial);
+                        tipMesh.position.y = 0.5;
+                        arrowMesh.add(tipMesh);
+                    }
                     
                     Audio.playArrowShootSound();
-                    
-                    const tipGeometry = new THREE.ConeGeometry(0.1, 0.2, 8);
-                    const tipMaterial = new THREE.MeshLambertMaterial({ color: 0x696969 });
-                    const tipMesh = new THREE.Mesh(tipGeometry, tipMaterial);
-                    tipMesh.position.y = 0.5;
-                    arrowMesh.add(tipMesh);
                     
                     // Target the closest player
                     let targetPlayer = playerGroup;
@@ -6129,8 +6313,10 @@ function initGame() {
                     );
                     
                     const angle = Math.atan2(dirX, dirZ);
-                    arrowMesh.rotation.x = Math.PI / 2;
-                    arrowMesh.rotation.z = -angle;
+                    if (!waterTheme) {
+                        arrowMesh.rotation.x = Math.PI / 2;
+                        arrowMesh.rotation.z = -angle;
+                    }
                     
                     const arrowSpeed = difficulty === 'hard' ? 0.15 : 0.1;
                     
@@ -7669,6 +7855,16 @@ function initGame() {
                 }
             }
             
+            // Animate octopus tentacles in water theme
+            if (waterTheme && gob.isGuardian && gob.mesh.tentacles) {
+                const wavePhase = Date.now() * 0.003;
+                gob.mesh.tentacles.forEach((tentacleData, idx) => {
+                    const wave = Math.sin(wavePhase + idx * 0.5) * 0.4;
+                    tentacleData.mesh.rotation.z = tentacleData.baseZ + wave;
+                    tentacleData.mesh.rotation.x = tentacleData.baseX + wave * 0.5;
+                });
+            }
+            
             // Update giant attack animation
             if (gob.isGiant && gob.isAttacking && !gob.frozen) {
                 gob.attackAnimationProgress += 0.12;
@@ -8524,6 +8720,23 @@ function initGame() {
         accumulator += deltaTime;
         
         const time = currentTime * 0.001;
+        
+        // Animate water waves in water theme
+        if (waterTheme && scene.userData.water) {
+            const water = scene.userData.water;
+            const waveData = water.userData.waveData;
+            const vertices = water.userData.vertices;
+            
+            for (let i = 0; i < vertices.count; i++) {
+                const data = waveData[i];
+                const waveHeight = Math.sin(data.x * 0.15 + time) * 0.25 + 
+                                  Math.sin(data.z * 0.2 + time * 1.5 + data.randomPhase) * 0.2 +
+                                  Math.sin(data.x * 0.3 + data.z * 0.25 + time * 0.8) * 0.1;
+                vertices.setZ(i, waveHeight); // Set Z (height) after plane rotation
+            }
+            vertices.needsUpdate = true;
+            water.geometry.computeVertexNormals();
+        }
         
         // Animate river water (visual only, runs every frame) - only if river exists
         if (riverObj) {
