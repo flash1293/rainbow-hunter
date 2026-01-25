@@ -599,61 +599,220 @@ const Audio = (function() {
 
     function playIcePowerSound() {
         if (!shouldPlayAudio()) return;
-        
+
         const now = audioContext.currentTime;
-        
+
         // Crystal chime sound
         const frequencies = [523, 659, 784, 1047]; // C, E, G, C (major chord)
         frequencies.forEach((freq, i) => {
             const osc = audioContext.createOscillator();
             const gain = audioContext.createGain();
             const filter = audioContext.createBiquadFilter();
-            
+
             osc.connect(filter);
             filter.connect(gain);
             gain.connect(audioContext.destination);
-            
+
             osc.type = 'sine';
             osc.frequency.setValueAtTime(freq, now);
-            
+
             filter.type = 'bandpass';
             filter.frequency.setValueAtTime(freq * 2, now);
             filter.Q.setValueAtTime(10, now);
-            
+
             const delay = i * 0.05;
             gain.gain.setValueAtTime(0, now + delay);
             gain.gain.linearRampToValueAtTime(0.15, now + delay + 0.01);
             gain.gain.exponentialRampToValueAtTime(0.001, now + delay + 1.5);
-            
+
             osc.start(now + delay);
             osc.stop(now + delay + 1.5);
         });
-        
+
         // Whoosh/wind sound
         const noiseBuffer = audioContext.createBuffer(1, audioContext.sampleRate * 1, audioContext.sampleRate);
         const noiseData = noiseBuffer.getChannelData(0);
         for (let i = 0; i < noiseData.length; i++) {
             noiseData[i] = Math.random() * 2 - 1;
         }
-        
+
         const noiseSource = audioContext.createBufferSource();
         const noiseGain = audioContext.createGain();
         const noiseFilter = audioContext.createBiquadFilter();
-        
+
         noiseSource.buffer = noiseBuffer;
         noiseSource.connect(noiseFilter);
         noiseFilter.connect(noiseGain);
         noiseGain.connect(audioContext.destination);
-        
+
         noiseFilter.type = 'highpass';
         noiseFilter.frequency.setValueAtTime(2000, now);
         noiseFilter.frequency.linearRampToValueAtTime(4000, now + 0.8);
-        
+
         noiseGain.gain.setValueAtTime(0, now);
         noiseGain.gain.linearRampToValueAtTime(0.3, now + 0.1);
         noiseGain.gain.exponentialRampToValueAtTime(0.001, now + 0.8);
-        
+
         noiseSource.start(now);
+    }
+
+    // Techno music state
+    let technoOscillators = [];
+    let technoGains = [];
+    let technoTimeouts = [];
+    let technoMasterGain = null;
+    let technoPlaying = false;
+
+    function startTechnoMusic() {
+        if (!shouldPlayAudio() || technoPlaying) return;
+        technoPlaying = true;
+
+        // Master gain for fading
+        technoMasterGain = audioContext.createGain();
+        technoMasterGain.connect(audioContext.destination);
+        technoMasterGain.gain.setValueAtTime(0, audioContext.currentTime);
+        technoMasterGain.gain.linearRampToValueAtTime(0.3, audioContext.currentTime + 0.5);
+
+        playTechnoLoop();
+    }
+
+    function playTechnoLoop() {
+        if (!technoPlaying || !technoMasterGain) return;
+
+        const now = audioContext.currentTime;
+        const bpm = 140;
+        const beatDuration = 60 / bpm;
+        const barDuration = beatDuration * 4;
+
+        // Kick drum pattern (4/4)
+        for (let i = 0; i < 4; i++) {
+            const kickOsc = audioContext.createOscillator();
+            const kickGain = audioContext.createGain();
+            kickOsc.connect(kickGain);
+            kickGain.connect(technoMasterGain);
+
+            kickOsc.type = 'sine';
+            kickOsc.frequency.setValueAtTime(150, now + i * beatDuration);
+            kickOsc.frequency.exponentialRampToValueAtTime(40, now + i * beatDuration + 0.15);
+
+            kickGain.gain.setValueAtTime(0.6, now + i * beatDuration);
+            kickGain.gain.exponentialRampToValueAtTime(0.001, now + i * beatDuration + 0.2);
+
+            kickOsc.start(now + i * beatDuration);
+            kickOsc.stop(now + i * beatDuration + 0.2);
+            technoOscillators.push(kickOsc);
+        }
+
+        // Hi-hat pattern (offbeats)
+        for (let i = 0; i < 8; i++) {
+            const hihatBuffer = audioContext.createBuffer(1, audioContext.sampleRate * 0.05, audioContext.sampleRate);
+            const hihatData = hihatBuffer.getChannelData(0);
+            for (let j = 0; j < hihatData.length; j++) {
+                hihatData[j] = (Math.random() * 2 - 1) * (1 - j / hihatData.length);
+            }
+
+            const hihatSource = audioContext.createBufferSource();
+            const hihatGain = audioContext.createGain();
+            const hihatFilter = audioContext.createBiquadFilter();
+
+            hihatSource.buffer = hihatBuffer;
+            hihatSource.connect(hihatFilter);
+            hihatFilter.connect(hihatGain);
+            hihatGain.connect(technoMasterGain);
+
+            hihatFilter.type = 'highpass';
+            hihatFilter.frequency.setValueAtTime(8000, now);
+
+            hihatGain.gain.setValueAtTime(i % 2 === 1 ? 0.15 : 0.08, now + i * beatDuration / 2);
+
+            hihatSource.start(now + i * beatDuration / 2);
+        }
+
+        // Bass synth (simple pattern)
+        const bassNotes = [110, 110, 146.83, 130.81]; // A2, A2, D3, C3
+        bassNotes.forEach((freq, i) => {
+            const bassOsc = audioContext.createOscillator();
+            const bassGain = audioContext.createGain();
+            const bassFilter = audioContext.createBiquadFilter();
+
+            bassOsc.connect(bassFilter);
+            bassFilter.connect(bassGain);
+            bassGain.connect(technoMasterGain);
+
+            bassOsc.type = 'sawtooth';
+            bassOsc.frequency.setValueAtTime(freq, now + i * beatDuration);
+
+            bassFilter.type = 'lowpass';
+            bassFilter.frequency.setValueAtTime(300, now + i * beatDuration);
+            bassFilter.frequency.linearRampToValueAtTime(800, now + i * beatDuration + beatDuration * 0.5);
+            bassFilter.frequency.linearRampToValueAtTime(300, now + i * beatDuration + beatDuration);
+
+            bassGain.gain.setValueAtTime(0.2, now + i * beatDuration);
+            bassGain.gain.setValueAtTime(0.2, now + i * beatDuration + beatDuration * 0.8);
+            bassGain.gain.exponentialRampToValueAtTime(0.01, now + i * beatDuration + beatDuration);
+
+            bassOsc.start(now + i * beatDuration);
+            bassOsc.stop(now + i * beatDuration + beatDuration);
+            technoOscillators.push(bassOsc);
+        });
+
+        // Arpeggiated synth
+        const arpNotes = [440, 554.37, 659.25, 880, 659.25, 554.37, 440, 329.63]; // A4 minor arp
+        arpNotes.forEach((freq, i) => {
+            const arpOsc = audioContext.createOscillator();
+            const arpGain = audioContext.createGain();
+            const arpFilter = audioContext.createBiquadFilter();
+
+            arpOsc.connect(arpFilter);
+            arpFilter.connect(arpGain);
+            arpGain.connect(technoMasterGain);
+
+            arpOsc.type = 'square';
+            arpOsc.frequency.setValueAtTime(freq, now + i * beatDuration / 2);
+
+            arpFilter.type = 'lowpass';
+            arpFilter.frequency.setValueAtTime(2000, now);
+
+            arpGain.gain.setValueAtTime(0.08, now + i * beatDuration / 2);
+            arpGain.gain.exponentialRampToValueAtTime(0.001, now + i * beatDuration / 2 + beatDuration / 2 * 0.8);
+
+            arpOsc.start(now + i * beatDuration / 2);
+            arpOsc.stop(now + i * beatDuration / 2 + beatDuration / 2);
+            technoOscillators.push(arpOsc);
+        });
+
+        // Schedule next loop
+        const timeout = setTimeout(() => playTechnoLoop(), barDuration * 1000);
+        technoTimeouts.push(timeout);
+    }
+
+    function stopTechnoMusic() {
+        if (!technoPlaying) return;
+        technoPlaying = false;
+
+        // Fade out
+        if (technoMasterGain) {
+            technoMasterGain.gain.setValueAtTime(technoMasterGain.gain.value, audioContext.currentTime);
+            technoMasterGain.gain.linearRampToValueAtTime(0, audioContext.currentTime + 0.5);
+        }
+
+        // Clear timeouts
+        technoTimeouts.forEach(timeout => clearTimeout(timeout));
+        technoTimeouts = [];
+
+        // Stop oscillators after fade
+        setTimeout(() => {
+            technoOscillators.forEach(osc => {
+                try { osc.stop(); } catch(e) {}
+            });
+            technoOscillators = [];
+            technoGains = [];
+            technoMasterGain = null;
+        }, 600);
+    }
+
+    function isTechnoPlaying() {
+        return technoPlaying;
     }
 
     // Return public API
@@ -678,7 +837,10 @@ const Audio = (function() {
         updateGoblinProximitySound,
         updateGiantProximitySound,
         playArrowShootSound,
-        updateArrowProximitySound
+        updateArrowProximitySound,
+        startTechnoMusic,
+        stopTechnoMusic,
+        isTechnoPlaying
     };
 })();
 

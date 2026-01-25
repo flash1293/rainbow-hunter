@@ -1325,6 +1325,77 @@ function generateDragonScaleTextureLava(THREE) {
     return texture;
 }
 
+// Generate water/sea dragon scale texture (deep teal with shimmering scales)
+function generateDragonScaleTextureWater(THREE) {
+    const canvas = document.createElement('canvas');
+    canvas.width = 256;
+    canvas.height = 256;
+    const ctx = canvas.getContext('2d');
+
+    // Base deep teal/ocean blue
+    ctx.fillStyle = '#0a4a5c';
+    ctx.fillRect(0, 0, 256, 256);
+
+    // Add scale pattern - aquatic with iridescent shimmer
+    for (let row = 0; row < 32; row++) {
+        for (let col = 0; col < 32; col++) {
+            const offsetX = (row % 2 === 0) ? 4 : 0;
+            const x = col * 8 + offsetX;
+            const y = row * 8;
+            const brightness = 0.6 + Math.random() * 0.5;
+            // Teal/cyan scales
+            const r = Math.floor(20 * brightness);
+            const g = Math.floor(140 * brightness);
+            const b = Math.floor(160 * brightness);
+
+            ctx.fillStyle = `rgb(${r}, ${g}, ${b})`;
+            ctx.beginPath();
+            ctx.ellipse(x + 4, y + 4, 3.5, 3, 0, 0, Math.PI * 2);
+            ctx.fill();
+
+            // Add iridescent shimmer highlight on each scale
+            const shimmerHue = Math.random() > 0.5 ? '120, 200, 255' : '180, 255, 220';
+            ctx.fillStyle = `rgba(${shimmerHue}, 0.35)`;
+            ctx.beginPath();
+            ctx.ellipse(x + 3, y + 2.5, 1.8, 1.2, 0, 0, Math.PI * 2);
+            ctx.fill();
+        }
+    }
+
+    // Add bioluminescent vein patterns
+    for (let i = 0; i < 12; i++) {
+        const startX = Math.random() * 256;
+        const startY = Math.random() * 256;
+        ctx.strokeStyle = `rgba(100, 255, 220, ${0.3 + Math.random() * 0.3})`;
+        ctx.lineWidth = 1 + Math.random() * 1.5;
+        ctx.beginPath();
+        ctx.moveTo(startX, startY);
+        let lx = startX, ly = startY;
+        for (let j = 0; j < 5; j++) {
+            lx += (Math.random() - 0.5) * 35;
+            ly += (Math.random() - 0.5) * 35;
+            ctx.lineTo(lx, ly);
+        }
+        ctx.stroke();
+    }
+
+    // Add glowing spots (like deep sea fish)
+    for (let i = 0; i < 10; i++) {
+        const sx = Math.random() * 256;
+        const sy = Math.random() * 256;
+        const radius = 5 + Math.random() * 10;
+        const gradient = ctx.createRadialGradient(sx, sy, 0, sx, sy, radius);
+        gradient.addColorStop(0, 'rgba(100, 255, 200, 0.5)');
+        gradient.addColorStop(0.5, 'rgba(50, 200, 180, 0.2)');
+        gradient.addColorStop(1, 'rgba(0, 150, 150, 0)');
+        ctx.fillStyle = gradient;
+        ctx.fillRect(sx - radius, sy - radius, radius * 2, radius * 2);
+    }
+
+    const texture = new THREE.CanvasTexture(canvas);
+    return texture;
+}
+
 // Generate dragon belly texture (golden/amber)
 function generateDragonBellyTexture(THREE) {
     const canvas = document.createElement('canvas');
@@ -1827,6 +1898,7 @@ function getTerrainTextures(THREE) {
             dragonScale: generateDragonScaleTexture(THREE, false),
             dragonScaleIce: generateDragonScaleTexture(THREE, true),
             dragonScaleLava: generateDragonScaleTextureLava(THREE),
+            dragonScaleWater: generateDragonScaleTextureWater(THREE),
             dragonBelly: generateDragonBellyTexture(THREE),
             fireball: generateFireballTexture(THREE, false),
             fireballIce: generateFireballTexture(THREE, true),
@@ -1842,6 +1914,7 @@ function getTerrainTextures(THREE) {
             dragonEye: generateGlowingEyeTexture(THREE, 0xFF6600),
             dragonEyeIce: generateGlowingEyeTexture(THREE, 0x00BFFF),
             dragonEyeLava: generateGlowingEyeTexture(THREE, 0xFFFF00),
+            dragonEyeWater: generateGlowingEyeTexture(THREE, 0x00FF88),
             giantEyeLava: generateGlowingEyeTexture(THREE, 0xFF4400),
             wizardRobe: generateWizardRobeTexture(THREE, false),
             wizardRobeIce: generateWizardRobeTexture(THREE, true),

@@ -537,9 +537,9 @@ const LEVELS = {
             { x: -70, z: -100 }        // Dragon in middle of western corridor
         ],
         
-        // World Kite position - not needed since carried over
-        worldKite: null,
-        
+        // World Kite position - near spawn for easy collection
+        worldKite: { x: 5, z: 190 },
+
         // Ice Berg position - in the extended southern corridor
         iceBerg: { x: 20, z: 100 },
         
@@ -861,12 +861,12 @@ const LEVELS = {
             { x: 80, z: -60 }
         ],
         
-        // World Kite position - not needed since carried over
-        worldKite: null,
-        
+        // World Kite position - near spawn for easy collection
+        worldKite: { x: 5, z: 170 },
+
         // No Ice Berg in desert
         iceBerg: null,
-        
+
         // Sand dunes instead of hills
         hills: [
             // Scattered dunes across the desert
@@ -941,19 +941,22 @@ const LEVELS = {
             [40, -110, 35, 45, 0.007]
         ],
         
-        // Mummies - guarding chokepoints, scarabs nearby [x, z, patrolLeft, patrolRight, speed]
+        // Mummies - guarding the offset chokepoint gaps [x, z, patrolLeft, patrolRight, speed]
         mummies: [
-            // Guard first chokepoint gap at z=120 (center opening)
-            [0, 120, -10, 10, 0.01],
-            [20, 115, 15, 25, 0.008],
-            [-20, 125, -25, -15, 0.008],
-            // Guard second chokepoint at z=40
-            [0, 45, -10, 10, 0.009],
-            // Guard third chokepoint at z=-40 (left opening)
-            [-35, -35, -45, -25, 0.01],
-            // Guard fourth chokepoint at z=-100 (right opening)
-            [35, -95, 25, 45, 0.01],
-            // Guard final approach at z=-150
+            // Guard first chokepoint gap at z=120 (LEFT side gap around x=-50)
+            [-50, 120, -60, -40, 0.01],
+            [-45, 115, -55, -35, 0.008],
+            [-55, 125, -65, -45, 0.008],
+            // Guard second chokepoint at z=40 (RIGHT side gap around x=50)
+            [50, 45, 40, 60, 0.009],
+            [55, 40, 45, 65, 0.008],
+            // Guard third chokepoint at z=-40 (LEFT side gap around x=-40)
+            [-40, -35, -50, -30, 0.01],
+            [-45, -45, -55, -35, 0.009],
+            // Guard fourth chokepoint at z=-100 (RIGHT side gap around x=45)
+            [45, -95, 35, 55, 0.01],
+            [50, -105, 40, 60, 0.009],
+            // Guard final approach at z=-150 (center gap)
             [0, -145, -10, 10, 0.01]
         ],
         
@@ -969,11 +972,17 @@ const LEVELS = {
             [-50, -160, -55, -45, 0.015]
         ],
         
-        // Birds flying over desert
+        // Birds flying over desert - more to increase difficulty
         birds: [
-            [0, 80, 35, 0.006],
-            [-40, -40, 30, 0.007],
-            [40, -120, 32, 0.006]
+            [0, 150, 30, 0.006],     // Near spawn
+            [-50, 100, 35, 0.005],   // Left side near first chokepoint
+            [50, 80, 32, 0.007],     // Right side
+            [0, 40, 28, 0.006],      // Center at second chokepoint
+            [-40, 0, 30, 0.005],     // Left mid area
+            [45, -40, 35, 0.006],    // Right at third chokepoint
+            [0, -80, 32, 0.007],     // Center lower
+            [-50, -120, 30, 0.005],  // Left near fourth chokepoint
+            [40, -150, 28, 0.006]    // Right near portal
         ],
         
         // Ammo pickups across the desert - extra for survivability
@@ -1046,7 +1055,7 @@ const LEVELS = {
         
         // Cacti and palm positions (replaces trees)
         treePositions: [
-            // Cacti scattered around
+            // Cacti scattered densely throughout the desert
             { x: -30, z: 160, type: 'cactus' }, { x: 45, z: 145, type: 'cactus' },
             { x: -55, z: 120, type: 'cactus' }, { x: 70, z: 100, type: 'cactus' },
             { x: -40, z: 70, type: 'cactus' }, { x: 50, z: 55, type: 'cactus' },
@@ -1054,10 +1063,39 @@ const LEVELS = {
             { x: -45, z: -25, type: 'cactus' }, { x: 60, z: -45, type: 'cactus' },
             { x: -55, z: -75, type: 'cactus' }, { x: 45, z: -95, type: 'cactus' },
             { x: -35, z: -125, type: 'cactus' }, { x: 55, z: -145, type: 'cactus' },
-            // Palms near oasis (treasure area)
+            // More cacti - near spawn area
+            { x: 20, z: 175, type: 'cactus' }, { x: -50, z: 170, type: 'cactus' },
+            { x: 65, z: 165, type: 'cactus' }, { x: -70, z: 155, type: 'cactus' },
+            { x: 80, z: 140, type: 'cactus' }, { x: -80, z: 135, type: 'cactus' },
+            // More cacti - upper mid area
+            { x: 25, z: 110, type: 'cactus' }, { x: -20, z: 95, type: 'cactus' },
+            { x: 85, z: 85, type: 'cactus' }, { x: -85, z: 80, type: 'cactus' },
+            { x: 20, z: 65, type: 'cactus' }, { x: -75, z: 55, type: 'cactus' },
+            // More cacti - mid area
+            { x: 75, z: 40, type: 'cactus' }, { x: -25, z: 45, type: 'cactus' },
+            { x: 55, z: 20, type: 'cactus' }, { x: -80, z: 15, type: 'cactus' },
+            { x: 80, z: -10, type: 'cactus' }, { x: -15, z: -5, type: 'cactus' },
+            // More cacti - lower mid area
+            { x: 25, z: -30, type: 'cactus' }, { x: -70, z: -35, type: 'cactus' },
+            { x: 75, z: -55, type: 'cactus' }, { x: -25, z: -60, type: 'cactus' },
+            { x: 20, z: -85, type: 'cactus' }, { x: -80, z: -90, type: 'cactus' },
+            // More cacti - near portal
+            { x: 70, z: -110, type: 'cactus' }, { x: -70, z: -115, type: 'cactus' },
+            { x: 80, z: -135, type: 'cactus' }, { x: -75, z: -140, type: 'cactus' },
+            { x: 65, z: -160, type: 'cactus' }, { x: -65, z: -165, type: 'cactus' },
+            // Small oasis with palms near first chokepoint
+            { x: -85, z: 110, type: 'palm' }, { x: -90, z: 105, type: 'palm' },
+            { x: -80, z: 100, type: 'palm' },
+            // Small oasis mid-right
+            { x: 90, z: 50, type: 'palm' }, { x: 85, z: 45, type: 'palm' },
+            { x: 95, z: 40, type: 'palm' },
+            // Small oasis mid-left
+            { x: -90, z: -50, type: 'palm' }, { x: -85, z: -55, type: 'palm' },
+            // Main oasis near portal (treasure area)
             { x: -15, z: -165, type: 'palm' }, { x: 15, z: -170, type: 'palm' },
             { x: -20, z: -185, type: 'palm' }, { x: 20, z: -185, type: 'palm' },
-            { x: 0, z: -195, type: 'palm' }
+            { x: 0, z: -195, type: 'palm' }, { x: -30, z: -175, type: 'palm' },
+            { x: 30, z: -180, type: 'palm' }, { x: 0, z: -175, type: 'palm' }
         ],
         
         // Boulder positions (large rocks instead of mountains)
@@ -1081,35 +1119,46 @@ const LEVELS = {
             { x: -25, z: -155 }, { x: 30, z: -175 }
         ],
         
-        // Canyon walls - create chokepoints forcing player through mummy areas
+        // Canyon walls - create winding chokepoints forcing player through mummy areas
+        // Gaps are offset to alternate sides, making navigation harder
         // Each wall has: x, z, width, depth, height, rotation (in radians)
         canyonWalls: [
-            // First chokepoint around z=120 - walls on sides, gap in middle guarded by mummies
-            { x: -60, z: 120, width: 80, depth: 8, height: 12, rotation: 0 },
-            { x: 60, z: 120, width: 80, depth: 8, height: 12, rotation: 0 },
-            
-            // Second chokepoint around z=40 - narrower passage
-            { x: -55, z: 40, width: 70, depth: 8, height: 14, rotation: 0 },
-            { x: 55, z: 40, width: 70, depth: 8, height: 14, rotation: 0 },
-            
-            // Third chokepoint around z=-40 - offset to create winding path
-            { x: -70, z: -40, width: 60, depth: 8, height: 12, rotation: 0 },
-            { x: 50, z: -40, width: 90, depth: 8, height: 12, rotation: 0 },
-            
-            // Fourth chokepoint around z=-100 - opposite side
-            { x: -50, z: -100, width: 90, depth: 8, height: 14, rotation: 0 },
-            { x: 70, z: -100, width: 60, depth: 8, height: 14, rotation: 0 },
-            
-            // Final approach to treasure - narrow canyon
-            { x: -40, z: -150, width: 50, depth: 8, height: 16, rotation: 0 },
-            { x: 40, z: -150, width: 50, depth: 8, height: 16, rotation: 0 }
+            // First chokepoint around z=120 - gap on LEFT side (around x=-50)
+            { x: -100, z: 120, width: 30, depth: 8, height: 12, rotation: 0 },  // Far left wall
+            { x: 30, z: 120, width: 140, depth: 8, height: 12, rotation: 0 },   // Large right wall
+
+            // Second chokepoint around z=40 - gap on RIGHT side (around x=50)
+            { x: -30, z: 40, width: 140, depth: 8, height: 14, rotation: 0 },   // Large left wall
+            { x: 100, z: 40, width: 30, depth: 8, height: 14, rotation: 0 },    // Far right wall
+
+            // Third chokepoint around z=-40 - gap on LEFT side (around x=-40)
+            { x: -110, z: -40, width: 25, depth: 8, height: 12, rotation: 0 },  // Far left wall
+            { x: 25, z: -40, width: 150, depth: 8, height: 12, rotation: 0 },   // Large right wall
+
+            // Fourth chokepoint around z=-100 - gap on RIGHT side (around x=45)
+            { x: -25, z: -100, width: 150, depth: 8, height: 14, rotation: 0 }, // Large left wall
+            { x: 110, z: -100, width: 25, depth: 8, height: 14, rotation: 0 },  // Far right wall
+
+            // Final approach around z=-150 - narrow gap in CENTER (harder final stretch)
+            { x: -55, z: -150, width: 70, depth: 8, height: 16, rotation: 0 },
+            { x: 55, z: -150, width: 70, depth: 8, height: 16, rotation: 0 }
         ],
         
-        // No scarabs needed since portal leads to Level 4
-        scarabs: [],
-        
-        // Message to show player about portal
-        scarabMessage: "Find the portal to the Lava Caves!"
+        // Scarabs scattered throughout the desert - collect them all!
+        scarabs: [
+            { x: -30, z: 150 },     // Near spawn, left side
+            { x: 50, z: 130 },      // Near first chokepoint, right
+            { x: -70, z: 90 },      // Before second chokepoint, far left
+            { x: 0, z: 60 },        // Center of desert
+            { x: 65, z: 20 },       // Right side mid desert
+            { x: -45, z: -30 },     // Between third chokepoint
+            { x: 30, z: -70 },      // Lower mid area
+            { x: -60, z: -120 },    // Near fourth chokepoint
+            { x: 0, z: -160 }       // Near portal
+        ],
+
+        // Message to show player about scarabs
+        scarabMessage: "Collect all Ancient Scarabs to unlock the portal!"
     },
     
     4: {
@@ -1151,16 +1200,19 @@ const LEVELS = {
         // Rainbow position - above the treasure
         rainbow: { x: 0, z: -175 },
         
-        // No dragon in lava level - just goblins and guardians
-        dragon: null,
-        extraDragons: [],
+        // Dragon in lava level - positioned in open area near treasure
+        dragon: { x: 0, z: -120, y: 12 },  // y: 12 keeps it below ceiling (25)
+        extraDragons: [
+            { x: -60, z: -80, y: 10, scale: 0.7, health: 30 },
+            { x: 60, z: -80, y: 10, scale: 0.7, health: 30 }
+        ],
         
-        // World Kite position - not needed since carried over
-        worldKite: null,
-        
+        // World Kite position - near spawn for easy collection
+        worldKite: { x: 5, z: 170 },
+
         // Ice Berg position - becomes a "cool rock" safe zone
         iceBerg: { x: 0, z: 100 },
-        
+
         // Lava pools - touching these is instant death
         lavaPools: [
             // Far back area (z: 160-200)
@@ -1256,7 +1308,29 @@ const LEVELS = {
             { x: -40, z: -100, radius: 5, height: 3 },
             { x: 45, z: -140, radius: 6, height: 4 }
         ],
-        
+
+        // Lava flows from rocks - visual effect of lava cascading down
+        lavaFlows: [
+            { x: -40, z: 160, length: 8, direction: 0.5 },      // From first hill
+            { x: 45, z: 140, length: 10, direction: -0.3 },     // From second hill
+            { x: 40, z: 80, length: 7, direction: 0.8 },        // From fourth hill
+            { x: -35, z: 40, length: 9, direction: -0.6 },      // From fifth hill
+            { x: 50, z: 20, length: 6, direction: 0.4 },        // From sixth hill
+            { x: 35, z: -60, length: 8, direction: -0.7 },      // From eighth hill
+            { x: 45, z: -140, length: 7, direction: 0.2 }       // From tenth hill
+        ],
+
+        // Crevices - deep dark pits that players can fall into (instant death)
+        crevices: [
+            { x: -70, z: 130, width: 4, length: 15, rotation: 0.3 },    // Near spawn left
+            { x: 80, z: 120, width: 3, length: 12, rotation: -0.2 },    // Near spawn right
+            { x: -60, z: 30, width: 5, length: 18, rotation: 0.5 },     // Mid-left
+            { x: 70, z: -20, width: 4, length: 14, rotation: -0.4 },    // Mid-right
+            { x: -50, z: -70, width: 3, length: 16, rotation: 0.2 },    // Lower-left
+            { x: 65, z: -100, width: 4, length: 12, rotation: -0.3 },   // Lower-right
+            { x: 0, z: -140, width: 5, length: 20, rotation: 0 }        // Before treasure
+        ],
+
         // No mountains - underground
         mountains: [],
         
@@ -1328,8 +1402,15 @@ const LEVELS = {
             [-45, -155, -50, -40, 0.017]
         ],
         
-        // No birds in underground caves
-        birds: [],
+        // Cave bats (bomb birds that patrol the lava caves)
+        birds: [
+            [0, 100, 30, 0.005],      // Center patrol near spawn
+            [-40, 50, 25, 0.006],     // Left side patrol
+            [40, 0, 28, 0.005],       // Right side patrol
+            [0, -50, 32, 0.004],      // Mid-cave patrol
+            [-30, -100, 26, 0.006],   // Deep left patrol
+            [30, -130, 24, 0.005]     // Near treasure patrol
+        ],
         
         // Ammo pickups
         ammoPositions: [
@@ -1405,8 +1486,9 @@ const LEVELS = {
             { x: -30, z: -125 }, { x: 35, z: -155 }
         ],
         
-        // Cave walls - box in the lava caves with rock walls (completely sealed)
+        // Cave walls - labyrinth structure with internal walls
         canyonWalls: [
+            // Outer walls
             // North wall (back of cave) - full width
             { x: 0, z: -200, width: 260, depth: 12, height: 25, rotation: 0 },
             // South wall (front of cave) - full width, no gap
@@ -1414,7 +1496,37 @@ const LEVELS = {
             // West wall (left side) - connects north to south
             { x: -125, z: 0, width: 12, depth: 415, height: 25, rotation: 0 },
             // East wall (right side) - connects north to south
-            { x: 125, z: 0, width: 12, depth: 415, height: 25, rotation: 0 }
+            { x: 125, z: 0, width: 12, depth: 415, height: 25, rotation: 0 },
+
+            // Internal labyrinth walls - create winding path from spawn to treasure
+            // Row 1 (near spawn z: 140-160) - blocks center, forces left or right
+            { x: 0, z: 150, width: 100, depth: 10, height: 20, rotation: 0 },
+
+            // Row 2 (z: 100-120) - blocks left side, forces right
+            { x: -70, z: 110, width: 90, depth: 10, height: 20, rotation: 0 },
+
+            // Row 3 (z: 50-70) - blocks right side, forces left
+            { x: 70, z: 60, width: 90, depth: 10, height: 20, rotation: 0 },
+
+            // Row 4 (z: 0-20) - blocks center-left, creates maze decision point
+            { x: -30, z: 10, width: 80, depth: 10, height: 20, rotation: 0 },
+            { x: 80, z: 10, width: 60, depth: 10, height: 20, rotation: 0 },
+
+            // Row 5 (z: -40 to -60) - blocks right side
+            { x: 50, z: -50, width: 100, depth: 10, height: 20, rotation: 0 },
+
+            // Row 6 (z: -90 to -110) - blocks left side
+            { x: -60, z: -100, width: 100, depth: 10, height: 20, rotation: 0 },
+
+            // Row 7 (z: -140 to -160) - final approach, blocks center
+            { x: 20, z: -150, width: 80, depth: 10, height: 20, rotation: 0 },
+
+            // Vertical walls to create corridors
+            { x: -50, z: 130, width: 10, depth: 50, height: 20, rotation: 0 },
+            { x: 50, z: 85, width: 10, depth: 60, height: 20, rotation: 0 },
+            { x: -80, z: -30, width: 10, depth: 70, height: 20, rotation: 0 },
+            { x: 90, z: -75, width: 10, depth: 60, height: 20, rotation: 0 },
+            { x: -40, z: -130, width: 10, depth: 50, height: 20, rotation: 0 }
         ],
         
         // No scarabs in lava level
@@ -1423,9 +1535,9 @@ const LEVELS = {
 
     5: {
         name: "Level 5 - The Deep Waters",
-        
-        // Player start position
-        playerStart: { x: 0, z: 40 },
+
+        // Player start position - far from treasure at z: -200
+        playerStart: { x: 0, z: 180 },
         
         // Portal to next level (or back to Level 1)
         portal: { x: 0, z: -220, destinationLevel: 1 },
@@ -1459,18 +1571,24 @@ const LEVELS = {
         // Rainbow position
         rainbow: { x: 0, z: -195 },
         
-        // No dragon - water enemies only
-        dragon: null,
-        extraDragons: [],
+        // Water dragon (sea serpent) - positioned away from cliffs
+        dragon: { x: -30, z: -175, y: 3 },
+        extraDragons: [
+            { x: -55, z: -60, y: 2, scale: 0.6, health: 25 },
+            { x: 55, z: -130, y: 2, scale: 0.6, health: 25 },
+            { x: -50, z: 35, y: 2, scale: 0.5, health: 20 },
+            { x: 50, z: 85, y: 2, scale: 0.5, health: 20 }
+        ],
+
+        // World Kite - near spawn for easy collection
+        worldKite: { x: 5, z: 170 },
+
+        // Iceberg - safe zone in the water
+        iceBerg: { x: 0, z: 80 },
         
-        // World Kite - carried over
-        worldKite: null,
-        
-        // No iceberg in water level
-        iceBerg: null,
-        
-        // Hills as small islands
+        // Hills as small islands - many more to block line of sight
         hills: [
+            // Original islands
             { x: -60, z: 120, radius: 8, height: 2 },
             { x: 55, z: 100, radius: 7, height: 2 },
             { x: -50, z: 50, radius: 6, height: 2 },
@@ -1478,11 +1596,31 @@ const LEVELS = {
             { x: -55, z: -20, radius: 8, height: 2 },
             { x: 50, z: -60, radius: 6, height: 2 },
             { x: -60, z: -100, radius: 7, height: 2 },
-            { x: 55, z: -140, radius: 8, height: 2 }
+            { x: 55, z: -140, radius: 8, height: 2 },
+            // Additional islands to create maze-like path
+            { x: 0, z: 140, radius: 10, height: 3 },      // Center blocker near spawn
+            { x: -30, z: 95, radius: 7, height: 2 },
+            { x: 30, z: 75, radius: 8, height: 2 },
+            { x: -25, z: 10, radius: 6, height: 2 },
+            { x: 25, z: -10, radius: 7, height: 2 },
+            { x: 0, z: -40, radius: 9, height: 3 },       // Center blocker mid
+            { x: -35, z: -70, radius: 6, height: 2 },
+            { x: 35, z: -85, radius: 7, height: 2 },
+            { x: 0, z: -120, radius: 8, height: 2 },      // Center blocker
+            { x: -30, z: -155, radius: 6, height: 2 },
+            { x: 30, z: -170, radius: 7, height: 2 },
+            // Small rocks/sandbars
+            { x: -15, z: 160, radius: 4, height: 1 },
+            { x: 20, z: 130, radius: 5, height: 1 },
+            { x: -20, z: 65, radius: 4, height: 1 },
+            { x: 15, z: -30, radius: 5, height: 1 },
+            { x: -10, z: -90, radius: 4, height: 1 },
+            { x: 10, z: -145, radius: 5, height: 1 }
         ],
-        
-        // Mountains as larger islands
+
+        // Mountains as larger islands - more to create barriers
         mountains: [
+            // Original islands on sides
             { x: -90, z: 150, radius: 15, height: 8 },
             { x: 85, z: 140, radius: 14, height: 7 },
             { x: -80, z: 80, radius: 12, height: 6 },
@@ -1490,7 +1628,41 @@ const LEVELS = {
             { x: -85, z: -30, radius: 14, height: 8 },
             { x: 80, z: -80, radius: 12, height: 6 },
             { x: -90, z: -130, radius: 15, height: 7 },
-            { x: 85, z: -170, radius: 13, height: 8 }
+            { x: 85, z: -170, radius: 13, height: 8 },
+            // Additional side islands
+            { x: -40, z: 170, radius: 10, height: 5 },
+            { x: 45, z: 160, radius: 11, height: 5 },
+            { x: -70, z: 20, radius: 10, height: 5 },
+            { x: 70, z: -10, radius: 11, height: 5 },
+            { x: -65, z: -65, radius: 10, height: 5 },
+            { x: 65, z: -50, radius: 10, height: 4 },
+            { x: -75, z: -160, radius: 12, height: 6 },
+            { x: 75, z: -145, radius: 11, height: 5 },
+            // Regular center islands (can glide over)
+            { x: -25, z: 80, radius: 15, height: 8 },
+            { x: 30, z: 60, radius: 16, height: 9 },
+            { x: -35, z: -30, radius: 14, height: 7 },
+            { x: 25, z: -50, radius: 15, height: 8 },
+            { x: -30, z: -130, radius: 14, height: 7 },
+            { x: 35, z: -150, radius: 15, height: 8 }
+        ],
+
+        // IMPASSABLE CLIFFS - rock formations that block gliding, fewer and shorter
+        impassableCliffs: [
+            // Upper area - cliff on right, go left
+            { x: 40, z: 120, radius: 25, height: 20 },
+
+            // Mid-upper - cliff on left, go right
+            { x: -40, z: 50, radius: 25, height: 22 },
+
+            // Center - cliff on right, go left
+            { x: 40, z: -20, radius: 25, height: 20 },
+
+            // Mid-lower - cliff on left, go right
+            { x: -40, z: -90, radius: 25, height: 22 },
+
+            // Near treasure - cliff on right, go left
+            { x: 40, z: -155, radius: 25, height: 20 }
         ],
         
         // Goblins as shark fins [x, z, patrolLeft, patrolRight, speed]
@@ -1514,14 +1686,37 @@ const LEVELS = {
             [0, -150, -5, 5, 0.014]
         ],
         
-        // Guardians as octopuses [x, z, patrolLeft, patrolRight, speed]
+        // Guardians as octopuses [x, z, patrolLeft, patrolRight, speed] - many more!
         guardians: [
-            [50, 120, 45, 55, 0.01],
-            [-55, 80, -60, -50, 0.011],
-            [45, 20, 40, 50, 0.01],
-            [-50, -40, -55, -45, 0.011],
-            [55, -110, 50, 60, 0.01],
-            [-50, -150, -55, -45, 0.011]
+            // Near spawn area
+            [50, 160, 45, 55, 0.01],
+            [-55, 145, -60, -50, 0.011],
+            [40, 130, 35, 45, 0.01],
+            // Upper section
+            [-45, 110, -50, -40, 0.011],
+            [55, 95, 50, 60, 0.01],
+            [-50, 75, -55, -45, 0.011],
+            [45, 60, 40, 50, 0.01],
+            // Mid-upper section
+            [-55, 40, -60, -50, 0.011],
+            [50, 25, 45, 55, 0.01],
+            [-45, 10, -50, -40, 0.011],
+            // Center section
+            [55, -10, 50, 60, 0.01],
+            [-50, -25, -55, -45, 0.011],
+            [45, -45, 40, 50, 0.01],
+            [-55, -60, -60, -50, 0.011],
+            // Mid-lower section
+            [50, -80, 45, 55, 0.01],
+            [-45, -95, -50, -40, 0.011],
+            [55, -115, 50, 60, 0.01],
+            // Lower section
+            [-50, -130, -55, -45, 0.011],
+            [45, -145, 40, 50, 0.01],
+            [-55, -165, -60, -50, 0.011],
+            // Near treasure
+            [50, -180, 45, 55, 0.01],
+            [-45, -190, -50, -40, 0.011]
         ],
         
         // No giants in water level
@@ -1544,17 +1739,36 @@ const LEVELS = {
             [-50, -165, -55, -45, 0.017]
         ],
         
-        // No birds in water level
-        birds: [],
+        // Seagulls (bomb birds) over the water - reduced count
+        birds: [
+            [0, 100, 25, 0.006],      // Upper area
+            [-40, 30, 30, 0.005],     // Left mid
+            [45, -50, 28, 0.007],     // Right lower
+            [0, -120, 32, 0.006],     // Near treasure
+            [-35, -170, 26, 0.005]    // Far end
+        ],
         
-        // Ammo pickups on floating debris
+        // Ammo pickups on floating debris - many more for the longer journey
         ammoPositions: [
-            { x: 10, z: 155 }, { x: -15, z: 135 }, { x: 20, z: 95 },
-            { x: -10, z: 75 }, { x: 15, z: 35 }, { x: -20, z: 5 },
-            { x: 10, z: -35 }, { x: -15, z: -65 }, { x: 20, z: -105 },
-            { x: -10, z: -135 }, { x: 15, z: -165 },
-            { x: 0, z: 120 }, { x: 0, z: 60 }, { x: 0, z: 0 },
-            { x: 0, z: -90 }, { x: 0, z: -145 }
+            // Along the path
+            { x: 10, z: 175 }, { x: -15, z: 160 }, { x: 20, z: 145 },
+            { x: -10, z: 130 }, { x: 15, z: 115 }, { x: -20, z: 100 },
+            { x: 10, z: 85 }, { x: -15, z: 70 }, { x: 20, z: 55 },
+            { x: -10, z: 40 }, { x: 15, z: 25 }, { x: -20, z: 10 },
+            { x: 10, z: -5 }, { x: -15, z: -20 }, { x: 20, z: -35 },
+            { x: -10, z: -50 }, { x: 15, z: -65 }, { x: -20, z: -80 },
+            { x: 10, z: -95 }, { x: -15, z: -110 }, { x: 20, z: -125 },
+            { x: -10, z: -140 }, { x: 15, z: -155 }, { x: -20, z: -170 },
+            { x: 10, z: -185 },
+            // Center line pickups
+            { x: 0, z: 170 }, { x: 0, z: 140 }, { x: 0, z: 110 },
+            { x: 0, z: 80 }, { x: 0, z: 50 }, { x: 0, z: 20 },
+            { x: 0, z: -10 }, { x: 0, z: -40 }, { x: 0, z: -70 },
+            { x: 0, z: -100 }, { x: 0, z: -130 }, { x: 0, z: -160 },
+            // Side pickups
+            { x: 40, z: 150 }, { x: -45, z: 120 }, { x: 50, z: 75 },
+            { x: -40, z: 30 }, { x: 45, z: -15 }, { x: -50, z: -60 },
+            { x: 40, z: -105 }, { x: -45, z: -150 }
         ],
         
         // Bomb pickups
@@ -1578,15 +1792,77 @@ const LEVELS = {
             { x: 0, z: -80 }, { x: 0, z: -140 }
         ],
         
-        // Trap positions (whirlpools)
+        // Trap positions (whirlpools/Strudel) - blocking center path to enforce slalom
         trapPositions: [
-            { x: 40, z: 135 },
-            { x: -35, z: 95 },
-            { x: 30, z: 40 },
-            { x: -40, z: -15 },
-            { x: 35, z: -70 },
-            { x: -30, z: -110 },
-            { x: 40, z: -160 }
+            // Row 1 (z: 120 area) - cliff on right, whirlpools block center/right
+            { x: 0, z: 125 }, { x: 10, z: 118 }, { x: -5, z: 130 },
+            { x: 15, z: 125 }, { x: 5, z: 115 },
+
+            // Between rows - scattered
+            { x: -35, z: 100 }, { x: 30, z: 90 }, { x: -20, z: 80 },
+
+            // Row 2 (z: 50 area) - cliff on left, whirlpools block center/left
+            { x: 0, z: 55 }, { x: -10, z: 48 }, { x: 5, z: 60 },
+            { x: -15, z: 55 }, { x: -5, z: 45 },
+
+            // Between rows - scattered
+            { x: 35, z: 30 }, { x: -30, z: 10 }, { x: 25, z: 0 },
+
+            // Row 3 (z: -20 area) - cliff on right, whirlpools block center/right
+            { x: 0, z: -15 }, { x: 10, z: -22 }, { x: -5, z: -10 },
+            { x: 15, z: -18 }, { x: 5, z: -25 },
+
+            // Between rows - scattered
+            { x: -35, z: -45 }, { x: 30, z: -55 }, { x: -20, z: -65 },
+
+            // Row 4 (z: -90 area) - cliff on left, whirlpools block center/left
+            { x: 0, z: -85 }, { x: -10, z: -92 }, { x: 5, z: -80 },
+            { x: -15, z: -88 }, { x: -5, z: -95 },
+
+            // Between rows - scattered
+            { x: 35, z: -110 }, { x: -30, z: -125 }, { x: 25, z: -135 },
+
+            // Row 5 (z: -155 area) - cliff on right, whirlpools block center/right
+            { x: 0, z: -150 }, { x: 10, z: -158 }, { x: -5, z: -145 },
+            { x: 15, z: -152 }, { x: 5, z: -160 },
+
+            // Near treasure - guard the approach
+            { x: -25, z: -175 }, { x: 20, z: -180 }, { x: -10, z: -185 }
+        ],
+
+        // Moving waterspouts that drift around - many more!
+        movingTraps: [
+            // Near spawn area
+            { x: -40, z: 160, radius: 5, speed: 0.001, rangeX: 15, rangeZ: 12 },
+            { x: 15, z: 150, radius: 5, speed: 0.001, rangeX: 18, rangeZ: 15 },
+            { x: 45, z: 140, radius: 4, speed: 0.0012, rangeX: 12, rangeZ: 14 },
+            // Upper section
+            { x: -20, z: 120, radius: 5, speed: 0.0008, rangeX: 15, rangeZ: 18 },
+            { x: 30, z: 110, radius: 4, speed: 0.001, rangeX: 14, rangeZ: 12 },
+            { x: -45, z: 90, radius: 5, speed: 0.0012, rangeX: 16, rangeZ: 14 },
+            { x: 10, z: 80, radius: 4, speed: 0.001, rangeX: 12, rangeZ: 16 },
+            // Mid-upper section
+            { x: 40, z: 70, radius: 5, speed: 0.0008, rangeX: 14, rangeZ: 12 },
+            { x: -25, z: 55, radius: 6, speed: 0.001, rangeX: 18, rangeZ: 15 },
+            { x: 20, z: 40, radius: 4, speed: 0.0012, rangeX: 12, rangeZ: 14 },
+            // Center section
+            { x: -40, z: 20, radius: 5, speed: 0.001, rangeX: 16, rangeZ: 14 },
+            { x: 35, z: 5, radius: 5, speed: 0.0008, rangeX: 14, rangeZ: 16 },
+            { x: -15, z: -10, radius: 4, speed: 0.0012, rangeX: 12, rangeZ: 12 },
+            { x: 45, z: -25, radius: 5, speed: 0.001, rangeX: 15, rangeZ: 14 },
+            // Mid-lower section
+            { x: -35, z: -40, radius: 4, speed: 0.001, rangeX: 14, rangeZ: 16 },
+            { x: 15, z: -55, radius: 5, speed: 0.0008, rangeX: 16, rangeZ: 14 },
+            { x: -20, z: -70, radius: 5, speed: 0.0012, rangeX: 12, rangeZ: 15 },
+            { x: 40, z: -85, radius: 4, speed: 0.001, rangeX: 14, rangeZ: 12 },
+            // Lower section
+            { x: -45, z: -100, radius: 5, speed: 0.001, rangeX: 15, rangeZ: 16 },
+            { x: 25, z: -115, radius: 4, speed: 0.0008, rangeX: 12, rangeZ: 14 },
+            { x: -30, z: -130, radius: 5, speed: 0.0012, rangeX: 14, rangeZ: 12 },
+            { x: 35, z: -145, radius: 4, speed: 0.001, rangeX: 16, rangeZ: 15 },
+            // Near treasure
+            { x: -40, z: -160, radius: 5, speed: 0.001, rangeX: 14, rangeZ: 14 },
+            { x: 15, z: -175, radius: 5, speed: 0.0012, rangeX: 12, rangeZ: 16 }
         ],
         
         // No trees - water level
@@ -1602,29 +1878,41 @@ const LEVELS = {
             { x: -50, z: -175 }, { x: 40, z: -195 }
         ],
         
-        // Rock positions as smaller debris
+        // Rock positions as smaller debris - more to obstruct path
         rockPositions: [
             { x: -20, z: 170 }, { x: 25, z: 160 },
             { x: -25, z: 140 }, { x: 30, z: 110 },
             { x: -30, z: 70 }, { x: 25, z: 40 },
             { x: -20, z: 10 }, { x: 30, z: -20 },
             { x: -25, z: -60 }, { x: 25, z: -100 },
-            { x: -30, z: -140 }, { x: 20, z: -175 }
+            { x: -30, z: -140 }, { x: 20, z: -175 },
+            // Additional rocks
+            { x: 10, z: 155 }, { x: -15, z: 125 },
+            { x: 15, z: 90 }, { x: -10, z: 55 },
+            { x: 5, z: 20 }, { x: -5, z: -15 },
+            { x: 10, z: -45 }, { x: -15, z: -80 },
+            { x: 15, z: -115 }, { x: -10, z: -160 }
         ],
-        
+
         // No canyon walls - open ocean
         canyonWalls: [],
-        
+
         // No scarabs in water level
         scarabs: [],
-        
+
         // Safe zone bounds for tornado spawning
         safeZoneBounds: {
             minX: -110,
             maxX: 110,
             minZ: -230,
             maxZ: 210
-        }
+        },
+
+        // Pirate ships that patrol and shoot cannonballs at the player
+        pirateShips: [
+            { x: -100, z: 100, patrolZ1: 50, patrolZ2: 150, speed: 0.03 },
+            { x: 100, z: -50, patrolZ1: -150, patrolZ2: 50, speed: 0.025 }
+        ]
     }
 };
 

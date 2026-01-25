@@ -273,6 +273,7 @@ function switchLevel(newLevel) {
     // Stop any audio
     if (typeof Audio !== 'undefined' && Audio.stopBackgroundMusic) {
         Audio.stopBackgroundMusic();
+        Audio.stopTechnoMusic();
     }
     
     // Small delay to let things clean up, then restart
@@ -393,7 +394,77 @@ function initGame() {
     if (levelConfig.hasMountains !== false && levelConfig.mountains && levelConfig.mountains.length > 0) {
         createMountains(scene, THREE, levelConfig.mountains);
     }
-    
+
+    // Impassable cliffs - towering formations that block everything including gliding
+    const impassableCliffs = [];
+    if (levelConfig.impassableCliffs && levelConfig.impassableCliffs.length > 0) {
+        levelConfig.impassableCliffs.forEach(cliff => {
+            const cliffGroup = new THREE.Group();
+
+            // Main cliff body - tall rocky spire
+            const cliffHeight = cliff.height || 50;
+            const cliffRadius = cliff.radius || 15;
+
+            // Base cone
+            const baseGeometry = new THREE.ConeGeometry(cliffRadius, cliffHeight * 0.6, 8, 4);
+            const baseMaterial = new THREE.MeshLambertMaterial({
+                color: waterTheme ? 0x4a4a5a : 0x6b5b4f
+            });
+            const base = new THREE.Mesh(baseGeometry, baseMaterial);
+            base.position.y = cliffHeight * 0.3;
+            cliffGroup.add(base);
+
+            // Middle section
+            const midGeometry = new THREE.ConeGeometry(cliffRadius * 0.7, cliffHeight * 0.4, 8, 3);
+            const midMaterial = new THREE.MeshLambertMaterial({
+                color: waterTheme ? 0x5a5a6a : 0x7b6b5f
+            });
+            const mid = new THREE.Mesh(midGeometry, midMaterial);
+            mid.position.y = cliffHeight * 0.6;
+            cliffGroup.add(mid);
+
+            // Top spire
+            const topGeometry = new THREE.ConeGeometry(cliffRadius * 0.4, cliffHeight * 0.3, 6, 2);
+            const topMaterial = new THREE.MeshLambertMaterial({
+                color: waterTheme ? 0x6a6a7a : 0x8b7b6f
+            });
+            const top = new THREE.Mesh(topGeometry, topMaterial);
+            top.position.y = cliffHeight * 0.85;
+            cliffGroup.add(top);
+
+            // Rocky outcrops
+            for (let i = 0; i < 6; i++) {
+                const rockGeometry = new THREE.DodecahedronGeometry(cliffRadius * 0.3, 0);
+                const rockMaterial = new THREE.MeshLambertMaterial({
+                    color: waterTheme ? 0x3a3a4a : 0x5b4b3f
+                });
+                const rock = new THREE.Mesh(rockGeometry, rockMaterial);
+                const angle = (i / 6) * Math.PI * 2;
+                const height = 5 + Math.random() * cliffHeight * 0.4;
+                rock.position.set(
+                    Math.cos(angle) * cliffRadius * 0.8,
+                    height,
+                    Math.sin(angle) * cliffRadius * 0.8
+                );
+                rock.rotation.set(Math.random(), Math.random(), Math.random());
+                cliffGroup.add(rock);
+            }
+
+            const terrainHeight = getTerrainHeight(cliff.x, cliff.z);
+            cliffGroup.position.set(cliff.x, terrainHeight, cliff.z);
+            cliffGroup.castShadow = true;
+            scene.add(cliffGroup);
+
+            impassableCliffs.push({
+                mesh: cliffGroup,
+                x: cliff.x,
+                z: cliff.z,
+                radius: cliffRadius,
+                height: cliffHeight
+            });
+        });
+    }
+
     // River and bridge are optional per level
     const hasRiver = levelConfig.hasRiver !== false; // Default true for backward compat
     let riverObj = null;
@@ -1308,25 +1379,37 @@ function initGame() {
                         guardianArrows[i].velocity.set(arrowData.vx, arrowData.vy, arrowData.vz);
                     }
                 } else {
-                    // Create new arrow on client
-                    const arrowGeometry = new THREE.CylinderGeometry(0.05, 0.05, 1, 8);
-                    const arrowMaterial = new THREE.MeshLambertMaterial({ color: 0x8B4513 });
-                    const arrowMesh = new THREE.Mesh(arrowGeometry, arrowMaterial);
-                    arrowMesh.castShadow = true;
-                    arrowMesh.position.set(arrowData.x, arrowData.y, arrowData.z);
-                    scene.add(arrowMesh);
-                    
-                    const tipGeometry = new THREE.ConeGeometry(0.1, 0.2, 8);
-                    const tipMaterial = new THREE.MeshLambertMaterial({ color: 0x696969 });
-                    const tipMesh = new THREE.Mesh(tipGeometry, tipMaterial);
-                    tipMesh.position.y = 0.5;
-                    arrowMesh.add(tipMesh);
-                    
-                    arrowMesh.rotation.x = Math.PI / 2;
-                    if (arrowData.rotationZ !== undefined) {
-                        arrowMesh.rotation.z = arrowData.rotationZ;
+                    // Create new arrow on client (ink ball for water theme)
+                    let arrowMesh;
+                    if (waterTheme) {
+                        // Ink ball for octopus guardians
+                        const inkGeometry = new THREE.SphereGeometry(0.3, 12, 12);
+                        const inkMaterial = new THREE.MeshLambertMaterial({ color: 0x000000 });
+                        arrowMesh = new THREE.Mesh(inkGeometry, inkMaterial);
+                        arrowMesh.castShadow = true;
+                        arrowMesh.position.set(arrowData.x, arrowData.y, arrowData.z);
+                        scene.add(arrowMesh);
+                    } else {
+                        // Regular arrow
+                        const arrowGeometry = new THREE.CylinderGeometry(0.05, 0.05, 1, 8);
+                        const arrowMaterial = new THREE.MeshLambertMaterial({ color: 0x8B4513 });
+                        arrowMesh = new THREE.Mesh(arrowGeometry, arrowMaterial);
+                        arrowMesh.castShadow = true;
+                        arrowMesh.position.set(arrowData.x, arrowData.y, arrowData.z);
+                        scene.add(arrowMesh);
+
+                        const tipGeometry = new THREE.ConeGeometry(0.1, 0.2, 8);
+                        const tipMaterial = new THREE.MeshLambertMaterial({ color: 0x696969 });
+                        const tipMesh = new THREE.Mesh(tipGeometry, tipMaterial);
+                        tipMesh.position.y = 0.5;
+                        arrowMesh.add(tipMesh);
+
+                        arrowMesh.rotation.x = Math.PI / 2;
+                        if (arrowData.rotationZ !== undefined) {
+                            arrowMesh.rotation.z = arrowData.rotationZ;
+                        }
                     }
-                    
+
                     guardianArrows.push({
                         mesh: arrowMesh,
                         velocity: new THREE.Vector3(0, 0, 0),
@@ -2813,27 +2896,258 @@ function initGame() {
         });
     }
 
-    // Traps
+    // Traps (whirlpools in water level)
     const traps = [];
-    const trapPositions = levelConfig.trapPositions;
+    const trapPositions = levelConfig.trapPositions || [];
 
     trapPositions.forEach(pos => {
-        const trapGeometry = new THREE.PlaneGeometry(2, 2);
-        const trapMaterial = new THREE.MeshLambertMaterial({ color: 0x6a8a6a });
-        const trap = new THREE.Mesh(trapGeometry, trapMaterial);
-        trap.rotation.x = -Math.PI / 2;
         const terrainHeight = getTerrainHeight(pos.x, pos.z);
-        trap.position.set(pos.x, terrainHeight + 0.02, pos.z);
-        trap.receiveShadow = true;
-        scene.add(trap);
-        traps.push({ mesh: trap, type: 'trap', radius: 1 });
+
+        if (waterTheme) {
+            // Whirlpool (Strudel) for water level
+            const whirlpoolGroup = new THREE.Group();
+
+            // Outer spinning ring
+            const outerRingGeometry = new THREE.RingGeometry(1.5, 2.5, 24);
+            const outerRingMaterial = new THREE.MeshBasicMaterial({
+                color: 0x104080,
+                transparent: true,
+                opacity: 0.7,
+                side: THREE.DoubleSide
+            });
+            const outerRing = new THREE.Mesh(outerRingGeometry, outerRingMaterial);
+            outerRing.rotation.x = -Math.PI / 2;
+            outerRing.position.y = 0.1;
+            whirlpoolGroup.add(outerRing);
+
+            // Middle ring
+            const midRingGeometry = new THREE.RingGeometry(0.8, 1.5, 24);
+            const midRingMaterial = new THREE.MeshBasicMaterial({
+                color: 0x1060a0,
+                transparent: true,
+                opacity: 0.8,
+                side: THREE.DoubleSide
+            });
+            const midRing = new THREE.Mesh(midRingGeometry, midRingMaterial);
+            midRing.rotation.x = -Math.PI / 2;
+            midRing.position.y = 0.05;
+            whirlpoolGroup.add(midRing);
+
+            // Inner dark vortex
+            const innerGeometry = new THREE.CircleGeometry(0.8, 24);
+            const innerMaterial = new THREE.MeshBasicMaterial({
+                color: 0x000020,
+                transparent: true,
+                opacity: 0.9
+            });
+            const inner = new THREE.Mesh(innerGeometry, innerMaterial);
+            inner.rotation.x = -Math.PI / 2;
+            inner.position.y = 0.02;
+            whirlpoolGroup.add(inner);
+
+            // Foam/spray particles around the edge
+            for (let i = 0; i < 8; i++) {
+                const foamGeometry = new THREE.SphereGeometry(0.15, 4, 4);
+                const foamMaterial = new THREE.MeshBasicMaterial({
+                    color: 0xffffff,
+                    transparent: true,
+                    opacity: 0.6
+                });
+                const foam = new THREE.Mesh(foamGeometry, foamMaterial);
+                const angle = (i / 8) * Math.PI * 2;
+                foam.position.set(Math.cos(angle) * 2, 0.2, Math.sin(angle) * 2);
+                whirlpoolGroup.add(foam);
+            }
+
+            whirlpoolGroup.position.set(pos.x, terrainHeight, pos.z);
+            scene.add(whirlpoolGroup);
+            traps.push({
+                mesh: whirlpoolGroup,
+                outerRing: outerRing,
+                midRing: midRing,
+                type: 'whirlpool',
+                radius: 1.2,  // Smaller hitbox - only the inner vortex kills
+                spinPhase: Math.random() * Math.PI * 2
+            });
+        } else {
+            // Regular trap for other levels
+            const trapGeometry = new THREE.PlaneGeometry(2, 2);
+            const trapMaterial = new THREE.MeshLambertMaterial({ color: 0x6a8a6a });
+            const trap = new THREE.Mesh(trapGeometry, trapMaterial);
+            trap.rotation.x = -Math.PI / 2;
+            trap.position.set(pos.x, terrainHeight + 0.02, pos.z);
+            trap.receiveShadow = true;
+            scene.add(trap);
+            traps.push({ mesh: trap, type: 'trap', radius: 1 });
+        }
     });
+
+    // Moving waterspouts (only in water level)
+    const movingTraps = [];
+    if (levelConfig.movingTraps && waterTheme) {
+        levelConfig.movingTraps.forEach(trapConfig => {
+            const waterspoutGroup = new THREE.Group();
+            const terrainHeight = getTerrainHeight(trapConfig.x, trapConfig.z);
+
+            // Waterspout colors
+            const outerColor = 0x1E90FF;  // Dodger blue
+            const innerColor = 0x87CEEB;  // Sky blue
+            const particleColor = 0xB0E0E6; // Powder blue
+
+            // Outer cone - moderate size
+            const coneHeight = 8 + trapConfig.radius;
+            const coneRadius = trapConfig.radius * 0.8;
+            const coneGeometry = new THREE.ConeGeometry(coneRadius, coneHeight, 16, 6, true);
+            const coneMaterial = new THREE.MeshBasicMaterial({
+                color: outerColor,
+                transparent: true,
+                opacity: 0.4,
+                side: THREE.DoubleSide
+            });
+            const outerCone = new THREE.Mesh(coneGeometry, coneMaterial);
+            outerCone.rotation.x = Math.PI; // Point up
+            outerCone.position.y = coneHeight / 2;
+            waterspoutGroup.add(outerCone);
+
+            // Inner spinning cone
+            const innerRadius = coneRadius * 0.5;
+            const innerHeight = coneHeight * 0.8;
+            const innerConeGeometry = new THREE.ConeGeometry(innerRadius, innerHeight, 16, 6, true);
+            const innerConeMaterial = new THREE.MeshBasicMaterial({
+                color: innerColor,
+                transparent: true,
+                opacity: 0.5,
+                side: THREE.DoubleSide
+            });
+            const innerCone = new THREE.Mesh(innerConeGeometry, innerConeMaterial);
+            innerCone.rotation.x = Math.PI;
+            innerCone.position.y = innerHeight / 2;
+            waterspoutGroup.add(innerCone);
+
+            // Core vortex
+            const coreRadius = coneRadius * 0.25;
+            const coreHeight = coneHeight * 0.6;
+            const coreConeGeometry = new THREE.ConeGeometry(coreRadius, coreHeight, 12, 4, true);
+            const coreConeMaterial = new THREE.MeshBasicMaterial({
+                color: 0xFFFFFF,
+                transparent: true,
+                opacity: 0.6,
+                side: THREE.DoubleSide
+            });
+            const coreCone = new THREE.Mesh(coreConeGeometry, coreConeMaterial);
+            coreCone.rotation.x = Math.PI;
+            coreCone.position.y = coreHeight / 2;
+            waterspoutGroup.add(coreCone);
+
+            // Add water spray particles - many particles for intimidating look
+            const dustGroup = new THREE.Group();
+            for (let i = 0; i < 80; i++) {
+                const dustGeometry = new THREE.SphereGeometry(0.2 + Math.random() * 0.3, 4, 4);
+                const dustMaterial = new THREE.MeshBasicMaterial({
+                    color: i % 3 === 0 ? 0xFFFFFF : particleColor,
+                    transparent: true,
+                    opacity: 0.4 + Math.random() * 0.4
+                });
+                const dust = new THREE.Mesh(dustGeometry, dustMaterial);
+                const angle = Math.random() * Math.PI * 2;
+                const height = Math.random() * coneHeight;
+                const radius = (height / coneHeight) * coneRadius * (0.5 + Math.random() * 0.6);
+                dust.position.set(Math.cos(angle) * radius, height, Math.sin(angle) * radius);
+                dustGroup.add(dust);
+            }
+            waterspoutGroup.add(dustGroup);
+
+            // Swirling foam rings at different heights
+            for (let h = 0; h < 4; h++) {
+                const ringHeight = (h + 1) * coneHeight * 0.2;
+                const ringRadius = (ringHeight / coneHeight) * coneRadius;
+                const foamRingGeometry = new THREE.TorusGeometry(ringRadius, 0.15, 8, 16);
+                const foamRingMaterial = new THREE.MeshBasicMaterial({
+                    color: 0xB0E0E6,
+                    transparent: true,
+                    opacity: 0.5 - h * 0.1
+                });
+                const foamRing = new THREE.Mesh(foamRingGeometry, foamRingMaterial);
+                foamRing.rotation.x = Math.PI / 2;
+                foamRing.position.y = ringHeight;
+                foamRing.userData.spinSpeed = 0.05 + h * 0.02;
+                waterspoutGroup.add(foamRing);
+            }
+
+            // Flying debris/fish being sucked up
+            const debrisGroup = new THREE.Group();
+            for (let i = 0; i < 8; i++) {
+                const debrisGeometry = new THREE.BoxGeometry(0.3, 0.15, 0.5);
+                const debrisMaterial = new THREE.MeshBasicMaterial({
+                    color: i % 2 === 0 ? 0x8B4513 : 0x696969,  // Brown wood or grey
+                    transparent: true,
+                    opacity: 0.8
+                });
+                const debris = new THREE.Mesh(debrisGeometry, debrisMaterial);
+                const angle = (i / 8) * Math.PI * 2;
+                const height = 2 + Math.random() * (coneHeight - 3);
+                const radius = (height / coneHeight) * coneRadius * 0.7;
+                debris.position.set(Math.cos(angle) * radius, height, Math.sin(angle) * radius);
+                debris.rotation.set(Math.random() * Math.PI, Math.random() * Math.PI, Math.random() * Math.PI);
+                debrisGroup.add(debris);
+            }
+            waterspoutGroup.add(debrisGroup);
+            waterspoutGroup.debrisGroup = debrisGroup;
+
+            // Large base foam/splash ring
+            const baseRingGeometry = new THREE.RingGeometry(coneRadius * 0.5, coneRadius * 1.5, 32);
+            const baseRingMaterial = new THREE.MeshBasicMaterial({
+                color: 0xFFFFFF,
+                transparent: true,
+                opacity: 0.6,
+                side: THREE.DoubleSide
+            });
+            const baseRing = new THREE.Mesh(baseRingGeometry, baseRingMaterial);
+            baseRing.rotation.x = -Math.PI / 2;
+            baseRing.position.y = 0.2;
+            waterspoutGroup.add(baseRing);
+
+            // Outer splash waves
+            const splashGeometry = new THREE.RingGeometry(coneRadius * 1.3, coneRadius * 2.0, 32);
+            const splashMaterial = new THREE.MeshBasicMaterial({
+                color: 0x87CEEB,
+                transparent: true,
+                opacity: 0.3,
+                side: THREE.DoubleSide
+            });
+            const splash = new THREE.Mesh(splashGeometry, splashMaterial);
+            splash.rotation.x = -Math.PI / 2;
+            splash.position.y = 0.1;
+            waterspoutGroup.add(splash);
+
+            waterspoutGroup.position.set(trapConfig.x, terrainHeight, trapConfig.z);
+            scene.add(waterspoutGroup);
+
+            movingTraps.push({
+                mesh: waterspoutGroup,
+                outerCone: outerCone,
+                innerCone: innerCone,
+                coreCone: coreCone,
+                dustGroup: dustGroup,
+                debrisGroup: debrisGroup,
+                baseRing: baseRing,
+                baseX: trapConfig.x,
+                baseZ: trapConfig.z,
+                radius: trapConfig.radius,
+                speed: trapConfig.speed,
+                rangeX: trapConfig.rangeX,
+                rangeZ: trapConfig.rangeZ,
+                phase: Math.random() * Math.PI * 2,
+                spinPhase: Math.random() * Math.PI * 2
+            });
+        });
+    }
 
     // Goblin helper function
     function createGoblin(x, z, patrolLeft, patrolRight, speed = 0.013) {
         const textures = getTerrainTextures(THREE);
         const goblinGrp = new THREE.Group();
-        
+
         if (waterTheme) {
             // Shark fin - triangle sticking out of water
             const finGeometry = new THREE.ConeGeometry(0.5, 2.5, 3);
@@ -2842,12 +3156,116 @@ function initGame() {
             fin.position.y = 1.0;
             fin.castShadow = true;
             goblinGrp.add(fin);
-            
+
             // Small dorsal detail
             const detailGeometry = new THREE.ConeGeometry(0.15, 0.5, 3);
             const detail = new THREE.Mesh(detailGeometry, finMaterial);
             detail.position.set(0, 0.3, -0.4);
             goblinGrp.add(detail);
+        } else if (lavaTheme) {
+            // DEVIL - red demonic creature for lava level
+            const devilRed = 0xCC2222;
+            const darkRed = 0x880000;
+
+            // Devil body
+            const bodyGeometry = new THREE.BoxGeometry(0.6, 0.9, 0.4);
+            const bodyMaterial = new THREE.MeshLambertMaterial({ color: devilRed });
+            const body = new THREE.Mesh(bodyGeometry, bodyMaterial);
+            body.position.y = 0.85;
+            body.castShadow = true;
+            goblinGrp.add(body);
+
+            // Devil head
+            const headGeometry = new THREE.SphereGeometry(0.4, 16, 16);
+            const headMaterial = new THREE.MeshLambertMaterial({ color: devilRed });
+            const head = new THREE.Mesh(headGeometry, headMaterial);
+            head.position.y = 1.55;
+            head.castShadow = true;
+            goblinGrp.add(head);
+
+            // Devil horns
+            const hornGeometry = new THREE.ConeGeometry(0.08, 0.5, 8);
+            const hornMaterial = new THREE.MeshLambertMaterial({ color: 0x222222 });
+            const horn1 = new THREE.Mesh(hornGeometry, hornMaterial);
+            horn1.position.set(-0.25, 1.85, 0);
+            horn1.rotation.z = 0.4;
+            horn1.castShadow = true;
+            goblinGrp.add(horn1);
+
+            const horn2 = new THREE.Mesh(hornGeometry, hornMaterial);
+            horn2.position.set(0.25, 1.85, 0);
+            horn2.rotation.z = -0.4;
+            horn2.castShadow = true;
+            goblinGrp.add(horn2);
+
+            // Glowing evil eyes
+            const eyeGeometry = new THREE.SphereGeometry(0.1, 12, 12);
+            const eyeMaterial = new THREE.MeshBasicMaterial({
+                color: 0xFFFF00,
+                transparent: true,
+                opacity: 0.9
+            });
+            const eye1 = new THREE.Mesh(eyeGeometry, eyeMaterial);
+            eye1.position.set(-0.15, 1.55, 0.35);
+            goblinGrp.add(eye1);
+
+            const eye2 = new THREE.Mesh(eyeGeometry, eyeMaterial);
+            eye2.position.set(0.15, 1.55, 0.35);
+            goblinGrp.add(eye2);
+
+            // Evil grin
+            const mouthGeometry = new THREE.BoxGeometry(0.25, 0.06, 0.1);
+            const mouthMaterial = new THREE.MeshBasicMaterial({ color: 0x000000 });
+            const mouth = new THREE.Mesh(mouthGeometry, mouthMaterial);
+            mouth.position.set(0, 1.4, 0.38);
+            goblinGrp.add(mouth);
+
+            // Pointed ears
+            const earGeometry = new THREE.ConeGeometry(0.1, 0.35, 4);
+            const earMaterial = new THREE.MeshLambertMaterial({ color: darkRed });
+            const ear1 = new THREE.Mesh(earGeometry, earMaterial);
+            ear1.rotation.z = Math.PI / 2;
+            ear1.position.set(-0.5, 1.5, 0);
+            goblinGrp.add(ear1);
+
+            const ear2 = new THREE.Mesh(earGeometry, earMaterial);
+            ear2.rotation.z = -Math.PI / 2;
+            ear2.position.set(0.5, 1.5, 0);
+            goblinGrp.add(ear2);
+
+            // Devil tail
+            const tailGeometry = new THREE.CylinderGeometry(0.05, 0.03, 0.8, 6);
+            const tailMaterial = new THREE.MeshLambertMaterial({ color: devilRed });
+            const tail = new THREE.Mesh(tailGeometry, tailMaterial);
+            tail.position.set(0, 0.5, -0.4);
+            tail.rotation.x = 0.5;
+            goblinGrp.add(tail);
+
+            // Tail tip (arrow shape)
+            const tipGeometry = new THREE.ConeGeometry(0.1, 0.2, 4);
+            const tipMaterial = new THREE.MeshLambertMaterial({ color: darkRed });
+            const tip = new THREE.Mesh(tipGeometry, tipMaterial);
+            tip.position.set(0, 0.15, -0.7);
+            tip.rotation.x = Math.PI / 2 + 0.3;
+            goblinGrp.add(tip);
+
+            // Small pitchfork
+            const staffGeometry = new THREE.CylinderGeometry(0.03, 0.03, 1.2, 6);
+            const staffMaterial = new THREE.MeshLambertMaterial({ color: 0x333333 });
+            const staff = new THREE.Mesh(staffGeometry, staffMaterial);
+            staff.position.set(0.4, 0.9, 0.1);
+            staff.rotation.z = 0.2;
+            goblinGrp.add(staff);
+
+            // Pitchfork prongs
+            const prongGeometry = new THREE.ConeGeometry(0.03, 0.2, 4);
+            const prongMaterial = new THREE.MeshLambertMaterial({ color: 0x333333 });
+            for (let i = -1; i <= 1; i++) {
+                const prong = new THREE.Mesh(prongGeometry, prongMaterial);
+                prong.position.set(0.4 + i * 0.08, 1.55, 0.1);
+                prong.rotation.z = 0.2;
+                goblinGrp.add(prong);
+            }
         } else {
             const bodyGeometry = new THREE.BoxGeometry(0.6, 0.8, 0.4);
             const bodyMaterial = new THREE.MeshLambertMaterial({ map: textures.goblinArmor });
@@ -2920,7 +3338,7 @@ function initGame() {
     function createGuardianGoblin(x, z, patrolLeft, patrolRight, speed = 0.014) {
         const textures = getTerrainTextures(THREE);
         const goblinGrp = new THREE.Group();
-        
+
         if (waterTheme) {
             // Octopus body
             const bodyGeometry = new THREE.SphereGeometry(0.8, 16, 16);
@@ -2930,28 +3348,28 @@ function initGame() {
             body.position.y = 1.2;
             body.castShadow = true;
             goblinGrp.add(body);
-            
+
             // Eyes
             const eyeGeometry = new THREE.SphereGeometry(0.15, 12, 12);
             const eyeMaterial = new THREE.MeshBasicMaterial({ color: 0xFFFFFF });
             const eye1 = new THREE.Mesh(eyeGeometry, eyeMaterial);
             eye1.position.set(-0.3, 1.4, 0.6);
             goblinGrp.add(eye1);
-            
+
             const eye2 = new THREE.Mesh(eyeGeometry, eyeMaterial);
             eye2.position.set(0.3, 1.4, 0.6);
             goblinGrp.add(eye2);
-            
+
             const pupilGeometry = new THREE.SphereGeometry(0.08, 8, 8);
             const pupilMaterial = new THREE.MeshBasicMaterial({ color: 0x000000 });
             const pupil1 = new THREE.Mesh(pupilGeometry, pupilMaterial);
             pupil1.position.set(-0.3, 1.4, 0.68);
             goblinGrp.add(pupil1);
-            
+
             const pupil2 = new THREE.Mesh(pupilGeometry, pupilMaterial);
             pupil2.position.set(0.3, 1.4, 0.68);
             goblinGrp.add(pupil2);
-            
+
             // 8 Tentacles in a circle
             const tentacleGeometry = new THREE.CylinderGeometry(0.12, 0.06, 1.5, 6);
             const tentacleMaterial = new THREE.MeshLambertMaterial({ color: 0x9932CC });
@@ -2967,11 +3385,155 @@ function initGame() {
                 tentacle.rotation.x = Math.sin(angle) * 0.3;
                 tentacle.castShadow = true;
                 goblinGrp.add(tentacle);
-                
+
                 // Store tentacle for animation
                 if (!goblinGrp.tentacles) goblinGrp.tentacles = [];
                 goblinGrp.tentacles.push({ mesh: tentacle, angle, baseZ: tentacle.rotation.z, baseX: tentacle.rotation.x });
             }
+        } else if (lavaTheme) {
+            // GREATER DEVIL - larger demonic creature for lava level guardian
+            const devilRed = 0xAA1111;
+            const darkRed = 0x660000;
+            const fireOrange = 0xFF4400;
+
+            // Muscular devil body
+            const bodyGeometry = new THREE.CylinderGeometry(0.5, 0.6, 1.3, 8);
+            const bodyMaterial = new THREE.MeshLambertMaterial({ color: devilRed });
+            const body = new THREE.Mesh(bodyGeometry, bodyMaterial);
+            body.position.y = 1.1;
+            body.castShadow = true;
+            goblinGrp.add(body);
+
+            // Devil head - slightly larger
+            const headGeometry = new THREE.SphereGeometry(0.5, 16, 16);
+            const headMaterial = new THREE.MeshLambertMaterial({ color: devilRed });
+            const head = new THREE.Mesh(headGeometry, headMaterial);
+            head.position.y = 2.0;
+            head.castShadow = true;
+            goblinGrp.add(head);
+
+            // Large curved horns
+            const hornGeometry = new THREE.ConeGeometry(0.12, 0.8, 8);
+            const hornMaterial = new THREE.MeshLambertMaterial({ color: 0x111111 });
+            const horn1 = new THREE.Mesh(hornGeometry, hornMaterial);
+            horn1.position.set(-0.35, 2.4, 0);
+            horn1.rotation.z = 0.5;
+            horn1.rotation.x = -0.2;
+            horn1.castShadow = true;
+            goblinGrp.add(horn1);
+
+            const horn2 = new THREE.Mesh(hornGeometry, hornMaterial);
+            horn2.position.set(0.35, 2.4, 0);
+            horn2.rotation.z = -0.5;
+            horn2.rotation.x = -0.2;
+            horn2.castShadow = true;
+            goblinGrp.add(horn2);
+
+            // Fiery glowing eyes
+            const eyeGeometry = new THREE.SphereGeometry(0.12, 12, 12);
+            const eyeMaterial = new THREE.MeshBasicMaterial({
+                color: fireOrange,
+                transparent: true,
+                opacity: 1.0
+            });
+            const eye1 = new THREE.Mesh(eyeGeometry, eyeMaterial);
+            eye1.position.set(-0.18, 2.0, 0.42);
+            goblinGrp.add(eye1);
+
+            const eye2 = new THREE.Mesh(eyeGeometry, eyeMaterial);
+            eye2.position.set(0.18, 2.0, 0.42);
+            goblinGrp.add(eye2);
+
+            // Demonic grin with fangs
+            const mouthGeometry = new THREE.BoxGeometry(0.3, 0.08, 0.1);
+            const mouthMaterial = new THREE.MeshBasicMaterial({ color: 0x000000 });
+            const mouth = new THREE.Mesh(mouthGeometry, mouthMaterial);
+            mouth.position.set(0, 1.82, 0.45);
+            goblinGrp.add(mouth);
+
+            // Fangs
+            const fangGeometry = new THREE.ConeGeometry(0.03, 0.12, 4);
+            const fangMaterial = new THREE.MeshBasicMaterial({ color: 0xFFFFFF });
+            const fang1 = new THREE.Mesh(fangGeometry, fangMaterial);
+            fang1.position.set(-0.08, 1.76, 0.45);
+            fang1.rotation.x = Math.PI;
+            goblinGrp.add(fang1);
+
+            const fang2 = new THREE.Mesh(fangGeometry, fangMaterial);
+            fang2.position.set(0.08, 1.76, 0.45);
+            fang2.rotation.x = Math.PI;
+            goblinGrp.add(fang2);
+
+            // Pointed ears
+            const earGeometry = new THREE.ConeGeometry(0.12, 0.4, 4);
+            const earMaterial = new THREE.MeshLambertMaterial({ color: darkRed });
+            const ear1 = new THREE.Mesh(earGeometry, earMaterial);
+            ear1.rotation.z = Math.PI / 2;
+            ear1.position.set(-0.6, 2.0, 0);
+            goblinGrp.add(ear1);
+
+            const ear2 = new THREE.Mesh(earGeometry, earMaterial);
+            ear2.rotation.z = -Math.PI / 2;
+            ear2.position.set(0.6, 2.0, 0);
+            goblinGrp.add(ear2);
+
+            // Bat-like wings
+            const wingGeometry = new THREE.PlaneGeometry(1.2, 0.8);
+            const wingMaterial = new THREE.MeshLambertMaterial({
+                color: darkRed,
+                side: THREE.DoubleSide,
+                transparent: true,
+                opacity: 0.9
+            });
+            const wing1 = new THREE.Mesh(wingGeometry, wingMaterial);
+            wing1.position.set(-0.8, 1.5, -0.2);
+            wing1.rotation.y = 0.8;
+            wing1.rotation.z = 0.3;
+            goblinGrp.add(wing1);
+
+            const wing2 = new THREE.Mesh(wingGeometry, wingMaterial);
+            wing2.position.set(0.8, 1.5, -0.2);
+            wing2.rotation.y = -0.8;
+            wing2.rotation.z = -0.3;
+            goblinGrp.add(wing2);
+
+            // Devil tail
+            const tailGeometry = new THREE.CylinderGeometry(0.06, 0.04, 1.0, 6);
+            const tailMaterial = new THREE.MeshLambertMaterial({ color: devilRed });
+            const tail = new THREE.Mesh(tailGeometry, tailMaterial);
+            tail.position.set(0, 0.6, -0.5);
+            tail.rotation.x = 0.6;
+            goblinGrp.add(tail);
+
+            // Tail tip
+            const tipGeometry = new THREE.ConeGeometry(0.12, 0.25, 4);
+            const tipMaterial = new THREE.MeshLambertMaterial({ color: darkRed });
+            const tip = new THREE.Mesh(tipGeometry, tipMaterial);
+            tip.position.set(0, 0.2, -0.9);
+            tip.rotation.x = Math.PI / 2 + 0.4;
+            goblinGrp.add(tip);
+
+            // Flaming trident
+            const tridentStaff = new THREE.CylinderGeometry(0.04, 0.04, 1.8, 6);
+            const tridentMaterial = new THREE.MeshLambertMaterial({ color: 0x222222 });
+            const staff = new THREE.Mesh(tridentStaff, tridentMaterial);
+            staff.position.set(0.5, 1.2, 0.2);
+            staff.rotation.z = 0.15;
+            goblinGrp.add(staff);
+
+            // Trident prongs
+            const prongGeometry = new THREE.ConeGeometry(0.05, 0.35, 4);
+            for (let i = -1; i <= 1; i++) {
+                const prong = new THREE.Mesh(prongGeometry, tridentMaterial);
+                prong.position.set(0.5 + i * 0.12, 2.2, 0.2);
+                prong.rotation.z = 0.15 + i * 0.15;
+                goblinGrp.add(prong);
+            }
+
+            // Fire glow at trident top
+            const fireGlow = new THREE.PointLight(fireOrange, 0.5, 3);
+            fireGlow.position.set(0.5, 2.3, 0.2);
+            goblinGrp.add(fireGlow);
         } else {
             const bodyGeometry = new THREE.BoxGeometry(0.8, 1.0, 0.5);
             const bodyMaterial = new THREE.MeshLambertMaterial({ map: textures.goblinArmor });
@@ -3790,14 +4352,14 @@ function initGame() {
     rainbowColors.forEach((color, i) => {
         const radius = 5 - (i * 0.3);
         const arcGeometry = new THREE.TorusGeometry(radius, 0.3, 8, 32, Math.PI);
-        const arcMaterial = new THREE.MeshBasicMaterial({ 
+        const arcMaterial = new THREE.MeshBasicMaterial({
             color: color,
             transparent: true,
             opacity: 0.9
         });
         const arc = new THREE.Mesh(arcGeometry, arcMaterial);
         rainbowGroup.add(arc);
-        
+
         // Add a point light for each rainbow color
         const light = new THREE.PointLight(color, 0.8, 25);
         // Position lights along the arc
@@ -3810,9 +4372,192 @@ function initGame() {
         rainbowGroup.add(light);
         rainbowLights.push(light);
     });
+
+    // Add LOTS of glow sprites around the rainbow for a real party!
+    const rainbowGlowSprites = [];
+    for (let i = 0; i < 200; i++) {
+        const glowCanvas = document.createElement('canvas');
+        glowCanvas.width = 64;
+        glowCanvas.height = 64;
+        const glowCtx = glowCanvas.getContext('2d');
+
+        // Random rainbow color for each sprite
+        const color = rainbowColors[Math.floor(Math.random() * rainbowColors.length)];
+        const colorStr = '#' + color.toString(16).padStart(6, '0');
+
+        // Create glowing circle
+        const gradient = glowCtx.createRadialGradient(32, 32, 0, 32, 32, 32);
+        gradient.addColorStop(0, '#ffffff');
+        gradient.addColorStop(0.2, colorStr);
+        gradient.addColorStop(0.5, colorStr);
+        gradient.addColorStop(1, 'transparent');
+        glowCtx.fillStyle = gradient;
+        glowCtx.fillRect(0, 0, 64, 64);
+
+        const glowTexture = new THREE.CanvasTexture(glowCanvas);
+        const glowMaterial = new THREE.SpriteMaterial({
+            map: glowTexture,
+            transparent: true,
+            blending: THREE.AdditiveBlending,
+            opacity: 0.9
+        });
+        const glowSprite = new THREE.Sprite(glowMaterial);
+
+        // Position sprites in a larger area around the rainbow
+        const angle = Math.random() * Math.PI;
+        const radius = 1 + Math.random() * 8;
+        const offset = (Math.random() - 0.5) * 6;
+        glowSprite.position.set(
+            Math.cos(angle) * radius + (Math.random() - 0.5) * 3,
+            Math.sin(angle) * radius + (Math.random() - 0.5) * 3,
+            offset
+        );
+        glowSprite.scale.set(0.4 + Math.random() * 0.8, 0.4 + Math.random() * 0.8, 1);
+        glowSprite.userData = {
+            baseY: glowSprite.position.y,
+            baseX: glowSprite.position.x,
+            baseZ: glowSprite.position.z,
+            phase: Math.random() * Math.PI * 2,
+            speed: 0.5 + Math.random() * 2,
+            pulseSpeed: 1 + Math.random() * 3,
+            orbitSpeed: (Math.random() - 0.5) * 0.5
+        };
+        rainbowGroup.add(glowSprite);
+        rainbowGlowSprites.push(glowSprite);
+    }
+
+    // Create BIG disco ball above the rainbow - using 3D mirror tiles
+    const discoBallGroup = new THREE.Group();
+    const discoBallRadius = 2.5;
+
+    // Create disco ball using actual 3D box tiles arranged in a sphere
+    const discoMirrors = [];
+    const tileSize = 0.35;
+    const tileDepth = 0.08;
+
+    for (let lat = -80; lat <= 80; lat += 12) {
+        const latRad = lat * Math.PI / 180;
+        const ringRadius = Math.cos(latRad) * discoBallRadius;
+        const y = Math.sin(latRad) * discoBallRadius;
+        const circumference = 2 * Math.PI * ringRadius;
+        const tilesInRing = Math.max(4, Math.floor(circumference / (tileSize + 0.05)));
+
+        for (let i = 0; i < tilesInRing; i++) {
+            const lon = (i / tilesInRing) * Math.PI * 2;
+            const x = Math.cos(lon) * ringRadius;
+            const z = Math.sin(lon) * ringRadius;
+
+            // Create 3D mirror tile
+            const tileGeometry = new THREE.BoxGeometry(tileSize, tileSize, tileDepth);
+            const tileMaterial = new THREE.MeshBasicMaterial({
+                color: 0xffffff,
+                transparent: false
+            });
+            const tile = new THREE.Mesh(tileGeometry, tileMaterial);
+
+            // Position tile on sphere surface
+            tile.position.set(x, y, z);
+            // Make tile face outward from center
+            tile.lookAt(x * 2, y * 2, z * 2);
+
+            tile.userData = { phase: Math.random() * Math.PI * 2 };
+            discoBallGroup.add(tile);
+            discoMirrors.push(tile);
+        }
+    }
+
+    // Add top and bottom cap tiles
+    const capTileMaterial = new THREE.MeshBasicMaterial({ color: 0xffffff });
+    const topCap = new THREE.Mesh(new THREE.BoxGeometry(tileSize, tileSize, tileDepth), capTileMaterial.clone());
+    topCap.position.set(0, discoBallRadius, 0);
+    topCap.rotation.x = -Math.PI / 2;
+    topCap.userData = { phase: Math.random() * Math.PI * 2 };
+    discoBallGroup.add(topCap);
+    discoMirrors.push(topCap);
+
+    const bottomCap = new THREE.Mesh(new THREE.BoxGeometry(tileSize, tileSize, tileDepth), capTileMaterial.clone());
+    bottomCap.position.set(0, -discoBallRadius, 0);
+    bottomCap.rotation.x = Math.PI / 2;
+    bottomCap.userData = { phase: Math.random() * Math.PI * 2 };
+    discoBallGroup.add(bottomCap);
+    discoMirrors.push(bottomCap);
+
+    // Add dark gaps/core visible between tiles
+    const coreGeometry = new THREE.SphereGeometry(discoBallRadius - tileDepth, 16, 16);
+    const coreMaterial = new THREE.MeshBasicMaterial({ color: 0x111111 });
+    const core = new THREE.Mesh(coreGeometry, coreMaterial);
+    discoBallGroup.add(core);
+
+    // Disco ball hanging rod - connects to top of rainbow
+    const rodLength = 3;
+    const rodGeometry = new THREE.CylinderGeometry(0.08, 0.08, rodLength, 8);
+    const rodMaterial = new THREE.MeshBasicMaterial({ color: 0x666666 });
+    const rod = new THREE.Mesh(rodGeometry, rodMaterial);
+    rod.position.y = discoBallRadius + rodLength / 2;
+    discoBallGroup.add(rod);
+
+    // Add a small hook/ring at the top of the rod
+    const hookGeometry = new THREE.TorusGeometry(0.15, 0.04, 8, 16);
+    const hookMaterial = new THREE.MeshBasicMaterial({ color: 0x888888 });
+    const hook = new THREE.Mesh(hookGeometry, hookMaterial);
+    hook.position.y = discoBallRadius + rodLength;
+    hook.rotation.x = Math.PI / 2;
+    discoBallGroup.add(hook);
+
+    // Add multiple colored point lights around the disco ball
+    const discoBallLight = new THREE.PointLight(0xffffff, 3, 50);
+    discoBallLight.position.set(0, 0, 0);
+    discoBallGroup.add(discoBallLight);
+
+    // Add spinning light beams shooting out from disco ball
+    const discoLightBeams = [];
+    for (let i = 0; i < 12; i++) {
+        const beamCanvas = document.createElement('canvas');
+        beamCanvas.width = 32;
+        beamCanvas.height = 128;
+        const beamCtx = beamCanvas.getContext('2d');
+
+        const beamGradient = beamCtx.createLinearGradient(16, 0, 16, 128);
+        beamGradient.addColorStop(0, 'rgba(255,255,255,0.8)');
+        beamGradient.addColorStop(0.3, 'rgba(255,255,255,0.4)');
+        beamGradient.addColorStop(1, 'rgba(255,255,255,0)');
+        beamCtx.fillStyle = beamGradient;
+        beamCtx.fillRect(0, 0, 32, 128);
+
+        const beamTexture = new THREE.CanvasTexture(beamCanvas);
+        const beamMaterial = new THREE.SpriteMaterial({
+            map: beamTexture,
+            transparent: true,
+            blending: THREE.AdditiveBlending,
+            opacity: 0.6
+        });
+        const beam = new THREE.Sprite(beamMaterial);
+        beam.scale.set(1.5, 15, 1);
+        beam.position.set(0, -5, 0);
+
+        const beamPivot = new THREE.Group();
+        beamPivot.add(beam);
+        const angle = (i / 12) * Math.PI * 2;
+        beamPivot.rotation.z = angle;
+        beamPivot.userData = {
+            baseAngle: angle,
+            color: rainbowColors[i % rainbowColors.length]
+        };
+        discoBallGroup.add(beamPivot);
+        discoLightBeams.push(beamPivot);
+    }
+
+    // Position disco ball hanging from the center top of the rainbow arc
+    // Rainbow outer radius is 5, so top of arc is at y=5. Disco ball hangs below that.
+    discoBallGroup.position.set(0, 5 - discoBallRadius - 3, 0);  // Hang from top center
+    rainbowGroup.add(discoBallGroup);
+
     rainbowGroup.position.set(levelConfig.rainbow.x, 5, levelConfig.rainbow.z + 5);
     rainbowGroup.rotation.y = Math.PI / 2; // Rotate 90 degrees to face player
     scene.add(rainbowGroup);
+
+    // Track if techno music is playing
+    let technoMusicPlaying = false;
 
     // Treasure
     const treasureGroup = new THREE.Group();
@@ -3907,21 +4652,48 @@ function initGame() {
     
     if (levelConfig.iceBerg) {
         // Main ice berg structure - tall crystalline shape
+        // Use obsidian theme for lava level, ice theme for others
         const iceBergGeometry = new THREE.ConeGeometry(8, 20, 6);
-        const iceBergMaterial = new THREE.MeshPhongMaterial({
+        const iceBergMaterial = lavaTheme ? new THREE.MeshPhongMaterial({
+            color: 0x2a1a3a,  // Dark purple obsidian
+            transparent: true,
+            opacity: 0.85,
+            shininess: 150,
+            specular: 0x6644aa,
+            emissive: 0x110022,
+            emissiveIntensity: 0.3
+        }) : new THREE.MeshPhongMaterial({
             color: 0xB0E0E6,
             transparent: true,
             opacity: 0.7,
-        shininess: 100,
-        specular: 0xFFFFFF
-    });
+            shininess: 100,
+            specular: 0xFFFFFF
+        });
     const iceBergMesh = new THREE.Mesh(iceBergGeometry, iceBergMaterial);
     iceBergMesh.position.y = 10;
     iceBergMesh.castShadow = true;
     iceBergMesh.receiveShadow = true;
     iceBergGroup.add(iceBergMesh);
-    
-    // Additional ice crystals around the base
+
+    // Add glowing core for lava level obsidian pillar
+    if (lavaTheme) {
+        const coreGeometry = new THREE.ConeGeometry(3, 18, 6);
+        const coreMaterial = new THREE.MeshBasicMaterial({
+            color: 0x6633cc,
+            transparent: true,
+            opacity: 0.4
+        });
+        const core = new THREE.Mesh(coreGeometry, coreMaterial);
+        core.position.y = 10;
+        iceBergGroup.add(core);
+
+        // Add point light for glow effect
+        const obsidianLight = new THREE.PointLight(0x6633cc, 1.5, 25);
+        obsidianLight.position.y = 10;
+        iceBergGroup.add(obsidianLight);
+    }
+
+    // Additional crystals around the base
     for (let i = 0; i < 5; i++) {
         const angle = (i / 5) * Math.PI * 2;
         const dist = 6;
@@ -4255,16 +5027,128 @@ function initGame() {
             
             poolGroup.position.set(pool.x, getTerrainHeight(pool.x, pool.z) + 0.1, pool.z);
             scene.add(poolGroup);
-            lavaPools.push({ 
-                mesh: poolGroup, 
-                x: pool.x, 
-                z: pool.z, 
+            lavaPools.push({
+                mesh: poolGroup,
+                x: pool.x,
+                z: pool.z,
                 radius: pool.radius,
                 pulsePhase: Math.random() * Math.PI * 2
             });
         });
     }
-    
+
+    // Create lava flows from rocks
+    const lavaFlows = [];
+    if (levelConfig.lavaFlows) {
+        levelConfig.lavaFlows.forEach(flow => {
+            const flowGroup = new THREE.Group();
+            const baseY = getTerrainHeight(flow.x, flow.z);
+
+            // Create cascading lava stream with multiple segments
+            const segments = 5;
+            for (let i = 0; i < segments; i++) {
+                const segmentLength = flow.length / segments;
+                const segmentWidth = 1.5 - (i * 0.15);  // Narrows as it flows down
+                const yOffset = 3 - (i * 0.5);  // Starts high, flows down
+
+                // Lava stream segment
+                const streamGeometry = new THREE.BoxGeometry(segmentWidth, 0.3, segmentLength);
+                const streamMaterial = new THREE.MeshBasicMaterial({
+                    color: i % 2 === 0 ? 0xff4400 : 0xffaa00,
+                    transparent: true,
+                    opacity: 0.9 - (i * 0.1)
+                });
+                const stream = new THREE.Mesh(streamGeometry, streamMaterial);
+                stream.position.set(
+                    flow.direction * i * 0.8,
+                    yOffset,
+                    i * segmentLength - flow.length / 2
+                );
+                stream.rotation.x = -0.15;  // Slight downward angle
+                flowGroup.add(stream);
+            }
+
+            // Add glowing core
+            const coreGeometry = new THREE.BoxGeometry(0.8, 0.2, flow.length * 0.8);
+            const coreMaterial = new THREE.MeshBasicMaterial({
+                color: 0xffffaa,
+                transparent: true,
+                opacity: 0.6
+            });
+            const core = new THREE.Mesh(coreGeometry, coreMaterial);
+            core.position.y = 2;
+            flowGroup.add(core);
+
+            // Add point light for glow
+            const flowLight = new THREE.PointLight(0xff6600, 1.2, 15);
+            flowLight.position.y = 2;
+            flowGroup.add(flowLight);
+
+            // Position the flow at the rock
+            flowGroup.position.set(flow.x, baseY, flow.z);
+            flowGroup.rotation.y = flow.direction;
+            scene.add(flowGroup);
+
+            lavaFlows.push({
+                mesh: flowGroup,
+                x: flow.x,
+                z: flow.z,
+                pulsePhase: Math.random() * Math.PI * 2
+            });
+        });
+    }
+
+    // Create crevices (deep pits that players can fall into)
+    const crevices = [];
+    if (levelConfig.crevices) {
+        levelConfig.crevices.forEach(crevice => {
+            const creviceGroup = new THREE.Group();
+            const baseY = getTerrainHeight(crevice.x, crevice.z);
+
+            // Dark pit opening
+            const pitGeometry = new THREE.PlaneGeometry(crevice.width, crevice.length);
+            const pitMaterial = new THREE.MeshBasicMaterial({
+                color: 0x000000,
+                side: THREE.DoubleSide
+            });
+            const pit = new THREE.Mesh(pitGeometry, pitMaterial);
+            pit.rotation.x = -Math.PI / 2;
+            pit.position.y = 0.05;
+            creviceGroup.add(pit);
+
+            // Jagged edges around the crevice
+            const edgeColor = lavaTheme ? 0x2a1a0a : 0x333333;
+            for (let i = 0; i < 8; i++) {
+                const side = i < 4 ? -1 : 1;
+                const along = (i % 4) / 3 - 0.5;
+                const edgeGeometry = new THREE.ConeGeometry(0.4, 1, 4);
+                const edgeMaterial = new THREE.MeshLambertMaterial({ color: edgeColor });
+                const edge = new THREE.Mesh(edgeGeometry, edgeMaterial);
+                edge.position.set(
+                    side * crevice.width / 2 + (Math.random() - 0.5) * 0.5,
+                    0.3,
+                    along * crevice.length + (Math.random() - 0.5) * 2
+                );
+                edge.rotation.z = side * 0.5;
+                creviceGroup.add(edge);
+            }
+
+            // Position and rotate the crevice
+            creviceGroup.position.set(crevice.x, baseY, crevice.z);
+            creviceGroup.rotation.y = crevice.rotation || 0;
+            scene.add(creviceGroup);
+
+            crevices.push({
+                mesh: creviceGroup,
+                x: crevice.x,
+                z: crevice.z,
+                width: crevice.width,
+                length: crevice.length,
+                rotation: crevice.rotation || 0
+            });
+        });
+    }
+
     // Create cave ceiling for underground level
     if (levelConfig.hasCeiling) {
         const ceilingHeight = levelConfig.ceilingHeight || 25;
@@ -4324,6 +5208,9 @@ function initGame() {
         } else if (iceTheme) {
             dragonScaleTexture = textures.dragonScaleIce;
             dragonEyeTexture = textures.dragonEyeIce;
+        } else if (waterTheme) {
+            dragonScaleTexture = textures.dragonScaleWater;
+            dragonEyeTexture = textures.dragonEyeWater;
         } else {
             dragonScaleTexture = textures.dragonScale;
             dragonEyeTexture = textures.dragonEye;
@@ -4505,10 +5392,12 @@ function initGame() {
         const dragonConfig = posConfig || levelConfig.dragon || { x: 0, z: -200 };
         const dragonX = dragonConfig.x;
         const dragonZ = dragonConfig.z;
-        
+        // Use config y if provided, otherwise calculate from terrain
+        const dragonY = dragonConfig.y !== undefined ? dragonConfig.y : getTerrainHeight(dragonX, dragonZ) + 3 * scale;
+
         // Apply scale to the entire dragon
         dragonGroup.scale.set(scale, scale, scale);
-        dragonGroup.position.set(dragonX, getTerrainHeight(dragonX, dragonZ) + 3 * scale, dragonZ);
+        dragonGroup.position.set(dragonX, dragonY, dragonZ);
         scene.add(dragonGroup);
         
         return {
@@ -4551,10 +5440,12 @@ function initGame() {
     if (difficulty === 'hard') {
         dragon = createDragon();
         
-        // Create extra dragons for Level 2
+        // Create extra dragons for levels with multiple dragons
         if (levelConfig.extraDragons) {
             levelConfig.extraDragons.forEach(pos => {
-                const extraDragon = createDragon(pos, 0.6, 25); // 60% size, 25 health
+                const dragonScale = pos.scale || 0.6;
+                const dragonHealth = pos.health || 25;
+                const extraDragon = createDragon(pos, dragonScale, dragonHealth);
                 extraDragons.push(extraDragon);
             });
         }
@@ -4631,6 +5522,94 @@ function initGame() {
         // Create birds from level config
         levelConfig.birds.forEach(birdConfig => {
             birds.push(createBird(birdConfig[0], birdConfig[1], birdConfig[2], birdConfig[3]));
+        });
+    }
+
+    // Pirate ships (water level only)
+    const pirateShips = [];
+    const cannonballs = [];
+
+    function createPirateShip(config) {
+        const shipGroup = new THREE.Group();
+
+        // Hull - dark wood
+        const hullGeometry = new THREE.BoxGeometry(8, 3, 20);
+        const hullMaterial = new THREE.MeshLambertMaterial({ color: 0x4a3020 });
+        const hull = new THREE.Mesh(hullGeometry, hullMaterial);
+        hull.position.y = 1.5;
+        hull.castShadow = true;
+        shipGroup.add(hull);
+
+        // Deck
+        const deckGeometry = new THREE.BoxGeometry(7, 0.5, 18);
+        const deckMaterial = new THREE.MeshLambertMaterial({ color: 0x6a5040 });
+        const deck = new THREE.Mesh(deckGeometry, deckMaterial);
+        deck.position.y = 3;
+        shipGroup.add(deck);
+
+        // Mast
+        const mastGeometry = new THREE.CylinderGeometry(0.3, 0.4, 12, 8);
+        const mastMaterial = new THREE.MeshLambertMaterial({ color: 0x3a2510 });
+        const mast = new THREE.Mesh(mastGeometry, mastMaterial);
+        mast.position.y = 9;
+        shipGroup.add(mast);
+
+        // Sail
+        const sailGeometry = new THREE.PlaneGeometry(6, 8);
+        const sailMaterial = new THREE.MeshLambertMaterial({
+            color: 0x111111,
+            side: THREE.DoubleSide
+        });
+        const sail = new THREE.Mesh(sailGeometry, sailMaterial);
+        sail.position.y = 10;
+        sail.position.z = 0.5;
+        shipGroup.add(sail);
+
+        // Skull emblem on sail
+        const skullGeometry = new THREE.CircleGeometry(1.5, 8);
+        const skullMaterial = new THREE.MeshBasicMaterial({ color: 0xffffff });
+        const skull = new THREE.Mesh(skullGeometry, skullMaterial);
+        skull.position.y = 10;
+        skull.position.z = 0.6;
+        shipGroup.add(skull);
+
+        // Cannons (sides)
+        for (let i = 0; i < 3; i++) {
+            const cannonGeometry = new THREE.CylinderGeometry(0.3, 0.4, 2, 8);
+            const cannonMaterial = new THREE.MeshLambertMaterial({ color: 0x222222 });
+
+            const leftCannon = new THREE.Mesh(cannonGeometry, cannonMaterial);
+            leftCannon.rotation.z = Math.PI / 2;
+            leftCannon.position.set(-4.5, 2.5, (i - 1) * 5);
+            shipGroup.add(leftCannon);
+
+            const rightCannon = new THREE.Mesh(cannonGeometry, cannonMaterial);
+            rightCannon.rotation.z = Math.PI / 2;
+            rightCannon.position.set(4.5, 2.5, (i - 1) * 5);
+            shipGroup.add(rightCannon);
+        }
+
+        const terrainHeight = getTerrainHeight(config.x, config.z);
+        shipGroup.position.set(config.x, terrainHeight + 0.5, config.z);
+        scene.add(shipGroup);
+
+        return {
+            mesh: shipGroup,
+            x: config.x,
+            z: config.z,
+            patrolZ1: config.patrolZ1,
+            patrolZ2: config.patrolZ2,
+            speed: config.speed,
+            direction: 1,
+            lastFireTime: Date.now(),
+            fireInterval: 3000 + Math.random() * 2000
+        };
+    }
+
+    // Create pirate ships in hard mode (water level only)
+    if (difficulty === 'hard' && levelConfig.pirateShips) {
+        levelConfig.pirateShips.forEach(shipConfig => {
+            pirateShips.push(createPirateShip(shipConfig));
         });
     }
 
@@ -5652,6 +6631,38 @@ function initGame() {
             });
         } else if (eventType === 'lavaTrailDeath') {
             // Client was killed by lava trail
+            if (!gameDead) {
+                playerHealth = 0;
+                gameDead = true;
+                Audio.stopBackgroundMusic();
+                Audio.playDeathSound();
+            }
+        } else if (eventType === 'lavaPoolDeath') {
+            // Client was killed by lava pool
+            if (!gameDead) {
+                playerHealth = 0;
+                gameDead = true;
+                Audio.stopBackgroundMusic();
+                Audio.playDeathSound();
+            }
+        } else if (eventType === 'creviceDeath') {
+            // Client fell into a crevice
+            if (!gameDead) {
+                playerHealth = 0;
+                gameDead = true;
+                Audio.stopBackgroundMusic();
+                Audio.playDeathSound();
+            }
+        } else if (eventType === 'whirlpoolDeath') {
+            // Client was sucked into a whirlpool
+            if (!gameDead) {
+                playerHealth = 0;
+                gameDead = true;
+                Audio.stopBackgroundMusic();
+                Audio.playDeathSound();
+            }
+        } else if (eventType === 'trapDeath') {
+            // Client hit a trap (quicksand, whirlpool, etc.)
             if (!gameDead) {
                 playerHealth = 0;
                 gameDead = true;
@@ -6698,6 +7709,153 @@ function initGame() {
         }
     }
 
+    // Update pirate ships and cannonballs
+    function updatePirateShips() {
+        const now = Date.now();
+
+        // Update ships
+        pirateShips.forEach(ship => {
+            // Patrol movement (up and down z-axis)
+            ship.z += ship.speed * ship.direction;
+            if (ship.z >= ship.patrolZ2) {
+                ship.direction = -1;
+            } else if (ship.z <= ship.patrolZ1) {
+                ship.direction = 1;
+            }
+            ship.mesh.position.z = ship.z;
+
+            // Bobbing motion
+            ship.mesh.position.y = 0.5 + Math.sin(now * 0.002) * 0.3;
+
+            // Check if player is in range before firing
+            const distToPlayer = Math.sqrt(
+                (playerGroup.position.x - ship.x) ** 2 +
+                (playerGroup.position.z - ship.z) ** 2
+            );
+            const firingRange = 90;  // Fire when player is within 90 units
+
+            // Fire cannonballs at player - rapid fire when in range
+            if (now - ship.lastFireTime > ship.fireInterval && distToPlayer < firingRange) {
+                ship.lastFireTime = now;
+                ship.fireInterval = 800 + Math.random() * 700;  // Fast firing rate (0.8-1.5s)
+
+                // Create cannonball aimed at player
+                const cannonballGeometry = new THREE.SphereGeometry(0.5, 8, 8);
+                const cannonballMaterial = new THREE.MeshLambertMaterial({ color: 0x222222 });
+                const cannonball = new THREE.Mesh(cannonballGeometry, cannonballMaterial);
+
+                // Fire from the side facing the player
+                const dirToPlayer = playerGroup.position.x - ship.x;
+                const sideX = dirToPlayer > 0 ? ship.x + 5 : ship.x - 5;
+                cannonball.position.set(sideX, 3, ship.z);
+                cannonball.castShadow = true;
+                scene.add(cannonball);
+
+                // Calculate shot toward player with lead prediction
+                const dx = playerGroup.position.x - sideX;
+                const dz = playerGroup.position.z - ship.z;
+                const horizontalDist = Math.sqrt(dx * dx + dz * dz);
+
+                // Predict player movement for better accuracy
+                const speed = 0.6;  // Cannonball speed
+                const flightTime = horizontalDist / (speed * 60);  // Approximate flight time
+                const predictX = dx + (player.velocity?.x || 0) * flightTime * 30;
+                const predictZ = dz + (player.velocity?.z || 0) * flightTime * 30;
+                const predictDist = Math.sqrt(predictX * predictX + predictZ * predictZ);
+
+                // Normalize direction toward predicted position
+                const dirX = predictX / predictDist;
+                const dirZ = predictZ / predictDist;
+
+                // Arc scales with distance - flat trajectory
+                const arcHeight = Math.max(0.03, horizontalDist * 0.002);
+
+                cannonballs.push({
+                    mesh: cannonball,
+                    velocity: new THREE.Vector3(dirX * speed, arcHeight, dirZ * speed),
+                    startTime: now
+                });
+
+                Audio.playExplosionSound();
+            }
+        });
+
+        // Update cannonballs
+        for (let i = cannonballs.length - 1; i >= 0; i--) {
+            const ball = cannonballs[i];
+
+            // Apply gravity and movement - low gravity for flat shots
+            ball.velocity.y -= 0.003;
+            ball.mesh.position.add(ball.velocity);
+
+            // Check if hit ground or timed out
+            const terrainHeight = getTerrainHeight(ball.mesh.position.x, ball.mesh.position.z);
+            const age = now - ball.startTime;
+
+            // Check if hit impassable cliff
+            let hitCliff = false;
+            for (const cliff of impassableCliffs) {
+                const distToCliff = Math.sqrt(
+                    (ball.mesh.position.x - cliff.x) ** 2 +
+                    (ball.mesh.position.z - cliff.z) ** 2
+                );
+                if (distToCliff < cliff.radius && ball.mesh.position.y < cliff.height) {
+                    hitCliff = true;
+                    break;
+                }
+            }
+
+            // Check if hit mountain
+            let hitMountain = false;
+            if (levelConfig.mountains) {
+                for (const mtn of levelConfig.mountains) {
+                    const distToMtn = Math.sqrt(
+                        (ball.mesh.position.x - mtn.x) ** 2 +
+                        (ball.mesh.position.z - mtn.z) ** 2
+                    );
+                    if (distToMtn < (mtn.radius || mtn.width / 2) && ball.mesh.position.y < (mtn.height || 10)) {
+                        hitMountain = true;
+                        break;
+                    }
+                }
+            }
+
+            if (ball.mesh.position.y <= terrainHeight || age > 12000 || hitCliff || hitMountain) {
+                // Create splash/explosion effect
+                createBombExplosion(ball.mesh.position.x, terrainHeight + 0.5, ball.mesh.position.z);
+
+                // Check if hit player - larger blast radius for more hits
+                const distToPlayer = Math.sqrt(
+                    (ball.mesh.position.x - playerGroup.position.x) ** 2 +
+                    (ball.mesh.position.z - playerGroup.position.z) ** 2
+                );
+                if (distToPlayer < 6 && !godMode) {  // Bigger hit radius
+                    playerHealth -= 2;
+                    damageFlashTime = Date.now();
+                    Audio.playDeathSound();
+                    if (playerHealth <= 0) {
+                        gameDead = true;
+                        Audio.stopBackgroundMusic();
+                    }
+                }
+
+                // Check hit on other player
+                if (multiplayerManager && multiplayerManager.isConnected() && multiplayerManager.isHost && otherPlayerMesh.visible) {
+                    const distToOther = Math.sqrt(
+                        (ball.mesh.position.x - otherPlayerMesh.position.x) ** 2 +
+                        (ball.mesh.position.z - otherPlayerMesh.position.z) ** 2
+                    );
+                    if (distToOther < 6) {  // Bigger hit radius
+                        multiplayerManager.sendGameEvent('playerDamage', {});
+                    }
+                }
+
+                scene.remove(ball.mesh);
+                cannonballs.splice(i, 1);
+            }
+        }
+    }
+
     function updateDragonVisuals() {
         if (!dragon) return;
         
@@ -7186,49 +8344,60 @@ function initGame() {
         return trail;
     }
 
-    // Helper function to create a tornado from a mummy
+    // Helper function to create a tornado from a mummy (or waterspout in water level)
     function createMummyTornado(mummy, targetPlayer) {
         const tornadoGroup = new THREE.Group();
-        
-        // Create tornado cone shape - larger size
-        const coneGeometry = new THREE.ConeGeometry(0.8, 3.0, 12, 4, true);
-        const coneMaterial = new THREE.MeshBasicMaterial({ 
-            color: 0xc4a14a,  // Sandy color
+
+        // Use water colors for waterspout in water theme
+        const outerColor = waterTheme ? 0x1E90FF : 0xc4a14a;  // Dodger blue or sandy
+        const innerColor = waterTheme ? 0x87CEEB : 0xe8c36a;  // Sky blue or light sand
+        const particleColor = waterTheme ? 0xB0E0E6 : 0xc4a14a; // Powder blue or sandy
+
+        // Create tornado/waterspout cone shape - moderate size for water level
+        const coneRadius = waterTheme ? 1.5 : 0.8;
+        const coneHeight = waterTheme ? 8.0 : 3.0;
+        const coneGeometry = new THREE.ConeGeometry(coneRadius, coneHeight, 12, 4, true);
+        const coneMaterial = new THREE.MeshBasicMaterial({
+            color: outerColor,
             transparent: true,
-            opacity: 0.7,
+            opacity: waterTheme ? 0.45 : 0.7,
             side: THREE.DoubleSide
         });
         const cone = new THREE.Mesh(coneGeometry, coneMaterial);
         cone.rotation.x = Math.PI; // Point up
-        cone.position.y = 1.5;
+        cone.position.y = waterTheme ? coneHeight / 2 : 1.5;
         tornadoGroup.add(cone);
-        
+
         // Inner spinning cone
-        const innerConeGeometry = new THREE.ConeGeometry(0.5, 2.5, 12, 4, true);
-        const innerConeMaterial = new THREE.MeshBasicMaterial({ 
-            color: 0xe8c36a,
+        const innerRadius = waterTheme ? 0.9 : 0.5;
+        const innerHeight = waterTheme ? 6.5 : 2.5;
+        const innerConeGeometry = new THREE.ConeGeometry(innerRadius, innerHeight, 12, 4, true);
+        const innerConeMaterial = new THREE.MeshBasicMaterial({
+            color: innerColor,
             transparent: true,
-            opacity: 0.8,
+            opacity: waterTheme ? 0.55 : 0.8,
             side: THREE.DoubleSide
         });
         const innerCone = new THREE.Mesh(innerConeGeometry, innerConeMaterial);
         innerCone.rotation.x = Math.PI;
-        innerCone.position.y = 1.25;
+        innerCone.position.y = waterTheme ? innerHeight / 2 : 1.25;
         tornadoGroup.add(innerCone);
-        
-        // Add dust particles - more and larger
+
+        // Add dust/water particles
         const dustGroup = new THREE.Group();
-        for (let i = 0; i < 25; i++) {
-            const dustGeometry = new THREE.SphereGeometry(0.1 + Math.random() * 0.1, 4, 4);
-            const dustMaterial = new THREE.MeshBasicMaterial({ 
-                color: 0xc4a14a,
+        const numParticles = waterTheme ? 30 : 25;
+        const particleScale = waterTheme ? 1.5 : 1;
+        for (let i = 0; i < numParticles; i++) {
+            const dustGeometry = new THREE.SphereGeometry((0.1 + Math.random() * 0.1) * particleScale, 4, 4);
+            const dustMaterial = new THREE.MeshBasicMaterial({
+                color: particleColor,
                 transparent: true,
-                opacity: 0.6 + Math.random() * 0.3
+                opacity: 0.5 + Math.random() * 0.3
             });
             const dust = new THREE.Mesh(dustGeometry, dustMaterial);
             const angle = Math.random() * Math.PI * 2;
-            const height = Math.random() * 3.0;
-            const radius = 0.2 + (height / 3.0) * 0.7; // Wider at top
+            const height = Math.random() * coneHeight;
+            const radius = (0.2 + (height / coneHeight) * coneRadius) * particleScale;
             dust.position.set(Math.cos(angle) * radius, height, Math.sin(angle) * radius);
             dustGroup.add(dust);
         }
@@ -7236,7 +8405,7 @@ function initGame() {
         tornadoGroup.dustGroup = dustGroup;
         tornadoGroup.innerCone = innerCone;
         tornadoGroup.outerCone = cone;
-        
+
         // Position at mummy
         tornadoGroup.position.copy(mummy.mesh.position);
         tornadoGroup.position.y += 0.5;
@@ -7252,11 +8421,11 @@ function initGame() {
         mummyTornados.push({
             mesh: tornadoGroup,
             velocity: new THREE.Vector3(dirX / length * speed, 0, dirZ / length * speed),
-            radius: 1.0,
+            radius: waterTheme ? 1.5 : 1.0,  // Moderate collision for waterspouts
             damage: 1,
             spinPhase: 0
         });
-        
+
         // Play a whoosh sound
         Audio.playExplosionSound();
     }
@@ -7264,55 +8433,66 @@ function initGame() {
     // Wild tornado spawning for out-of-bounds players
     let lastWildTornadoSpawn = 0;
     const wildTornadoBaseInterval = 2000; // Base spawn interval
-    
+
     function spawnWildTornado(targetX, targetZ) {
         // Spawn tornado from a random direction outside the visible area
         const angle = Math.random() * Math.PI * 2;
         const spawnDistance = 40 + Math.random() * 20;
         const spawnX = targetX + Math.cos(angle) * spawnDistance;
         const spawnZ = targetZ + Math.sin(angle) * spawnDistance;
-        
+
+        // Use water colors for waterspout in water theme
+        const outerColor = waterTheme ? 0x1E90FF : 0xc4a14a;
+        const innerColor = waterTheme ? 0x87CEEB : 0xe8c36a;
+        const particleColor = waterTheme ? 0xB0E0E6 : 0xc4a14a;
+
         const tornadoGroup = new THREE.Group();
-        
-        // Create tornado cone shape
-        const coneGeometry = new THREE.ConeGeometry(0.8, 3.0, 12, 4, true);
-        const coneMaterial = new THREE.MeshBasicMaterial({ 
-            color: 0xc4a14a,
+
+        // Create tornado/waterspout cone shape - moderate size for water level
+        const coneRadius = waterTheme ? 1.5 : 0.8;
+        const coneHeight = waterTheme ? 8.0 : 3.0;
+        const coneGeometry = new THREE.ConeGeometry(coneRadius, coneHeight, 12, 4, true);
+        const coneMaterial = new THREE.MeshBasicMaterial({
+            color: outerColor,
             transparent: true,
-            opacity: 0.7,
+            opacity: waterTheme ? 0.45 : 0.7,
             side: THREE.DoubleSide
         });
         const cone = new THREE.Mesh(coneGeometry, coneMaterial);
         cone.rotation.x = Math.PI;
-        cone.position.y = 1.5;
+        cone.position.y = waterTheme ? coneHeight / 2 : 1.5;
         tornadoGroup.add(cone);
-        
+
         // Inner spinning cone
-        const innerConeGeometry = new THREE.ConeGeometry(0.5, 2.5, 12, 4, true);
-        const innerConeMaterial = new THREE.MeshBasicMaterial({ 
-            color: 0xe8c36a,
+        const innerRadius = waterTheme ? 0.9 : 0.5;
+        const innerHeight = waterTheme ? 6.5 : 2.5;
+        const innerConeGeometry = new THREE.ConeGeometry(innerRadius, innerHeight, 12, 4, true);
+        const innerConeMaterial = new THREE.MeshBasicMaterial({
+            color: innerColor,
             transparent: true,
-            opacity: 0.8,
+            opacity: waterTheme ? 0.55 : 0.8,
             side: THREE.DoubleSide
         });
         const innerCone = new THREE.Mesh(innerConeGeometry, innerConeMaterial);
         innerCone.rotation.x = Math.PI;
-        innerCone.position.y = 1.25;
+        innerCone.position.y = waterTheme ? innerHeight / 2 : 1.25;
         tornadoGroup.add(innerCone);
-        
-        // Add dust particles
+
+        // Add dust/water particles
         const dustGroup = new THREE.Group();
-        for (let i = 0; i < 25; i++) {
-            const dustGeometry = new THREE.SphereGeometry(0.1 + Math.random() * 0.1, 4, 4);
-            const dustMaterial = new THREE.MeshBasicMaterial({ 
-                color: 0xc4a14a,
+        const numParticles = waterTheme ? 30 : 25;
+        const particleScale = waterTheme ? 1.5 : 1;
+        for (let i = 0; i < numParticles; i++) {
+            const dustGeometry = new THREE.SphereGeometry((0.1 + Math.random() * 0.1) * particleScale, 4, 4);
+            const dustMaterial = new THREE.MeshBasicMaterial({
+                color: particleColor,
                 transparent: true,
-                opacity: 0.6 + Math.random() * 0.3
+                opacity: 0.5 + Math.random() * 0.3
             });
             const dust = new THREE.Mesh(dustGeometry, dustMaterial);
             const dustAngle = Math.random() * Math.PI * 2;
-            const height = Math.random() * 3.0;
-            const radius = 0.2 + (height / 3.0) * 0.7;
+            const height = Math.random() * coneHeight;
+            const radius = (0.2 + (height / coneHeight) * coneRadius) * particleScale;
             dust.position.set(Math.cos(dustAngle) * radius, height, Math.sin(dustAngle) * radius);
             dustGroup.add(dust);
         }
@@ -7320,7 +8500,7 @@ function initGame() {
         tornadoGroup.dustGroup = dustGroup;
         tornadoGroup.innerCone = innerCone;
         tornadoGroup.outerCone = cone;
-        
+
         const terrainHeight = getTerrainHeight(spawnX, spawnZ);
         tornadoGroup.position.set(spawnX, terrainHeight + 0.5, spawnZ);
         scene.add(tornadoGroup);
@@ -7335,7 +8515,7 @@ function initGame() {
         mummyTornados.push({
             mesh: tornadoGroup,
             velocity: new THREE.Vector3(dirX / length * speed, 0, dirZ / length * speed),
-            radius: 1.0,
+            radius: waterTheme ? 1.5 : 1.0,  // Moderate collision for waterspouts
             damage: 1,
             spinPhase: 0,
             isWild: true // Mark as wild tornado
@@ -7513,9 +8693,9 @@ function initGame() {
                 const scale = 0.7 + 0.3 * fadeMultiplier;
                 trail.mesh.scale.setScalar(scale);
                 
-                // Check collision with local player
+                // Check collision with local player (unless gliding)
                 const dist = Math.sqrt((px - trail.x) ** 2 + (pz - trail.z) ** 2);
-                if (dist < trail.radius * scale - 0.3 && !godMode) {
+                if (dist < trail.radius * scale - 0.3 && !godMode && !player.isGliding) {
                     // Player stepped in lava trail - instant death
                     if (!gameDead) {
                         playerHealth = 0;
@@ -7524,14 +8704,14 @@ function initGame() {
                         Audio.playDeathSound();
                     }
                 }
-                
-                // Check collision with other player in multiplayer (host only)
+
+                // Check collision with other player in multiplayer (host only, unless they're gliding)
                 if (multiplayerManager && multiplayerManager.isHost && multiplayerManager.isConnected() && otherPlayerMesh && otherPlayerMesh.visible) {
                     const otherDist = Math.sqrt(
                         (otherPlayerMesh.position.x - trail.x) ** 2 +
                         (otherPlayerMesh.position.z - trail.z) ** 2
                     );
-                    if (otherDist < trail.radius * scale - 0.3) {
+                    if (otherDist < trail.radius * scale - 0.3 && !otherPlayerIsGliding) {
                         // Notify client of lava trail death
                         multiplayerManager.sendGameEvent('lavaTrailDeath', {});
                     }
@@ -7678,18 +8858,31 @@ function initGame() {
                 const dz = fireball.mesh.position.z - wall.z;
                 const localX = dx * cos - dz * sin;
                 const localZ = dx * sin + dz * cos;
-                
+
                 // Check if inside wall bounds
                 const halfWidth = wall.width / 2;
                 const halfDepth = wall.depth / 2;
-                
+
                 if (Math.abs(localX) < halfWidth && Math.abs(localZ) < halfDepth && fireball.mesh.position.y < wall.height) {
                     hitCanyonWall = true;
                     break;
                 }
             }
-            
-            if (fireball.mesh.position.y < terrainHeight || hitMountain || hitCanyonWall ||
+
+            // Check collision with impassable cliffs
+            let hitCliff = false;
+            for (const cliff of impassableCliffs) {
+                const distToCliff = Math.sqrt(
+                    (fireball.mesh.position.x - cliff.x) ** 2 +
+                    (fireball.mesh.position.z - cliff.z) ** 2
+                );
+                if (distToCliff < cliff.radius && fireball.mesh.position.y < cliff.height) {
+                    hitCliff = true;
+                    break;
+                }
+            }
+
+            if (fireball.mesh.position.y < terrainHeight || hitMountain || hitCanyonWall || hitCliff ||
                 Math.abs(fireball.mesh.position.x) > GAME_CONFIG.WORLD_BOUND ||
                 Math.abs(fireball.mesh.position.z) > GAME_CONFIG.WORLD_BOUND) {
                 createFireballExplosion(fireball.mesh.position.x, terrainHeight, fireball.mesh.position.z);
@@ -7708,13 +8901,14 @@ function initGame() {
         const px = playerGroup.position.x;
         const pz = playerGroup.position.z;
         
-        // Lava pool collision - instant death!
+        // Lava pool collision - instant death (unless gliding over)
         lavaPools.forEach(pool => {
             const dist = Math.sqrt(
                 (px - pool.x) ** 2 +
                 (pz - pool.z) ** 2
             );
-            if (dist < pool.radius - 0.5 && !godMode) {
+            // Player can fly over lava if gliding
+            if (dist < pool.radius - 0.5 && !godMode && !player.isGliding) {
                 // Player fell into lava - instant death
                 if (!gameDead) {
                     playerHealth = 0;
@@ -7723,22 +8917,101 @@ function initGame() {
                     Audio.playDeathSound();
                 }
             }
+
+            // Check if other player (client) is in lava pool (unless they're gliding)
+            if (multiplayerManager && multiplayerManager.isConnected() && multiplayerManager.isHost && otherPlayerMesh.visible) {
+                const otherDist = Math.sqrt(
+                    (otherPlayerMesh.position.x - pool.x) ** 2 +
+                    (otherPlayerMesh.position.z - pool.z) ** 2
+                );
+                if (otherDist < pool.radius - 0.5 && !otherPlayerIsGliding) {
+                    // Notify client of lava pool death
+                    multiplayerManager.sendGameEvent('lavaPoolDeath', {});
+                }
+            }
         });
-        
-        // Mountains (only if level has them)
+
+        // Crevice collision - falling into deep pits (unless gliding)
+        crevices.forEach(crevice => {
+            // Transform player position into crevice's local space (to handle rotation)
+            const cos = Math.cos(-crevice.rotation);
+            const sin = Math.sin(-crevice.rotation);
+            const dx = px - crevice.x;
+            const dz = pz - crevice.z;
+            const localX = dx * cos - dz * sin;
+            const localZ = dx * sin + dz * cos;
+
+            // Check if inside crevice bounds
+            const halfWidth = crevice.width / 2;
+            const halfLength = crevice.length / 2;
+
+            if (Math.abs(localX) < halfWidth && Math.abs(localZ) < halfLength && !godMode && !player.isGliding) {
+                // Player fell into crevice - instant death
+                if (!gameDead) {
+                    playerHealth = 0;
+                    gameDead = true;
+                    Audio.stopBackgroundMusic();
+                    Audio.playDeathSound();
+                }
+            }
+
+            // Check if other player (client) fell into crevice (unless they're gliding)
+            if (multiplayerManager && multiplayerManager.isConnected() && multiplayerManager.isHost && otherPlayerMesh.visible) {
+                const otherDx = otherPlayerMesh.position.x - crevice.x;
+                const otherDz = otherPlayerMesh.position.z - crevice.z;
+                const otherLocalX = otherDx * cos - otherDz * sin;
+                const otherLocalZ = otherDx * sin + otherDz * cos;
+
+                if (Math.abs(otherLocalX) < halfWidth && Math.abs(otherLocalZ) < halfLength && !otherPlayerIsGliding) {
+                    // Notify client of crevice death
+                    multiplayerManager.sendGameEvent('creviceDeath', {});
+                }
+            }
+        });
+
+        // Mountains (only if level has them) - in water level, can glide over them
         if (levelConfig.mountains && levelConfig.mountains.length > 0) {
-            levelConfig.mountains.forEach(mtn => {
+            const canPassMountains = waterTheme && player.isGliding;
+            if (!canPassMountains) {
+                levelConfig.mountains.forEach(mtn => {
+                    const dist = new THREE.Vector2(
+                        playerGroup.position.x - mtn.x,
+                        playerGroup.position.z - mtn.z
+                    ).length();
+                    if (dist < mtn.width/2 + 1.5) {
+                        playerGroup.position.copy(prevPos);
+                        isStuck = true;
+                    }
+                });
+            }
+        }
+
+        // Impassable cliffs - ALWAYS block, even when gliding
+        impassableCliffs.forEach(cliff => {
+            const dist = new THREE.Vector2(
+                playerGroup.position.x - cliff.x,
+                playerGroup.position.z - cliff.z
+            ).length();
+            if (dist < cliff.radius + 1.5) {
+                playerGroup.position.copy(prevPos);
+                isStuck = true;
+            }
+        });
+
+        // Hills - in water level, player is on a boat and can't go on islands (unless gliding)
+        if (waterTheme && !player.isGliding && levelConfig.hills && levelConfig.hills.length > 0) {
+            levelConfig.hills.forEach(hill => {
                 const dist = new THREE.Vector2(
-                    playerGroup.position.x - mtn.x,
-                    playerGroup.position.z - mtn.z
+                    playerGroup.position.x - hill.x,
+                    playerGroup.position.z - hill.z
                 ).length();
-                if (dist < mtn.width/2 + 1.5) {
+                if (dist < hill.radius + 1.0) {
                     playerGroup.position.copy(prevPos);
                     isStuck = true;
                 }
             });
         }
-        
+
         // Rocks
         rocks.forEach(rock => {
             const dist = new THREE.Vector2(
@@ -8083,7 +9356,7 @@ function initGame() {
                     gameDead = true;
                     Audio.stopBackgroundMusic();
                     Audio.playDeathSound();
-                    
+
                     // Notify other player of death
                     if (multiplayerManager && multiplayerManager.isConnected()) {
                         multiplayerManager.sendGameEvent('playerDeath', {});
@@ -8091,7 +9364,21 @@ function initGame() {
                 }
             });
         }
-        
+
+        // Check if other player (client) hit a trap (HOST ONLY)
+        if (multiplayerManager && multiplayerManager.isConnected() && multiplayerManager.isHost && otherPlayerMesh.visible && !otherPlayerIsGliding) {
+            traps.forEach(trap => {
+                const distToTrap = new THREE.Vector2(
+                    otherPlayerMesh.position.x - trap.mesh.position.x,
+                    otherPlayerMesh.position.z - trap.mesh.position.z
+                ).length();
+                if (distToTrap < trap.radius) {
+                    // Notify client of trap death
+                    multiplayerManager.sendGameEvent('trapDeath', {});
+                }
+            });
+        }
+
         // Bridge repair - only if level has river/bridge
         if (bridgeObj && !bridgeRepaired && materialsCollected >= materialsNeeded) {
             const distToBridge = new THREE.Vector2(
@@ -8798,7 +10085,70 @@ function initGame() {
         
         // Animate portal (visual effects)
         animatePortal();
-        
+
+        // Animate rainbow glow sprites and disco ball - PARTY TIME!
+        const rainbowTime = Date.now() * 0.001;
+        rainbowGlowSprites.forEach(sprite => {
+            // More dynamic floating animation with orbiting
+            const orbitAngle = rainbowTime * sprite.userData.orbitSpeed + sprite.userData.phase;
+            sprite.position.y = sprite.userData.baseY + Math.sin(rainbowTime * sprite.userData.speed + sprite.userData.phase) * 0.5;
+            sprite.position.x = sprite.userData.baseX + Math.cos(rainbowTime * sprite.userData.speed * 0.5 + sprite.userData.phase) * 0.4;
+            sprite.position.z = sprite.userData.baseZ + Math.sin(orbitAngle) * 0.3;
+            // Pulsing opacity - more dramatic
+            const pulse = 0.5 + 0.5 * Math.sin(rainbowTime * sprite.userData.pulseSpeed + sprite.userData.phase);
+            sprite.material.opacity = 0.5 + pulse * 0.5;
+            // Scale pulsing
+            const scalePulse = 1 + 0.3 * Math.sin(rainbowTime * sprite.userData.pulseSpeed * 0.5 + sprite.userData.phase);
+            sprite.scale.setScalar(sprite.scale.x * 0.95 + (0.5 + Math.random() * 0.3) * scalePulse * 0.05);
+        });
+
+        // Animate disco ball - faster spinning!
+        discoBallGroup.rotation.y += 0.04;
+        // Animate mirror colors cycling through rainbow - faster and brighter
+        discoMirrors.forEach((mirror, i) => {
+            const colorIndex = Math.floor((rainbowTime * 4 + mirror.userData.phase + i * 0.05) % rainbowColors.length);
+            const brightness = 0.8 + 0.2 * Math.sin(rainbowTime * 5 + mirror.userData.phase);
+            const color = new THREE.Color(rainbowColors[colorIndex]);
+            color.multiplyScalar(brightness);
+            mirror.material.color.copy(color);
+        });
+        // Animate disco ball light color - strobe effect
+        const lightColorIndex = Math.floor(rainbowTime * 5) % rainbowColors.length;
+        discoBallLight.color.set(rainbowColors[lightColorIndex]);
+        discoBallLight.intensity = 2 + Math.sin(rainbowTime * 8) * 1.5;
+
+        // Animate light beams shooting from disco ball
+        discoLightBeams.forEach((beamPivot, i) => {
+            // Rotate beams
+            beamPivot.rotation.z = beamPivot.userData.baseAngle + rainbowTime * 0.5;
+            beamPivot.rotation.x = Math.sin(rainbowTime * 2 + i) * 0.3;
+            // Color the beams
+            const beam = beamPivot.children[0];
+            if (beam && beam.material) {
+                const beamColorIndex = Math.floor((rainbowTime * 3 + i * 0.5) % rainbowColors.length);
+                beam.material.color = new THREE.Color(rainbowColors[beamColorIndex]);
+                beam.material.opacity = 0.4 + 0.3 * Math.sin(rainbowTime * 4 + i);
+            }
+        });
+
+        // Check player proximity to rainbow for techno music
+        const rainbowDist = Math.sqrt(
+            (playerGroup.position.x - levelConfig.rainbow.x) ** 2 +
+            (playerGroup.position.z - (levelConfig.rainbow.z + 5)) ** 2
+        );
+        const technoRange = 25;
+        if (rainbowDist < technoRange && !technoMusicPlaying && !gameDead) {
+            technoMusicPlaying = true;
+            Audio.stopBackgroundMusic();
+            Audio.startTechnoMusic();
+        } else if ((rainbowDist >= technoRange || gameDead) && technoMusicPlaying) {
+            technoMusicPlaying = false;
+            Audio.stopTechnoMusic();
+            if (!gameDead) {
+                Audio.startBackgroundMusic();
+            }
+        }
+
         // Animate lava pools (pulsing glow effect)
         lavaPools.forEach(pool => {
             pool.pulsePhase += 0.05;
@@ -8813,7 +10163,68 @@ function initGame() {
                 pool.mesh.children[1].material.color.setHSL(coreHue, 1, 0.5);
             }
         });
-        
+
+        // Animate whirlpool traps (spinning effect)
+        traps.forEach(trap => {
+            if (trap.type === 'whirlpool') {
+                trap.spinPhase += 0.08;
+                if (trap.outerRing) trap.outerRing.rotation.z = trap.spinPhase;
+                if (trap.midRing) trap.midRing.rotation.z = -trap.spinPhase * 1.5;
+            }
+        });
+
+        // Animate and move moving waterspouts
+        const now = Date.now();
+        movingTraps.forEach(trap => {
+            // Spin animation - rotate the cones and particles
+            trap.spinPhase += 0.08;
+            if (trap.outerCone) trap.outerCone.rotation.y = trap.spinPhase;
+            if (trap.innerCone) trap.innerCone.rotation.y = -trap.spinPhase * 1.3;
+            if (trap.coreCone) trap.coreCone.rotation.y = trap.spinPhase * 1.8;
+            if (trap.dustGroup) trap.dustGroup.rotation.y = trap.spinPhase * 0.5;
+            if (trap.baseRing) trap.baseRing.rotation.z = trap.spinPhase * 2;
+            // Spin debris
+            if (trap.debrisGroup) {
+                trap.debrisGroup.rotation.y = trap.spinPhase * 0.7;
+                trap.debrisGroup.children.forEach(debris => {
+                    debris.rotation.x += 0.05;
+                    debris.rotation.z += 0.03;
+                });
+            }
+
+            // Movement - drift around base position
+            trap.phase += trap.speed;
+            const newX = trap.baseX + Math.sin(trap.phase) * trap.rangeX;
+            const newZ = trap.baseZ + Math.cos(trap.phase * 0.7) * trap.rangeZ;
+            trap.mesh.position.x = newX;
+            trap.mesh.position.z = newZ;
+
+            // Check collision with player (unless gliding)
+            if (!gameDead && !player.isGliding && !godMode) {
+                const dist = Math.sqrt(
+                    (playerGroup.position.x - newX) ** 2 +
+                    (playerGroup.position.z - newZ) ** 2
+                );
+                if (dist < trap.radius) {
+                    playerHealth = 0;
+                    gameDead = true;
+                    Audio.stopBackgroundMusic();
+                    Audio.playDeathSound();
+                }
+            }
+
+            // Check collision with other player
+            if (multiplayerManager && multiplayerManager.isConnected() && multiplayerManager.isHost && otherPlayerMesh.visible && !otherPlayerIsGliding) {
+                const otherDist = Math.sqrt(
+                    (otherPlayerMesh.position.x - newX) ** 2 +
+                    (otherPlayerMesh.position.z - newZ) ** 2
+                );
+                if (otherDist < trap.radius) {
+                    multiplayerManager.sendGameEvent('whirlpoolDeath', {});
+                }
+            }
+        });
+
         // Fixed timestep game logic updates
         while (accumulator >= targetFrameTime) {
             // Update gamepad input
@@ -8994,6 +10405,7 @@ function initGame() {
                     checkAndSpawnWildTornados();
                     updateBirds();
                     updateBombs();
+                    updatePirateShips();
                     updateDragon();
                 }
                 
