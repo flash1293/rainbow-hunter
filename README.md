@@ -37,14 +37,12 @@ python -m http.server 8000
 eat-the-rainbow/
 ├── index.html              # Main HTML entry point
 ├── style.css               # Styles and difficulty menu
-├── game.js                 # Legacy monolithic game file (kept for backup)
 ├── js/                     # Modular game code (NEW!)
-│   ├── main.js            # Main game orchestration and initialization
-│   ├── config.js          # Game configuration and constants
+│   ├── main.js            # Main game orchestration and initialization (44,144 lines)
+│   ├── config.js          # Game configuration and constants (8,527 lines)
+│   ├── terrain.js         # Terrain generation and procedural textures (7,847 lines)
 │   ├── audio.js           # Audio system (music and sound effects)
-│   ├── terrain.js         # Terrain generation and environment
-│   ├── player.js          # Player controls and movement
-│   └── goblins.js         # Goblin AI and behavior
+│   └── multiplayer.js     # PeerJS-based multiplayer synchronization
 └── README.md              # This file
 ```
 
@@ -82,22 +80,25 @@ Terrain and environment utilities:
 - Mountains (world boundaries with 3-area progression)
 - River and bridge creation
 
-### `js/player.js`
-Player class managing:
+### Player System (in `main.js`)
+Player logic implemented directly in main.js:
 - Keyboard and mouse controls (WASD + Arrow keys + Mouse look)
-- Player mesh creation (bike + rider)
-- Movement, rotation, and gliding
+- Player mesh creation (bike + rider, boat for water level)
+- Movement, rotation, and gliding mechanics
 - Terrain height following
 - God mode for testing (G key)
+- Multiplayer differentiation (host/client colors)
 
-### `js/goblins.js`
-Goblin entity system:
-- Regular goblin creation with AI
+### Goblin System (in `main.js`)
+Goblin entity system implemented directly in main.js:
+- Regular goblin creation with AI (shark fins for water level)
 - Giant goblins with special attacks
-- Guardian goblin creation (elite enemies with bows)
+- Guardian goblin creation (elite enemies with bows, octopuses for water level)
+- Wizard, mummy, and lava monster variants
 - AI behavior (patrol, chase, attack)
 - Collision and trap detection
 - Freeze power effects
+- Dragon boss with fireballs and 50 HP
 
 ## Game Features
 
@@ -147,7 +148,7 @@ The game features a 3-area progression system:
 
 - **Engine**: Three.js r128
 - **Multiplayer**: PeerJS for peer-to-peer connections (host-authoritative, 20Hz sync)
-- **Module System**: ES6 modules for better code organization
+- **Architecture**: Traditional script loading with separated concerns
 - **Rendering**: WebGL with shadow mapping and emissive materials
 - **Audio**: Web Audio API with procedural sound generation
 - **Input**: Pointer Lock API for FPS-style mouse control
@@ -155,13 +156,14 @@ The game features a 3-area progression system:
 
 ## Development
 
-The codebase has been restructured from a single 2500-line file into modular ES6 modules:
-- Each module has a single, clear responsibility
+The codebase uses traditional script loading for browser compatibility:
 - Configuration is centralized in `config.js`
-- Audio system is completely isolated
-- Multiplayer system with full game state synchronization
+- Audio system is completely isolated in `audio.js`
+- Terrain generation and textures in `terrain.js`
+- Multiplayer system with full game state synchronization in `multiplayer.js`
+- Main game logic in `main.js` for easy browser execution
 - Easy to extend with new features
-- Better maintainability and testing
+- Supports direct `file:///` execution without a web server
 
 ### Recent Additions
 - Dragon boss with detailed model (scales, teeth, wings, tail, pupils)
@@ -172,14 +174,14 @@ The codebase has been restructured from a single 2500-line file into modular ES6
 - 3-area map progression system
 - Gliding mechanics for the player
 
-**Note**: The original `game.js` is kept as a backup. The new modular version uses `js/main.js` as the entry point.
+**Note**: The game uses `js/main.js` as the entry point and runs directly in modern browsers.
 
 ## Browser Compatibility
 
 Works in all modern browsers that support:
-- ES6 modules
 - WebGL
 - Web Audio API
 - Pointer Lock API
+- JavaScript ES6 syntax
 
 Tested on Chrome, Firefox, Safari, and Edge.
