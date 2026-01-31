@@ -1,0 +1,3931 @@
+// main-gameplay.js - Combat, updates, and collisions
+
+    function createExplosion(x, y, z) {
+        Audio.playExplosionSound();
+        
+        const particles = [];
+        const particleCount = 15;
+        
+        for (let i = 0; i < particleCount; i++) {
+            // Clone pre-cached material to avoid texture loading glitches
+            const spriteMaterial = G.explosionBaseMaterial.clone();
+            const particle = new THREE.Sprite(spriteMaterial);
+            const size = 0.2 + Math.random() * 0.25;
+            particle.scale.set(size, size, 1);
+            particle.position.set(x, y, z);
+            
+            const velocity = new THREE.Vector3(
+                (Math.random() - 0.5) * 0.5,
+                Math.random() * 0.5,
+                (Math.random() - 0.5) * 0.5
+            );
+            
+            G.scene.add(particle);
+            particles.push({ mesh: particle, velocity: velocity, life: 30, initialScale: size });
+        }
+        
+        G.explosions.push(...particles);
+    }
+
+    // Fireball impact explosion (medium size with smoke and scorch)
+    function createFireballExplosion(x, y, z) {
+        Audio.playExplosionSound();
+        
+        const particles = [];
+        const particleCount = 40;
+        
+        for (let i = 0; i < particleCount; i++) {
+            const size = 0.5 + Math.random() * 0.8;
+            // Clone pre-cached material to avoid texture loading glitches
+            const spriteMaterial = G.explosionBaseMaterial.clone();
+            const particle = new THREE.Sprite(spriteMaterial);
+            particle.scale.set(size, size, 1);
+            particle.position.set(x, y, z);
+            
+            const speed = 0.2 + Math.random() * 0.5;
+            const velocity = new THREE.Vector3(
+                (Math.random() - 0.5) * speed,
+                Math.random() * speed * 0.6,
+                (Math.random() - 0.5) * speed
+            );
+            
+            G.scene.add(particle);
+            particles.push({ mesh: particle, velocity: velocity, life: 35, initialScale: size });
+        }
+        
+        G.explosions.push(...particles);
+        
+        // Add smoke and scorch
+        createSmokeCloud(x, y + 0.5, z, 0.8);
+        createScorchMark(x, z, 2.5);
+    }
+
+    // Big bomb explosion helper
+    function createBombExplosion(x, y, z) {
+        Audio.playBombExplosionSound();
+        
+        const particles = [];
+        const particleCount = 100;
+        
+        for (let i = 0; i < particleCount; i++) {
+            const size = 1.0 + Math.random() * 1.5;
+            
+            // Mix of fire glow and smoke - clone pre-cached materials
+            let useSmokeColor = Math.random() < 0.12;
+            const spriteMaterial = useSmokeColor 
+                ? G.smokeBaseMaterial.clone()
+                : G.explosionBaseMaterial.clone();
+            const particle = new THREE.Sprite(spriteMaterial);
+            particle.scale.set(size, size, 1);
+            particle.position.set(x, y, z);
+            
+            const speed = 0.3 + Math.random() * 0.8;
+            const velocity = new THREE.Vector3(
+                (Math.random() - 0.5) * speed,
+                Math.random() * speed * 0.8,
+                (Math.random() - 0.5) * speed
+            );
+            
+            G.scene.add(particle);
+            particles.push({ mesh: particle, velocity: velocity, life: 45, initialScale: size });
+        }
+        
+        G.explosions.push(...particles);
+        
+        // Add lingering smoke cloud
+        createSmokeCloud(x, y + 1, z, 1.5);
+        
+        // Add scorch mark on ground
+        createScorchMark(x, z, 5);
+    }
+
+    // Massive dragon death explosion
+    function createDragonExplosion(x, y, z) {
+        Audio.playBombExplosionSound();
+        
+        const particles = [];
+        const particleCount = 180; // Way more particles
+        
+        for (let i = 0; i < particleCount; i++) {
+            const size = 1.5 + Math.random() * 2.5; // Much bigger glowing sprites
+            
+            // Clone pre-cached material to avoid texture loading glitches
+            const spriteMaterial = G.explosionBaseMaterial.clone();
+            const particle = new THREE.Sprite(spriteMaterial);
+            particle.scale.set(size, size, 1);
+            particle.position.set(x, y, z);
+            
+            const speed = 0.5 + Math.random() * 1.2; // Much faster
+            const velocity = new THREE.Vector3(
+                (Math.random() - 0.5) * speed,
+                Math.random() * speed,
+                (Math.random() - 0.5) * speed
+            );
+            
+            G.scene.add(particle);
+            particles.push({ mesh: particle, velocity: velocity, life: 60, initialScale: size }); // Longer life
+        }
+        
+        G.explosions.push(...particles);
+    }
+
+    // Create lingering smoke cloud
+    function createSmokeCloud(x, y, z, intensity = 1.0) {
+        const smokeCount = Math.floor(8 * intensity);
+        
+        for (let i = 0; i < smokeCount; i++) {
+            // Clone pre-cached material and adjust opacity
+            const smokeMaterial = G.smokeBaseMaterial.clone();
+            smokeMaterial.opacity = 0.5 + Math.random() * 0.3;
+            const smoke = new THREE.Sprite(smokeMaterial);
+            const size = (1.5 + Math.random() * 2.0) * intensity;
+            smoke.scale.set(size, size, 1);
+            
+            // Position with some spread
+            smoke.position.set(
+                x + (Math.random() - 0.5) * 2 * intensity,
+                y + Math.random() * 1.5,
+                z + (Math.random() - 0.5) * 2 * intensity
+            );
+            
+            G.scene.add(smoke);
+            G.smokeParticles.push({
+                mesh: smoke,
+                velocity: new THREE.Vector3(
+                    (Math.random() - 0.5) * 0.02,
+                    0.01 + Math.random() * 0.02,  // Slowly rise
+                    (Math.random() - 0.5) * 0.02
+                ),
+                life: 150 + Math.random() * 100,  // Long life (2.5-4 seconds)
+                initialOpacity: smoke.material.opacity,
+                initialScale: size
+            });
+        }
+    }
+
+    // Create scorch mark on the ground
+    function createScorchMark(x, z, size = 3) {
+        const textures = getTerrainTextures(THREE);
+        const terrainHeight = getTerrainHeight(x, z);
+        
+        const scorchGeometry = new THREE.PlaneGeometry(size, size);
+        const scorchMaterial = new THREE.MeshBasicMaterial({
+            map: textures.scorch,
+            transparent: true,
+            opacity: 0.8,
+            depthWrite: false
+        });
+        const scorch = new THREE.Mesh(scorchGeometry, scorchMaterial);
+        scorch.rotation.x = -Math.PI / 2;  // Lay flat on ground
+        scorch.rotation.z = Math.random() * Math.PI * 2;  // Random rotation
+        scorch.position.set(x, terrainHeight + 0.02, z);  // Slightly above ground
+        
+        G.scene.add(scorch);
+        G.scorchMarks.push({
+            mesh: scorch,
+            life: 600 + Math.random() * 300,  // 10-15 seconds
+            initialOpacity: 0.8
+        });
+    }
+
+    // Update smoke particles
+    function updateSmoke() {
+        for (let i = G.smokeParticles.length - 1; i >= 0; i--) {
+            const smoke = G.smokeParticles[i];
+            smoke.mesh.position.add(smoke.velocity);
+            smoke.life--;
+            
+            // Fade out and expand
+            const lifeRatio = smoke.life / 200;
+            smoke.mesh.material.opacity = smoke.initialOpacity * Math.min(1, lifeRatio * 1.5);
+            // Expand slightly as it rises
+            const expandFactor = 1 + (1 - lifeRatio) * 0.5;
+            smoke.mesh.scale.set(
+                smoke.initialScale * expandFactor,
+                smoke.initialScale * expandFactor,
+                1
+            );
+            
+            if (smoke.life <= 0) {
+                G.scene.remove(smoke.mesh);
+                G.smokeParticles.splice(i, 1);
+            }
+        }
+    }
+
+    // Update scorch marks (fade over time)
+    function updateScorchMarks() {
+        for (let i = G.scorchMarks.length - 1; i >= 0; i--) {
+            const scorch = G.scorchMarks[i];
+            scorch.life--;
+            
+            // Start fading in the last 200 frames
+            if (scorch.life < 200) {
+                scorch.mesh.material.opacity = scorch.initialOpacity * (scorch.life / 200);
+            }
+            
+            if (scorch.life <= 0) {
+                G.scene.remove(scorch.mesh);
+                G.scorchMarks.splice(i, 1);
+            }
+        }
+    }
+
+    // Shoot bullet
+    function shootBullet() {
+        if (gameWon) return;
+        
+        if (G.ammo <= 0 && !godMode) {
+            Audio.playEmptyGunSound();
+            return;
+        }
+        
+        Audio.playShootSound();
+        
+        const bulletGeometry = new THREE.SphereGeometry(0.2, 8, 8);
+        const bulletColor = G.isHost ? 0xFF69B4 : 0x4169E1; // Pink for girl, Blue for boy
+        const bulletMaterial = new THREE.MeshLambertMaterial({ color: bulletColor });
+        const bulletMesh = new THREE.Mesh(bulletGeometry, bulletMaterial);
+        bulletMesh.position.copy(G.playerGroup.position);
+        bulletMesh.position.y = 1;
+        bulletMesh.castShadow = true;
+        G.scene.add(bulletMesh);
+        
+        const direction = new THREE.Vector3(
+            Math.sin(G.player.rotation),
+            0,
+            Math.cos(G.player.rotation)
+        );
+        
+        const bullet = {
+            mesh: bulletMesh,
+            velocity: direction.multiplyScalar(0.5),
+            radius: 0.2,
+            startPos: { x: G.playerGroup.position.x, z: G.playerGroup.position.z }
+        };
+        G.bullets.push(bullet);
+        if (!godMode) G.ammo--;
+        
+        // Sync bullet to other player
+        if (multiplayerManager && multiplayerManager.isConnected()) {
+            multiplayerManager.sendBullet({
+                position: { x: bulletMesh.position.x, y: bulletMesh.position.y, z: bulletMesh.position.z },
+                velocity: { x: bullet.velocity.x, y: bullet.velocity.y, z: bullet.velocity.z },
+                startPos: bullet.startPos
+            });
+        }
+    }
+
+    // Create bullet from remote player
+    function createRemoteBullet(bulletData) {
+        // Play shooting sound
+        Audio.playShootSound();
+        
+        const bulletGeometry = new THREE.SphereGeometry(0.2, 8, 8);
+        const remoteBulletColor = G.isHost ? 0x4169E1 : 0xFF69B4; // Blue for boy's G.bullets, Pink for girl's G.bullets
+        const bulletMaterial = new THREE.MeshLambertMaterial({ color: remoteBulletColor });
+        const bulletMesh = new THREE.Mesh(bulletGeometry, bulletMaterial);
+        bulletMesh.position.set(bulletData.position.x, bulletData.position.y, bulletData.position.z);
+        bulletMesh.castShadow = true;
+        G.scene.add(bulletMesh);
+        
+        const bullet = {
+            mesh: bulletMesh,
+            velocity: new THREE.Vector3(bulletData.velocity.x, bulletData.velocity.y, bulletData.velocity.z),
+            radius: 0.2,
+            startPos: bulletData.startPos,
+            isRemote: true // Mark as remote to differentiate
+        };
+        G.bullets.push(bullet);
+    }
+    
+    // Create freeze particle effect on an NPC
+    function createFreezeEffect(x, y, z) {
+        const particleCount = 20;
+        const particles = [];
+        
+        for (let i = 0; i < particleCount; i++) {
+            const geometry = new THREE.SphereGeometry(0.1, 4, 4);
+            const material = new THREE.MeshBasicMaterial({
+                color: 0xAAFFFF,
+                transparent: true,
+                opacity: 0.8
+            });
+            const particle = new THREE.Mesh(geometry, material);
+            
+            // Random position around the NPC
+            const angle = (i / particleCount) * Math.PI * 2;
+            const radius = 0.5 + Math.random() * 0.5;
+            particle.position.set(
+                x + Math.cos(angle) * radius,
+                y + 0.5 + Math.random() * 1.5,
+                z + Math.sin(angle) * radius
+            );
+            
+            G.scene.add(particle);
+            particles.push({
+                mesh: particle,
+                life: 30,
+                velocity: {
+                    x: (Math.random() - 0.5) * 0.02,
+                    y: Math.random() * 0.05,
+                    z: (Math.random() - 0.5) * 0.02
+                }
+            });
+        }
+        
+        // Animate particles
+        let frame = 0;
+        const animateInterval = setInterval(() => {
+            frame++;
+            particles.forEach(p => {
+                p.mesh.position.x += p.velocity.x;
+                p.mesh.position.y += p.velocity.y;
+                p.mesh.position.z += p.velocity.z;
+                p.mesh.material.opacity = 0.8 * (1 - frame / p.life);
+            });
+            
+            if (frame >= 30) {
+                clearInterval(animateInterval);
+                particles.forEach(p => G.scene.remove(p.mesh));
+            }
+        }, 16);
+    }
+    
+    // Ice power activation
+    function activateIcePower() {
+        if (gameWon || gameDead || !G.hasIcePower) return;
+        
+        const now = Date.now();
+        if (now - G.lastIcePowerTime < G.icePowerCooldown) return; // Cooldown not ready
+        
+        G.lastIcePowerTime = now;
+        
+        console.log('Activating ice power, isHost:', multiplayerManager ? multiplayerManager.isHost : 'no multiplayer');
+        
+        Audio.playIcePowerSound();
+        
+        const freezeRadius = 20;
+        const playerPos = G.playerGroup.position;
+        
+        // Create visual effect - expanding blue circle
+        const circleGeometry = new THREE.RingGeometry(0.1, freezeRadius, 32);
+        const circleMaterial = new THREE.MeshBasicMaterial({
+            color: 0x00BFFF,
+            transparent: true,
+            opacity: 0.6,
+            side: THREE.DoubleSide
+        });
+        const circle = new THREE.Mesh(circleGeometry, circleMaterial);
+        circle.rotation.x = -Math.PI / 2;
+        circle.position.set(playerPos.x, 2.0, playerPos.z);
+        G.scene.add(circle);
+        
+        // Animate circle expansion and fade
+        let expansion = 0;
+        const expandInterval = setInterval(() => {
+            expansion += 0.05;
+            circle.scale.set(expansion, expansion, 1);
+            circle.material.opacity = 0.6 * (1 - expansion);
+            
+            if (expansion >= 1) {
+                clearInterval(expandInterval);
+                G.scene.remove(circle);
+            }
+        }, 16);
+        
+        // Freeze all NPCs in radius
+        const freezeDuration = 5000; // 5 seconds
+        
+        // Freeze goblins
+        G.goblins.forEach(gob => {
+            if (gob.alive) {
+                const dist = Math.sqrt(
+                    (gob.mesh.position.x - playerPos.x) ** 2 +
+                    (gob.mesh.position.z - playerPos.z) ** 2
+                );
+                if (dist <= freezeRadius) {
+                    gob.frozen = true;
+                    gob.frozenUntil = now + freezeDuration;
+                    // Apply blue tint
+                    gob.mesh.children.forEach(child => {
+                        if (child.material && child.material.emissive !== undefined) {
+                            child.material.emissive = new THREE.Color(0x0088FF);
+                            child.material.emissiveIntensity = 0.5;
+                        }
+                    });
+                    // Create freeze particle effect
+                    createFreezeEffect(gob.mesh.position.x, gob.mesh.position.y, gob.mesh.position.z);
+                }
+            }
+        });
+        
+        // Freeze birds
+        G.birds.forEach(bird => {
+            const birdDist = Math.sqrt(
+                (bird.mesh.position.x - playerPos.x) ** 2 +
+                (bird.mesh.position.z - playerPos.z) ** 2
+            );
+            if (birdDist <= freezeRadius) {
+                bird.frozen = true;
+                bird.frozenUntil = now + freezeDuration;
+                // Apply blue tint to bird
+                bird.mesh.children.forEach(child => {
+                    if (child.material && child.material.emissive !== undefined) {
+                        child.material.emissive = new THREE.Color(0x0088FF);
+                        child.material.emissiveIntensity = 0.5;
+                    }
+                });
+                // Create freeze particle effect
+                createFreezeEffect(bird.mesh.position.x, bird.mesh.position.y, bird.mesh.position.z);
+            }
+        });
+        
+        // Freeze dragon (can still move and damage, just can't fire)
+        // Use larger radius for dragon since it's a big boss
+        if (G.dragon && G.dragon.alive) {
+            const dist = Math.sqrt(
+                (G.dragon.mesh.position.x - playerPos.x) ** 2 +
+                (G.dragon.mesh.position.z - playerPos.z) ** 2
+            );
+            if (dist <= freezeRadius + 15) { // Extra 15 units for G.dragon's size
+                G.dragon.frozen = true;
+                G.dragon.frozenUntil = now + freezeDuration;
+                // Apply blue tint to dragon
+                G.dragon.mesh.children.forEach(child => {
+                    if (child.material && child.material.emissive !== undefined) {
+                        child.material.emissive = new THREE.Color(0x0088FF);
+                        child.material.emissiveIntensity = 0.5;
+                    }
+                });
+                createFreezeEffect(G.dragon.mesh.position.x, G.dragon.mesh.position.y + 5, G.dragon.mesh.position.z);
+            }
+        }
+        
+        // Freeze extra dragons
+        G.extraDragons.forEach(extraDragon => {
+            if (!extraDragon.alive) return;
+            const dist = Math.sqrt(
+                (extraDragon.mesh.position.x - playerPos.x) ** 2 +
+                (extraDragon.mesh.position.z - playerPos.z) ** 2
+            );
+            const extraRadius = freezeRadius + 10 * (extraDragon.scale || 1); // Smaller bonus for smaller dragons
+            if (dist <= extraRadius) {
+                extraDragon.frozen = true;
+                extraDragon.frozenUntil = now + freezeDuration;
+                // Apply blue tint
+                extraDragon.mesh.children.forEach(child => {
+                    if (child.material && child.material.emissive !== undefined) {
+                        child.material.emissive = new THREE.Color(0x0088FF);
+                        child.material.emissiveIntensity = 0.5;
+                    }
+                });
+                createFreezeEffect(extraDragon.mesh.position.x, extraDragon.mesh.position.y + 3, extraDragon.mesh.position.z);
+            }
+        });
+        
+        // Send ice power activation to other player in multiplayer
+        if (multiplayerManager && multiplayerManager.isConnected()) {
+            multiplayerManager.sendGameEvent('icePowerActivated', {
+                x: playerPos.x,
+                y: playerPos.y,
+                z: playerPos.z,
+                isHost: multiplayerManager.isHost
+            });
+        }
+    }
+
+    // Place banana trap
+    function placeBanana() {
+        if (G.bananaInventory <= 0) return;
+        
+        G.bananaInventory--;
+        
+        // Create banana mesh
+        const bananaGroup = new THREE.Group();
+        
+        // Banana body (curved cylinder)
+        const bananaGeometry = new THREE.CylinderGeometry(0.3, 0.3, 1.5, 8);
+        const bananaMaterial = new THREE.MeshLambertMaterial({ 
+            color: 0xFFFF00,
+            emissive: 0xFFFF00,
+            emissiveIntensity: 0.3
+        });
+        const bananaMesh = new THREE.Mesh(bananaGeometry, bananaMaterial);
+        bananaMesh.rotation.z = Math.PI / 6; // Slight curve
+        bananaMesh.castShadow = true;
+        bananaGroup.add(bananaMesh);
+        
+        // Banana ends (darker)
+        const endMaterial = new THREE.MeshLambertMaterial({ color: 0x8B7500 });
+        const endGeometry = new THREE.SphereGeometry(0.35, 8, 8);
+        const end1 = new THREE.Mesh(endGeometry, endMaterial);
+        end1.position.y = 0.7;
+        end1.scale.set(0.8, 1, 0.8);
+        bananaGroup.add(end1);
+        
+        const end2 = new THREE.Mesh(endGeometry, endMaterial);
+        end2.position.y = -0.7;
+        end2.scale.set(0.8, 1, 0.8);
+        bananaGroup.add(end2);
+        
+        // Position 3 units in front of the player based on their rotation
+        const placeDistance = 3;
+        const bananaX = G.playerGroup.position.x + Math.sin(G.player.rotation) * placeDistance;
+        const bananaZ = G.playerGroup.position.z + Math.cos(G.player.rotation) * placeDistance;
+        const terrainHeight = getTerrainHeight(bananaX, bananaZ);
+        bananaGroup.position.set(bananaX, terrainHeight + 0.5, bananaZ);
+        G.scene.add(bananaGroup);
+        
+        const bananaId = Date.now() + Math.random(); // Unique ID
+        G.placedBananas.push({
+            id: bananaId,
+            mesh: bananaGroup,
+            x: bananaX,
+            z: bananaZ,
+            radius: 1.2
+        });
+        
+        Audio.playCollectSound();
+        
+        // Notify other player in multiplayer
+        if (multiplayerManager && multiplayerManager.isConnected()) {
+            multiplayerManager.sendGameEvent('bananaPlaced', {
+                id: bananaId,
+                x: bananaX,
+                z: bananaZ
+            });
+        }
+    }
+    
+    function placeBomb() {
+        if (G.bombInventory <= 0) return;
+        
+        const bombId = Date.now() + Math.random();
+        G.bombInventory--;
+        
+        // Create bomb mesh
+        const bombGroup = new THREE.Group();
+        
+        // Main sphere (black bomb)
+        const sphereGeometry = new THREE.SphereGeometry(0.4, 16, 16);
+        const sphereMaterial = new THREE.MeshLambertMaterial({ color: 0x1a1a1a });
+        const sphere = new THREE.Mesh(sphereGeometry, sphereMaterial);
+        sphere.castShadow = true;
+        bombGroup.add(sphere);
+        
+        // Fuse
+        const fuseGeometry = new THREE.CylinderGeometry(0.05, 0.05, 0.3, 8);
+        const fuseMaterial = new THREE.MeshLambertMaterial({ color: 0x8B4513 });
+        const fuse = new THREE.Mesh(fuseGeometry, fuseMaterial);
+        fuse.position.y = 0.4;
+        bombGroup.add(fuse);
+        
+        // Animated spark
+        const sparkGeometry = new THREE.SphereGeometry(0.1, 8, 8);
+        const sparkMaterial = new THREE.MeshBasicMaterial({ 
+            color: 0xFF4500,
+            emissive: 0xFF4500,
+            emissiveIntensity: 1.0
+        });
+        const spark = new THREE.Mesh(sparkGeometry, sparkMaterial);
+        spark.position.y = 0.55;
+        bombGroup.add(spark);
+        
+        // Start position at player, throw to 6 units in front
+        const throwDistance = 6;
+        const targetX = G.playerGroup.position.x + Math.sin(G.player.rotation) * throwDistance;
+        const targetZ = G.playerGroup.position.z + Math.cos(G.player.rotation) * throwDistance;
+        const targetTerrainHeight = getTerrainHeight(targetX, targetZ);
+        
+        // Start at player position
+        bombGroup.position.set(
+            G.playerGroup.position.x,
+            G.playerGroup.position.y + 1.5, // Start at chest height
+            G.playerGroup.position.z
+        );
+        G.scene.add(bombGroup);
+        
+        // Animate throw (arc motion)
+        const throwDuration = 400; // 400ms throw animation
+        const startTime = Date.now();
+        const startY = bombGroup.position.y;
+        const throwHeight = 3; // Arc height
+        
+        const throwInterval = setInterval(() => {
+            const elapsed = Date.now() - startTime;
+            const progress = Math.min(elapsed / throwDuration, 1);
+            
+            if (progress >= 1) {
+                clearInterval(throwInterval);
+                bombGroup.position.set(targetX, targetTerrainHeight + 0.4, targetZ);
+            } else {
+                // Linear horizontal movement
+                bombGroup.position.x = G.playerGroup.position.x + (targetX - G.playerGroup.position.x) * progress;
+                bombGroup.position.z = G.playerGroup.position.z + (targetZ - G.playerGroup.position.z) * progress;
+                
+                // Parabolic arc for vertical movement
+                const arcProgress = Math.sin(progress * Math.PI);
+                bombGroup.position.y = startY + arcProgress * throwHeight - (progress * (startY - targetTerrainHeight - 0.4));
+            }
+        }, 16);
+        
+        const explodeAt = Date.now() + 3000; // 3 seconds
+        G.placedBombs.push({
+            id: bombId,
+            mesh: bombGroup,
+            x: targetX,
+            z: targetZ,
+            radius: 12, // Explosion radius
+            explodeAt: explodeAt,
+            spark: spark // For animation
+        });
+        
+        Audio.playCollectSound();
+        
+        // Notify other player in multiplayer
+        if (multiplayerManager && multiplayerManager.isConnected()) {
+            multiplayerManager.sendGameEvent('bombPlaced', {
+                id: bombId,
+                x: targetX,
+                z: targetZ,
+                explodeAt: explodeAt
+            });
+        }
+    }
+    
+    // Handle game events from remote player
+    function handleRemoteGameEvent(eventData) {
+        const { eventType, data } = eventData;
+        
+        if (eventType === 'bombExplosion') {
+            // Show explosion effect on client
+            createBombExplosion(data.x, data.y, data.z);
+            
+            // Add camera shake
+            const distToExplosion = Math.sqrt(
+                (G.playerGroup.position.x - data.x) ** 2 +
+                (G.playerGroup.position.z - data.z) ** 2
+            );
+            if (distToExplosion < 30) {
+                const shakeIntensity = Math.max(0, 1 - distToExplosion / 30) * 0.3;
+                G.camera.position.x += (Math.random() - 0.5) * shakeIntensity;
+                G.camera.position.y += (Math.random() - 0.5) * shakeIntensity;
+                G.camera.position.z += (Math.random() - 0.5) * shakeIntensity;
+            }
+        } else if (eventType === 'itemCollected') {
+            // Other player collected an item
+            if (data.type === 'material' && G.materials[data.index]) {
+                G.materials[data.index].collected = true;
+                G.materials[data.index].mesh.visible = false;
+                G.materialsCollected++;
+                Audio.playCollectSound();
+            } else if (data.type === 'G.ammo' && G.ammoPickups[data.index]) {
+                G.ammoPickups[data.index].collected = true;
+                G.ammoPickups[data.index].mesh.visible = false;
+                Audio.playCollectSound();
+            } else if (data.type === 'health' && G.healthPickups[data.index]) {
+                G.healthPickups[data.index].collected = true;
+                G.healthPickups[data.index].mesh.visible = false;
+                Audio.playCollectSound();
+            } else if (data.type === 'bomb' && G.bombPickups[data.index]) {
+                G.bombPickups[data.index].collected = true;
+                G.bombPickups[data.index].mesh.visible = false;
+                Audio.playCollectSound();
+            } else if (data.type === 'scarab' && G.scarabPickups[data.index]) {
+                G.scarabPickups[data.index].collected = true;
+                G.scene.remove(G.scarabPickups[data.index].mesh);
+                G.scarabsCollected++;
+                Audio.playCollectSound();
+            }
+        } else if (eventType === 'G.bridgeRepaired') {
+            // Other player repaired the bridge
+            if (!G.bridgeRepaired) {
+                G.bridgeRepaired = true;
+                G.bridgeObj.mesh.visible = true;
+                G.brokenBridgeGroup.visible = false;
+                Audio.playRepairSound();
+            }
+        } else if (eventType === 'G.icePowerCollected') {
+            // Other player collected ice power
+            if (!G.icePowerCollected) {
+                G.icePowerCollected = true;
+                G.hasIcePower = true;
+                Audio.playCollectSound();
+            }
+        } else if (eventType === 'icePowerActivated') {
+            // Other player activated ice power
+            const playerPos = { x: data.x, y: data.y, z: data.z };
+            
+            // Always play sound for the receiving player
+            Audio.playIcePowerSound();
+            
+            const freezeRadius = 20;
+            const circleGeometry = new THREE.RingGeometry(0.1, freezeRadius, 32);
+            const circleMaterial = new THREE.MeshBasicMaterial({
+                color: 0x00BFFF,
+                transparent: true,
+                opacity: 0.6,
+                side: THREE.DoubleSide
+            });
+            const circle = new THREE.Mesh(circleGeometry, circleMaterial);
+            circle.rotation.x = -Math.PI / 2;
+            circle.position.set(playerPos.x, 2.0, playerPos.z);
+            G.scene.add(circle);
+            
+            let expansion = 0;
+            const expandInterval = setInterval(() => {
+                expansion += 0.05;
+                circle.scale.set(expansion, expansion, 1);
+                circle.material.opacity = 0.6 * (1 - expansion);
+                
+                if (expansion >= 1) {
+                    clearInterval(expandInterval);
+                    G.scene.remove(circle);
+                }
+            }, 16);
+            
+            // If this is the host, apply freezing (client sent the event)
+            if (multiplayerManager && multiplayerManager.isHost && !data.isHost) {
+                console.log('Host applying freeze from client at position:', playerPos);
+                const freezeDuration = 5000;
+                const now = Date.now();
+                
+                // Freeze goblins
+                console.log('Checking', G.goblins.length, 'G.goblins for freezing');
+                G.goblins.forEach(gob => {
+                    if (gob.alive) {
+                        const dist = Math.sqrt(
+                            (gob.mesh.position.x - playerPos.x) ** 2 +
+                            (gob.mesh.position.z - playerPos.z) ** 2
+                        );
+                        if (dist <= freezeRadius) {
+                            gob.frozen = true;
+                            gob.frozenUntil = now + freezeDuration;
+                            gob.mesh.children.forEach(child => {
+                                if (child.material && child.material.emissive !== undefined) {
+                                    child.material.emissive = new THREE.Color(0x0088FF);
+                                    child.material.emissiveIntensity = 0.5;
+                                }
+                            });
+                            // Create freeze particle effect
+                            createFreezeEffect(gob.mesh.position.x, gob.mesh.position.y, gob.mesh.position.z);
+                        }
+                    }
+                });
+                
+                // Freeze birds
+                G.birds.forEach(bird => {
+                    const birdDist = Math.sqrt(
+                        (bird.mesh.position.x - playerPos.x) ** 2 +
+                        (bird.mesh.position.z - playerPos.z) ** 2
+                    );
+                    if (birdDist <= freezeRadius) {
+                        bird.frozen = true;
+                        bird.frozenUntil = now + freezeDuration;
+                        bird.mesh.children.forEach(child => {
+                            if (child.material && child.material.emissive !== undefined) {
+                                child.material.emissive = new THREE.Color(0x0088FF);
+                                child.material.emissiveIntensity = 0.5;
+                            }
+                        });
+                        // Create freeze particle effect
+                        createFreezeEffect(bird.mesh.position.x, bird.mesh.position.y, bird.mesh.position.z);
+                    }
+                });
+                
+                // Freeze dragon (can still move and damage, just can't fire)
+                if (G.dragon && G.dragon.alive) {
+                    const dist = Math.sqrt(
+                        (G.dragon.mesh.position.x - playerPos.x) ** 2 +
+                        (G.dragon.mesh.position.z - playerPos.z) ** 2
+                    );
+                    if (dist <= freezeRadius + 15) { // Extra 15 units for G.dragon's size
+                        G.dragon.frozen = true;
+                        G.dragon.frozenUntil = now + freezeDuration;
+                        // Apply blue tint to dragon
+                        G.dragon.mesh.children.forEach(child => {
+                            if (child.material && child.material.emissive !== undefined) {
+                                child.material.emissive = new THREE.Color(0x0088FF);
+                                child.material.emissiveIntensity = 0.5;
+                            }
+                        });
+                        createFreezeEffect(G.dragon.mesh.position.x, G.dragon.mesh.position.y + 5, G.dragon.mesh.position.z);
+                    }
+                }
+            }
+        } else if (eventType === 'gameRestart') {
+            // Host requested game restart
+            resetGame();
+        } else if (eventType === 'playerWin') {
+            // Client reached treasure, host decides if game is won
+            if (multiplayerManager && multiplayerManager.isHost) {
+                gameWon = true;
+                Audio.playWinSound();
+            }
+        } else if (eventType === 'playerDamage') {
+            // Other player took damage (from host's guardian arrow)
+            if (!godMode) {
+                G.playerHealth--;
+                G.damageFlashTime = Date.now();
+                // Don't check for death here - client will send updated health to host
+                // and host will sync gameDead status back via fullSync
+                if (G.playerHealth > 0) {
+                    Audio.playStuckSound();
+                }
+            }
+        } else if (eventType === 'tornadoHit') {
+            // Client was hit by a tornado (from host)
+            if (!godMode) {
+                G.playerHealth--;
+                G.damageFlashTime = Date.now();
+                
+                // Trigger tornado spin visual effect
+                G.tornadoSpinActive = true;
+                G.tornadoSpinStartTime = Date.now();
+                
+                if (G.playerHealth > 0) {
+                    Audio.playStuckSound();
+                }
+            }
+        } else if (eventType === 'G.bananaPowerCollected') {
+            // Other player collected banana power, both get it
+            G.worldBananaPowerCollected = true;
+            G.hasBananaPower = true;
+            G.bananaInventory = G.maxBananas;
+            Audio.playCollectSound();
+        } else if (eventType === 'bananaPlaced') {
+            // Other player placed a banana
+            const bananaGroup = new THREE.Group();
+            const bananaGeometry = new THREE.CylinderGeometry(0.3, 0.3, 1.5, 8);
+            const bananaMaterial = new THREE.MeshLambertMaterial({ 
+                color: 0xFFFF00,
+                emissive: 0xFFFF00,
+                emissiveIntensity: 0.3
+            });
+            const bananaMesh = new THREE.Mesh(bananaGeometry, bananaMaterial);
+            bananaMesh.rotation.z = Math.PI / 6;
+            bananaMesh.castShadow = true;
+            bananaGroup.add(bananaMesh);
+            
+            const endMaterial = new THREE.MeshLambertMaterial({ color: 0x8B7500 });
+            const endGeometry = new THREE.SphereGeometry(0.35, 8, 8);
+            const end1 = new THREE.Mesh(endGeometry, endMaterial);
+            end1.position.y = 0.7;
+            end1.scale.set(0.8, 1, 0.8);
+            bananaGroup.add(end1);
+            
+            const end2 = new THREE.Mesh(endGeometry, endMaterial);
+            end2.position.y = -0.7;
+            end2.scale.set(0.8, 1, 0.8);
+            bananaGroup.add(end2);
+            
+            const terrainHeight = getTerrainHeight(data.x, data.z);
+            bananaGroup.position.set(data.x, terrainHeight + 0.5, data.z);
+            G.scene.add(bananaGroup);
+            
+            G.placedBananas.push({
+                id: data.id,
+                mesh: bananaGroup,
+                x: data.x,
+                z: data.z,
+                radius: 1.2
+            });
+        } else if (eventType === 'bananaCollected') {
+            // Other player collected a banana - remove it
+            const index = G.placedBananas.findIndex(b => b.id === data.id);
+            if (index !== -1) {
+                G.scene.remove(G.placedBananas[index].mesh);
+                G.placedBananas.splice(index, 1);
+            }
+        } else if (eventType === 'bombPlaced') {
+            // Other player placed a bomb
+            const bombGroup = new THREE.Group();
+            
+            const sphereGeometry = new THREE.SphereGeometry(0.4, 16, 16);
+            const sphereMaterial = new THREE.MeshLambertMaterial({ color: 0x1a1a1a });
+            const sphere = new THREE.Mesh(sphereGeometry, sphereMaterial);
+            sphere.castShadow = true;
+            bombGroup.add(sphere);
+            
+            const fuseGeometry = new THREE.CylinderGeometry(0.05, 0.05, 0.3, 8);
+            const fuseMaterial = new THREE.MeshLambertMaterial({ color: 0x8B4513 });
+            const fuse = new THREE.Mesh(fuseGeometry, fuseMaterial);
+            fuse.position.y = 0.4;
+            bombGroup.add(fuse);
+            
+            const sparkGeometry = new THREE.SphereGeometry(0.1, 8, 8);
+            const sparkMaterial = new THREE.MeshBasicMaterial({ 
+                color: 0xFF4500,
+                emissive: 0xFF4500,
+                emissiveIntensity: 1.0
+            });
+            const spark = new THREE.Mesh(sparkGeometry, sparkMaterial);
+            spark.position.y = 0.55;
+            bombGroup.add(spark);
+            
+            const terrainHeight = getTerrainHeight(data.x, data.z);
+            bombGroup.position.set(data.x, terrainHeight + 0.4, data.z);
+            G.scene.add(bombGroup);
+            
+            G.placedBombs.push({
+                id: data.id,
+                mesh: bombGroup,
+                x: data.x,
+                z: data.z,
+                radius: 12,
+                explodeAt: data.explodeAt,
+                spark: spark
+            });
+        } else if (eventType === 'bombExploded') {
+            // Other player's bomb exploded, show visual effect only
+            createBombExplosion(data.x, data.y, data.z);
+            
+            // Remove bomb from array
+            const index = G.placedBombs.findIndex(b => b.id === data.id);
+            if (index !== -1) {
+                G.scene.remove(G.placedBombs[index].mesh);
+                G.placedBombs.splice(index, 1);
+            }
+        } else if (eventType === 'levelChange') {
+            // Other player entered a portal - switch level together
+            console.log(`Received level change to Level ${data.level}`);
+            
+            // Save current inventory before switching (so both players keep their inventory)
+            persistentInventory.ammo = G.ammo;
+            persistentInventory.bombs = G.bombInventory;
+            persistentInventory.health = G.playerHealth;
+            persistentInventory.hasKite = G.worldKiteCollected || G.player.hasKite;
+            
+            switchLevel(data.level);
+        } else if (eventType === 'lavaTrailCreate') {
+            // Host created a lava trail, client needs to show it
+            const trailGroup = new THREE.Group();
+            
+            const poolGeometry = new THREE.CircleGeometry(GAME_CONFIG.LAVA_TRAIL_RADIUS, 16);
+            const poolMaterial = new THREE.MeshBasicMaterial({ 
+                color: 0xff4400,
+                transparent: true,
+                opacity: 0.9,
+                side: THREE.DoubleSide,
+                blending: THREE.AdditiveBlending
+            });
+            const pool = new THREE.Mesh(poolGeometry, poolMaterial);
+            pool.rotation.x = -Math.PI / 2;
+            pool.position.y = 0.15;
+            trailGroup.add(pool);
+            
+            const crustGeometry = new THREE.RingGeometry(GAME_CONFIG.LAVA_TRAIL_RADIUS * 0.7, GAME_CONFIG.LAVA_TRAIL_RADIUS, 16);
+            const crustMaterial = new THREE.MeshBasicMaterial({ 
+                color: 0x4a2010,
+                transparent: true,
+                opacity: 0.6,
+                side: THREE.DoubleSide
+            });
+            const crust = new THREE.Mesh(crustGeometry, crustMaterial);
+            crust.rotation.x = -Math.PI / 2;
+            crust.position.y = 0.16;
+            trailGroup.add(crust);
+            
+            const bubbleGeometry = new THREE.SphereGeometry(0.15, 8, 8);
+            const bubbleMaterial = new THREE.MeshBasicMaterial({ 
+                color: 0xffaa00,
+                transparent: true,
+                opacity: 0.8,
+                blending: THREE.AdditiveBlending
+            });
+            const bubble = new THREE.Mesh(bubbleGeometry, bubbleMaterial);
+            bubble.position.y = 0.2;
+            trailGroup.add(bubble);
+            trailGroup.bubble = bubble;
+            
+            const terrainHeight = getTerrainHeight(data.x, data.z);
+            trailGroup.position.set(data.x, terrainHeight, data.z);
+            G.scene.add(trailGroup);
+            
+            G.lavaTrails.push({
+                id: data.id,
+                mesh: trailGroup,
+                x: data.x,
+                z: data.z,
+                radius: GAME_CONFIG.LAVA_TRAIL_RADIUS,
+                createdAt: Date.now(),
+                duration: GAME_CONFIG.LAVA_TRAIL_DURATION,
+                pool: pool,
+                crust: crust,
+                creatorId: data.creatorId
+            });
+        } else if (eventType === 'lavaTrailDeath') {
+            // Client was killed by lava trail
+            if (!gameDead) {
+                G.playerHealth = 0;
+                gameDead = true;
+                Audio.stopBackgroundMusic();
+                Audio.playDeathSound();
+            }
+        } else if (eventType === 'lavaPoolDeath') {
+            // Client was killed by lava pool
+            if (!gameDead) {
+                G.playerHealth = 0;
+                gameDead = true;
+                Audio.stopBackgroundMusic();
+                Audio.playDeathSound();
+            }
+        } else if (eventType === 'creviceDeath') {
+            // Client fell into a crevice
+            if (!gameDead) {
+                G.playerHealth = 0;
+                gameDead = true;
+                Audio.stopBackgroundMusic();
+                Audio.playDeathSound();
+            }
+        } else if (eventType === 'whirlpoolDeath') {
+            // Client was sucked into a whirlpool
+            if (!gameDead) {
+                G.playerHealth = 0;
+                gameDead = true;
+                Audio.stopBackgroundMusic();
+                Audio.playDeathSound();
+            }
+        } else if (eventType === 'trapDeath') {
+            // Client hit a trap (quicksand, whirlpool, etc.)
+            if (!gameDead) {
+                G.playerHealth = 0;
+                gameDead = true;
+                Audio.stopBackgroundMusic();
+                Audio.playDeathSound();
+            }
+        }
+    }
+
+    // Update functions
+    function updatePlayer() {
+        if (gameWon) return;
+        
+        const prevPos = G.playerGroup.position.clone();
+        
+        // Handle gliding
+        let isMoving = false;
+        if (G.player.isGliding) {
+            // Takeoff animation
+            if (G.player.glideState === 'takeoff') {
+                G.player.glideLiftProgress += 0.05;
+                if (G.player.glideLiftProgress >= 1) {
+                    G.player.glideState = 'flying';
+                    G.player.glideLiftProgress = 1;
+                }
+            }
+            // Landing animation
+            else if (G.player.glideState === 'landing') {
+                G.player.glideLiftProgress -= 0.05;
+                if (G.player.glideLiftProgress <= 0) {
+                    G.player.isGliding = false;
+                    G.player.glideState = 'none';
+                    G.player.glideLiftProgress = 0;
+                    G.kiteGroup.visible = false;
+                }
+            }
+            // Flying - consume charge
+            else if (G.player.glideState === 'flying') {
+                G.player.glideCharge -= 0.3;
+                if (G.player.glideCharge <= 0) {
+                    G.player.glideCharge = 0;
+                    G.player.glideState = 'landing';
+                }
+            }
+            
+            // Glide forward
+            G.playerGroup.position.x += Math.sin(G.player.rotation) * G.player.glideSpeed;
+            G.playerGroup.position.z += Math.cos(G.player.rotation) * G.player.glideSpeed;
+            isMoving = true;
+        } else if (godMode) {
+            // God mode flying controls
+            let moveSpeed = godModeSpeed;
+            
+            // Forward/backward
+            if (G.keys.ArrowUp || G.keys.w) {
+                G.playerGroup.position.x += Math.sin(G.player.rotation) * moveSpeed;
+                G.playerGroup.position.z += Math.cos(G.player.rotation) * moveSpeed;
+            }
+            if (G.keys.ArrowDown || G.keys.s) {
+                G.playerGroup.position.x -= Math.sin(G.player.rotation) * moveSpeed;
+                G.playerGroup.position.z -= Math.cos(G.player.rotation) * moveSpeed;
+            }
+            
+            // Left/right rotation
+            if (G.keys.ArrowLeft || G.keys.a) {
+                G.player.rotation += G.player.rotationSpeed;
+            }
+            if (G.keys.ArrowRight || G.keys.d) {
+                G.player.rotation -= G.player.rotationSpeed;
+            }
+            
+            // Up/down (Q/E keys)
+            if (G.keys.q) {
+                G.playerGroup.position.y += moveSpeed * 0.5;
+            }
+            if (G.keys.e) {
+                G.playerGroup.position.y -= moveSpeed * 0.5;
+            }
+            
+            isMoving = G.keys.ArrowUp || G.keys.ArrowDown || G.keys.w || G.keys.s;
+        } else {
+            // Recharge glide
+            if (G.player.glideCharge < G.player.maxGlideCharge) {
+                G.player.glideCharge += 0.15;
+            }
+            
+            // Normal movement
+            if (G.keys.ArrowLeft || G.keys.a) {
+                G.player.rotation += G.player.rotationSpeed;
+            }
+            if (G.keys.ArrowRight || G.keys.d) {
+                G.player.rotation -= G.player.rotationSpeed;
+            }
+            
+            isMoving = G.keys.ArrowUp || G.keys.ArrowDown || G.keys.w || G.keys.s;
+            const moveScale = G.player.gamepadMoveScale > 0 ? G.player.gamepadMoveScale : 1;
+            if (G.keys.ArrowUp || G.keys.w) {
+                G.playerGroup.position.x += Math.sin(G.player.rotation) * G.player.speed * moveScale;
+                G.playerGroup.position.z += Math.cos(G.player.rotation) * G.player.speed * moveScale;
+            }
+            if (G.keys.ArrowDown || G.keys.s) {
+                G.playerGroup.position.x -= Math.sin(G.player.rotation) * G.player.speed * moveScale;
+                G.playerGroup.position.z -= Math.cos(G.player.rotation) * G.player.speed * moveScale;
+            }
+            G.player.gamepadMoveScale = 0;
+        }
+        
+        G.playerGroup.rotation.y = G.player.rotation;
+        
+        // Tornado spin visual effect (purely visual, doesn't affect gameplay position)
+        if (G.tornadoSpinActive) {
+            const elapsed = Date.now() - G.tornadoSpinStartTime;
+            const progress = Math.min(elapsed / G.tornadoSpinDuration, 1);
+            
+            if (progress < 1) {
+                // Spin rotation - ease out
+                const spinProgress = 1 - Math.pow(1 - progress, 2); // ease out quad
+                const extraRotation = spinProgress * G.tornadoSpinRotations * Math.PI * 2;
+                G.playerGroup.rotation.y = G.player.rotation + extraRotation;
+                
+                // Lift up and down - parabolic arc
+                const liftProgress = Math.sin(progress * Math.PI); // 0 -> 1 -> 0
+                G.playerGroup.position.y += liftProgress * G.tornadoSpinLiftHeight;
+                
+                // Slight wobble
+                G.playerGroup.rotation.x = Math.sin(elapsed * 0.02) * 0.2 * (1 - progress);
+                G.playerGroup.rotation.z = Math.cos(elapsed * 0.025) * 0.15 * (1 - progress);
+            } else {
+                // Effect finished, reset
+                G.tornadoSpinActive = false;
+                G.playerGroup.rotation.x = 0;
+                G.playerGroup.rotation.z = 0;
+            }
+        }
+        
+        const isStuck = godMode ? false : checkCollisions(prevPos);
+        
+        if (isMoving && !isStuck) {
+            Audio.startBikeSound();
+        } else {
+            Audio.stopBikeSound();
+        }
+        
+        if (!godMode) {
+            const terrainHeight = getTerrainHeight(G.playerGroup.position.x, G.playerGroup.position.z);
+            if (G.player.isGliding) {
+                const groundHeight = 0.1;
+                const currentHeight = groundHeight + (G.player.glideHeight - groundHeight) * G.player.glideLiftProgress;
+                G.playerGroup.position.y = terrainHeight + currentHeight;
+            } else {
+                G.playerGroup.position.y = terrainHeight + 0.1;
+            }
+        }
+        
+        const cameraDistance = 8;
+        const cameraHeight = 4;
+        
+        const cameraOffsetX = -Math.sin(G.player.rotation) * cameraDistance;
+        const cameraOffsetZ = -Math.cos(G.player.rotation) * cameraDistance;
+        
+        G.camera.position.x = G.playerGroup.position.x + cameraOffsetX;
+        G.camera.position.y = G.playerGroup.position.y + cameraHeight;
+        G.camera.position.z = G.playerGroup.position.z + cameraOffsetZ;
+        G.camera.lookAt(G.playerGroup.position.x, G.playerGroup.position.y, G.playerGroup.position.z);
+        
+        // Client syncs their player state to host (throttled to 20Hz to reduce network traffic)
+        if (multiplayerManager && multiplayerManager.isClient && multiplayerManager.isConnected()) {
+            const now = Date.now();
+            if (now - G.lastClientStateSend >= G.clientStateSendInterval) {
+                multiplayerManager.sendPlayerState({
+                    position: G.playerGroup.position,
+                    rotation: G.player.rotation,
+                    health: G.playerHealth,
+                    isGliding: G.player.isGliding,
+                    glideLiftProgress: G.player.glideLiftProgress
+                });
+                G.lastClientStateSend = now;
+            }
+        }
+    }
+
+    function updateBullets() {
+        for (let i = G.bullets.length - 1; i >= 0; i--) {
+            const bullet = G.bullets[i];
+            bullet.mesh.position.add(bullet.velocity);
+            
+            // Calculate distance from start position
+            const distFromStart = new THREE.Vector2(
+                bullet.mesh.position.x - bullet.startPos.x,
+                bullet.mesh.position.z - bullet.startPos.z
+            ).length();
+            
+            const maxDistance = difficulty === 'hard' ? 35 : GAME_CONFIG.WORLD_BOUND;
+            
+            if (Math.abs(bullet.mesh.position.x) > GAME_CONFIG.WORLD_BOUND || Math.abs(bullet.mesh.position.z) > GAME_CONFIG.WORLD_BOUND || distFromStart > maxDistance) {
+                G.scene.remove(bullet.mesh);
+                G.bullets.splice(i, 1);
+                continue;
+            }
+            
+            let bulletHit = false;
+            
+            // Check collision with goblins
+            // Visual feedback happens on both, but only host applies damage
+            for (let j = 0; j < G.goblins.length; j++) {
+                const gob = G.goblins[j];
+                if (gob.alive) {
+                    const dist = bullet.mesh.position.distanceTo(gob.mesh.position);
+                    if (dist < gob.radius + bullet.radius) {
+                        // Visual feedback on both host and client
+                        createExplosion(gob.mesh.position.x, gob.mesh.position.y + 1, gob.mesh.position.z);
+                        
+                        // Only host applies actual damage
+                        if (!multiplayerManager || !multiplayerManager.isConnected() || multiplayerManager.isHost) {
+                            gob.health--;
+                            gob.isChasing = true;
+                            if (gob.health <= 0) {
+                                gob.alive = false;
+                                Audio.playGoblinDeathSound();
+                                if (G.waterTheme) {
+                                    // Sharks disappear underwater
+                                    G.scene.remove(gob.mesh);
+                                } else {
+                                    gob.mesh.rotation.z = Math.PI / 2;
+                                    const terrainH = getTerrainHeight(gob.mesh.position.x, gob.mesh.position.z);
+                                    gob.mesh.position.y = terrainH + 0.5;
+                                }
+                            }
+                        }
+                        bulletHit = true;
+                        break;
+                    }
+                }
+            }
+            
+            // Check collision with dragon (main dragon)
+            if (!bulletHit && G.dragon && G.dragon.alive) {
+                const dist = bullet.mesh.position.distanceTo(G.dragon.mesh.position);
+                const hitRadius = 8 * (G.dragon.scale || 1);
+                if (dist < hitRadius) {
+                    // Visual feedback
+                    createExplosion(bullet.mesh.position.x, bullet.mesh.position.y, bullet.mesh.position.z);
+                    
+                    // Only host applies damage
+                    if (!multiplayerManager || !multiplayerManager.isConnected() || multiplayerManager.isHost) {
+                        G.dragon.health--;
+                        if (G.dragon.health <= 0 && G.dragon.alive) {
+                            G.dragon.alive = false;
+                            G.dragon.deathTime = Date.now();
+                            Audio.playGoblinDeathSound();
+                            
+                            // Start massive camera shake
+                            dragonDeathShakeUntil = Date.now() + 1200; // 1.2 seconds
+                            dragonDeathShakeIntensity = 1.0;
+                            
+                            // Capture position before hiding mesh
+                            const deathX = G.dragon.mesh.position.x;
+                            const deathY = G.dragon.mesh.position.y;
+                            const deathZ = G.dragon.mesh.position.z;
+                            
+                            // Create multiple massive explosions
+                            for (let i = 0; i < 8; i++) {
+                                const offsetX = (Math.random() - 0.5) * 12;
+                                const offsetY = Math.random() * 10;
+                                const offsetZ = (Math.random() - 0.5) * 12;
+                                setTimeout(() => {
+                                    createDragonExplosion(
+                                        deathX + offsetX,
+                                        deathY + offsetY + 2,
+                                        deathZ + offsetZ
+                                    );
+                                }, i * 150);
+                            }
+                            
+                            // Hide dragon mesh immediately
+                            G.dragon.mesh.visible = false;
+                        }
+                    }
+                    bulletHit = true;
+                }
+            }
+            
+            // Check collision with extra dragons
+            if (!bulletHit) {
+                for (const extraDragon of G.extraDragons) {
+                    if (!extraDragon.alive) continue;
+                    const dist = bullet.mesh.position.distanceTo(extraDragon.mesh.position);
+                    const hitRadius = 8 * (extraDragon.scale || 1);
+                    if (dist < hitRadius) {
+                        // Visual feedback
+                        createExplosion(bullet.mesh.position.x, bullet.mesh.position.y, bullet.mesh.position.z);
+                        
+                        // Only host applies damage
+                        if (!multiplayerManager || !multiplayerManager.isConnected() || multiplayerManager.isHost) {
+                            extraDragon.health--;
+                            if (extraDragon.health <= 0 && extraDragon.alive) {
+                                extraDragon.alive = false;
+                                extraDragon.deathTime = Date.now();
+                                Audio.playGoblinDeathSound();
+                                
+                                // Smaller camera shake for extra dragons
+                                dragonDeathShakeUntil = Date.now() + 600;
+                                dragonDeathShakeIntensity = 0.5;
+                                
+                                // Capture position before hiding mesh
+                                const deathX = extraDragon.mesh.position.x;
+                                const deathY = extraDragon.mesh.position.y;
+                                const deathZ = extraDragon.mesh.position.z;
+                                
+                                // Create smaller explosions (fewer, smaller)
+                                for (let i = 0; i < 4; i++) {
+                                    const offsetX = (Math.random() - 0.5) * 8;
+                                    const offsetY = Math.random() * 6;
+                                    const offsetZ = (Math.random() - 0.5) * 8;
+                                    setTimeout(() => {
+                                        createDragonExplosion(
+                                            deathX + offsetX,
+                                            deathY + offsetY + 1,
+                                            deathZ + offsetZ
+                                        );
+                                    }, i * 100);
+                                }
+                                
+                                // Hide dragon mesh immediately
+                                extraDragon.mesh.visible = false;
+                            }
+                        }
+                        bulletHit = true;
+                        break;
+                    }
+                }
+            }
+            
+            // Check collision with trees (visual feedback on both)
+            if (!bulletHit) {
+                for (let j = 0; j < G.trees.length; j++) {
+                    const tree = G.trees[j];
+                    const dist = new THREE.Vector2(
+                        bullet.mesh.position.x - tree.mesh.position.x,
+                        bullet.mesh.position.z - tree.mesh.position.z
+                    ).length();
+                    if (dist < tree.radius + bullet.radius) {
+                        Audio.playBulletImpactSound();
+                        createExplosion(bullet.mesh.position.x, bullet.mesh.position.y, bullet.mesh.position.z);
+                        bulletHit = true;
+                        break;
+                    }
+                }
+            }
+            
+            // Check collision with hills (visual feedback on both)
+            if (!bulletHit) {
+                for (let j = 0; j < G.levelConfig.hills.length; j++) {
+                    const hill = G.levelConfig.hills[j];
+                    const dist = new THREE.Vector2(
+                        bullet.mesh.position.x - hill.x,
+                        bullet.mesh.position.z - hill.z
+                    ).length();
+                    
+                    if (dist < hill.radius) {
+                        const hillHeight = getTerrainHeight(bullet.mesh.position.x, bullet.mesh.position.z);
+                        if (bullet.mesh.position.y <= hillHeight + 1) {
+                            Audio.playBulletImpactSound();
+                            createExplosion(bullet.mesh.position.x, bullet.mesh.position.y, bullet.mesh.position.z);
+                            bulletHit = true;
+                            break;
+                        }
+                    }
+                }
+            }
+            
+            if (bulletHit) {
+                G.scene.remove(bullet.mesh);
+                G.bullets.splice(i, 1);
+            }
+        }
+    }
+
+    function updateExplosions() {
+        for (let i = G.explosions.length - 1; i >= 0; i--) {
+            const exp = G.explosions[i];
+            exp.mesh.position.add(exp.velocity);
+            exp.velocity.y -= 0.02;
+            exp.life--;
+            
+            // Fade out and shrink for star-like dissipation
+            const lifeRatio = exp.life / 60; // Normalize to 0-1
+            if (exp.mesh.material) {
+                exp.mesh.material.opacity = Math.max(0, lifeRatio * 1.5);
+            }
+            // Shrink as it fades
+            if (exp.initialScale) {
+                const scale = exp.initialScale * (0.3 + lifeRatio * 0.7);
+                exp.mesh.scale.set(scale, scale, 1);
+            }
+            
+            if (exp.life <= 0) {
+                G.scene.remove(exp.mesh);
+                G.explosions.splice(i, 1);
+            }
+        }
+    }
+
+    function updateGoblins() {
+        G.goblins.forEach(gob => {
+            if (!gob.alive || gameWon) return;
+            
+            // Check if frozen
+            if (gob.frozen) {
+                if (Date.now() < gob.frozenUntil) {
+                    return; // Skip update while frozen
+                } else {
+                    // Unfreeze
+                    gob.frozen = false;
+                    gob.frozenUntil = 0;
+                    // Remove blue tint
+                    gob.mesh.children.forEach(child => {
+                        if (child.material && child.material.emissive !== undefined) {
+                            child.material.emissive = new THREE.Color(0x000000);
+                            child.material.emissiveIntensity = 0;
+                        }
+                    });
+                }
+            }
+            
+            // Initialize velocity tracking if not present
+            if (!gob.velocity) {
+                gob.velocity = { x: 0, z: 0 };
+            }
+            
+            const oldX = gob.mesh.position.x;
+            const oldZ = gob.mesh.position.z;
+            
+            // Check distance to both players (if multiplayer)
+            const distToPlayer = Math.sqrt(
+                Math.pow(G.playerGroup.position.x - gob.mesh.position.x, 2) + 
+                Math.pow(G.playerGroup.position.z - gob.mesh.position.z, 2)
+            );
+            
+            // Check if player is in ice berg (safe zone) - only if iceBerg exists
+            const playerInIceBerg = G.iceBerg ? Math.sqrt(
+                Math.pow(G.playerGroup.position.x - G.iceBerg.position.x, 2) +
+                Math.pow(G.playerGroup.position.z - G.iceBerg.position.z, 2)
+            ) < G.iceBerg.radius : false;
+            
+            let targetPlayer = G.playerGroup;
+            let distToTarget = distToPlayer;
+            let targetInIceBerg = playerInIceBerg;
+            
+            // If multiplayer and other player is visible, check distance to them too
+            if (multiplayerManager && multiplayerManager.isConnected() && otherPlayerMesh.visible) {
+                const distToOther = Math.sqrt(
+                    Math.pow(otherPlayerMesh.position.x - gob.mesh.position.x, 2) + 
+                    Math.pow(otherPlayerMesh.position.z - gob.mesh.position.z, 2)
+                );
+                
+                const otherInIceBerg = G.iceBerg ? Math.sqrt(
+                    Math.pow(otherPlayerMesh.position.x - G.iceBerg.position.x, 2) +
+                    Math.pow(otherPlayerMesh.position.z - G.iceBerg.position.z, 2)
+                ) < G.iceBerg.radius : false;
+                
+                // Chase the closer player who is NOT in ice berg
+                if (!playerInIceBerg && (otherInIceBerg || distToPlayer < distToOther)) {
+                    targetPlayer = G.playerGroup;
+                    distToTarget = distToPlayer;
+                    targetInIceBerg = playerInIceBerg;
+                } else if (!otherInIceBerg) {
+                    targetPlayer = otherPlayerMesh;
+                    distToTarget = distToOther;
+                    targetInIceBerg = otherInIceBerg;
+                } else {
+                    // Both in ice berg, don't chase anyone
+                    return;
+                }
+            } else if (playerInIceBerg) {
+                // Single player in ice berg, don't chase
+                return;
+            }
+            
+            if (gob.isGuardian && distToTarget < 25 && !targetInIceBerg) {
+                gob.isChasing = true;
+            }
+            
+            if (distToTarget < 25 || (gob.isGuardian && gob.isChasing) || gob.isChasing) {
+                const directionX = targetPlayer.position.x - gob.mesh.position.x;
+                const directionZ = targetPlayer.position.z - gob.mesh.position.z;
+                const length = Math.sqrt(directionX * directionX + directionZ * directionZ);
+                
+                if (length > 0) {
+                    gob.mesh.position.x += (directionX / length) * gob.speed;
+                    gob.mesh.position.z += (directionZ / length) * gob.speed;
+                    gob.mesh.rotation.y = Math.atan2(directionX, directionZ);
+                }
+            } else {
+                gob.mesh.position.x += gob.speed * gob.direction;
+                gob.mesh.rotation.y = gob.direction > 0 ? Math.PI / 2 : -Math.PI / 2;
+                
+                if (gob.mesh.position.x <= gob.patrolLeft) {
+                    gob.direction = 1;
+                } else if (gob.mesh.position.x >= gob.patrolRight) {
+                    gob.direction = -1;
+                }
+            }
+            
+            // Track velocity for sync
+            gob.velocity.x = gob.mesh.position.x - oldX;
+            gob.velocity.z = gob.mesh.position.z - oldZ;
+            
+            // Check mountain collision - prevent goblins from entering mountains
+            for (const mtn of MOUNTAINS) {
+                const distToMountain = Math.sqrt(
+                    (gob.mesh.position.x - mtn.x) ** 2 +
+                    (gob.mesh.position.z - mtn.z) ** 2
+                );
+                const mountainRadius = mtn.width / 2 - 1; // Slight buffer
+                if (distToMountain < mountainRadius) {
+                    // Push goblin back out of mountain
+                    const pushAngle = Math.atan2(
+                        gob.mesh.position.z - mtn.z,
+                        gob.mesh.position.x - mtn.x
+                    );
+                    gob.mesh.position.x = mtn.x + Math.cos(pushAngle) * mountainRadius;
+                    gob.mesh.position.z = mtn.z + Math.sin(pushAngle) * mountainRadius;
+                    
+                    // Reverse patrol direction if patrolling
+                    if (!gob.isChasing) {
+                        gob.direction *= -1;
+                    }
+                }
+            }
+            
+            const terrainHeight = getTerrainHeight(gob.mesh.position.x, gob.mesh.position.z);
+            gob.mesh.position.y = terrainHeight + 0.1;
+            
+            // Check trap collision
+            G.traps.forEach(trap => {
+                const distToTrap = new THREE.Vector2(
+                    gob.mesh.position.x - trap.mesh.position.x,
+                    gob.mesh.position.z - trap.mesh.position.z
+                ).length();
+                if (distToTrap < trap.radius) {
+                    gob.alive = false;
+                    gob.mesh.rotation.z = Math.PI / 2;
+                    gob.mesh.position.y = terrainHeight + 0.5;
+                    createExplosion(gob.mesh.position.x, gob.mesh.position.y + 1, gob.mesh.position.z);
+                }
+            });
+            
+            // Check banana trap collision
+            G.placedBananas.forEach(banana => {
+                const distToBanana = new THREE.Vector2(
+                    gob.mesh.position.x - banana.x,
+                    gob.mesh.position.z - banana.z
+                ).length();
+                if (distToBanana < banana.radius) {
+                    gob.alive = false;
+                    gob.mesh.rotation.z = Math.PI / 2;
+                    gob.mesh.position.y = terrainHeight + 0.5;
+                    createExplosion(gob.mesh.position.x, gob.mesh.position.y + 1, gob.mesh.position.z);
+                }
+            });
+            
+            // Check player collision - LOCAL PLAYER (deals damage with cooldown like dragon)
+            const dist = G.playerGroup.position.distanceTo(gob.mesh.position);
+            if (dist < 1.5 && !godMode) {
+                const now = Date.now();
+                if (now - G.lastDamageTime > G.damageCooldown) {
+                    G.playerHealth--;
+                    G.lastDamageTime = now;
+                    G.damageFlashTime = now;
+                    
+                    if (G.playerHealth <= 0) {
+                        if (!gameDead) {
+                            gameDead = true;
+                            Audio.stopBackgroundMusic();
+                            Audio.playDeathSound();
+                        }
+                    } else {
+                        Audio.playStuckSound();
+                    }
+                }
+            }
+            
+            // Check OTHER PLAYER collision in multiplayer (HOST ONLY)
+            if (multiplayerManager && multiplayerManager.isHost && multiplayerManager.isConnected() && otherPlayerMesh.visible) {
+                const distToOther = otherPlayerMesh.position.distanceTo(gob.mesh.position);
+                if (distToOther < 1.5) {
+                    const now = Date.now();
+                    // Initialize per-goblin cooldown tracker for other player
+                    if (!gob.lastOtherPlayerDamageTime) gob.lastOtherPlayerDamageTime = 0;
+                    
+                    if (now - gob.lastOtherPlayerDamageTime > G.damageCooldown) {
+                        multiplayerManager.sendGameEvent('playerDamage', {});
+                        gob.lastOtherPlayerDamageTime = now;
+                    }
+                }
+            }
+            
+            // Guardian arrows (or ink balls in water theme)
+            if (gob.isGuardian && distToTarget < 25) {
+                const now = Date.now();
+                const fireInterval = 4000 + Math.random() * 2000;
+                if (now - gob.lastFireTime > fireInterval) {
+                    gob.lastFireTime = now;
+                    
+                    let arrowMesh;
+                    if (G.waterTheme) {
+                        // Ink ball for octopus guardians
+                        const inkGeometry = new THREE.SphereGeometry(0.3, 12, 12);
+                        const inkMaterial = new THREE.MeshLambertMaterial({ color: 0x000000 });
+                        arrowMesh = new THREE.Mesh(inkGeometry, inkMaterial);
+                        arrowMesh.position.copy(gob.mesh.position);
+                        arrowMesh.position.y += 1.2;
+                        G.scene.add(arrowMesh);
+                    } else {
+                        // Regular arrow
+                        const arrowGeometry = new THREE.CylinderGeometry(0.05, 0.05, 0.8, 8);
+                        const arrowMaterial = new THREE.MeshLambertMaterial({ color: 0x8B4513 });
+                        arrowMesh = new THREE.Mesh(arrowGeometry, arrowMaterial);
+                        arrowMesh.position.copy(gob.mesh.position);
+                        arrowMesh.position.y += 1.5;
+                        G.scene.add(arrowMesh);
+                        
+                        const tipGeometry = new THREE.ConeGeometry(0.1, 0.2, 8);
+                        const tipMaterial = new THREE.MeshLambertMaterial({ color: 0x696969 });
+                        const tipMesh = new THREE.Mesh(tipGeometry, tipMaterial);
+                        tipMesh.position.y = 0.5;
+                        arrowMesh.add(tipMesh);
+                    }
+                    
+                    Audio.playArrowShootSound();
+                    
+                    // Target the closest player
+                    let targetPlayer = G.playerGroup;
+                    let closestDist = Math.sqrt(
+                        Math.pow(G.playerGroup.position.x - gob.mesh.position.x, 2) +
+                        Math.pow(G.playerGroup.position.z - gob.mesh.position.z, 2)
+                    );
+                    
+                    // Check if other player is closer
+                    if (multiplayerManager && multiplayerManager.isConnected() && otherPlayerMesh.visible) {
+                        const distToOther = Math.sqrt(
+                            Math.pow(otherPlayerMesh.position.x - gob.mesh.position.x, 2) +
+                            Math.pow(otherPlayerMesh.position.z - gob.mesh.position.z, 2)
+                        );
+                        if (distToOther < closestDist) {
+                            targetPlayer = otherPlayerMesh;
+                        }
+                    }
+                    
+                    const dirX = targetPlayer.position.x - gob.mesh.position.x;
+                    const dirZ = targetPlayer.position.z - gob.mesh.position.z;
+                    const length = Math.sqrt(dirX * dirX + dirZ * dirZ);
+                    
+                    const direction = new THREE.Vector3(
+                        dirX / length,
+                        0,
+                        dirZ / length
+                    );
+                    
+                    const angle = Math.atan2(dirX, dirZ);
+                    if (!G.waterTheme) {
+                        arrowMesh.rotation.x = Math.PI / 2;
+                        arrowMesh.rotation.z = -angle;
+                    }
+                    
+                    const arrowSpeed = difficulty === 'hard' ? 0.15 : 0.1;
+                    
+                    G.guardianArrows.push({
+                        mesh: arrowMesh,
+                        velocity: direction.multiplyScalar(arrowSpeed * speedMultiplier),
+                        radius: 0.3
+                    });
+                }
+            }
+            
+            // Wizard fireballs
+            if (gob.isWizard && distToTarget < GAME_CONFIG.WIZARD_RANGE && !gob.frozen) {
+                const now = Date.now();
+                const fireInterval = GAME_CONFIG.WIZARD_FIRE_INTERVAL_MIN + Math.random() * (GAME_CONFIG.WIZARD_FIRE_INTERVAL_MAX - GAME_CONFIG.WIZARD_FIRE_INTERVAL_MIN);
+                if (now - gob.lastFireTime > fireInterval) {
+                    gob.lastFireTime = now;
+                    
+                    // Create wizard fireball (smaller than dragon's)
+                    createWizardFireball(gob, targetPlayer);
+                }
+                
+                // Animate staff orb glow
+                gob.orbGlowPhase += 0.05;
+                if (gob.mesh.staffOrb) {
+                    const glowIntensity = 0.6 + 0.4 * Math.sin(gob.orbGlowPhase);
+                    gob.mesh.staffOrb.material.opacity = glowIntensity;
+                    gob.mesh.staffOrb.scale.setScalar(1 + 0.2 * Math.sin(gob.orbGlowPhase * 2));
+                }
+            }
+            
+            // Mummy tornados
+            if (gob.isMummy && distToTarget < GAME_CONFIG.MUMMY_RANGE && !gob.frozen) {
+                const now = Date.now();
+                const fireInterval = GAME_CONFIG.MUMMY_FIRE_INTERVAL_MIN + Math.random() * (GAME_CONFIG.MUMMY_FIRE_INTERVAL_MAX - GAME_CONFIG.MUMMY_FIRE_INTERVAL_MIN);
+                if (now - gob.lastFireTime > fireInterval) {
+                    gob.lastFireTime = now;
+                    
+                    // Create mummy tornado
+                    createMummyTornado(gob, targetPlayer);
+                }
+                
+                // Animate sand particles floating around mummy
+                gob.sandPhase += 0.03;
+                if (gob.mesh.sandParticles) {
+                    gob.mesh.sandParticles.children.forEach((sand, idx) => {
+                        const baseAngle = (idx / 8) * Math.PI * 2;
+                        const angle = baseAngle + gob.sandPhase;
+                        sand.position.x = Math.cos(angle) * 0.8;
+                        sand.position.z = Math.sin(angle) * 0.8;
+                        sand.position.y = 1.5 + Math.sin(gob.sandPhase + idx) * 0.3;
+                    });
+                }
+            }
+            
+            // Lava monster fireballs and lava trails
+            if (gob.isLavaMonster && !gob.frozen) {
+                const now = Date.now();
+                
+                // Shoot fireballs at player in range
+                if (distToTarget < GAME_CONFIG.LAVA_MONSTER_RANGE) {
+                    const fireInterval = GAME_CONFIG.LAVA_MONSTER_FIRE_INTERVAL_MIN + Math.random() * (GAME_CONFIG.LAVA_MONSTER_FIRE_INTERVAL_MAX - GAME_CONFIG.LAVA_MONSTER_FIRE_INTERVAL_MIN);
+                    if (now - gob.lastFireTime > fireInterval) {
+                        gob.lastFireTime = now;
+                        createLavaMonsterFireball(gob, targetPlayer);
+                    }
+                }
+                
+                // Leave lava trails while moving
+                if (now - gob.lastTrailTime > GAME_CONFIG.LAVA_MONSTER_TRAIL_INTERVAL) {
+                    gob.lastTrailTime = now;
+                    const trailX = gob.mesh.position.x + (Math.random() - 0.5) * 1.5;
+                    const trailZ = gob.mesh.position.z + (Math.random() - 0.5) * 1.5;
+                    createLavaTrail(trailX, trailZ, gob.initialX + '_' + gob.initialZ);
+                }
+                
+                // Animate ember particles
+                gob.emberPhase += 0.04;
+                if (gob.mesh.emberParticles) {
+                    gob.mesh.emberParticles.children.forEach((ember, idx) => {
+                        const baseAngle = (idx / 16) * Math.PI * 2;
+                        const angle = baseAngle + gob.emberPhase;
+                        ember.position.x = Math.cos(angle) * (1.5 + Math.sin(gob.emberPhase * 0.5 + idx) * 0.3);
+                        ember.position.z = Math.sin(angle) * (1.5 + Math.sin(gob.emberPhase * 0.5 + idx) * 0.3);
+                        ember.position.y = 1.5 + Math.sin(gob.emberPhase * 2 + idx) * 1.0 + 1.0;
+                    });
+                }
+                
+                // Pulse the inner body glow
+                gob.pulsePhase += 0.05;
+                if (gob.mesh.innerBody) {
+                    const pulse = 0.7 + Math.sin(gob.pulsePhase) * 0.3;
+                    gob.mesh.innerBody.material.opacity = pulse;
+                }
+                
+                // Animate head glow
+                if (gob.mesh.headGlow) {
+                    gob.mesh.headGlow.material.opacity = 0.4 + Math.sin(gob.pulsePhase * 1.5) * 0.2;
+                }
+                
+                // Animate arms - menacing swinging motion
+                const armSwing = Math.sin(gob.emberPhase * 2) * 0.3;
+                if (gob.mesh.leftArm) {
+                    gob.mesh.leftArm.rotation.x = armSwing;
+                    gob.mesh.leftArm.rotation.z = 0.1 + Math.sin(gob.pulsePhase) * 0.1;
+                }
+                if (gob.mesh.rightArm) {
+                    gob.mesh.rightArm.rotation.x = -armSwing;
+                    gob.mesh.rightArm.rotation.z = -0.1 - Math.sin(gob.pulsePhase) * 0.1;
+                }
+                
+                // Animate legs - walking motion
+                const legSwing = Math.sin(gob.emberPhase * 2.5) * 0.25;
+                if (gob.mesh.leftLeg) {
+                    gob.mesh.leftLeg.rotation.x = legSwing;
+                }
+                if (gob.mesh.rightLeg) {
+                    gob.mesh.rightLeg.rotation.x = -legSwing;
+                }
+            }
+        });
+    }
+
+    function updateGuardianArrows() {
+        for (let i = G.guardianArrows.length - 1; i >= 0; i--) {
+            const arrow = G.guardianArrows[i];
+            arrow.mesh.position.x += arrow.velocity.x;
+            arrow.mesh.position.z += arrow.velocity.z;
+            
+            // Check collision with local player
+            const dist = new THREE.Vector2(
+                G.playerGroup.position.x - arrow.mesh.position.x,
+                G.playerGroup.position.z - arrow.mesh.position.z
+            ).length();
+            
+            let hitPlayer = false;
+            if (dist < 1.0) {
+                if (!godMode) {
+                    G.playerHealth--;
+                    G.damageFlashTime = Date.now();
+                    if (G.playerHealth <= 0) {
+                        if (!gameDead) {
+                            gameDead = true;
+                            Audio.stopBackgroundMusic();
+                            Audio.playDeathSound();
+                        }
+                    } else {
+                        // Play hurt sound or use existing sound
+                        Audio.playStuckSound();
+                    }
+                }
+                hitPlayer = true;
+            }
+            
+            // Check collision with other player (in multiplayer)
+            if (!hitPlayer && multiplayerManager && multiplayerManager.isConnected() && otherPlayerMesh.visible) {
+                const distToOther = new THREE.Vector2(
+                    otherPlayerMesh.position.x - arrow.mesh.position.x,
+                    otherPlayerMesh.position.z - arrow.mesh.position.z
+                ).length();
+                
+                if (distToOther < 1.0) {
+                    // Arrow hit other player - send damage event to them
+                    // Note: Don't modify otherPlayerHealth here, it will be updated via sync
+                    multiplayerManager.sendGameEvent('playerDamage', {});
+                    hitPlayer = true;
+                }
+            }
+            
+            if (hitPlayer) {
+                G.scene.remove(arrow.mesh);
+                G.guardianArrows.splice(i, 1);
+                continue;
+            }
+            
+            let hitObstacle = false;
+            G.trees.forEach(tree => {
+                const distToTree = new THREE.Vector2(
+                    arrow.mesh.position.x - tree.mesh.position.x,
+                    arrow.mesh.position.z - tree.mesh.position.z
+                ).length();
+                if (distToTree < tree.radius) {
+                    hitObstacle = true;
+                }
+            });
+            
+            G.levelConfig.hills.forEach(hill => {
+                const distToHill = new THREE.Vector2(
+                    arrow.mesh.position.x - hill.x,
+                    arrow.mesh.position.z - hill.z
+                ).length();
+                if (distToHill < hill.radius) {
+                    hitObstacle = true;
+                }
+            });
+            
+            if (hitObstacle) {
+                G.scene.remove(arrow.mesh);
+                G.guardianArrows.splice(i, 1);
+                continue;
+            }
+            
+            // Remove arrows that travel too far
+            const distFromOrigin = Math.sqrt(
+                arrow.mesh.position.x * arrow.mesh.position.x +
+                arrow.mesh.position.z * arrow.mesh.position.z
+            );
+            if (distFromOrigin > GAME_CONFIG.WORLD_BOUND) {
+                G.scene.remove(arrow.mesh);
+                G.guardianArrows.splice(i, 1);
+            }
+        }
+    }
+
+    function updateBirds() {
+        const now = Date.now();
+        
+        G.birds.forEach(bird => {
+            // Check if frozen
+            if (bird.frozen) {
+                if (Date.now() < bird.frozenUntil) {
+                    return; // Skip update while frozen
+                } else {
+                    // Unfreeze
+                    bird.frozen = false;
+                    bird.frozenUntil = 0;
+                    // Remove blue tint
+                    bird.mesh.children.forEach(child => {
+                        if (child.material && child.material.emissive !== undefined) {
+                            child.material.emissive = new THREE.Color(0x000000);
+                            child.material.emissiveIntensity = 0;
+                        }
+                    });
+                }
+            }
+            
+            // Circle around center point
+            bird.angle += bird.speed;
+            bird.mesh.position.x = bird.centerX + Math.cos(bird.angle) * bird.radius;
+            bird.mesh.position.z = bird.centerZ + Math.sin(bird.angle) * bird.radius;
+            
+            // Slight bobbing motion
+            bird.mesh.position.y = bird.height + Math.sin(now * 0.003) * 0.5;
+            
+            // Calculate tangent direction (perpendicular to radius) and flip to face forward
+            const dx = -Math.sin(bird.angle);
+            const dz = Math.cos(bird.angle);
+            bird.mesh.rotation.y = Math.atan2(-dx, -dz);
+            
+            // Wing flapping animation
+            bird.wingFlapPhase += 0.2;
+            const flapAngle = Math.sin(bird.wingFlapPhase) * 0.4;
+            bird.leftWing.rotation.z = flapAngle;
+            bird.rightWing.rotation.z = -flapAngle;
+            
+            // Check if players are in ice berg (safe zone) - only if iceBerg exists
+            const playerInIceBerg = G.iceBerg ? Math.sqrt(
+                Math.pow(G.playerGroup.position.x - G.iceBerg.position.x, 2) +
+                Math.pow(G.playerGroup.position.z - G.iceBerg.position.z, 2)
+            ) < G.iceBerg.radius : false;
+            
+            // Drop bomb if player is close (and not in ice berg)
+            const distToPlayer = new THREE.Vector2(
+                G.playerGroup.position.x - bird.mesh.position.x,
+                G.playerGroup.position.z - bird.mesh.position.z
+            ).length();
+            
+            // Also check distance to other player in multiplayer
+            let distToOtherPlayer = Infinity;
+            let otherInIceBerg = true;
+            if (multiplayerManager && multiplayerManager.isConnected() && otherPlayerMesh.visible) {
+                otherInIceBerg = G.iceBerg ? Math.sqrt(
+                    Math.pow(otherPlayerMesh.position.x - G.iceBerg.position.x, 2) +
+                    Math.pow(otherPlayerMesh.position.z - G.iceBerg.position.z, 2)
+                ) < G.iceBerg.radius : false;
+                
+                distToOtherPlayer = new THREE.Vector2(
+                    otherPlayerMesh.position.x - bird.mesh.position.x,
+                    otherPlayerMesh.position.z - bird.mesh.position.z
+                ).length();
+            }
+            
+            const closestPlayerDist = Math.min(distToPlayer, distToOtherPlayer);
+            const anyPlayerInRange = (!playerInIceBerg && distToPlayer < 20) || (!otherInIceBerg && distToOtherPlayer < 20);
+            
+            if (anyPlayerInRange && now - bird.lastBombTime > 2500) {
+                // Drop bomb
+                const bombGeometry = new THREE.SphereGeometry(0.3, 8, 8);
+                const bombMaterial = new THREE.MeshLambertMaterial({ color: 0x000000 });
+                const bombMesh = new THREE.Mesh(bombGeometry, bombMaterial);
+                bombMesh.position.copy(bird.mesh.position);
+                bombMesh.castShadow = true;
+                G.scene.add(bombMesh);
+                
+                G.bombs.push({
+                    mesh: bombMesh,
+                    velocity: new THREE.Vector3(0, -0.2, 0),
+                    radius: 7 // Explosion radius
+                });
+                
+                bird.lastBombTime = now;
+            }
+        });
+    }
+    
+    function updateBombs() {
+        for (let i = G.bombs.length - 1; i >= 0; i--) {
+            const bomb = G.bombs[i];
+            
+            // Apply gravity
+            bomb.velocity.y -= 0.01;
+            bomb.mesh.position.add(bomb.velocity);
+            
+            // Check if bomb hit ground
+            const terrainHeight = getTerrainHeight(bomb.mesh.position.x, bomb.mesh.position.z);
+            if (bomb.mesh.position.y <= terrainHeight) {
+                // Explode
+                const explosionX = bomb.mesh.position.x;
+                const explosionZ = bomb.mesh.position.z;
+                createBombExplosion(explosionX, terrainHeight + 0.5, explosionZ);
+                
+                // Add camera shake for bomb explosion
+                const distToExplosion = Math.sqrt(
+                    (G.playerGroup.position.x - explosionX) ** 2 +
+                    (G.playerGroup.position.z - explosionZ) ** 2
+                );
+                if (distToExplosion < 30) {
+                    const shakeIntensity = Math.max(0, 1 - distToExplosion / 30) * 0.3;
+                    G.camera.position.x += (Math.random() - 0.5) * shakeIntensity;
+                    G.camera.position.y += (Math.random() - 0.5) * shakeIntensity;
+                    G.camera.position.z += (Math.random() - 0.5) * shakeIntensity;
+                }
+                
+                // Send explosion event to client
+                if (multiplayerManager && multiplayerManager.isConnected()) {
+                    multiplayerManager.sendGameEvent('bombExplosion', {
+                        x: explosionX,
+                        y: terrainHeight + 0.5,
+                        z: explosionZ
+                    });
+                }
+                
+                // Check if player is in blast radius
+                const distToPlayer = new THREE.Vector2(
+                    G.playerGroup.position.x - bomb.mesh.position.x,
+                    G.playerGroup.position.z - bomb.mesh.position.z
+                ).length();
+                
+                if (distToPlayer < bomb.radius && !godMode) {
+                    G.playerHealth--;
+                    G.damageFlashTime = Date.now();
+                    if (G.playerHealth <= 0) {
+                        if (!gameDead) {
+                            gameDead = true;
+                            Audio.stopBackgroundMusic();
+                            Audio.playDeathSound();
+                        }
+                    } else {
+                        Audio.playStuckSound();
+                    }
+                }
+                
+                // Check if other player is in blast radius (multiplayer)
+                if (multiplayerManager && multiplayerManager.isConnected() && otherPlayerMesh.visible) {
+                    const distToOther = new THREE.Vector2(
+                        otherPlayerMesh.position.x - bomb.mesh.position.x,
+                        otherPlayerMesh.position.z - bomb.mesh.position.z
+                    ).length();
+                    
+                    if (distToOther < bomb.radius) {
+                        // Bomb hit other player - send damage event to them
+                        multiplayerManager.sendGameEvent('playerDamage', {});
+                    }
+                }
+                
+                G.scene.remove(bomb.mesh);
+                G.bombs.splice(i, 1);
+            }
+        }
+    }
+
+    // Update pirate ships and cannonballs
+    function updatePirateShips() {
+        const now = Date.now();
+
+        // Update ships
+        G.pirateShips.forEach(ship => {
+            // Patrol movement (up and down z-axis)
+            ship.z += ship.speed * ship.direction;
+            if (ship.z >= ship.patrolZ2) {
+                ship.direction = -1;
+            } else if (ship.z <= ship.patrolZ1) {
+                ship.direction = 1;
+            }
+            ship.mesh.position.z = ship.z;
+
+            // Bobbing motion
+            ship.mesh.position.y = 0.5 + Math.sin(now * 0.002) * 0.3;
+
+            // Check if player is in range before firing
+            const distToPlayer = Math.sqrt(
+                (G.playerGroup.position.x - ship.x) ** 2 +
+                (G.playerGroup.position.z - ship.z) ** 2
+            );
+            const firingRange = 90;  // Fire when G.player is within 90 units
+
+            // Fire cannonballs at player - rapid fire when in range
+            if (now - ship.lastFireTime > ship.fireInterval && distToPlayer < firingRange) {
+                ship.lastFireTime = now;
+                ship.fireInterval = 800 + Math.random() * 700;  // Fast firing rate (0.8-1.5s)
+
+                // Create cannonball aimed at player
+                const cannonballGeometry = new THREE.SphereGeometry(0.5, 8, 8);
+                const cannonballMaterial = new THREE.MeshLambertMaterial({ color: 0x222222 });
+                const cannonball = new THREE.Mesh(cannonballGeometry, cannonballMaterial);
+
+                // Fire from the side facing the player
+                const dirToPlayer = G.playerGroup.position.x - ship.x;
+                const sideX = dirToPlayer > 0 ? ship.x + 5 : ship.x - 5;
+                cannonball.position.set(sideX, 3, ship.z);
+                cannonball.castShadow = true;
+                G.scene.add(cannonball);
+
+                // Calculate shot toward player with lead prediction
+                const dx = G.playerGroup.position.x - sideX;
+                const dz = G.playerGroup.position.z - ship.z;
+                const horizontalDist = Math.sqrt(dx * dx + dz * dz);
+
+                // Predict player movement for better accuracy
+                const speed = 0.6;  // Cannonball speed
+                const flightTime = horizontalDist / (speed * 60);  // Approximate flight time
+                const predictX = dx + (G.player.velocity?.x || 0) * flightTime * 30;
+                const predictZ = dz + (G.player.velocity?.z || 0) * flightTime * 30;
+                const predictDist = Math.sqrt(predictX * predictX + predictZ * predictZ);
+
+                // Normalize direction toward predicted position
+                const dirX = predictX / predictDist;
+                const dirZ = predictZ / predictDist;
+
+                // Arc scales with distance - flat trajectory
+                const arcHeight = Math.max(0.03, horizontalDist * 0.002);
+
+                G.cannonballs.push({
+                    mesh: cannonball,
+                    velocity: new THREE.Vector3(dirX * speed, arcHeight, dirZ * speed),
+                    startTime: now
+                });
+
+                Audio.playExplosionSound();
+            }
+        });
+
+        // Update cannonballs
+        for (let i = G.cannonballs.length - 1; i >= 0; i--) {
+            const ball = G.cannonballs[i];
+
+            // Apply gravity and movement - low gravity for flat shots
+            ball.velocity.y -= 0.003;
+            ball.mesh.position.add(ball.velocity);
+
+            // Check if hit ground or timed out
+            const terrainHeight = getTerrainHeight(ball.mesh.position.x, ball.mesh.position.z);
+            const age = now - ball.startTime;
+
+            // Check if hit impassable cliff
+            let hitCliff = false;
+            for (const cliff of G.impassableCliffs) {
+                const distToCliff = Math.sqrt(
+                    (ball.mesh.position.x - cliff.x) ** 2 +
+                    (ball.mesh.position.z - cliff.z) ** 2
+                );
+                if (distToCliff < cliff.radius && ball.mesh.position.y < cliff.height) {
+                    hitCliff = true;
+                    break;
+                }
+            }
+
+            // Check if hit mountain
+            let hitMountain = false;
+            if (G.levelConfig.mountains) {
+                for (const mtn of G.levelConfig.mountains) {
+                    const distToMtn = Math.sqrt(
+                        (ball.mesh.position.x - mtn.x) ** 2 +
+                        (ball.mesh.position.z - mtn.z) ** 2
+                    );
+                    if (distToMtn < (mtn.radius || mtn.width / 2) && ball.mesh.position.y < (mtn.height || 10)) {
+                        hitMountain = true;
+                        break;
+                    }
+                }
+            }
+
+            if (ball.mesh.position.y <= terrainHeight || age > 12000 || hitCliff || hitMountain) {
+                // Create splash/explosion effect
+                createBombExplosion(ball.mesh.position.x, terrainHeight + 0.5, ball.mesh.position.z);
+
+                // Check if hit player - larger blast radius for more hits
+                const distToPlayer = Math.sqrt(
+                    (ball.mesh.position.x - G.playerGroup.position.x) ** 2 +
+                    (ball.mesh.position.z - G.playerGroup.position.z) ** 2
+                );
+                if (distToPlayer < 6 && !godMode) {  // Bigger hit radius
+                    G.playerHealth -= 2;
+                    G.damageFlashTime = Date.now();
+                    Audio.playDeathSound();
+                    if (G.playerHealth <= 0) {
+                        gameDead = true;
+                        Audio.stopBackgroundMusic();
+                    }
+                }
+
+                // Check hit on other player
+                if (multiplayerManager && multiplayerManager.isConnected() && multiplayerManager.isHost && otherPlayerMesh.visible) {
+                    const distToOther = Math.sqrt(
+                        (ball.mesh.position.x - otherPlayerMesh.position.x) ** 2 +
+                        (ball.mesh.position.z - otherPlayerMesh.position.z) ** 2
+                    );
+                    if (distToOther < 6) {  // Bigger hit radius
+                        multiplayerManager.sendGameEvent('playerDamage', {});
+                    }
+                }
+
+                G.scene.remove(ball.mesh);
+                G.cannonballs.splice(i, 1);
+            }
+        }
+    }
+
+    function updateDragonVisuals() {
+        if (!G.dragon) return;
+        
+        const now = Date.now();
+        
+        // Helper function to update visuals for a single dragon
+        function updateSingleDragonVisuals(d) {
+            if (!d || !d.alive) return;
+            
+            // Check if freeze effect should end
+            if (d.frozen && now >= d.frozenUntil) {
+                d.frozen = false;
+                // Remove blue tint
+                d.mesh.children.forEach(child => {
+                    if (child.material && child.material.emissive !== undefined) {
+                        child.material.emissive = new THREE.Color(0x000000);
+                        child.material.emissiveIntensity = 0;
+                    }
+                });
+            }
+            
+            // Wing flap animation
+            d.wingFlapPhase += 0.15;
+            const flapAngle = Math.sin(d.wingFlapPhase) * 0.5;
+            d.leftWing.rotation.x = flapAngle;
+            d.rightWing.rotation.x = -flapAngle;
+            d.leftWing.rotation.z = 0.3 + flapAngle * 0.3;
+            d.rightWing.rotation.z = -0.3 - flapAngle * 0.3;
+            
+            // Tail sway
+            if (d.tailSegments) {
+                d.tailSegments.forEach((segment, i) => {
+                    const sway = Math.sin(now * 0.003 + i * 0.5) * (0.15 + i * 0.05);
+                    segment.rotation.y = sway;
+                });
+            }
+        }
+        
+        // Update main dragon
+        updateSingleDragonVisuals(G.dragon);
+        
+        // Update extra dragons
+        G.extraDragons.forEach(d => updateSingleDragonVisuals(d));
+    }
+
+    function updateDragon() {
+        if (!G.dragon && G.extraDragons.length === 0) return;
+        
+        const now = Date.now();
+        
+        // Helper function to update a single dragon
+        function updateSingleDragon(d) {
+            if (!d || !d.alive) return;
+            
+            // Find closest player for targeting
+            const distToPlayer = Math.sqrt(
+                (G.playerGroup.position.x - d.mesh.position.x) ** 2 +
+                (G.playerGroup.position.z - d.mesh.position.z) ** 2
+            );
+            
+            let targetPlayer = G.playerGroup;
+            let targetDist = distToPlayer;
+            
+            if (multiplayerManager && multiplayerManager.isConnected() && otherPlayerMesh.visible) {
+                const distToOther = Math.sqrt(
+                    (otherPlayerMesh.position.x - d.mesh.position.x) ** 2 +
+                    (otherPlayerMesh.position.z - d.mesh.position.z) ** 2
+                );
+                if (distToOther < targetDist) {
+                    targetPlayer = otherPlayerMesh;
+                    targetDist = distToOther;
+                }
+            }
+            
+            // Look at the closest player (add Math.PI/2 offset to fix 90-degree rotation)
+            const angleToPlayer = Math.atan2(
+                targetPlayer.position.x - d.mesh.position.x,
+                targetPlayer.position.z - d.mesh.position.z
+            );
+            d.mesh.rotation.y = angleToPlayer - Math.PI / 2;
+            
+            // Make eye glows pulse menacingly
+            const eyePulse = 0.4 + Math.sin(now * 0.005) * 0.2;
+            if (d.leftEyeGlow) d.leftEyeGlow.material.opacity = eyePulse;
+            if (d.rightEyeGlow) d.rightEyeGlow.material.opacity = eyePulse;
+            
+            // Check collision damage with host player (host only handles damage)
+            const collisionRadius = 5 * (d.scale || 1);
+            if (distToPlayer < collisionRadius && !godMode) {
+                if (now - G.lastDamageTime > G.damageCooldown) {
+                    G.playerHealth--;
+                    G.lastDamageTime = now;
+                    G.damageFlashTime = now;
+                    Audio.playStuckSound();
+                    
+                    if (G.playerHealth <= 0) {
+                        if (!gameDead) {
+                            gameDead = true;
+                            Audio.stopBackgroundMusic();
+                            Audio.playDeathSound();
+                        }
+                    }
+                }
+            }
+            
+            // Check collision damage with other player (multiplayer) - HOST ONLY
+            if (multiplayerManager && multiplayerManager.isHost && multiplayerManager.isConnected() && otherPlayerMesh.visible) {
+                const distToOther = Math.sqrt(
+                    (otherPlayerMesh.position.x - d.mesh.position.x) ** 2 +
+                    (otherPlayerMesh.position.z - d.mesh.position.z) ** 2
+                );
+                
+                if (distToOther < collisionRadius) {
+                    // Initialize cooldown tracker if needed
+                    if (!d.lastOtherPlayerDamageTime) d.lastOtherPlayerDamageTime = 0;
+                    
+                    if (now - d.lastOtherPlayerDamageTime > G.damageCooldown) {
+                        multiplayerManager.sendGameEvent('playerDamage', {});
+                        d.lastOtherPlayerDamageTime = now;
+                    }
+                }
+            }
+            
+            // Flying behavior - randomly fly up sometimes
+            const flyHeight = (d.scale || 1) * 15;
+            if (!d.isFlying && Math.random() < 0.0005) {
+                d.isFlying = true;
+                d.flyStartTime = now;
+                d.flyDuration = 3000 + Math.random() * 2000;
+                d.groundY = d.mesh.position.y;
+                d.flyTargetY = d.groundY + flyHeight + Math.random() * 10;
+            }
+            
+            // Handle flying state
+            if (d.isFlying) {
+                const flyElapsed = now - d.flyStartTime;
+                const flyProgress = flyElapsed / d.flyDuration;
+                
+                if (flyProgress < 0.3) {
+                    const ascendProgress = flyProgress / 0.3;
+                    d.mesh.position.y = d.groundY + (d.flyTargetY - d.groundY) * ascendProgress;
+                } else if (flyProgress < 0.7) {
+                    d.mesh.position.y = d.flyTargetY;
+                } else if (flyProgress < 1.0) {
+                    const descendProgress = (flyProgress - 0.7) / 0.3;
+                    d.mesh.position.y = d.flyTargetY - (d.flyTargetY - d.groundY) * descendProgress;
+                } else {
+                    d.mesh.position.y = d.groundY;
+                    d.isFlying = false;
+                }
+            }
+            
+            // Patrol movement
+            d.mesh.position.x += d.speed * d.direction;
+            
+            if (d.mesh.position.x <= d.patrolLeft) {
+                d.direction = 1;
+            } else if (d.mesh.position.x >= d.patrolRight) {
+                d.direction = -1;
+            }
+            
+            // Fire fireballs at players (not when frozen)
+            if (!d.frozen && now - d.lastFireTime > d.fireInterval) {
+                let fireTargetPlayer = G.playerGroup;
+                let fireTargetDist = distToPlayer;
+                
+                if (multiplayerManager && multiplayerManager.isConnected() && otherPlayerMesh.visible) {
+                    const distToOther = Math.sqrt(
+                        (otherPlayerMesh.position.x - d.mesh.position.x) ** 2 +
+                        (otherPlayerMesh.position.z - d.mesh.position.z) ** 2
+                    );
+                    if (distToOther < fireTargetDist) {
+                        fireTargetPlayer = otherPlayerMesh;
+                        fireTargetDist = distToOther;
+                    }
+                }
+                
+                // Only fire if player is in range
+                if (fireTargetDist < 100) {
+                    createDragonFireball(d, fireTargetPlayer);
+                    d.lastFireTime = now;
+                    Audio.playExplosionSound();
+                }
+            }
+        }
+        
+        // Update main dragon
+        if (G.dragon && G.dragon.alive) {
+            updateSingleDragon(G.dragon);
+        }
+        
+        // Update extra dragons
+        G.extraDragons.forEach(d => updateSingleDragon(d));
+    }
+    
+    // Helper function to create a fireball from a dragon
+    function createDragonFireball(d, targetPlayer) {
+        const fbTextures = getTerrainTextures(THREE);
+        
+        // Use ice-themed textures for winter level
+        const fireballTexture = G.iceTheme ? fbTextures.fireballIce : fbTextures.fireball;
+        const explosionTexture = G.iceTheme ? fbTextures.explosionIce : fbTextures.explosion;
+        
+        // Create fireball group with core, glow, and flames
+        const fireballGroup = new THREE.Group();
+        
+        // Scale fireball based on dragon size
+        const fbScale = d.scale || 1;
+        
+        // Core sphere
+        G.coreGeometry = new THREE.SphereGeometry(0.6 * fbScale, 12, 12);
+        G.coreMaterial = new THREE.MeshBasicMaterial({ 
+            map: fireballTexture,
+            transparent: true
+        });
+        G.core = new THREE.Mesh(G.coreGeometry, G.coreMaterial);
+        fireballGroup.add(G.core);
+        
+        // Outer glow sprite
+        const glowMaterial = new THREE.SpriteMaterial({
+            map: explosionTexture,
+            transparent: true,
+            blending: THREE.AdditiveBlending,
+            depthWrite: false,
+            opacity: 0.7
+        });
+        const glow = new THREE.Sprite(glowMaterial);
+        glow.scale.set(3 * fbScale, 3 * fbScale, 1);
+        fireballGroup.add(glow);
+        
+        // Inner bright glow
+        const innerGlowMaterial = new THREE.SpriteMaterial({
+            map: explosionTexture,
+            transparent: true,
+            blending: THREE.AdditiveBlending,
+            depthWrite: false,
+            opacity: 0.9
+        });
+        const innerGlow = new THREE.Sprite(innerGlowMaterial);
+        innerGlow.scale.set(1.8 * fbScale, 1.8 * fbScale, 1);
+        fireballGroup.add(innerGlow);
+        
+        fireballGroup.position.copy(d.mesh.position);
+        fireballGroup.position.x += d.direction > 0 ? 14 * fbScale : -14 * fbScale;
+        fireballGroup.position.y += 1;
+        G.scene.add(fireballGroup);
+        
+        // Calculate direction to target (including Y axis)
+        const dirX = targetPlayer.position.x - fireballGroup.position.x;
+        const dirY = targetPlayer.position.y - fireballGroup.position.y;
+        const dirZ = targetPlayer.position.z - fireballGroup.position.z;
+        const length = Math.sqrt(dirX * dirX + dirY * dirY + dirZ * dirZ);
+        
+        G.fireballs.push({
+            mesh: fireballGroup,
+            velocity: new THREE.Vector3(dirX / length * 0.4, dirY / length * 0.4, dirZ / length * 0.4),
+            radius: 1.5 * fbScale,
+            damage: 1,
+            trail: [],
+            lastTrailTime: 0
+        });
+    }
+
+    // Helper function to create a fireball from a wizard goblin
+    function createWizardFireball(wizard, targetPlayer) {
+        const fbTextures = getTerrainTextures(THREE);
+        
+        // Use ice-themed textures for winter level
+        const fireballTexture = G.iceTheme ? fbTextures.fireballIce : fbTextures.fireball;
+        const explosionTexture = G.iceTheme ? fbTextures.explosionIce : fbTextures.explosion;
+        
+        // Create smaller fireball group (60% size of dragon's)
+        const fireballGroup = new THREE.Group();
+        const fbScale = 0.4;
+        
+        // Core sphere - purple/magenta tint for wizard magic
+        G.coreGeometry = new THREE.SphereGeometry(0.6 * fbScale, 12, 12);
+        G.coreMaterial = new THREE.MeshBasicMaterial({ 
+            map: fireballTexture,
+            transparent: true,
+            color: G.iceTheme ? 0x00FFFF : 0xFF00FF // Magenta or cyan tint
+        });
+        G.core = new THREE.Mesh(G.coreGeometry, G.coreMaterial);
+        fireballGroup.add(G.core);
+        
+        // Outer glow sprite
+        const glowMaterial = new THREE.SpriteMaterial({
+            map: explosionTexture,
+            transparent: true,
+            blending: THREE.AdditiveBlending,
+            depthWrite: false,
+            opacity: 0.7,
+            color: G.iceTheme ? 0x00FFFF : 0xFF00FF
+        });
+        const glow = new THREE.Sprite(glowMaterial);
+        glow.scale.set(2 * fbScale, 2 * fbScale, 1);
+        fireballGroup.add(glow);
+        
+        // Inner bright glow
+        const innerGlowMaterial = new THREE.SpriteMaterial({
+            map: explosionTexture,
+            transparent: true,
+            blending: THREE.AdditiveBlending,
+            depthWrite: false,
+            opacity: 0.9,
+            color: G.iceTheme ? 0x88FFFF : 0xFF88FF
+        });
+        const innerGlow = new THREE.Sprite(innerGlowMaterial);
+        innerGlow.scale.set(1.2 * fbScale, 1.2 * fbScale, 1);
+        fireballGroup.add(innerGlow);
+        
+        // Position fireball at wizard's staff position
+        fireballGroup.position.copy(wizard.mesh.position);
+        fireballGroup.position.x += 0.9;
+        fireballGroup.position.y += 3.2;
+        fireballGroup.position.z += 0.3;
+        G.scene.add(fireballGroup);
+        
+        // Calculate direction to target (including Y axis)
+        const dirX = targetPlayer.position.x - fireballGroup.position.x;
+        const dirY = (targetPlayer.position.y + 1) - fireballGroup.position.y; // Aim at G.player center
+        const dirZ = targetPlayer.position.z - fireballGroup.position.z;
+        const length = Math.sqrt(dirX * dirX + dirY * dirY + dirZ * dirZ);
+        
+        // Wizard fireballs are slower but still dangerous
+        const speed = 0.25;
+        
+        G.fireballs.push({
+            mesh: fireballGroup,
+            velocity: new THREE.Vector3(dirX / length * speed, dirY / length * speed, dirZ / length * speed),
+            radius: 0.8,
+            damage: 1,
+            trail: [],
+            lastTrailTime: 0,
+            isWizardFireball: true
+        });
+        
+        // Play a sound effect
+        Audio.playExplosionSound();
+    }
+
+    // Helper function to create a fireball from a lava monster
+    function createLavaMonsterFireball(monster, targetPlayer) {
+        const fbTextures = getTerrainTextures(THREE);
+        const fireballTexture = fbTextures.fireball;
+        const explosionTexture = fbTextures.explosion;
+        
+        const fireballGroup = new THREE.Group();
+        const fbScale = 0.5;
+        
+        // Core sphere - bright orange/yellow lava
+        G.coreGeometry = new THREE.SphereGeometry(0.6 * fbScale, 12, 12);
+        G.coreMaterial = new THREE.MeshBasicMaterial({ 
+            map: fireballTexture,
+            transparent: true,
+            color: 0xff6600
+        });
+        G.core = new THREE.Mesh(G.coreGeometry, G.coreMaterial);
+        fireballGroup.add(G.core);
+        
+        // Outer glow sprite - orange
+        const glowMaterial = new THREE.SpriteMaterial({
+            map: explosionTexture,
+            transparent: true,
+            blending: THREE.AdditiveBlending,
+            depthWrite: false,
+            opacity: 0.8,
+            color: 0xff4400
+        });
+        const glow = new THREE.Sprite(glowMaterial);
+        glow.scale.set(2.5 * fbScale, 2.5 * fbScale, 1);
+        fireballGroup.add(glow);
+        
+        // Inner bright glow - yellow
+        const innerGlowMaterial = new THREE.SpriteMaterial({
+            map: explosionTexture,
+            transparent: true,
+            blending: THREE.AdditiveBlending,
+            depthWrite: false,
+            opacity: 0.95,
+            color: 0xffaa00
+        });
+        const innerGlow = new THREE.Sprite(innerGlowMaterial);
+        innerGlow.scale.set(1.5 * fbScale, 1.5 * fbScale, 1);
+        fireballGroup.add(innerGlow);
+        
+        // Position fireball at monster's center
+        fireballGroup.position.copy(monster.mesh.position);
+        fireballGroup.position.y += 1.5;
+        G.scene.add(fireballGroup);
+        
+        // Calculate direction to target
+        const dirX = targetPlayer.position.x - fireballGroup.position.x;
+        const dirY = (targetPlayer.position.y + 1) - fireballGroup.position.y;
+        const dirZ = targetPlayer.position.z - fireballGroup.position.z;
+        const length = Math.sqrt(dirX * dirX + dirY * dirY + dirZ * dirZ);
+        
+        const speed = 0.28;
+        
+        G.fireballs.push({
+            mesh: fireballGroup,
+            velocity: new THREE.Vector3(dirX / length * speed, dirY / length * speed, dirZ / length * speed),
+            radius: 1.0,
+            damage: 1,
+            trail: [],
+            lastTrailTime: 0,
+            isLavaMonsterFireball: true
+        });
+        
+        Audio.playExplosionSound();
+    }
+
+    // Helper function to create a lava trail (small temporary lava pool)
+    function createLavaTrail(x, z, creatorId) {
+        const trailGroup = new THREE.Group();
+        
+        // Glowing lava pool
+        const poolGeometry = new THREE.CircleGeometry(GAME_CONFIG.LAVA_TRAIL_RADIUS, 16);
+        const poolMaterial = new THREE.MeshBasicMaterial({ 
+            color: 0xff4400,
+            transparent: true,
+            opacity: 0.9,
+            side: THREE.DoubleSide,
+            blending: THREE.AdditiveBlending
+        });
+        const pool = new THREE.Mesh(poolGeometry, poolMaterial);
+        pool.rotation.x = -Math.PI / 2;
+        pool.position.y = 0.15;
+        trailGroup.add(pool);
+        
+        // Darker crust ring
+        const crustGeometry = new THREE.RingGeometry(GAME_CONFIG.LAVA_TRAIL_RADIUS * 0.7, GAME_CONFIG.LAVA_TRAIL_RADIUS, 16);
+        const crustMaterial = new THREE.MeshBasicMaterial({ 
+            color: 0x4a2010,
+            transparent: true,
+            opacity: 0.6,
+            side: THREE.DoubleSide
+        });
+        const crust = new THREE.Mesh(crustGeometry, crustMaterial);
+        crust.rotation.x = -Math.PI / 2;
+        crust.position.y = 0.16;
+        trailGroup.add(crust);
+        
+        // Small bubbling particle
+        const bubbleGeometry = new THREE.SphereGeometry(0.15, 8, 8);
+        const bubbleMaterial = new THREE.MeshBasicMaterial({ 
+            color: 0xffaa00,
+            transparent: true,
+            opacity: 0.8,
+            blending: THREE.AdditiveBlending
+        });
+        const bubble = new THREE.Mesh(bubbleGeometry, bubbleMaterial);
+        bubble.position.y = 0.2;
+        trailGroup.add(bubble);
+        trailGroup.bubble = bubble;
+        
+        const terrainHeight = getTerrainHeight(x, z);
+        trailGroup.position.set(x, terrainHeight, z);
+        G.scene.add(trailGroup);
+        
+        const trail = {
+            id: Date.now() + Math.random(),
+            mesh: trailGroup,
+            x: x,
+            z: z,
+            radius: GAME_CONFIG.LAVA_TRAIL_RADIUS,
+            createdAt: Date.now(),
+            duration: GAME_CONFIG.LAVA_TRAIL_DURATION,
+            pool: pool,
+            crust: crust,
+            creatorId: creatorId
+        };
+        
+        G.lavaTrails.push(trail);
+        
+        // Sync to other player in multiplayer
+        if (multiplayerManager && multiplayerManager.isConnected() && multiplayerManager.isHost) {
+            multiplayerManager.sendGameEvent('lavaTrailCreate', {
+                id: trail.id,
+                x: x,
+                z: z,
+                creatorId: creatorId
+            });
+        }
+        
+        return trail;
+    }
+
+    // Helper function to create a tornado from a mummy (or waterspout in water level)
+    function createMummyTornado(mummy, targetPlayer) {
+        const tornadoGroup = new THREE.Group();
+
+        // Use water colors for waterspout in water theme
+        const outerColor = G.waterTheme ? 0x1E90FF : 0xc4a14a;  // Dodger blue or sandy
+        const innerColor = G.waterTheme ? 0x87CEEB : 0xe8c36a;  // Sky blue or light sand
+        const particleColor = G.waterTheme ? 0xB0E0E6 : 0xc4a14a; // Powder blue or sandy
+
+        // Create tornado/waterspout cone shape - moderate size for water level
+        const coneRadius = G.waterTheme ? 1.5 : 0.8;
+        const coneHeight = G.waterTheme ? 8.0 : 3.0;
+        const coneGeometry = new THREE.ConeGeometry(coneRadius, coneHeight, 12, 4, true);
+        const coneMaterial = new THREE.MeshBasicMaterial({
+            color: outerColor,
+            transparent: true,
+            opacity: G.waterTheme ? 0.45 : 0.7,
+            side: THREE.DoubleSide
+        });
+        const cone = new THREE.Mesh(coneGeometry, coneMaterial);
+        cone.rotation.x = Math.PI; // Point up
+        cone.position.y = G.waterTheme ? coneHeight / 2 : 1.5;
+        tornadoGroup.add(cone);
+
+        // Inner spinning cone
+        const innerRadius = G.waterTheme ? 0.9 : 0.5;
+        const innerHeight = G.waterTheme ? 6.5 : 2.5;
+        const innerConeGeometry = new THREE.ConeGeometry(innerRadius, innerHeight, 12, 4, true);
+        const innerConeMaterial = new THREE.MeshBasicMaterial({
+            color: innerColor,
+            transparent: true,
+            opacity: G.waterTheme ? 0.55 : 0.8,
+            side: THREE.DoubleSide
+        });
+        const innerCone = new THREE.Mesh(innerConeGeometry, innerConeMaterial);
+        innerCone.rotation.x = Math.PI;
+        innerCone.position.y = G.waterTheme ? innerHeight / 2 : 1.25;
+        tornadoGroup.add(innerCone);
+
+        // Add dust/water particles
+        const dustGroup = new THREE.Group();
+        const numParticles = G.waterTheme ? 30 : 25;
+        const particleScale = G.waterTheme ? 1.5 : 1;
+        for (let i = 0; i < numParticles; i++) {
+            const dustGeometry = new THREE.SphereGeometry((0.1 + Math.random() * 0.1) * particleScale, 4, 4);
+            const dustMaterial = new THREE.MeshBasicMaterial({
+                color: particleColor,
+                transparent: true,
+                opacity: 0.5 + Math.random() * 0.3
+            });
+            const dust = new THREE.Mesh(dustGeometry, dustMaterial);
+            const angle = Math.random() * Math.PI * 2;
+            const height = Math.random() * coneHeight;
+            const radius = (0.2 + (height / coneHeight) * coneRadius) * particleScale;
+            dust.position.set(Math.cos(angle) * radius, height, Math.sin(angle) * radius);
+            dustGroup.add(dust);
+        }
+        tornadoGroup.add(dustGroup);
+        tornadoGroup.dustGroup = dustGroup;
+        tornadoGroup.innerCone = innerCone;
+        tornadoGroup.outerCone = cone;
+
+        // Position at mummy
+        tornadoGroup.position.copy(mummy.mesh.position);
+        tornadoGroup.position.y += 0.5;
+        G.scene.add(tornadoGroup);
+        
+        // Calculate direction to target
+        const dirX = targetPlayer.position.x - tornadoGroup.position.x;
+        const dirZ = targetPlayer.position.z - tornadoGroup.position.z;
+        const length = Math.sqrt(dirX * dirX + dirZ * dirZ);
+        
+        const speed = 0.18;
+        
+        G.mummyTornados.push({
+            mesh: tornadoGroup,
+            velocity: new THREE.Vector3(dirX / length * speed, 0, dirZ / length * speed),
+            radius: G.waterTheme ? 1.5 : 1.0,  // Moderate collision for waterspouts
+            damage: 1,
+            spinPhase: 0
+        });
+
+        // Play a whoosh sound
+        Audio.playExplosionSound();
+    }
+
+    // Wild tornado spawning for out-of-bounds players
+    G.lastWildTornadoSpawn = 0;
+    G.wildTornadoBaseInterval = 2000; // Base spawn interval
+
+    function spawnWildTornado(targetX, targetZ) {
+        // Spawn tornado from a random direction outside the visible area
+        const angle = Math.random() * Math.PI * 2;
+        const spawnDistance = 40 + Math.random() * 20;
+        const spawnX = targetX + Math.cos(angle) * spawnDistance;
+        const spawnZ = targetZ + Math.sin(angle) * spawnDistance;
+
+        // Use water colors for waterspout in water theme
+        const outerColor = G.waterTheme ? 0x1E90FF : 0xc4a14a;
+        const innerColor = G.waterTheme ? 0x87CEEB : 0xe8c36a;
+        const particleColor = G.waterTheme ? 0xB0E0E6 : 0xc4a14a;
+
+        const tornadoGroup = new THREE.Group();
+
+        // Create tornado/waterspout cone shape - moderate size for water level
+        const coneRadius = G.waterTheme ? 1.5 : 0.8;
+        const coneHeight = G.waterTheme ? 8.0 : 3.0;
+        const coneGeometry = new THREE.ConeGeometry(coneRadius, coneHeight, 12, 4, true);
+        const coneMaterial = new THREE.MeshBasicMaterial({
+            color: outerColor,
+            transparent: true,
+            opacity: G.waterTheme ? 0.45 : 0.7,
+            side: THREE.DoubleSide
+        });
+        const cone = new THREE.Mesh(coneGeometry, coneMaterial);
+        cone.rotation.x = Math.PI;
+        cone.position.y = G.waterTheme ? coneHeight / 2 : 1.5;
+        tornadoGroup.add(cone);
+
+        // Inner spinning cone
+        const innerRadius = G.waterTheme ? 0.9 : 0.5;
+        const innerHeight = G.waterTheme ? 6.5 : 2.5;
+        const innerConeGeometry = new THREE.ConeGeometry(innerRadius, innerHeight, 12, 4, true);
+        const innerConeMaterial = new THREE.MeshBasicMaterial({
+            color: innerColor,
+            transparent: true,
+            opacity: G.waterTheme ? 0.55 : 0.8,
+            side: THREE.DoubleSide
+        });
+        const innerCone = new THREE.Mesh(innerConeGeometry, innerConeMaterial);
+        innerCone.rotation.x = Math.PI;
+        innerCone.position.y = G.waterTheme ? innerHeight / 2 : 1.25;
+        tornadoGroup.add(innerCone);
+
+        // Add dust/water particles
+        const dustGroup = new THREE.Group();
+        const numParticles = G.waterTheme ? 30 : 25;
+        const particleScale = G.waterTheme ? 1.5 : 1;
+        for (let i = 0; i < numParticles; i++) {
+            const dustGeometry = new THREE.SphereGeometry((0.1 + Math.random() * 0.1) * particleScale, 4, 4);
+            const dustMaterial = new THREE.MeshBasicMaterial({
+                color: particleColor,
+                transparent: true,
+                opacity: 0.5 + Math.random() * 0.3
+            });
+            const dust = new THREE.Mesh(dustGeometry, dustMaterial);
+            const dustAngle = Math.random() * Math.PI * 2;
+            const height = Math.random() * coneHeight;
+            const radius = (0.2 + (height / coneHeight) * coneRadius) * particleScale;
+            dust.position.set(Math.cos(dustAngle) * radius, height, Math.sin(dustAngle) * radius);
+            dustGroup.add(dust);
+        }
+        tornadoGroup.add(dustGroup);
+        tornadoGroup.dustGroup = dustGroup;
+        tornadoGroup.innerCone = innerCone;
+        tornadoGroup.outerCone = cone;
+
+        const terrainHeight = getTerrainHeight(spawnX, spawnZ);
+        tornadoGroup.position.set(spawnX, terrainHeight + 0.5, spawnZ);
+        G.scene.add(tornadoGroup);
+        
+        // Calculate direction to target player
+        const dirX = targetX - spawnX;
+        const dirZ = targetZ - spawnZ;
+        const length = Math.sqrt(dirX * dirX + dirZ * dirZ);
+        
+        const speed = 0.22; // Slightly faster than mummy tornados
+        
+        G.mummyTornados.push({
+            mesh: tornadoGroup,
+            velocity: new THREE.Vector3(dirX / length * speed, 0, dirZ / length * speed),
+            radius: G.waterTheme ? 1.5 : 1.0,  // Moderate collision for waterspouts
+            damage: 1,
+            spinPhase: 0,
+            isWild: true // Mark as wild tornado
+        });
+    }
+    
+    function checkAndSpawnWildTornados() {
+        if (!G.levelConfig.safeZoneBounds) return;
+        
+        const bounds = G.levelConfig.safeZoneBounds;
+        const px = G.playerGroup.position.x;
+        const pz = G.playerGroup.position.z;
+        
+        // Check if player is outside safe zone
+        const outsideX = px < bounds.minX ? bounds.minX - px : (px > bounds.maxX ? px - bounds.maxX : 0);
+        const outsideZ = pz < bounds.minZ ? bounds.minZ - pz : (pz > bounds.maxZ ? pz - bounds.maxZ : 0);
+        const distanceOutside = Math.sqrt(outsideX * outsideX + outsideZ * outsideZ);
+        
+        if (distanceOutside > 0) {
+            const now = Date.now();
+            // Spawn rate increases the further out you are
+            // At 10 units out: every 2 seconds, at 50 units out: every 0.4 seconds
+            const spawnInterval = Math.max(400, G.wildTornadoBaseInterval - distanceOutside * 40);
+            
+            if (now - G.lastWildTornadoSpawn > spawnInterval) {
+                // Spawn 1-3 tornados based on distance
+                const tornadoCount = Math.min(3, 1 + Math.floor(distanceOutside / 20));
+                for (let i = 0; i < tornadoCount; i++) {
+                    spawnWildTornado(px, pz);
+                }
+                G.lastWildTornadoSpawn = now;
+            }
+        }
+    }
+
+    // Update tornados
+    function updateMummyTornados() {
+        for (let i = G.mummyTornados.length - 1; i >= 0; i--) {
+            const tornado = G.mummyTornados[i];
+            tornado.mesh.position.add(tornado.velocity);
+            
+            // Spin the tornado continuously
+            tornado.spinPhase += 0.35;
+            tornado.mesh.outerCone.rotation.y = tornado.spinPhase;
+            if (tornado.mesh.innerCone) {
+                tornado.mesh.innerCone.rotation.y = -tornado.spinPhase * 1.8;
+            }
+            
+            // Animate dust particles
+            if (tornado.mesh.dustGroup) {
+                tornado.mesh.dustGroup.children.forEach((dust, idx) => {
+                    const baseAngle = (idx / 25) * Math.PI * 2;
+                    const angle = baseAngle + tornado.spinPhase;
+                    const height = dust.position.y;
+                    const radius = 0.25 + (height / 3.0) * 0.8;
+                    dust.position.x = Math.cos(angle) * radius;
+                    dust.position.z = Math.sin(angle) * radius;
+                });
+            }
+            
+            // Check collision with player
+            const px = G.playerGroup.position.x;
+            const pz = G.playerGroup.position.z;
+            const dist = Math.sqrt(
+                (tornado.mesh.position.x - px) ** 2 +
+                (tornado.mesh.position.z - pz) ** 2
+            );
+            
+            if (dist < tornado.radius + 0.8) {
+                // Player hit by tornado
+                if (!godMode) {
+                    G.playerHealth -= tornado.damage;
+                    G.damageFlashTime = Date.now();
+                    
+                    // Start tornado spin visual effect
+                    G.tornadoSpinActive = true;
+                    G.tornadoSpinStartTime = Date.now();
+                    
+                    if (G.playerHealth <= 0) {
+                        if (!gameDead) {
+                            gameDead = true;
+                            Audio.stopBackgroundMusic();
+                            Audio.playDeathSound();
+                        }
+                    }
+                }
+                G.scene.remove(tornado.mesh);
+                G.mummyTornados.splice(i, 1);
+                continue;
+            }
+            
+            // Check collision with other player in multiplayer
+            if (multiplayerManager && multiplayerManager.isConnected() && otherPlayerMesh && otherPlayerMesh.visible) {
+                const otherDist = Math.sqrt(
+                    (tornado.mesh.position.x - otherPlayerMesh.position.x) ** 2 +
+                    (tornado.mesh.position.z - otherPlayerMesh.position.z) ** 2
+                );
+                if (otherDist < tornado.radius + 0.8) {
+                    // Host notifies client of tornado hit damage
+                    if (multiplayerManager.isHost) {
+                        multiplayerManager.sendGameEvent('tornadoHit', {});
+                    }
+                    G.scene.remove(tornado.mesh);
+                    G.mummyTornados.splice(i, 1);
+                    continue;
+                }
+            }
+            
+            // Check collision with canyon walls
+            let hitCanyonWall = false;
+            for (const wall of G.canyonWalls) {
+                const cos = Math.cos(-wall.rotation);
+                const sin = Math.sin(-wall.rotation);
+                const dx = tornado.mesh.position.x - wall.x;
+                const dz = tornado.mesh.position.z - wall.z;
+                const localX = dx * cos - dz * sin;
+                const localZ = dx * sin + dz * cos;
+                
+                const halfWidth = wall.width / 2;
+                const halfDepth = wall.depth / 2;
+                
+                if (Math.abs(localX) < halfWidth && Math.abs(localZ) < halfDepth) {
+                    hitCanyonWall = true;
+                    break;
+                }
+            }
+            
+            if (hitCanyonWall) {
+                G.scene.remove(tornado.mesh);
+                G.mummyTornados.splice(i, 1);
+                continue;
+            }
+            
+            // Remove if out of bounds or too far
+            const tornadoDistFromOrigin = Math.sqrt(
+                tornado.mesh.position.x ** 2 + tornado.mesh.position.z ** 2
+            );
+            if (tornadoDistFromOrigin > 300) {
+                G.scene.remove(tornado.mesh);
+                G.mummyTornados.splice(i, 1);
+            }
+        }
+    }
+
+    // Update lava trails (fade and check collision)
+    function updateLavaTrails() {
+        const now = Date.now();
+        const px = G.playerGroup.position.x;
+        const pz = G.playerGroup.position.z;
+        
+        for (let i = G.lavaTrails.length - 1; i >= 0; i--) {
+            const trail = G.lavaTrails[i];
+            const elapsed = now - trail.createdAt;
+            const progress = elapsed / trail.duration;
+            
+            // Fade out over time
+            if (progress < 1) {
+                const opacity = 1 - progress;
+                const fadeMultiplier = Math.pow(opacity, 0.5); // Slower initial fade
+                
+                if (trail.pool) {
+                    trail.pool.material.opacity = 0.9 * fadeMultiplier;
+                }
+                if (trail.crust) {
+                    trail.crust.material.opacity = 0.6 * fadeMultiplier;
+                }
+                
+                // Bubble animation
+                if (trail.mesh.bubble) {
+                    trail.mesh.bubble.position.y = 0.2 + Math.sin(now * 0.01 + i) * 0.15;
+                    trail.mesh.bubble.material.opacity = 0.8 * fadeMultiplier;
+                }
+                
+                // Shrink slightly as it fades
+                const scale = 0.7 + 0.3 * fadeMultiplier;
+                trail.mesh.scale.setScalar(scale);
+                
+                // Check collision with local player (unless gliding)
+                const dist = Math.sqrt((px - trail.x) ** 2 + (pz - trail.z) ** 2);
+                if (dist < trail.radius * scale - 0.3 && !godMode && !G.player.isGliding) {
+                    // Player stepped in lava trail - instant death
+                    if (!gameDead) {
+                        G.playerHealth = 0;
+                        gameDead = true;
+                        Audio.stopBackgroundMusic();
+                        Audio.playDeathSound();
+                    }
+                }
+
+                // Check collision with other player in multiplayer (host only, unless they're gliding)
+                if (multiplayerManager && multiplayerManager.isHost && multiplayerManager.isConnected() && otherPlayerMesh && otherPlayerMesh.visible) {
+                    const otherDist = Math.sqrt(
+                        (otherPlayerMesh.position.x - trail.x) ** 2 +
+                        (otherPlayerMesh.position.z - trail.z) ** 2
+                    );
+                    if (otherDist < trail.radius * scale - 0.3 && !otherPlayerIsGliding) {
+                        // Notify client of lava trail death
+                        multiplayerManager.sendGameEvent('lavaTrailDeath', {});
+                    }
+                }
+            } else {
+                // Trail expired, remove it
+                G.scene.remove(trail.mesh);
+                G.lavaTrails.splice(i, 1);
+            }
+        }
+    }
+
+    function updateFireballs() {
+        const now = Date.now();
+        
+        // Update fireballs
+        for (let i = G.fireballs.length - 1; i >= 0; i--) {
+            const fireball = G.fireballs[i];
+            fireball.mesh.position.add(fireball.velocity);
+            
+            // Add flame trail particles
+            if (fireball.trail && now - fireball.lastTrailTime > 30) {
+                // Clone pre-cached material for trail
+                const trailMaterial = G.explosionBaseMaterial.clone();
+                trailMaterial.opacity = 0.8;
+                const trailSprite = new THREE.Sprite(trailMaterial);
+                const trailSize = 0.8 + Math.random() * 0.5;
+                trailSprite.scale.set(trailSize, trailSize, 1);
+                trailSprite.position.copy(fireball.mesh.position);
+                // Offset slightly behind the fireball
+                trailSprite.position.x -= fireball.velocity.x * 2;
+                trailSprite.position.y -= fireball.velocity.y * 2;
+                trailSprite.position.z -= fireball.velocity.z * 2;
+                G.scene.add(trailSprite);
+                fireball.trail.push({ sprite: trailSprite, life: 15, initialSize: trailSize });
+                fireball.lastTrailTime = now;
+            }
+            
+            // Update trail particles
+            if (fireball.trail) {
+                for (let t = fireball.trail.length - 1; t >= 0; t--) {
+                    const trail = fireball.trail[t];
+                    trail.life--;
+                    const lifeRatio = trail.life / 15;
+                    trail.sprite.material.opacity = lifeRatio * 0.8;
+                    const scale = trail.initialSize * (0.3 + lifeRatio * 0.7);
+                    trail.sprite.scale.set(scale, scale, 1);
+                    if (trail.life <= 0) {
+                        G.scene.remove(trail.sprite);
+                        fireball.trail.splice(t, 1);
+                    }
+                }
+            }
+            
+            // Pulse the glow effects
+            if (fireball.mesh.children && fireball.mesh.children.length > 1) {
+                const pulseScale = 1 + Math.sin(now * 0.02) * 0.15;
+                fireball.mesh.children[1].scale.set(3 * pulseScale, 3 * pulseScale, 1);
+                fireball.mesh.children[2].scale.set(1.8 * pulseScale, 1.8 * pulseScale, 1);
+            }
+            
+            // Check collision with player (only host applies damage)
+            const distToPlayer = new THREE.Vector2(
+                G.playerGroup.position.x - fireball.mesh.position.x,
+                G.playerGroup.position.z - fireball.mesh.position.z
+            ).length();
+            
+            if (distToPlayer < fireball.radius) {
+                // Only host applies damage to host player
+                if (!godMode && (!multiplayerManager || !multiplayerManager.isConnected() || multiplayerManager.isHost)) {
+                    G.playerHealth -= fireball.damage;
+                    G.damageFlashTime = Date.now();
+                    if (G.playerHealth <= 0) {
+                        if (!gameDead) {
+                            gameDead = true;
+                            Audio.stopBackgroundMusic();
+                            Audio.playDeathSound();
+                        }
+                    } else {
+                        Audio.playStuckSound();
+                    }
+                }
+                
+                createFireballExplosion(fireball.mesh.position.x, fireball.mesh.position.y, fireball.mesh.position.z);
+                // Clean up trail particles
+                if (fireball.trail) {
+                    fireball.trail.forEach(t => G.scene.remove(t.sprite));
+                }
+                G.scene.remove(fireball.mesh);
+                G.fireballs.splice(i, 1);
+                continue;
+            }
+            
+            // Check collision with other player (multiplayer)
+            if (multiplayerManager && multiplayerManager.isConnected() && otherPlayerMesh.visible) {
+                const distToOther = new THREE.Vector2(
+                    otherPlayerMesh.position.x - fireball.mesh.position.x,
+                    otherPlayerMesh.position.z - fireball.mesh.position.z
+                ).length();
+                
+                if (distToOther < fireball.radius) {
+                    // Let host handle damage
+                    if (multiplayerManager.isHost) {
+                        // Notify client of damage
+                        multiplayerManager.sendGameEvent('playerDamage', {});
+                    }
+                    createFireballExplosion(fireball.mesh.position.x, fireball.mesh.position.y, fireball.mesh.position.z);
+                    // Clean up trail particles
+                    if (fireball.trail) {
+                        fireball.trail.forEach(t => G.scene.remove(t.sprite));
+                    }
+                    G.scene.remove(fireball.mesh);
+                    G.fireballs.splice(i, 1);
+                    continue;
+                }
+            }
+            
+            // Remove if out of bounds or hit ground
+            const terrainHeight = getTerrainHeight(fireball.mesh.position.x, fireball.mesh.position.z);
+            
+            // Check collision with mountains (if level has them)
+            let hitMountain = false;
+            if (G.levelConfig.mountains && G.levelConfig.mountains.length > 0) {
+                for (const mtn of G.levelConfig.mountains) {
+                    const distToMountain = Math.sqrt(
+                        (fireball.mesh.position.x - mtn.x) ** 2 +
+                        (fireball.mesh.position.z - mtn.z) ** 2
+                    );
+                    // Mountain radius is half its width
+                    if (distToMountain < mtn.width / 2) {
+                        hitMountain = true;
+                        break;
+                    }
+                }
+            }
+            
+            // Check collision with canyon walls
+            let hitCanyonWall = false;
+            for (const wall of G.canyonWalls) {
+                // Transform fireball position into wall's local space
+                const cos = Math.cos(-wall.rotation);
+                const sin = Math.sin(-wall.rotation);
+                const dx = fireball.mesh.position.x - wall.x;
+                const dz = fireball.mesh.position.z - wall.z;
+                const localX = dx * cos - dz * sin;
+                const localZ = dx * sin + dz * cos;
+
+                // Check if inside wall bounds
+                const halfWidth = wall.width / 2;
+                const halfDepth = wall.depth / 2;
+
+                if (Math.abs(localX) < halfWidth && Math.abs(localZ) < halfDepth && fireball.mesh.position.y < wall.height) {
+                    hitCanyonWall = true;
+                    break;
+                }
+            }
+
+            // Check collision with impassable cliffs
+            let hitCliff = false;
+            for (const cliff of G.impassableCliffs) {
+                const distToCliff = Math.sqrt(
+                    (fireball.mesh.position.x - cliff.x) ** 2 +
+                    (fireball.mesh.position.z - cliff.z) ** 2
+                );
+                if (distToCliff < cliff.radius && fireball.mesh.position.y < cliff.height) {
+                    hitCliff = true;
+                    break;
+                }
+            }
+
+            if (fireball.mesh.position.y < terrainHeight || hitMountain || hitCanyonWall || hitCliff ||
+                Math.abs(fireball.mesh.position.x) > GAME_CONFIG.WORLD_BOUND ||
+                Math.abs(fireball.mesh.position.z) > GAME_CONFIG.WORLD_BOUND) {
+                createFireballExplosion(fireball.mesh.position.x, terrainHeight, fireball.mesh.position.z);
+                // Clean up trail particles
+                if (fireball.trail) {
+                    fireball.trail.forEach(t => G.scene.remove(t.sprite));
+                }
+                G.scene.remove(fireball.mesh);
+                G.fireballs.splice(i, 1);
+            }
+        }
+    }
+
+    function checkCollisions(prevPos) {
+        let isStuck = false;
+        const px = G.playerGroup.position.x;
+        const pz = G.playerGroup.position.z;
+        
+        // Lava pool collision - instant death (unless gliding over)
+        G.lavaPools.forEach(pool => {
+            const dist = Math.sqrt(
+                (px - pool.x) ** 2 +
+                (pz - pool.z) ** 2
+            );
+            // Player can fly over lava if gliding
+            if (dist < pool.radius - 0.5 && !godMode && !G.player.isGliding) {
+                // Player fell into lava - instant death
+                if (!gameDead) {
+                    G.playerHealth = 0;
+                    gameDead = true;
+                    Audio.stopBackgroundMusic();
+                    Audio.playDeathSound();
+                }
+            }
+
+            // Check if other player (client) is in lava pool (unless they're gliding)
+            if (multiplayerManager && multiplayerManager.isConnected() && multiplayerManager.isHost && otherPlayerMesh.visible) {
+                const otherDist = Math.sqrt(
+                    (otherPlayerMesh.position.x - pool.x) ** 2 +
+                    (otherPlayerMesh.position.z - pool.z) ** 2
+                );
+                if (otherDist < pool.radius - 0.5 && !otherPlayerIsGliding) {
+                    // Notify client of lava pool death
+                    multiplayerManager.sendGameEvent('lavaPoolDeath', {});
+                }
+            }
+        });
+
+        // Crevice collision - falling into deep pits (unless gliding)
+        G.crevices.forEach(crevice => {
+            // Transform player position into crevice's local space (to handle rotation)
+            const cos = Math.cos(-crevice.rotation);
+            const sin = Math.sin(-crevice.rotation);
+            const dx = px - crevice.x;
+            const dz = pz - crevice.z;
+            const localX = dx * cos - dz * sin;
+            const localZ = dx * sin + dz * cos;
+
+            // Check if inside crevice bounds
+            const halfWidth = crevice.width / 2;
+            const halfLength = crevice.length / 2;
+
+            if (Math.abs(localX) < halfWidth && Math.abs(localZ) < halfLength && !godMode && !G.player.isGliding) {
+                // Player fell into crevice - instant death
+                if (!gameDead) {
+                    G.playerHealth = 0;
+                    gameDead = true;
+                    Audio.stopBackgroundMusic();
+                    Audio.playDeathSound();
+                }
+            }
+
+            // Check if other player (client) fell into crevice (unless they're gliding)
+            if (multiplayerManager && multiplayerManager.isConnected() && multiplayerManager.isHost && otherPlayerMesh.visible) {
+                const otherDx = otherPlayerMesh.position.x - crevice.x;
+                const otherDz = otherPlayerMesh.position.z - crevice.z;
+                const otherLocalX = otherDx * cos - otherDz * sin;
+                const otherLocalZ = otherDx * sin + otherDz * cos;
+
+                if (Math.abs(otherLocalX) < halfWidth && Math.abs(otherLocalZ) < halfLength && !otherPlayerIsGliding) {
+                    // Notify client of crevice death
+                    multiplayerManager.sendGameEvent('creviceDeath', {});
+                }
+            }
+        });
+
+        // Mountains (only if level has them) - in water level, can glide over them
+        if (G.levelConfig.mountains && G.levelConfig.mountains.length > 0) {
+            const canPassMountains = G.waterTheme && G.player.isGliding;
+            if (!canPassMountains) {
+                G.levelConfig.mountains.forEach(mtn => {
+                    const dist = new THREE.Vector2(
+                        G.playerGroup.position.x - mtn.x,
+                        G.playerGroup.position.z - mtn.z
+                    ).length();
+                    if (dist < mtn.width/2 + 1.5) {
+                        G.playerGroup.position.copy(prevPos);
+                        isStuck = true;
+                    }
+                });
+            }
+        }
+
+        // Impassable cliffs - ALWAYS block, even when gliding
+        G.impassableCliffs.forEach(cliff => {
+            const dist = new THREE.Vector2(
+                G.playerGroup.position.x - cliff.x,
+                G.playerGroup.position.z - cliff.z
+            ).length();
+            if (dist < cliff.radius + 1.5) {
+                G.playerGroup.position.copy(prevPos);
+                isStuck = true;
+            }
+        });
+
+        // Hills - in water level, player is on a boat and can't go on islands (unless gliding)
+        if (G.waterTheme && !G.player.isGliding && G.levelConfig.hills && G.levelConfig.hills.length > 0) {
+            G.levelConfig.hills.forEach(hill => {
+                const dist = new THREE.Vector2(
+                    G.playerGroup.position.x - hill.x,
+                    G.playerGroup.position.z - hill.z
+                ).length();
+                if (dist < hill.radius + 1.0) {
+                    G.playerGroup.position.copy(prevPos);
+                    isStuck = true;
+                }
+            });
+        }
+
+        // Rocks
+        G.rocks.forEach(rock => {
+            const dist = new THREE.Vector2(
+                G.playerGroup.position.x - rock.mesh.position.x,
+                G.playerGroup.position.z - rock.mesh.position.z
+            ).length();
+            if (dist < rock.radius + 0.8) {
+                G.playerGroup.position.copy(prevPos);
+                isStuck = true;
+            }
+        });
+        
+        // Boulders
+        G.boulders.forEach(boulder => {
+            const dist = new THREE.Vector2(
+                G.playerGroup.position.x - boulder.mesh.position.x,
+                G.playerGroup.position.z - boulder.mesh.position.z
+            ).length();
+            if (dist < boulder.radius + 0.8) {
+                G.playerGroup.position.copy(prevPos);
+                isStuck = true;
+            }
+        });
+        
+        // Canyon walls - box collision
+        G.canyonWalls.forEach(wall => {
+            // Transform player position into wall's local space (accounting for rotation)
+            const cos = Math.cos(-wall.rotation);
+            const sin = Math.sin(-wall.rotation);
+            const dx = G.playerGroup.position.x - wall.x;
+            const dz = G.playerGroup.position.z - wall.z;
+            const localX = dx * cos - dz * sin;
+            const localZ = dx * sin + dz * cos;
+            
+            // Check if inside wall bounds (with player radius buffer)
+            const halfWidth = wall.width / 2 + 1.0;
+            const halfDepth = wall.depth / 2 + 1.0;
+            
+            if (Math.abs(localX) < halfWidth && Math.abs(localZ) < halfDepth) {
+                G.playerGroup.position.copy(prevPos);
+                isStuck = true;
+            }
+        });
+        
+        // Trees
+        G.trees.forEach(tree => {
+            const dist = new THREE.Vector2(
+                G.playerGroup.position.x - tree.mesh.position.x,
+                G.playerGroup.position.z - tree.mesh.position.z
+            ).length();
+            if (dist < tree.radius + 0.8) {
+                G.playerGroup.position.copy(prevPos);
+                isStuck = true;
+            }
+        });
+        
+        // Play stuck sound
+        if (isStuck) {
+            const now = Date.now();
+            if (!checkCollisions.lastStuckSound || now - checkCollisions.lastStuckSound > 1000) {
+                Audio.playStuckSound();
+                checkCollisions.lastStuckSound = now;
+            }
+        }
+        
+        // Goblin collision damage
+        const now = Date.now();
+        G.goblins.forEach(gob => {
+            if (!gob.alive) return;
+            
+            // Check if frozen
+            if (gob.frozen && Date.now() < gob.frozenUntil) {
+                return; // Skip damage while frozen
+            }
+            
+            const distToGob = new THREE.Vector2(
+                G.playerGroup.position.x - gob.mesh.position.x,
+                G.playerGroup.position.z - gob.mesh.position.z
+            ).length();
+            
+            // Check if player is in ice berg (safe zone) - only if iceBerg exists
+            const playerInIceBerg = G.iceBerg ? Math.sqrt(
+                Math.pow(G.playerGroup.position.x - G.iceBerg.position.x, 2) +
+                Math.pow(G.playerGroup.position.z - G.iceBerg.position.z, 2)
+            ) < G.iceBerg.radius : false;
+            
+            if (playerInIceBerg) {
+                return; // Don't damage G.player in ice berg
+            }
+            
+            if (distToGob < gob.radius + 1) {
+                if (!godMode && now - G.lastDamageTime > G.damageCooldown) {
+                    // Trigger giant attack animation and sound BEFORE damage
+                    if (gob.isGiant) {
+                        gob.isAttacking = true;
+                        gob.attackAnimationProgress = 0;
+                        Audio.playGiantAttackSound();
+                    }
+                    
+                    G.playerHealth--;
+                    G.lastDamageTime = now;
+                    G.damageFlashTime = now;
+                    
+                    if (G.playerHealth <= 0) {
+                        if (!gameDead) {
+                            gameDead = true;
+                            Audio.stopBackgroundMusic();
+                            Audio.playDeathSound();
+                        }
+                    } else {
+                        // Play danger sound
+                        Audio.playStuckSound();
+                    }
+                }
+            }
+            
+            // Animate octopus tentacles in water theme
+            if (G.waterTheme && gob.isGuardian && gob.mesh.tentacles) {
+                const wavePhase = Date.now() * 0.003;
+                gob.mesh.tentacles.forEach((tentacleData, idx) => {
+                    const wave = Math.sin(wavePhase + idx * 0.5) * 0.4;
+                    tentacleData.mesh.rotation.z = tentacleData.baseZ + wave;
+                    tentacleData.mesh.rotation.x = tentacleData.baseX + wave * 0.5;
+                });
+            }
+            
+            // Update giant attack animation
+            if (gob.isGiant && gob.isAttacking && !gob.frozen) {
+                gob.attackAnimationProgress += 0.12;
+                
+                // Extra camera shake during attack
+                const distToPlayer = new THREE.Vector2(
+                    G.playerGroup.position.x - gob.mesh.position.x,
+                    G.playerGroup.position.z - gob.mesh.position.z
+                ).length();
+                if (distToPlayer < 30) {
+                    const attackShake = (1 - distToPlayer / 30) * 5;
+                    G.camera.position.x += (Math.random() - 0.5) * attackShake;
+                    G.camera.position.y += (Math.random() - 0.5) * attackShake;
+                    G.camera.position.z += (Math.random() - 0.5) * attackShake;
+                }
+                
+                // Dramatic slam animation - wind up, slam down, shake
+                if (gob.attackAnimationProgress < 1.0) {
+                    const t = gob.attackAnimationProgress;
+                    
+                    if (t < 0.35) {
+                        // Wind up - raise arms high and lean back
+                        const windUp = t / 0.35;
+                        const easeOut = 1 - Math.pow(1 - windUp, 3);
+                        gob.mesh.leftArm.rotation.x = -easeOut * 1.4;
+                        gob.mesh.rightArm.rotation.x = -easeOut * 1.4;
+                        gob.mesh.leftArm.rotation.z = 0.3 + easeOut * 0.4;
+                        gob.mesh.rightArm.rotation.z = -0.3 - easeOut * 0.4;
+                        gob.mesh.leftFist.position.y = 1.8 + easeOut * 4.0;
+                        gob.mesh.rightFist.position.y = 1.8 + easeOut * 4.0;
+                        gob.mesh.position.y = getTerrainHeight(gob.mesh.position.x, gob.mesh.position.z) - easeOut * 0.3;
+                    } else if (t < 0.5) {
+                        // Slam down - fast downward motion
+                        const slam = (t - 0.35) / 0.15;
+                        const easeIn = Math.pow(slam, 2.5);
+                        const armAngle = -1.4 + easeIn * 2.2;
+                        gob.mesh.leftArm.rotation.x = armAngle;
+                        gob.mesh.rightArm.rotation.x = armAngle;
+                        gob.mesh.leftArm.rotation.z = 0.7 - easeIn * 0.9;
+                        gob.mesh.rightArm.rotation.z = -0.7 + easeIn * 0.9;
+                        gob.mesh.leftFist.position.y = 5.8 - easeIn * 5.0;
+                        gob.mesh.rightFist.position.y = 5.8 - easeIn * 5.0;
+                        gob.mesh.leftFist.position.z = easeIn * 1.2;
+                        gob.mesh.rightFist.position.z = easeIn * 1.2;
+                        gob.mesh.position.y = getTerrainHeight(gob.mesh.position.x, gob.mesh.position.z) - 0.3 + easeIn * 0.5;
+                    } else {
+                        // Recovery and shake
+                        const recover = (t - 0.5) / 0.5;
+                        const shake = Math.sin(recover * Math.PI * 4) * (1 - recover) * 0.15;
+                        const easeBack = 1 - Math.pow(1 - recover, 2);
+                        gob.mesh.leftArm.rotation.x = 0.8 - easeBack * 0.8;
+                        gob.mesh.rightArm.rotation.x = 0.8 - easeBack * 0.8;
+                        gob.mesh.leftArm.rotation.z = -0.2 + easeBack * 0.5;
+                        gob.mesh.rightArm.rotation.z = 0.2 - easeBack * 0.5;
+                        gob.mesh.leftFist.position.y = 0.8 + easeBack * 1.0;
+                        gob.mesh.rightFist.position.y = 0.8 + easeBack * 1.0;
+                        gob.mesh.leftFist.position.z = 1.2 - easeBack * 1.2;
+                        gob.mesh.rightFist.position.z = 1.2 - easeBack * 1.2;
+                        gob.mesh.position.y = getTerrainHeight(gob.mesh.position.x, gob.mesh.position.z) + 0.2 - easeBack * 0.2 + shake;
+                        gob.mesh.rotation.y += shake * 0.3;
+                    }
+                } else {
+                    // Reset to idle position
+                    gob.mesh.leftArm.rotation.x = 0;
+                    gob.mesh.rightArm.rotation.x = 0;
+                    gob.mesh.leftArm.rotation.z = 0.3;
+                    gob.mesh.rightArm.rotation.z = -0.3;
+                    gob.mesh.leftFist.position.y = 1.8;
+                    gob.mesh.rightFist.position.y = 1.8;
+                    gob.mesh.leftFist.position.z = 0;
+                    gob.mesh.rightFist.position.z = 0;
+                    gob.mesh.position.y = getTerrainHeight(gob.mesh.position.x, gob.mesh.position.z);
+                    gob.isAttacking = false;
+                    gob.attackAnimationProgress = 0;
+                }
+            }
+        });
+        
+        // Collect materials
+        G.materials.forEach((material, idx) => {
+            if (!material.collected) {
+                const dist = G.playerGroup.position.distanceTo(material.mesh.position);
+                if (dist < material.radius) {
+                    material.collected = true;
+                    material.mesh.visible = false;
+                    G.materialsCollected++;
+                    Audio.playCollectSound();
+                    
+                    // Notify other player
+                    if (multiplayerManager && multiplayerManager.isConnected()) {
+                        multiplayerManager.sendGameEvent('itemCollected', { type: 'material', index: idx });
+                    }
+                }
+            }
+        });
+        
+        // Collect ammo
+        G.ammoPickups.forEach((pickup, idx) => {
+            if (!pickup.collected) {
+                const dist = G.playerGroup.position.distanceTo(pickup.mesh.position);
+                if (dist < pickup.radius) {
+                    pickup.collected = true;
+                    pickup.mesh.visible = false;
+                    G.ammo = Math.min(G.ammo + pickup.amount, G.maxAmmo);
+                    Audio.playCollectSound();
+                    
+                    // Notify other player
+                    if (multiplayerManager && multiplayerManager.isConnected()) {
+                        multiplayerManager.sendGameEvent('itemCollected', { type: 'G.ammo', index: idx });
+                    }
+                }
+            }
+        });
+        
+        // Collect health
+        G.healthPickups.forEach((pickup, idx) => {
+            if (!pickup.collected) {
+                const dist = G.playerGroup.position.distanceTo(pickup.mesh.position);
+                if (dist < pickup.radius) {
+                    pickup.collected = true;
+                    pickup.mesh.visible = false;
+                    G.playerHealth = Math.min(G.playerHealth + 1, G.maxPlayerHealth);
+                    Audio.playCollectSound();
+                    
+                    // Notify other player
+                    if (multiplayerManager && multiplayerManager.isConnected()) {
+                        multiplayerManager.sendGameEvent('itemCollected', { type: 'health', index: idx });
+                    }
+                }
+            }
+        });
+        
+        // Collect scarabs
+        G.scarabPickups.forEach((pickup, idx) => {
+            if (!pickup.collected) {
+                const dist = Math.sqrt(
+                    Math.pow(G.playerGroup.position.x - pickup.x, 2) +
+                    Math.pow(G.playerGroup.position.z - pickup.z, 2)
+                );
+                if (dist < 1.5) {
+                    pickup.collected = true;
+                    G.scene.remove(pickup.mesh);
+                    G.scarabsCollected++;
+                    Audio.playCollectSound();
+                    
+                    // Show collection message
+                    if (G.totalScarabs > 0) {
+                        const remaining = G.totalScarabs - G.scarabsCollected;
+                        if (remaining > 0) {
+                            console.log(`Scarab collected! ${remaining} more to find.`);
+                        } else {
+                            console.log('All scarabs collected! The G.treasure is now accessible!');
+                        }
+                    }
+                    
+                    // Notify other player
+                    if (multiplayerManager && multiplayerManager.isConnected()) {
+                        multiplayerManager.sendGameEvent('itemCollected', { type: 'scarab', index: idx });
+                    }
+                }
+            }
+        });
+        
+        // Animate uncollected scarabs (bob and rotate)
+        G.scarabPickups.forEach((pickup) => {
+            if (!pickup.collected && pickup.mesh) {
+                pickup.bobPhase += 0.05;
+                const baseHeight = getTerrainHeight(pickup.x, pickup.z) + 0.5;
+                pickup.mesh.position.y = baseHeight + Math.sin(pickup.bobPhase) * 0.2;
+                pickup.mesh.rotation.y += 0.02;
+                
+                // Pulse the aura
+                if (pickup.mesh.aura) {
+                    pickup.mesh.aura.material.opacity = 0.3 + Math.sin(pickup.bobPhase * 2) * 0.2;
+                    pickup.mesh.aura.scale.setScalar(1 + Math.sin(pickup.bobPhase) * 0.1);
+                }
+            }
+        });
+        
+        // Portal collision - level switching (only if portal exists)
+        if (G.portal && G.portalCooldown <= 0) {
+            const distToPortal = Math.sqrt(
+                Math.pow(G.playerGroup.position.x - G.portal.x, 2) +
+                Math.pow(G.playerGroup.position.z - G.portal.z, 2)
+            );
+            if (distToPortal < G.portal.radius) {
+                // Switch to destination level
+                const destinationLevel = G.portal.destinationLevel;
+                console.log(`Entering G.portal to Level ${destinationLevel}!`);
+                
+                // Save inventory for next level
+                persistentInventory.ammo = G.ammo;
+                persistentInventory.bombs = G.bombInventory;
+                persistentInventory.health = G.playerHealth;
+                persistentInventory.hasKite = G.worldKiteCollected || G.player.hasKite;
+                
+                // Notify multiplayer if connected
+                if (multiplayerManager && multiplayerManager.isConnected()) {
+                    multiplayerManager.sendGameEvent('levelChange', { level: destinationLevel });
+                }
+                
+                // Switch level
+                switchLevel(destinationLevel);
+                return; // Exit current game loop
+            }
+        }
+        
+        // Trap collision (only when not gliding)
+        if (!G.player.isGliding) {
+            G.traps.forEach(trap => {
+                const distToTrap = new THREE.Vector2(
+                    G.playerGroup.position.x - trap.mesh.position.x,
+                    G.playerGroup.position.z - trap.mesh.position.z
+                ).length();
+                if (distToTrap < trap.radius && !godMode) {
+                    gameDead = true;
+                    Audio.stopBackgroundMusic();
+                    Audio.playDeathSound();
+
+                    // Notify other player of death
+                    if (multiplayerManager && multiplayerManager.isConnected()) {
+                        multiplayerManager.sendGameEvent('playerDeath', {});
+                    }
+                }
+            });
+        }
+
+        // Check if other player (client) hit a trap (HOST ONLY)
+        if (multiplayerManager && multiplayerManager.isConnected() && multiplayerManager.isHost && otherPlayerMesh.visible && !otherPlayerIsGliding) {
+            G.traps.forEach(trap => {
+                const distToTrap = new THREE.Vector2(
+                    otherPlayerMesh.position.x - trap.mesh.position.x,
+                    otherPlayerMesh.position.z - trap.mesh.position.z
+                ).length();
+                if (distToTrap < trap.radius) {
+                    // Notify client of trap death
+                    multiplayerManager.sendGameEvent('trapDeath', {});
+                }
+            });
+        }
+
+        // Bridge repair - only if level has river/bridge
+        if (G.bridgeObj && !G.bridgeRepaired && G.materialsCollected >= G.materialsNeeded) {
+            const distToBridge = new THREE.Vector2(
+                G.playerGroup.position.x,
+                G.playerGroup.position.z
+            ).length();
+            if (distToBridge < 5) {
+                G.bridgeRepaired = true;
+                G.bridgeObj.mesh.visible = true;
+                G.brokenBridgeGroup.visible = false;
+                Audio.playRepairSound();
+                
+                // Notify other player in multiplayer
+                if (multiplayerManager && multiplayerManager.isConnected()) {
+                    multiplayerManager.sendGameEvent('G.bridgeRepaired', {});
+                }
+            }
+        }
+        
+        // River and bridge collision (can fly over when gliding) - only if river exists
+        if (G.riverObj && !G.player.isGliding && G.playerGroup.position.z > G.riverObj.minZ && G.playerGroup.position.z < G.riverObj.maxZ) {
+            const onBridge = G.bridgeRepaired &&
+                            G.playerGroup.position.x > G.bridgeObj.minX && 
+                            G.playerGroup.position.x < G.bridgeObj.maxX &&
+                            G.playerGroup.position.z > G.bridgeObj.minZ && 
+                            G.playerGroup.position.z < G.bridgeObj.maxZ;
+            if (!onBridge) {
+                G.playerGroup.position.copy(prevPos);
+            }
+        }
+        
+        // Treasure collection - only if this level has treasure
+        if (G.treasure) {
+            const dist = G.playerGroup.position.distanceTo(G.treasureGroup.position);
+            if (dist < G.treasure.radius + 0.8) {
+                // Check if scarabs are required and collected
+                const scarabsRequired = G.totalScarabs > 0;
+                const allScarabsCollected = G.scarabsCollected >= G.totalScarabs;
+                
+                if (scarabsRequired && !allScarabsCollected) {
+                    // Can't collect treasure yet - need more scarabs
+                    // Only show message occasionally to avoid spam
+                    if (!G.treasure.lastWarningTime || Date.now() - G.treasure.lastWarningTime > 2000) {
+                        G.treasure.lastWarningTime = Date.now();
+                        const remaining = G.totalScarabs - G.scarabsCollected;
+                        console.log(`Collect ${remaining} more Ancient Scarab${remaining > 1 ? 's' : ''} to unlock the G.treasure!`);
+                    }
+                } else {
+                    // Only host decides win state
+                    if (!multiplayerManager || multiplayerManager.isHost) {
+                        gameWon = true;
+                        Audio.playWinSound();
+                    } else {
+                        // Client notifies host they reached treasure
+                        if (multiplayerManager && multiplayerManager.isConnected()) {
+                            multiplayerManager.sendGameEvent('playerWin', {});
+                        }
+                    }
+                }
+            }
+        }
+        
+        // Ice power collection - only if iceBerg exists
+        if (G.iceBerg && !G.icePowerCollected) {
+            const iceDist = Math.sqrt(
+                (px - G.iceBerg.position.x) ** 2 +
+                (pz - G.iceBerg.position.z) ** 2
+            );
+            if (iceDist < G.iceBerg.powerRadius) {
+                G.icePowerCollected = true;
+                G.hasIcePower = true;
+                Audio.playCollectSound();
+                
+                // Notify other player in multiplayer
+                if (multiplayerManager && multiplayerManager.isConnected()) {
+                    multiplayerManager.sendGameEvent('G.icePowerCollected', {});
+                }
+            }
+        }
+        
+        // Banana power collection and refill
+        const bananaDist = Math.sqrt(
+            (px - G.bananaIceBerg.position.x) ** 2 +
+            (pz - G.bananaIceBerg.position.z) ** 2
+        );
+        if (bananaDist < G.bananaIceBerg.powerRadius) {
+            if (!G.worldBananaPowerCollected) {
+                G.worldBananaPowerCollected = true;
+                G.hasBananaPower = true;
+                G.bananaInventory = G.maxBananas;
+                Audio.playCollectSound();
+                
+                // Notify other player in multiplayer - both get the power
+                if (multiplayerManager && multiplayerManager.isConnected()) {
+                    multiplayerManager.sendGameEvent('G.bananaPowerCollected', {});
+                }
+            } else if (G.hasBananaPower && G.bananaInventory < G.maxBananas) {
+                // Refill bananas when returning to ice berg
+                G.bananaInventory = G.maxBananas;
+                Audio.playCollectSound();
+            }
+        }
+        
+        // Collect placed bananas
+        for (let i = G.placedBananas.length - 1; i >= 0; i--) {
+            const banana = G.placedBananas[i];
+            const distToBanana = Math.sqrt(
+                (px - banana.x) ** 2 +
+                (pz - banana.z) ** 2
+            );
+            if (distToBanana < banana.radius) {
+                // Pick up the banana
+                G.bananaInventory = Math.min(G.bananaInventory + 1, G.maxBananas);
+                G.scene.remove(banana.mesh);
+                G.placedBananas.splice(i, 1);
+                Audio.playCollectSound();
+                
+                // Notify other player
+                if (multiplayerManager && multiplayerManager.isConnected()) {
+                    multiplayerManager.sendGameEvent('bananaCollected', { id: banana.id });
+                }
+            }
+        }
+        
+        // Bomb pickups
+        G.bombPickups.forEach((pickup, idx) => {
+            if (!pickup.collected) {
+                const distToPickup = Math.sqrt(
+                    (px - pickup.mesh.position.x) ** 2 +
+                    (pz - pickup.mesh.position.z) ** 2
+                );
+                if (distToPickup < pickup.radius && G.bombInventory < G.maxBombs) {
+                    G.bombInventory++;
+                    pickup.collected = true;
+                    pickup.mesh.visible = false;
+                    Audio.playCollectSound();
+                    
+                    // Notify other player
+                    if (multiplayerManager && multiplayerManager.isConnected()) {
+                        multiplayerManager.sendGameEvent('itemCollected', {
+                            type: 'bomb',
+                            index: idx
+                        });
+                    }
+                }
+            }
+        });
+        
+        // Check world kite collection
+        if (!G.worldKiteCollected) {
+            const kiteDistSq = (px - G.worldKiteGroup.position.x) ** 2 + (pz - G.worldKiteGroup.position.z) ** 2;
+            if (kiteDistSq < 4) {
+                G.worldKiteCollected = true;
+                G.player.hasKite = true;
+                G.player.glideCharge = G.player.maxGlideCharge; // Full charge immediately
+                G.scene.remove(G.worldKiteGroup);
+                Audio.playCollectSound();
+                // Note: Kite state is synced via fullSync, not individual events
+            }
+        }
+        
+        return isStuck;
+    }
+
