@@ -12,6 +12,8 @@
 - Resource collection and bridge repair mechanics
 - Procedurally generated textures and audio
 
+**Recent Modularization**: The monolithic 44,144-line `main.js` file has been split into logical modules (`main-setup.js`, `main-entities.js`, `main-gameplay.js`, `main-loop.js`) totaling 15,742 lines, improving maintainability and code organization.
+
 ## Project Structure
 
 ### Root Directory
@@ -22,42 +24,59 @@ eat-the-rainbow/
 ├── style.css               # Game styling and UI
 ├── README.md               # User-facing documentation
 ├── MULTIPLAYER_GUIDE.md    # Detailed multiplayer implementation guide
+├── AGENT_CONTEXT.md        # Developer documentation (this file)
 ├── screenshot.png          # Game screenshot
+├── progress.txt            # Development progress tracking
+├── ralph.sh               # Utility script
 └── js/                     # Modular game code (ACTIVE CODEBASE)
 ```
 
-### Modular JavaScript (`js/` directory)
+### Modular JavaScript (`js/` directory) - MODULAR ARCHITECTURE
 ```
 js/
-├── main.js                 # Game orchestration, initialization, game loop (44,144 lines)
-├── config.js               # Game constants, level configurations (8,527 lines)
-├── terrain.js              # Terrain generation and procedural textures (7,847 lines)
-├── audio.js                # Audio system with sound effects and music
-└── multiplayer.js          # PeerJS-based multiplayer synchronization
+├── main.js                 # Game orchestration, initialization entry point (481 lines)
+├── main-setup.js           # Player, environment objects, and input setup (2,437 lines)
+├── main-entities.js        # Enemies, collectibles, and special objects (2,723 lines)
+├── main-gameplay.js        # Combat, updates, and collision systems (3,931 lines)
+├── main-loop.js            # Game reset, HUD, and main game loop (913 lines)
+├── config.js               # Game constants, level configurations (1,927 lines)
+├── terrain.js              # Terrain generation and procedural textures (2,213 lines)
+├── audio.js                # Audio system with sound effects and music (846 lines)
+└── multiplayer.js          # PeerJS-based multiplayer synchronization (270 lines)
 ```
+
+**Total Codebase: 15,742 lines** (down from 44,144 lines in monolithic version)
 
 ## Architecture Overview
 
-### Traditional Script Loading Architecture
-The project uses **traditional script loading** (no ES6 modules):
+### Modular Script Loading Architecture
+The project uses **traditional script loading** (no ES6 modules) with a clean modular structure:
 
-- All JavaScript files are loaded via `<script>` tags in `index.html`:
+- All JavaScript files are loaded via `<script>` tags in `index.html` in dependency order:
   ```html
   <script src="js/config.js"></script>
   <script src="js/terrain.js"></script>
   <script src="js/audio.js"></script>
   <script src="js/multiplayer.js"></script>
+  <script src="js/main-setup.js"></script>
+  <script src="js/main-entities.js"></script>
+  <script src="js/main-gameplay.js"></script>
+  <script src="js/main-loop.js"></script>
   <script src="js/main.js"></script>
   ```
 - Functions and variables are available globally after loading
 - No ES6 imports/exports are used in the active codebase
 This allows the game to run directly in browsers with `file:///` URLs
 
-**Recent Cleanup**: Legacy files have been removed to simplify the codebase:
-- `game.js` and `game-2d-backup.js` (monolithic legacy versions)
-- `js/player.js` and `js/goblins.js` (unused ES6 module files)
-- `js/main-old.js` and `js/audio-broken.js.bak` (old versions and backups)
-- `water-level-guide.md` (implementation completed)
+**Recent Modularization**: The monolithic `main.js` (44,144 lines) has been successfully split into logical modules:
+
+| Module | Responsibility | Lines |
+|--------|----------------|-------|
+| `main.js` | Game orchestration, initialization entry point | 481 |
+| `main-setup.js` | Player creation, environment objects, input setup | 2,437 |
+| `main-entities.js` | Enemy and special object creation (goblins, dragons, etc.) | 2,723 |
+| `main-gameplay.js` | Combat, updates, collisions, explosions | 3,931 |
+| `main-loop.js` | Game loop, HUD, reset functionality | 913 |
 
 ### Configuration-Driven Design
 - **`config.js`** contains ALL game constants, level data, enemy positions, etc.
@@ -123,14 +142,14 @@ Levels are defined in `config.js` under `LEVELS` object (1-5). Each level has:
 
 ### 4. Enemy System
 **Enemy Types:**
-1. **Regular Goblins** - Basic patrol and chase AI
-2. **Guardian Goblins** - Elite enemies with bows (hard mode)
-3. **Wizards** - Spellcasters with projectile attacks
-4. **Mummies** - Desert-themed enemies
-5. **Lava Monsters** - Lava-themed with trail effects
-6. **Dragon Boss** - Final boss with fireballs and 50 HP
+1. **Regular Goblins** - Basic patrol and chase AI (`createGoblin` in `main-entities.js`)
+2. **Guardian Goblins** - Elite enemies with bows (hard mode) (`createGuardianGoblin`)
+3. **Wizards** - Spellcasters with projectile attacks (`createWizard`)
+4. **Mummies** - Desert-themed enemies (`createMummy`)
+5. **Lava Monsters** - Lava-themed with trail effects (`createLavaMonster`)
+6. **Dragon Boss** - Final boss with fireballs and 50 HP (`createDragon`)
 
-**AI Patterns:**
+**AI Patterns:** (implemented in `main-gameplay.js`)
 - Patrol between `patrolLeft` and `patrolRight` positions
 - Chase player when within detection range
 - Attack with projectiles (guardians, wizards) or contact damage
@@ -145,8 +164,8 @@ Levels are defined in `config.js` under `LEVELS` object (1-5). Each level has:
 - R: Restart after death/victory
 - G: God mode (debug - flight, invincibility, unlimited ammo)
 
-**Player Implementation**:
-- Player logic is implemented directly in `main.js` (not as a separate class)
+**Player Implementation**: (`main-setup.js`)
+- Player logic is implemented in `initSetup()` function
 - Bike + rider mesh with customizable colors
 - Terrain-following movement
 - Multiplayer differentiation (host/client colors)
@@ -166,17 +185,17 @@ GAME_CONFIG.NEW_ENEMY_RANGE = 25;
 GAME_CONFIG.NEW_ENEMY_FIRE_INTERVAL = 3000;
 ```
 
-**Step 2 - Create enemy in `main.js`:**
-- Add creation function (model existing `createGoblin` or `createGuardianGoblin` functions in `main.js`)
+**Step 2 - Create enemy in `main-entities.js`:**
+- Add creation function (model existing `createGoblin` or `createGuardianGoblin`)
 - Add to enemy arrays: `enemies.push(newEnemy)`
-- Implement AI in game loop (model existing `updateGoblins` function)
+- Implement AI in `main-gameplay.js` (model existing `updateGoblins` function)
 
 **Step 3 - Add update logic:**
-- Add to enemy update loop in `animate()` function
+- Add to enemy update loop in `updateGoblins()` function in `main-gameplay.js`
 - Handle collisions, attacks, and death
 
 **Step 4 - Multiplayer sync:**
-- Add to game state synchronization in `multiplayer.js`
+- Add to game state synchronization in `main-setup.js` (`getFullGameSyncData()`)
 - Ensure host sends new enemy state to clients
 
 ### 2. Adding a New Level
@@ -209,37 +228,97 @@ GAME_CONFIG.NEW_MECHANIC_COOLDOWN = 5000;
 GAME_CONFIG.NEW_MECHANIC_RADIUS = 10;
 ```
 
-**Step 2 - Implement in `main.js`:**
-- Add to game state variables
-- Implement in `animate()` game loop
-- Add UI indicators to HUD rendering
+**Step 2 - Implement in appropriate module:**
+- Game logic: `main-gameplay.js`
+- UI/HUD: `main-loop.js`
+- Player controls: `main-setup.js`
+- Special objects: `main-entities.js`
 
 **Step 3 - Add controls:**
-- Add key event listener
+- Add key event listener in `main-setup.js`
 - Implement activation logic
 
 **Step 4 - Multiplayer sync:**
-- Add to game state synchronization
+- Add to game state synchronization in `main-setup.js`
 - Handle host-authoritative validation
 
 ### 4. Modifying Player Appearance
 **For theme-specific player models:**
-1. Check current theme in player creation (lines ~500-720 in `main.js`)
+1. Check current theme in player creation (`main-setup.js`, lines ~500-720)
 2. Create conditional mesh generation based on theme
 3. Example: Boat for water level (fully implemented - see water theme checks)
 
 **For multiplayer differentiation:**
 - Host (Girl): Pink bike (`0xFF69B4`), pink shirt, brown hair
 - Client (Boy): Blue bike (`0x4169E1`), blue shirt, black hair
-- Colors defined in player mesh creation
+- Colors defined in player mesh creation in `main-setup.js`
+
+## Module Reference Guide
+
+### `main.js` (481 lines)
+- **Entry Point**: `initGame()` called after difficulty selection
+- **Level Switching**: `switchLevel()` handles level transitions
+- **Core Orchestration**: Coordinates module initialization
+- **Global State**: Difficulty, multiplayer, game state variables
+
+### `main-setup.js` (2,437 lines)
+- **Player Creation**: `initSetup()` creates player, bike, kite
+- **Multiplayer Sync**: `getFullGameSyncData()`, `applyFullGameSync()`
+- **Input Handling**: Keyboard, mouse, gamepad controls
+- **Environment Objects**: Trees, rocks, collectibles, bridges
+- **Cloud System**: 3D cloud generation and animation
+
+### `main-entities.js` (2,723 lines)
+- **Enemy Creation**: `createGoblin()`, `createGuardianGoblin()`, `createWizard()`, etc.
+- **Special Objects**: Dragons, pirate ships, portals, treasure
+- **Collectibles**: Ammo, health, materials, scarabs
+- **Environmental Hazards**: Lava pools, ice bergs, traps
+
+### `main-gameplay.js` (3,931 lines)
+- **Combat System**: Bullets, fireballs, explosions
+- **AI Updates**: `updateGoblins()`, `updateDragon()`, etc.
+- **Collision Detection**: `checkCollisions()` comprehensive collision system
+- **Special Effects**: Freeze, tornadoes, lava trails
+- **Projectile Systems**: Arrows, fireballs, cannonballs
+
+### `main-loop.js` (913 lines)
+- **Game Loop**: `animate()` main 60fps game loop
+- **HUD Rendering**: `drawHUD()` displays health, ammo, minimap
+- **Reset System**: `resetGame()` resets game state
+- **Visual Effects**: Rainbow, water waves, camera shake
+
+### `config.js` (1,927 lines)
+- **Game Constants**: `GAME_CONFIG` with all game parameters
+- **Level Data**: `LEVELS[1-5]` complete level configurations
+- **Terrain Arrays**: `HILLS`, `MOUNTAINS`, `GOBLIN_POSITIONS`
+- **Balance Settings**: Enemy counts, speeds, ranges
+
+### `terrain.js` (2,213 lines)
+- **Procedural Textures**: 20+ texture generation functions
+- **Height System**: `getTerrainHeight()` used throughout game
+- **Theme Support**: Ice, desert, lava, water theme textures
+- **Environment**: Tree, rock, hill mesh generation
+
+### `audio.js` (846 lines)
+- **Sound Effects**: Explosions, shooting, collectibles
+- **Background Music**: Thematic music for each level
+- **Spatial Audio**: 3D positional sound effects
+- **Volume Control**: Master and effect volume settings
+
+### `multiplayer.js` (270 lines)
+- **Connection Management**: PeerJS setup and teardown
+- **Room System**: 3-digit room codes (100-999)
+- **State Sync**: 10Hz host→client, 60Hz client→host
+- **Network Events**: Connection, disconnection, data transfer
 
 ## Development Guidelines
 
 ### Code Organization
-1. **Configuration First**: Add constants to `config.js` before implementation
-2. **Theme Awareness**: Always check `iceTheme`, `desertTheme`, `lavaTheme`, `waterTheme` flags
-3. **Difficulty Scaling**: Use `speedMultiplier` for enemy speeds
-4. **Multiplayer Compatibility**: All game state changes must sync via host
+1. **Module Boundaries**: Follow existing modular structure when adding features
+2. **Configuration First**: Add constants to `config.js` before implementation
+3. **Theme Awareness**: Always check `iceTheme`, `desertTheme`, `lavaTheme`, `waterTheme` flags
+4. **Difficulty Scaling**: Use `speedMultiplier` for enemy speeds
+5. **Multiplayer Compatibility**: All game state changes must sync via host
 
 ### Debugging Tools
 - **God Mode**: Press `G` to toggle
@@ -270,11 +349,11 @@ GAME_CONFIG.NEW_MECHANIC_RADIUS = 10;
 
 ## Known Issues & Technical Debt
 
-### 1. Monolithic `main.js`
-- **Problem**: 44,144 line file handles everything from rendering to game logic
-- **Impact**: Hard to maintain, debug, and test
-- **Workaround**: Code is organized into functions within the file (createGoblin, updateGoblins, etc.)
-- **Note**: This was a deliberate choice to avoid ES6 module complexity and support direct browser execution
+### 1. ~~Monolithic `main.js`~~ **RESOLVED**
+- ~~**Problem**: 44,144 line file handles everything from rendering to game logic~~
+- ~~**Impact**: Hard to maintain, debug, and test~~
+- **Status**: Successfully split into logical modules (15,742 total lines)
+- **Current Structure**: Clean separation of concerns with dedicated modules
 
 ### 2. Math Exercise System
 - **Status**: Partially implemented in `main.js`
@@ -284,42 +363,37 @@ GAME_CONFIG.NEW_MECHANIC_RADIUS = 10;
 ### 3. Input Handling Conflicts
 - **Issue**: Multiple input systems (keyboard, mouse, gamepad)
 - **Conflict**: Gamepad support may interfere with keyboard controls
-- **Debug**: Check `controllerIndex` and `bananaButtonWasPressed` variables
+- **Debug**: Check `controllerIndex` and `bananaButtonWasPressed` variables in `main-setup.js`
 
 ### 4. Performance with Many Enemies
 - **Issue**: Hard mode can have ~70+ enemies which affects performance
 - **Optimization**: Consider culling distant enemies or simplifying AI
+- **Module**: Enemy updates in `main-gameplay.js`
 
 ## File-Specific Notes
 
-### `config.js` (1500+ lines)
+### `config.js` (1,927 lines)
 - **Structure**: `GAME_CONFIG` constants + `LEVELS` array + terrain data arrays
 - **Key Arrays**: `HILLS`, `MOUNTAINS`, `TREES_LEVEL1`, `GOBLIN_POSITIONS`
 - **Level Data**: Each level has specific enemy positions, terrain, and theme
 - **Editing**: Be careful with array indices and object references
 
-### `terrain.js` (2213 lines)
+### `terrain.js` (2,213 lines)
 - **Pattern**: All functions are globally available
 - **Texture Generation**: 20+ procedural texture functions
-- **No Exports**: Functions called directly from `main.js`
+- **No Exports**: Functions called directly from other modules
 - **Theme Support**: Most functions take `iceTheme`, `desertTheme`, etc. parameters
 
-### `main.js` (44,144 lines)
-- **Entry Point**: `initGame()` called after difficulty selection
-- **Game Loop**: `animate()` function runs at 60fps with fixed timestep updates
-- **Sections**:
-  - Lines 1-400: Game state and initialization
-  - Lines 400-800: Player creation and controls
-  - Lines 800-1500: Terrain and environment setup
-  - Lines 1500-3000: Enemy creation and items
-  - Lines 3000-8000: Game logic functions (createGoblin, updateGoblins, etc.)
-  - Lines 8000-10452: Game loop, multiplayer sync, and rendering
-- **Global Access**: Modifies DOM, handles audio, manages all game objects
+### `audio.js` (846 lines)
+- **Audio Class**: `Audio` singleton with static methods
+- **Background Music**: Loopable tracks with theme variations
+- **3D Audio**: Positional sound effects using Web Audio API
+- **Volume Control**: Separate controls for music and sound effects
 
-### `multiplayer.js`
+### `multiplayer.js` (270 lines)
 - **Architecture**: Host-client with PeerJS
 - **Sync Rate**: Host→Client: 10Hz, Client→Host: 60Hz
-- **State Sync**: Full game state serialized/deserialized
+- **State Sync**: Full game state serialized/deserialized in `main-setup.js`
 - **Connection**: Auto-generates room codes, handles disconnects
 
 ## Quick Reference
@@ -327,37 +401,45 @@ GAME_CONFIG.NEW_MECHANIC_RADIUS = 10;
 ### Common Tasks
 1. **Change enemy count**: Modify `LEVELS[x].goblins` array in `config.js`
 2. **Adjust player speed**: Modify `GAME_CONFIG.PLAYER_SPEED` in `config.js`
-3. **Add new power-up**: Add to item creation in `main.js` (~lines 2700-2900)
+3. **Add new power-up**: Add to item creation in `main-entities.js`
 4. **Debug collision**: Enable god mode (`G` key) and inspect collision spheres
 5. **Test multiplayer**: Use two browser windows with same room code
 6. **Test splitscreen**: Open `splitscreen.html` in browser
 
+### Module-Specific Code Locations
+- **Player Controls**: `main-setup.js` lines ~1400-1600
+- **Enemy AI**: `main-gameplay.js` functions like `updateGoblins()`
+- **Collision Detection**: `main-gameplay.js` `checkCollisions()` function
+- **HUD/UI**: `main-loop.js` `drawHUD()` function
+- **Multiplayer Sync**: `main-setup.js` `getFullGameSyncData()` and `applyFullGameSync()`
+
 ### Theme-Specific Code Locations
 - **Ice Theme**: `iceTheme` flag, texture functions in `terrain.js`
 - **Desert Theme**: `desertTheme` flag, pyramids and sandstone colors
-- **Lava Theme**: `lavaTheme` flag, lava monsters and trails
+- **Lava Theme**: `lavaTheme` flag, lava monsters and trails in `main-entities.js`
 - **Water Theme**: `waterTheme` flag, fully implemented with boats, sharks, and octopuses
 
-### Key Global Functions (from `terrain.js`)
-- `getTerrainHeight(x, z)` - Get height at position
-- `createGround()` - Create terrain plane
-- `createHills()` - Add hill meshes
-- `getTerrainTextures()` - Get theme-appropriate textures
-- `generateExplosionTexture()` - Create particle textures
+### Key Global Functions
+- `getTerrainHeight(x, z)` - From `terrain.js`, get height at position
+- `initGame()` - From `main.js`, main initialization
+- `animate()` - From `main-loop.js`, main game loop
+- `checkCollisions()` - From `main-gameplay.js`, collision detection
+- `getFullGameSyncData()` - From `main-setup.js`, multiplayer state serialization
 
 ### Game State Flow
-1. User selects difficulty → `startGame()`
-2. Level loads → `initGame()` with level config
-3. Game loop starts → `animate()` at 60fps
+1. User selects difficulty → `startGame()` in `main.js`
+2. Level loads → `initGame()` calls module initialization functions
+3. Game loop starts → `animate()` at 60fps in `main-loop.js`
 4. Multiplayer sync → `multiplayer.js` handles state exchange
 5. Level complete → Portal to next level or victory screen
 
 ## Contributing Guidelines
 
-1. **Test Multiplayer**: All features must work in multiplayer mode
-2. **Preserve Themes**: New features should support all level themes
-3. **Config-Driven**: Make values configurable in `config.js` when possible
-4. **Performance Aware**: Monitor frame rate with many enemies/effects
-5. **Keep Simple**: Maintain traditional script loading architecture for browser compatibility
+1. **Respect Module Boundaries**: Add code to the appropriate module
+2. **Test Multiplayer**: All features must work in multiplayer mode
+3. **Preserve Themes**: New features should support all level themes
+4. **Config-Driven**: Make values configurable in `config.js` when possible
+5. **Performance Aware**: Monitor frame rate with many enemies/effects
+6. **Keep Simple**: Maintain traditional script loading architecture for browser compatibility
 
-This project demonstrates sophisticated 3D game development with Three.js while maintaining approachable code structure for educational purposes. The modular architecture allows for continuous expansion while the configuration system makes balancing and level design accessible.
+This project demonstrates sophisticated 3D game development with Three.js while maintaining a clean, modular code structure for educational purposes. The modular architecture allows for continuous expansion while the configuration system makes balancing and level design accessible.
