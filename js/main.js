@@ -48,8 +48,13 @@ let mathCorrectAnswer = 0;
 // Splitscreen support
 const urlParams = new URLSearchParams(window.location.search);
 const isSplitscreen = urlParams.get('splitscreen');
+const isNativeSplitscreen = isSplitscreen === 'native';
 const splitscreenRoom = urlParams.get('room');
 const controllerIndex = parseInt(urlParams.get('controller')) || 0;
+
+// Native splitscreen players array (used when isNativeSplitscreen is true)
+// Each entry: { group, camera, keys, gamepad, controllerIndex, health, ammo, ... }
+let splitscreenPlayers = [];
 
 
 // Initialize multiplayer on page load
@@ -58,6 +63,12 @@ window.addEventListener('DOMContentLoaded', () => {
     if (isSplitscreen) {
         const multiplayerSetup = document.getElementById('multiplayer-setup');
         if (multiplayerSetup) multiplayerSetup.style.display = 'none';
+    }
+    
+    // For native splitscreen, no multiplayer manager needed
+    if (isNativeSplitscreen) {
+        // Native splitscreen starts directly - no network setup
+        return;
     }
     
     multiplayerManager = new MultiplayerManager(isSplitscreen ? splitscreenRoom : null);
@@ -112,8 +123,8 @@ window.addEventListener('DOMContentLoaded', () => {
     }
 });
 
-// Difficulty selection - only for host or non-splitscreen
-if (!isSplitscreen || isSplitscreen === 'host') {
+// Difficulty selection - for native splitscreen, host, or non-splitscreen modes
+if (!isSplitscreen || isSplitscreen === 'host' || isNativeSplitscreen) {
     document.getElementById('easy-btn').addEventListener('click', () => startGame('easy'));
     document.getElementById('hard-btn').addEventListener('click', () => startGame('hard'));
 }
@@ -336,6 +347,36 @@ function initGame() {
         G.scene.background = G.skyTextures.sky;
     }
     
+    // Add fog for performance and atmosphere
+    if (G.levelConfig.fogDensity) {
+        // Explicit fog config from level
+        const fogColor = G.levelConfig.fogColor || G.levelConfig.skyColor || 0x888888;
+        G.scene.fog = new THREE.FogExp2(fogColor, G.levelConfig.fogDensity);
+        G.scene.background = new THREE.Color(fogColor);
+    } else if (G.graveyardTheme) {
+        // Default graveyard fog - spooky purple
+        G.scene.fog = new THREE.FogExp2(0x443355, 0.008);
+        G.scene.background = new THREE.Color(0x443355);
+    } else if (G.lavaTheme) {
+        // Lava level - smoky red/orange haze
+        G.scene.fog = new THREE.FogExp2(0x331100, 0.005);
+    } else if (G.desertTheme) {
+        // Desert level - sandy dust haze
+        G.scene.fog = new THREE.FogExp2(0xd4a574, 0.003);
+    } else if (G.iceTheme) {
+        // Ice level - white mist
+        G.scene.fog = new THREE.FogExp2(0xc8d8e8, 0.003);
+    } else if (G.waterTheme) {
+        // Water level - misty blue
+        G.scene.fog = new THREE.FogExp2(0x4488aa, 0.004);
+    } else if (G.candyTheme) {
+        // Candy level - cotton candy pink/purple mist
+        G.scene.fog = new THREE.FogExp2(0xffccee, 0.002);
+    }
+    
+    // Determine camera far plane based on fog (closer = better performance)
+    const cameraFar = G.scene.fog ? 120 : GAME_CONFIG.CAMERA_FAR;
+    
     // Pre-cache explosion and smoke materials to avoid texture loading glitches
     G.explosionTextureCached = G.iceTheme ? G.skyTextures.explosionIce : G.skyTextures.explosion;
     G.explosionBaseMaterial = new THREE.SpriteMaterial({
@@ -352,20 +393,44 @@ function initGame() {
         depthWrite: false
     });
 
+    // Calculate aspect ratio - half width for native splitscreen
+    const aspectRatio = isNativeSplitscreen 
+        ? (window.innerWidth / 2) / window.innerHeight 
+        : window.innerWidth / window.innerHeight;
+
     G.camera = new THREE.PerspectiveCamera(
         GAME_CONFIG.CAMERA_FOV, 
-        window.innerWidth / window.innerHeight, 
+        aspectRatio, 
         GAME_CONFIG.CAMERA_NEAR, 
-        GAME_CONFIG.CAMERA_FAR
+        cameraFar
     );
     G.camera.position.set(0, GAME_CONFIG.CAMERA_Y, GAME_CONFIG.CAMERA_Z);
     G.camera.lookAt(0, 0, 0);
 
-    G.renderer = new THREE.WebGLRenderer({ antialias: true });
+    // Second camera for native splitscreen (player 2)
+    if (isNativeSplitscreen) {
+        G.camera2 = new THREE.PerspectiveCamera(
+            GAME_CONFIG.CAMERA_FOV, 
+            aspectRatio, 
+            GAME_CONFIG.CAMERA_NEAR, 
+            cameraFar
+        );
+        G.camera2.position.set(0, GAME_CONFIG.CAMERA_Y, GAME_CONFIG.CAMERA_Z);
+        G.camera2.lookAt(0, 0, 0);
+    }
+
+    // Reduce antialiasing for splitscreen (rendering twice) for performance
+    const useAntialias = !isNativeSplitscreen;
+    G.renderer = new THREE.WebGLRenderer({ antialias: useAntialias, powerPreference: 'high-performance' });
     currentRenderer = G.renderer; // Store for cleanup
+    
+    // Limit pixel ratio for performance (especially on retina displays)
+    G.renderer.setPixelRatio(Math.min(window.devicePixelRatio, isNativeSplitscreen ? 1.5 : 2));
     G.renderer.setSize(window.innerWidth, window.innerHeight);
     G.renderer.shadowMap.enabled = true;
-    G.renderer.shadowMap.type = THREE.PCFSoftShadowMap;
+    // Use simpler shadow map type in fog/splitscreen for performance
+    G.renderer.shadowMap.type = (isNativeSplitscreen || G.scene.fog) ? THREE.PCFShadowMap : THREE.PCFSoftShadowMap;
+    G.renderer.setScissorTest(isNativeSplitscreen); // Enable scissor test for native splitscreen
     G.container.appendChild(G.renderer.domElement);
 
     G.container.style.position = 'relative';
@@ -374,24 +439,38 @@ function initGame() {
     G.container.style.display = 'block';
 
     window.addEventListener('resize', () => {
-        G.camera.aspect = window.innerWidth / window.innerHeight;
+        const newAspect = isNativeSplitscreen 
+            ? (window.innerWidth / 2) / window.innerHeight 
+            : window.innerWidth / window.innerHeight;
+        G.camera.aspect = newAspect;
         G.camera.updateProjectionMatrix();
+        if (isNativeSplitscreen && G.camera2) {
+            G.camera2.aspect = newAspect;
+            G.camera2.updateProjectionMatrix();
+        }
         G.renderer.setSize(window.innerWidth, window.innerHeight);
     }, { signal: G.eventSignal });
 
     // Lighting
-    G.ambientLight = new THREE.AmbientLight(0xffffff, 0.6);
+    // Adjust ambient light for themed levels
+    const ambientIntensity = G.graveyardTheme ? 0.4 : 0.6;
+    G.ambientLight = new THREE.AmbientLight(G.graveyardTheme ? 0x7755bb : 0xffffff, ambientIntensity);
     G.scene.add(G.ambientLight);
 
-    G.directionalLight = new THREE.DirectionalLight(0xffffff, 0.8);
+    G.directionalLight = new THREE.DirectionalLight(G.graveyardTheme ? 0x8866cc : 0xffffff, G.graveyardTheme ? 0.4 : 0.8);
     G.directionalLight.position.set(50, 100, 50);
     G.directionalLight.castShadow = true;
-    G.directionalLight.shadow.camera.left = -100;
-    G.directionalLight.shadow.camera.right = 100;
-    G.directionalLight.shadow.camera.top = 100;
-    G.directionalLight.shadow.camera.bottom = -100;
-    G.directionalLight.shadow.mapSize.width = 2048;
-    G.directionalLight.shadow.mapSize.height = 2048;
+    
+    // Reduce shadow quality in splitscreen or fog levels for performance
+    const shadowQuality = (isNativeSplitscreen || G.scene.fog) ? 1024 : 2048;
+    const shadowRange = G.scene.fog ? 60 : 100;
+    G.directionalLight.shadow.camera.left = -shadowRange;
+    G.directionalLight.shadow.camera.right = shadowRange;
+    G.directionalLight.shadow.camera.top = shadowRange;
+    G.directionalLight.shadow.camera.bottom = -shadowRange;
+    G.directionalLight.shadow.camera.far = cameraFar;
+    G.directionalLight.shadow.mapSize.width = shadowQuality;
+    G.directionalLight.shadow.mapSize.height = shadowQuality;
     G.scene.add(G.directionalLight);
 
     // Set current level hills for terrain height calculation

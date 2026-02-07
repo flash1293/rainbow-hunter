@@ -13,171 +13,86 @@
         body {
             overflow: hidden;
             font-family: Arial, sans-serif;
-        }
-        #splitscreen-container {
+            background: linear-gradient(135deg, #1a1a2e 0%, #16213e 100%);
             display: flex;
-            width: 100vw;
-            height: 100vh;
-        }
-        .player-frame {
-            width: 100%;
-            height: 100%;
-            border: none;
-        }
-        .player-container {
-            position: relative;
-            width: 50%;
-            height: 100%;
-        }
-        .player-label {
-            position: absolute;
-            top: 10px;
-            right: 10px;
-            background: rgba(0, 0, 0, 0.7);
-            color: white;
-            padding: 8px 15px;
-            border-radius: 5px;
-            font-size: 18px;
-            font-weight: bold;
-            z-index: 1000;
-            pointer-events: none;
-        }
-        .player-1-label {
-            background: rgba(255, 105, 180, 0.8);
-        }
-        .player-2-label {
-            background: rgba(0, 150, 255, 0.8);
-        }
-
-        #split-controls {
-            position: fixed;
-            left: 10px;
-            bottom: 10px;
-            z-index: 2000;
-            background: rgba(0, 0, 0, 0.75);
-            color: white;
-            padding: 10px 12px;
-            border-radius: 8px;
-            font-size: 14px;
-            max-width: 440px;
-        }
-        #split-controls .row {
-            display: flex;
-            gap: 8px;
+            justify-content: center;
             align-items: center;
-            flex-wrap: wrap;
+            min-height: 100vh;
         }
-        #split-controls .muted {
-            opacity: 0.85;
+        .launcher {
+            background: rgba(255, 255, 255, 0.95);
+            padding: 40px;
+            border-radius: 20px;
+            text-align: center;
+            max-width: 500px;
+            box-shadow: 0 10px 40px rgba(0,0,0,0.3);
         }
-        #split-controls button {
-            appearance: none;
-            border: 0;
-            border-radius: 6px;
-            padding: 8px 10px;
+        h1 {
+            color: #333;
+            margin-bottom: 10px;
+            font-size: 2em;
+        }
+        .subtitle {
+            color: #666;
+            margin-bottom: 30px;
+            font-size: 1.1em;
+        }
+        .start-btn {
+            display: block;
+            width: 100%;
+            padding: 25px;
+            border: none;
+            border-radius: 12px;
+            font-size: 1.3em;
+            font-weight: bold;
             cursor: pointer;
-            font-weight: 700;
+            transition: transform 0.2s, box-shadow 0.2s;
+            background: linear-gradient(135deg, #FF6B9D 0%, #4488FF 100%);
+            color: white;
         }
-        #btn-popout {
-            background: #22c55e;
-            color: #06210f;
+        .start-btn:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 5px 20px rgba(0,0,0,0.2);
         }
-        #btn-reload {
-            background: #60a5fa;
-            color: #071a2c;
+        .mode-desc {
+            font-size: 0.9em;
+            color: rgba(255,255,255,0.9);
+            margin-top: 8px;
+        }
+        .controller-note {
+            margin-top: 25px;
+            padding: 15px;
+            background: #f8f9fa;
+            border-radius: 10px;
+            font-size: 0.9em;
+            color: #555;
+        }
+        .controller-note strong {
+            color: #333;
         }
     </style>
 </head>
 <body>
-    <div id="splitscreen-container">
-        <div class="player-container">
-            <div class="player-label player-1-label">Spieler 1 (Mädchen) - Controller 1</div>
-            <iframe id="player1" class="player-frame"></iframe>
-        </div>
-        <div class="player-container">
-            <div class="player-label player-2-label">Spieler 2 (Junge) - Controller 2</div>
-            <iframe id="player2" class="player-frame"></iframe>
-        </div>
-    </div>
-    <div id="split-controls">
-        <div class="row" style="margin-bottom: 6px;">
-            <div><strong>Room:</strong> <span id="room-code">---</span></div>
-        </div>
-        <div class="row" style="margin-bottom: 6px;">
-            <button id="btn-popout" type="button" title="Opens host/client in separate windows (helps when iframes stutter)">
-                Open as 2 windows
-            </button>
-            <button id="btn-reload" type="button" title="Generate a new room and reload iframes">
-                New room
-            </button>
-        </div>
-        <div class="muted">
-            Tip: If iframe splitscreen stutters/freezes during movement, popout windows usually avoids main-thread contention.
+    <div class="launcher">
+        <h1>Splitscreen Modus</h1>
+        <p class="subtitle">2 Spieler, 2 Controller, ein Bildschirm</p>
+        
+        <button class="start-btn" onclick="startGame()">
+            Spiel starten
+            <div class="mode-desc">Lokaler Koop-Modus</div>
+        </button>
+        
+        <div class="controller-note">
+            <strong>Controller benötigt:</strong><br>
+            Spieler 1: Controller 1 oder Tastatur (WASD)<br>
+            Spieler 2: Controller 2 (erforderlich)
         </div>
     </div>
+    
     <script>
-        function generateRoomCode() {
-            return Math.floor(100 + Math.random() * 900).toString();
+        function startGame() {
+            window.location.href = 'index.html?splitscreen=native';
         }
-
-        function buildUrl(role, roomCode, controllerIdx) {
-            const url = new URL('index.html', window.location.href);
-            url.searchParams.set('splitscreen', role);
-            url.searchParams.set('room', roomCode);
-            url.searchParams.set('controller', String(controllerIdx));
-            return url.toString();
-        }
-
-        function loadIframes(roomCode) {
-            document.getElementById('room-code').textContent = roomCode;
-
-            const player1Frame = document.getElementById('player1');
-            const player2Frame = document.getElementById('player2');
-
-            player1Frame.src = buildUrl('host', roomCode, 0);
-            player2Frame.src = buildUrl('client', roomCode, 1);
-
-            console.log('Splitscreen session started with room code:', roomCode);
-        }
-
-        function openPopoutWindows(roomCode) {
-            const hostUrl = buildUrl('host', roomCode, 0);
-            const clientUrl = buildUrl('client', roomCode, 1);
-
-            const w = Math.max(480, Math.floor(screen.availWidth / 2));
-            const h = Math.max(640, Math.floor(screen.availHeight));
-
-            const leftX = 0;
-            const rightX = Math.floor(screen.availWidth / 2);
-            const topY = 0;
-
-            const hostWin = window.open(
-                hostUrl,
-                'etr_host',
-                `popup=1,width=${w},height=${h},left=${leftX},top=${topY}`
-            );
-            const clientWin = window.open(
-                clientUrl,
-                'etr_client',
-                `popup=1,width=${w},height=${h},left=${rightX},top=${topY}`
-            );
-
-            if (!hostWin || !clientWin) {
-                alert('Popup blocked. Please allow popups for this site, then click "Open as 2 windows" again.');
-            }
-        }
-
-        let roomCode = generateRoomCode();
-        loadIframes(roomCode);
-
-        document.getElementById('btn-reload').addEventListener('click', () => {
-            roomCode = generateRoomCode();
-            loadIframes(roomCode);
-        });
-
-        document.getElementById('btn-popout').addEventListener('click', () => {
-            openPopoutWindows(roomCode);
-        });
     </script>
 </body>
 </html>

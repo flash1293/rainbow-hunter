@@ -1637,6 +1637,113 @@ function initSetup() {
             resetGame();
         }
     }
+    
+    // Native splitscreen: Update player 2's gamepad input
+    function updateGamepad2() {
+        if (!isNativeSplitscreen) return;
+        
+        const gamepads = navigator.getGamepads();
+        G.gamepad2 = gamepads[1]; // Player 2 always uses controller index 1
+        
+        if (!G.gamepad2) return;
+        
+        const now = Date.now();
+        
+        // Left stick for rotation and movement (axes 0 and 1)
+        const leftStickX = G.gamepad2.axes[0];
+        const leftStickY = G.gamepad2.axes[1];
+        const deadzone = 0.15;
+        
+        // Horizontal rotation
+        if (Math.abs(leftStickX) > deadzone) {
+            G.player2.rotation -= leftStickX * 0.03;
+        }
+        
+        // Vertical movement with analog scaling
+        if (Math.abs(leftStickY) > deadzone) {
+            if (leftStickY < 0) {
+                // Forward
+                G.keys2.w = true;
+                G.keys2.s = false;
+                G.player2.gamepadMoveScale = Math.abs(leftStickY);
+            } else {
+                // Backward
+                G.keys2.w = false;
+                G.keys2.s = true;
+                G.player2.gamepadMoveScale = Math.abs(leftStickY);
+            }
+        } else {
+            // R2 (button 7) for forward, L2 (button 6) for backward
+            const r2Value = G.gamepad2.buttons[7]?.value || 0;
+            const l2Value = G.gamepad2.buttons[6]?.value || 0;
+            
+            G.keys2.w = r2Value > 0.1;
+            G.keys2.s = l2Value > 0.1;
+            G.player2.gamepadMoveScale = Math.max(r2Value, l2Value);
+        }
+        
+        G.keys2.a = false;
+        G.keys2.d = false;
+        
+        // X (button 0) for shooting
+        if (G.gamepad2.buttons[0]?.pressed && now - G.lastShootTime2 > G.shootCooldown) {
+            shootBulletForPlayer(2);
+            G.lastShootTime2 = now;
+        }
+        
+        // Triangle (button 2) for kite - both players share kite access
+        const anyoneHasKite = G.player.hasKite || G.player2.hasKite || G.worldKiteCollected;
+        if (G.gamepad2.buttons[2]?.pressed && anyoneHasKite && !gameWon && !gameDead && now - G.lastKiteActivationTime2 > G.kiteActivationCooldown) {
+            if (!G.player2.isGliding && G.player2.glideCharge >= 20) {
+                // Start gliding
+                G.player2.isGliding = true;
+                G.player2.glideState = 'takeoff';
+                G.player2.glideLiftProgress = 0;
+                if (G.player2Group.kiteGroup) {
+                    G.player2Group.kiteGroup.visible = true;
+                }
+                G.lastKiteActivationTime2 = now;
+            } else if (G.player2.isGliding && G.player2.glideState === 'flying') {
+                // Exit gliding
+                G.player2.glideState = 'landing';
+                G.lastKiteActivationTime2 = now;
+            }
+        }
+        
+        // Y button (button 3) for ice power
+        if (G.gamepad2.buttons[3]?.pressed && G.hasIcePower && !gameWon && !gameDead && now - G.lastIcePowerTime >= G.icePowerCooldown) {
+            activateIcePowerForPlayer(2);
+        }
+        
+        // Circle button (button 1) for banana placement
+        if (!G.bananaButtonWasPressed2 && G.gamepad2.buttons[1]?.pressed && G.hasBananaPower && G.player2BananaInventory > 0 && !gameWon && !gameDead) {
+            placeBananaForPlayer(2);
+            G.bananaButtonWasPressed2 = true;
+        } else if (!G.gamepad2.buttons[1]?.pressed) {
+            G.bananaButtonWasPressed2 = false;
+        }
+        
+        // R1/Right Bumper (button 5) for bomb placement
+        if (!G.bombButtonWasPressed2 && G.gamepad2.buttons[5]?.pressed && G.player2BombInventory > 0 && !gameWon && !gameDead) {
+            placeBombForPlayer(2);
+            G.bombButtonWasPressed2 = true;
+        } else if (!G.gamepad2.buttons[5]?.pressed) {
+            G.bombButtonWasPressed2 = false;
+        }
+        
+        // L1/Left Bumper (button 4) for Herz-Man placement
+        if (!G.herzmanButtonWasPressed2 && G.gamepad2.buttons[4]?.pressed && G.player2HerzmanInventory > 0 && !gameWon && !gameDead) {
+            placeHerzmanForPlayer(2);
+            G.herzmanButtonWasPressed2 = true;
+        } else if (!G.gamepad2.buttons[4]?.pressed) {
+            G.herzmanButtonWasPressed2 = false;
+        }
+        
+        // Options (button 9) for restart - either player can restart
+        if (G.gamepad2.buttons[9]?.pressed && (gameWon || gameDead)) {
+            resetGame();
+        }
+    }
 
     document.addEventListener('keyup', (e) => {
         if (G.keys.hasOwnProperty(e.key)) {
@@ -3080,8 +3187,326 @@ function initSetup() {
         });
     }
 
+    // ===== NATIVE SPLITSCREEN SETUP =====
+    if (isNativeSplitscreen) {
+        // Create player 2 mesh (boy character) - similar to createOtherPlayerMesh but with direct control
+        function createPlayer2Mesh() {
+            const player2Group = new THREE.Group();
+            
+            if (G.waterTheme) {
+                // Boat hull
+                const hullGeometry = new THREE.BoxGeometry(1.2, 0.4, 2.5);
+                const hullMaterial = new THREE.MeshLambertMaterial({ color: 0x654321 });
+                const hull = new THREE.Mesh(hullGeometry, hullMaterial);
+                hull.position.y = 0.2;
+                hull.castShadow = true;
+                player2Group.add(hull);
+                
+                // Boat deck
+                const deckGeometry = new THREE.BoxGeometry(1.0, 0.1, 2.3);
+                const deckMaterial = new THREE.MeshLambertMaterial({ color: 0x8B4513 });
+                const deck = new THREE.Mesh(deckGeometry, deckMaterial);
+                deck.position.y = 0.45;
+                deck.castShadow = true;
+                player2Group.add(deck);
+                
+                // Mast
+                const mastGeometry = new THREE.CylinderGeometry(0.08, 0.08, 2.5, 8);
+                const mastMaterial = new THREE.MeshLambertMaterial({ color: 0x3E2723 });
+                const mast = new THREE.Mesh(mastGeometry, mastMaterial);
+                mast.position.set(0, 1.75, 0);
+                mast.castShadow = true;
+                player2Group.add(mast);
+                
+                // Sail
+                const sailGeometry = new THREE.BufferGeometry();
+                const sailVertices = new Float32Array([
+                    0, 0, 0,
+                    0.8, 0.8, 0,
+                    0, 1.6, 0
+                ]);
+                sailGeometry.setAttribute('position', new THREE.BufferAttribute(sailVertices, 3));
+                sailGeometry.computeVertexNormals();
+                const sailMaterial = new THREE.MeshLambertMaterial({ 
+                    color: 0x87CEEB,
+                    side: THREE.DoubleSide
+                });
+                const sail = new THREE.Mesh(sailGeometry, sailMaterial);
+                sail.position.set(0, 0.9, 0);
+                sail.castShadow = true;
+                player2Group.add(sail);
+            } else {
+                // Bicycle wheels
+                const wheelGeometry = new THREE.TorusGeometry(0.3, 0.1, 8, 16);
+                const wheelMaterial = new THREE.MeshLambertMaterial({ color: 0x333333 });
+
+                const frontWheel = new THREE.Mesh(wheelGeometry, wheelMaterial);
+                frontWheel.rotation.y = Math.PI / 2;
+                frontWheel.position.set(0, 0.3, -0.7);
+                frontWheel.castShadow = true;
+                player2Group.add(frontWheel);
+
+                const backWheel = new THREE.Mesh(wheelGeometry, wheelMaterial);
+                backWheel.rotation.y = Math.PI / 2;
+                backWheel.position.set(0, 0.3, 0.5);
+                backWheel.castShadow = true;
+                player2Group.add(backWheel);
+
+                // Frame (blue for player 2)
+                const frameGeometry = new THREE.CylinderGeometry(0.05, 0.05, 1.3, 8);
+                const frameMaterial = new THREE.MeshLambertMaterial({ color: 0x4488FF });
+                const frame1 = new THREE.Mesh(frameGeometry, frameMaterial);
+                frame1.rotation.x = Math.PI / 2;
+                frame1.position.set(0, 0.5, -0.1);
+                frame1.castShadow = true;
+                player2Group.add(frame1);
+
+                // Seat post
+                const seatPostGeometry = new THREE.CylinderGeometry(0.04, 0.04, 0.5, 8);
+                const seatPost = new THREE.Mesh(seatPostGeometry, frameMaterial);
+                seatPost.position.set(0, 0.75, 0.2);
+                seatPost.castShadow = true;
+                player2Group.add(seatPost);
+
+                // Handlebar post
+                const handlebarPostGeometry = new THREE.CylinderGeometry(0.04, 0.04, 0.4, 8);
+                const handlebarPost = new THREE.Mesh(handlebarPostGeometry, frameMaterial);
+                handlebarPost.position.set(0, 0.7, -0.5);
+                handlebarPost.castShadow = true;
+                player2Group.add(handlebarPost);
+
+                // Handlebar
+                const handlebarGeometry = new THREE.CylinderGeometry(0.03, 0.03, 0.5, 8);
+                const handlebar = new THREE.Mesh(handlebarGeometry, frameMaterial);
+                handlebar.rotation.z = Math.PI / 2;
+                handlebar.position.set(0, 0.9, -0.5);
+                handlebar.castShadow = true;
+                player2Group.add(handlebar);
+            }
+
+            // Player body - Boy (blue)
+            const bodyGeometry = new THREE.BoxGeometry(0.35, 0.6, 0.25);
+            const bodyMaterial = new THREE.MeshLambertMaterial({ 
+                map: G.playerTextures.playerClothingBlue 
+            });
+            const body = new THREE.Mesh(bodyGeometry, bodyMaterial);
+            body.position.set(0, 1.3, 0.1);
+            body.castShadow = true;
+            player2Group.add(body);
+
+            // Head
+            const headGeometry = new THREE.SphereGeometry(0.25, 16, 16);
+            const headMaterial = new THREE.MeshLambertMaterial({ map: G.playerTextures.playerSkin });
+            const head = new THREE.Mesh(headGeometry, headMaterial);
+            head.position.set(0, 1.85, 0);
+            head.castShadow = true;
+            player2Group.add(head);
+
+            // Hair (black for boy)
+            const hairGeometry = new THREE.SphereGeometry(0.28, 16, 16, 0, Math.PI * 2, 0, Math.PI / 2);
+            const hairMaterial = new THREE.MeshLambertMaterial({ 
+                map: G.playerTextures.hairBlack 
+            });
+            const hair = new THREE.Mesh(hairGeometry, hairMaterial);
+            hair.position.set(0, 1.95, 0);
+            hair.castShadow = true;
+            player2Group.add(hair);
+
+            // Bicycle helmet (blue)
+            const helmetGroup = new THREE.Group();
+            const helmetShellGeometry = new THREE.SphereGeometry(0.32, 24, 16, 0, Math.PI * 2, 0, Math.PI * 0.6);
+            const helmetTexture = G.playerTextures.helmetBlue.clone();
+            helmetTexture.offset.x = 0.5;
+            helmetTexture.needsUpdate = true;
+            const helmetMaterial = new THREE.MeshLambertMaterial({ map: helmetTexture });
+            const helmetShell = new THREE.Mesh(helmetShellGeometry, helmetMaterial);
+            helmetShell.scale.set(1, 0.85, 1.15);
+            helmetShell.position.y = 0;
+            helmetShell.castShadow = true;
+            helmetGroup.add(helmetShell);
+            
+            const visorGeometry = new THREE.BoxGeometry(0.35, 0.05, 0.15);
+            const visorMaterial = new THREE.MeshLambertMaterial({ color: 0x333333 });
+            const visor = new THREE.Mesh(visorGeometry, visorMaterial);
+            visor.position.set(0, 0.05, 0.28);
+            visor.rotation.x = -0.3;
+            visor.castShadow = true;
+            helmetGroup.add(visor);
+            
+            helmetGroup.position.set(0, 1.95, 0);
+            player2Group.add(helmetGroup);
+
+            // Direction indicator
+            const coneGeometry = new THREE.ConeGeometry(0.15, 0.4, 8);
+            const coneMaterial = new THREE.MeshLambertMaterial({ color: 0x00FFFF });
+            const directionCone = new THREE.Mesh(coneGeometry, coneMaterial);
+            directionCone.rotation.x = Math.PI / 2;
+            directionCone.position.set(0, 0.5, -1.0);
+            directionCone.castShadow = true;
+            player2Group.add(directionCone);
+
+            // Kite for player 2 (blue)
+            const kite2Group = new THREE.Group();
+            const kiteTextures = getTerrainTextures(THREE);
+            
+            const kiteShape = new THREE.BufferGeometry();
+            const kiteVertices = new Float32Array([
+                0, 0.8, 0, 0.6, 0, 0, 0, -0.5, 0, -0.6, 0, 0
+            ]);
+            const kiteIndices = [0, 1, 2, 0, 2, 3];
+            const kiteUVs = new Float32Array([0.5, 1, 1, 0.5, 0.5, 0, 0, 0.5]);
+            kiteShape.setAttribute('position', new THREE.BufferAttribute(kiteVertices, 3));
+            kiteShape.setAttribute('uv', new THREE.BufferAttribute(kiteUVs, 2));
+            kiteShape.setIndex(kiteIndices);
+            kiteShape.computeVertexNormals();
+            
+            const kiteMaterial = new THREE.MeshLambertMaterial({ 
+                map: kiteTextures.kiteBlue,
+                side: THREE.DoubleSide
+            });
+            const kite = new THREE.Mesh(kiteShape, kiteMaterial);
+            kite.castShadow = true;
+            kite2Group.add(kite);
+            
+            // Kite sticks
+            const stickMaterial = new THREE.MeshLambertMaterial({ color: 0x8B4513 });
+            const vertStick = new THREE.Mesh(
+                new THREE.CylinderGeometry(0.02, 0.02, 1.3, 4),
+                stickMaterial
+            );
+            vertStick.position.y = 0.15;
+            kite2Group.add(vertStick);
+            
+            const horizStick = new THREE.Mesh(
+                new THREE.CylinderGeometry(0.02, 0.02, 1.2, 4),
+                stickMaterial
+            );
+            horizStick.rotation.z = Math.PI / 2;
+            kite2Group.add(horizStick);
+            
+            // Kite tail
+            const tailGroup = new THREE.Group();
+            const tailString = new THREE.Mesh(
+                new THREE.CylinderGeometry(0.01, 0.01, 2, 4),
+                new THREE.MeshLambertMaterial({ color: 0x333333 })
+            );
+            tailString.position.y = -1.5;
+            tailGroup.add(tailString);
+            
+            const ribbonColors = [0xFF0000, 0xFFFF00, 0x00FF00, 0x00FFFF];
+            for (let i = 0; i < 4; i++) {
+                const ribbon = new THREE.Mesh(
+                    new THREE.BoxGeometry(0.15, 0.25, 0.02),
+                    new THREE.MeshLambertMaterial({ color: ribbonColors[i] })
+                );
+                ribbon.position.y = -0.8 - i * 0.5;
+                ribbon.position.x = (Math.random() - 0.5) * 0.2;
+                tailGroup.add(ribbon);
+            }
+            tailGroup.position.y = -0.5;
+            kite2Group.add(tailGroup);
+            
+            kite2Group.rotation.x = -Math.PI / 2 + 0.3;
+            kite2Group.rotation.y = Math.PI;
+            kite2Group.position.set(0, 3.5, -3);
+            kite2Group.visible = false;
+            player2Group.add(kite2Group);
+            player2Group.kiteGroup = kite2Group;
+
+            return player2Group;
+        }
+        
+        // Create player 2 mesh
+        G.player2Group = createPlayer2Mesh();
+        
+        // Position player 2 to the right of player 1
+        const p2StartX = G.levelConfig.playerStart.x + 2;
+        const p2StartZ = G.levelConfig.playerStart.z;
+        G.player2Group.position.set(p2StartX, getTerrainHeight(p2StartX, p2StartZ), p2StartZ);
+        G.player2Group.rotation.y = Math.PI;
+        G.scene.add(G.player2Group);
+        
+        // Create player 2 state object
+        G.player2 = {
+            mesh: G.player2Group,
+            speed: 0.12 * (difficulty === 'hard' ? 1.3 : 1),
+            rotation: Math.PI,
+            rotationSpeed: 0.04 * (difficulty === 'hard' ? 1.3 : 1),
+            isGliding: false,
+            glideCharge: 100,
+            maxGlideCharge: 100,
+            glideSpeed: 0.2 * (difficulty === 'hard' ? 1.3 : 1),
+            glideHeight: 1.2,
+            glideState: 'none',
+            glideLiftProgress: 0,
+            hasKite: false,
+            gamepadMoveScale: 0
+        };
+        
+        // Player 2 keys (separate from player 1)
+        G.keys2 = {
+            w: false, s: false, a: false, d: false
+        };
+        
+        // Store player 2 gamepad state
+        G.gamepad2 = null;
+        G.lastShootTime2 = 0;
+        G.lastKiteActivationTime2 = 0;
+        
+        // Player 2 specific state - restore from persistent inventory if available
+        G.player2Health = persistentInventory.health2 !== null && persistentInventory.health2 !== undefined ? persistentInventory.health2 : 1;
+        G.player2Ammo = persistentInventory.ammo2 !== null && persistentInventory.ammo2 !== undefined ? persistentInventory.ammo2 : GAME_CONFIG.STARTING_AMMO;
+        G.player2BananaInventory = persistentInventory.bananas2 || 0;
+        G.player2BombInventory = persistentInventory.bombs2 || 0;
+        G.player2HerzmanInventory = persistentInventory.herzmen2 !== null && persistentInventory.herzmen2 !== undefined ? persistentInventory.herzmen2 : GAME_CONFIG.HERZMAN_STARTING_COUNT;
+        G.damageFlashTime2 = 0;
+        
+        // Button state for player 2
+        G.bananaButtonWasPressed2 = false;
+        G.bombButtonWasPressed2 = false;
+        G.herzmanButtonWasPressed2 = false;
+        
+        // Initialize splitscreenPlayers array
+        splitscreenPlayers = [
+            {
+                index: 0,
+                group: G.playerGroup,
+                kiteGroup: G.kiteGroup,
+                player: G.player,
+                keys: G.keys,
+                camera: G.camera,
+                health: G.playerHealth,
+                ammo: G.ammo,
+                label: 'Spieler 1',
+                color: '#FF6B9D'
+            },
+            {
+                index: 1,
+                group: G.player2Group,
+                kiteGroup: G.player2Group.kiteGroup,
+                player: G.player2,
+                keys: G.keys2,
+                camera: G.camera2,
+                health: G.player2Health,
+                ammo: G.player2Ammo,
+                label: 'Spieler 2',
+                color: '#4488FF'
+            }
+        ];
+        
+        // Make player 2 visible (since it's local, not network dependent)
+        G.player2Group.visible = true;
+        
+        // Hide the network multiplayer "other player" mesh
+        if (otherPlayerMesh) {
+            otherPlayerMesh.visible = false;
+        }
+    }
+    // ===== END NATIVE SPLITSCREEN SETUP =====
+
     // Export functions needed by other files
     window.updateClouds = updateClouds;
     window.updateGamepad = updateGamepad;
+    window.updateGamepad2 = isNativeSplitscreen ? updateGamepad2 : () => {};
 }
 

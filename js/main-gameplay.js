@@ -1,5 +1,57 @@
 // main-gameplay.js - Combat, updates, and collisions
 
+    // Helper function to get the nearest player target for enemies (works with both network multiplayer and native splitscreen)
+    function getNearestPlayerTarget(fromX, fromZ) {
+        let targetPlayer = G.playerGroup;
+        let closestDist = Math.sqrt(
+            Math.pow(G.playerGroup.position.x - fromX, 2) +
+            Math.pow(G.playerGroup.position.z - fromZ, 2)
+        );
+        let targetInIceBerg = G.iceBerg ? Math.sqrt(
+            Math.pow(G.playerGroup.position.x - G.iceBerg.position.x, 2) +
+            Math.pow(G.playerGroup.position.z - G.iceBerg.position.z, 2)
+        ) < G.iceBerg.radius : false;
+        
+        // Check native splitscreen player 2
+        if (isNativeSplitscreen && G.player2Group) {
+            const distToP2 = Math.sqrt(
+                Math.pow(G.player2Group.position.x - fromX, 2) +
+                Math.pow(G.player2Group.position.z - fromZ, 2)
+            );
+            const p2InIceBerg = G.iceBerg ? Math.sqrt(
+                Math.pow(G.player2Group.position.x - G.iceBerg.position.x, 2) +
+                Math.pow(G.player2Group.position.z - G.iceBerg.position.z, 2)
+            ) < G.iceBerg.radius : false;
+            
+            // Choose closer player not in ice berg
+            if (!p2InIceBerg && (targetInIceBerg || distToP2 < closestDist)) {
+                targetPlayer = G.player2Group;
+                closestDist = distToP2;
+                targetInIceBerg = p2InIceBerg;
+            }
+        }
+        
+        // Check network multiplayer other player
+        if (multiplayerManager && multiplayerManager.isConnected() && otherPlayerMesh && otherPlayerMesh.visible) {
+            const distToOther = Math.sqrt(
+                Math.pow(otherPlayerMesh.position.x - fromX, 2) +
+                Math.pow(otherPlayerMesh.position.z - fromZ, 2)
+            );
+            const otherInIceBerg = G.iceBerg ? Math.sqrt(
+                Math.pow(otherPlayerMesh.position.x - G.iceBerg.position.x, 2) +
+                Math.pow(otherPlayerMesh.position.z - G.iceBerg.position.z, 2)
+            ) < G.iceBerg.radius : false;
+            
+            if (!otherInIceBerg && (targetInIceBerg || distToOther < closestDist)) {
+                targetPlayer = otherPlayerMesh;
+                closestDist = distToOther;
+                targetInIceBerg = otherInIceBerg;
+            }
+        }
+        
+        return { target: targetPlayer, distance: closestDist, inIceBerg: targetInIceBerg };
+    }
+
     function createExplosion(x, y, z) {
         Audio.playExplosionSound();
         
@@ -825,6 +877,117 @@
                 z: herzmanZ
             });
         }
+    }
+    
+    // Helper function to place banana at specific coordinates (for splitscreen player 2)
+    function placeBananaAt(bananaX, bananaZ) {
+        const bananaGroup = new THREE.Group();
+        
+        const bananaGeometry = new THREE.CylinderGeometry(0.3, 0.3, 1.5, 8);
+        const bananaMaterial = new THREE.MeshLambertMaterial({ 
+            color: 0xFFFF00,
+            emissive: 0xFFFF00,
+            emissiveIntensity: 0.3
+        });
+        const bananaMesh = new THREE.Mesh(bananaGeometry, bananaMaterial);
+        bananaMesh.rotation.z = Math.PI / 6;
+        bananaMesh.castShadow = true;
+        bananaGroup.add(bananaMesh);
+        
+        const endMaterial = new THREE.MeshLambertMaterial({ color: 0x8B7500 });
+        const endGeometry = new THREE.SphereGeometry(0.35, 8, 8);
+        const end1 = new THREE.Mesh(endGeometry, endMaterial);
+        end1.position.y = 0.7;
+        end1.scale.set(0.8, 1, 0.8);
+        bananaGroup.add(end1);
+        
+        const end2 = new THREE.Mesh(endGeometry, endMaterial);
+        end2.position.y = -0.7;
+        end2.scale.set(0.8, 1, 0.8);
+        bananaGroup.add(end2);
+        
+        const terrainHeight = getTerrainHeight(bananaX, bananaZ);
+        bananaGroup.position.set(bananaX, terrainHeight + 0.5, bananaZ);
+        G.scene.add(bananaGroup);
+        
+        const bananaId = Date.now() + Math.random();
+        G.placedBananas.push({
+            id: bananaId,
+            mesh: bananaGroup,
+            x: bananaX,
+            z: bananaZ,
+            radius: 1.2
+        });
+        
+        Audio.playCollectSound();
+    }
+    
+    // Helper function to place bomb at specific coordinates (for splitscreen player 2)
+    function placeBombAt(targetX, targetZ) {
+        const bombId = Date.now() + Math.random();
+        
+        const bombGroup = new THREE.Group();
+        
+        const sphereGeometry = new THREE.SphereGeometry(0.4, 16, 16);
+        const sphereMaterial = new THREE.MeshLambertMaterial({ color: 0x1a1a1a });
+        const sphere = new THREE.Mesh(sphereGeometry, sphereMaterial);
+        sphere.castShadow = true;
+        bombGroup.add(sphere);
+        
+        const fuseGeometry = new THREE.CylinderGeometry(0.05, 0.05, 0.3, 8);
+        const fuseMaterial = new THREE.MeshLambertMaterial({ color: 0x8B4513 });
+        const fuse = new THREE.Mesh(fuseGeometry, fuseMaterial);
+        fuse.position.y = 0.4;
+        bombGroup.add(fuse);
+        
+        const sparkGeometry = new THREE.SphereGeometry(0.1, 8, 8);
+        const sparkMaterial = new THREE.MeshBasicMaterial({ 
+            color: 0xFF4500,
+            emissive: 0xFF4500,
+            emissiveIntensity: 1.0
+        });
+        const spark = new THREE.Mesh(sparkGeometry, sparkMaterial);
+        spark.position.y = 0.55;
+        bombGroup.add(spark);
+        
+        const targetTerrainHeight = getTerrainHeight(targetX, targetZ);
+        bombGroup.position.set(targetX, targetTerrainHeight + 0.4, targetZ);
+        G.scene.add(bombGroup);
+        
+        const explodeAt = Date.now() + 3000;
+        G.placedBombs.push({
+            id: bombId,
+            mesh: bombGroup,
+            x: targetX,
+            z: targetZ,
+            radius: 12,
+            explodeAt: explodeAt,
+            spark: spark
+        });
+        
+        Audio.playCollectSound();
+    }
+    
+    // Helper function to place Herz-Man at specific coordinates (for splitscreen player 2)
+    function placeHerzmanAt(herzmanX, herzmanZ) {
+        const herzmanId = Date.now() + Math.random();
+        const herzmanGroup = createHerzmanMesh();
+        
+        const terrainHeight = getTerrainHeight(herzmanX, herzmanZ);
+        herzmanGroup.position.set(herzmanX, terrainHeight, herzmanZ);
+        G.scene.add(herzmanGroup);
+        
+        G.placedHerzmen.push({
+            id: herzmanId,
+            mesh: herzmanGroup,
+            x: herzmanX,
+            z: herzmanZ,
+            lastFireTime: 0,
+            targetAngle: 0,
+            placedAt: Date.now()
+        });
+        
+        Audio.playCollectSound();
     }
     
     // Create Herz-Man mesh (big heart with arms, legs, and face)
@@ -2106,6 +2269,17 @@
         G.camera.position.z = G.playerGroup.position.z + cameraOffsetZ;
         G.camera.lookAt(G.playerGroup.position.x, G.playerGroup.position.y, G.playerGroup.position.z);
         
+        // Native splitscreen: Update camera 2 to follow player 2
+        if (isNativeSplitscreen && G.camera2 && G.player2 && G.player2Group) {
+            const cam2OffsetX = -Math.sin(G.player2.rotation) * cameraDistance;
+            const cam2OffsetZ = -Math.cos(G.player2.rotation) * cameraDistance;
+            
+            G.camera2.position.x = G.player2Group.position.x + cam2OffsetX;
+            G.camera2.position.y = G.player2Group.position.y + cameraHeight;
+            G.camera2.position.z = G.player2Group.position.z + cam2OffsetZ;
+            G.camera2.lookAt(G.player2Group.position.x, G.player2Group.position.y, G.player2Group.position.z);
+        }
+        
         // Client syncs their player state to host (throttled to 20Hz to reduce network traffic)
         if (multiplayerManager && multiplayerManager.isClient && multiplayerManager.isConnected()) {
             const now = Date.now();
@@ -2121,6 +2295,369 @@
             }
         }
     }
+    
+    // Update player 2 for native splitscreen mode
+    function updatePlayer2() {
+        if (!isNativeSplitscreen || !G.player2 || !G.player2Group) return;
+        if (gameWon) return;
+        
+        const prevPos = G.player2Group.position.clone();
+        
+        // Handle gliding
+        if (G.player2.isGliding) {
+            // Takeoff animation
+            if (G.player2.glideState === 'takeoff') {
+                G.player2.glideLiftProgress += 0.05;
+                if (G.player2.glideLiftProgress >= 1) {
+                    G.player2.glideState = 'flying';
+                    G.player2.glideLiftProgress = 1;
+                }
+            }
+            // Landing animation
+            else if (G.player2.glideState === 'landing') {
+                G.player2.glideLiftProgress -= 0.05;
+                if (G.player2.glideLiftProgress <= 0) {
+                    G.player2.isGliding = false;
+                    G.player2.glideState = 'none';
+                    G.player2.glideLiftProgress = 0;
+                    if (G.player2Group.kiteGroup) {
+                        G.player2Group.kiteGroup.visible = false;
+                    }
+                }
+            }
+            // Flying - consume charge
+            else if (G.player2.glideState === 'flying') {
+                G.player2.glideCharge -= 0.3;
+                if (G.player2.glideCharge <= 0) {
+                    G.player2.glideCharge = 0;
+                    G.player2.glideState = 'landing';
+                }
+            }
+            
+            // Glide forward
+            G.player2Group.position.x += Math.sin(G.player2.rotation) * G.player2.glideSpeed;
+            G.player2Group.position.z += Math.cos(G.player2.rotation) * G.player2.glideSpeed;
+        } else {
+            // Recharge glide
+            if (G.player2.glideCharge < G.player2.maxGlideCharge) {
+                G.player2.glideCharge += 0.15;
+            }
+            
+            // Normal movement from gamepad keys
+            const moveScale = G.player2.gamepadMoveScale > 0 ? G.player2.gamepadMoveScale : 1;
+            if (G.keys2.w) {
+                G.player2Group.position.x += Math.sin(G.player2.rotation) * G.player2.speed * moveScale;
+                G.player2Group.position.z += Math.cos(G.player2.rotation) * G.player2.speed * moveScale;
+            }
+            if (G.keys2.s) {
+                G.player2Group.position.x -= Math.sin(G.player2.rotation) * G.player2.speed * moveScale;
+                G.player2Group.position.z -= Math.cos(G.player2.rotation) * G.player2.speed * moveScale;
+            }
+            G.player2.gamepadMoveScale = 0;
+        }
+        
+        G.player2Group.rotation.y = G.player2.rotation;
+        
+        // NOTE: Unlike the original boundary check, player 2 (like player 1) is now
+        // only blocked by walls/mountains, not by arbitrary bounds. This matches P1 behavior.
+        
+        // Collision with hills and impassable cliffs (when not gliding)
+        if (!G.player2.isGliding || G.player2.glideState !== 'flying') {
+            const newX = G.player2Group.position.x;
+            const newZ = G.player2Group.position.z;
+            let collided = false;
+            
+            // Check hill collision - ONLY on water theme levels (same as player 1)
+            if (G.waterTheme && G.levelConfig.hills && G.levelConfig.hills.length > 0) {
+                for (const hill of G.levelConfig.hills) {
+                    const dx = newX - hill.x;
+                    const dz = newZ - hill.z;
+                    const dist = Math.sqrt(dx * dx + dz * dz);
+                    
+                    if (dist < hill.radius + 1.0) {
+                        G.player2Group.position.copy(prevPos);
+                        collided = true;
+                        break;
+                    }
+                }
+            }
+            
+            // Check impassable cliffs
+            if (!collided) {
+                for (const cliff of G.impassableCliffs || []) {
+                    const dx = newX - cliff.x;
+                    const dz = newZ - cliff.z;
+                    const dist = Math.sqrt(dx * dx + dz * dz);
+                    if (dist < cliff.radius + 1.5) {
+                        G.player2Group.position.copy(prevPos);
+                        collided = true;
+                        break;
+                    }
+                }
+            }
+            
+            // Check mountains/walls
+            if (!collided && G.levelConfig.mountains && G.levelConfig.mountains.length > 0) {
+                for (const mtn of G.levelConfig.mountains) {
+                    if (G.graveyardTheme) {
+                        // Box collision for graveyard walls
+                        const wallWidth = mtn.width;
+                        const wallDepth = Math.min(mtn.width * 0.15, 8);
+                        const halfW = wallWidth / 2 + 1.5;
+                        const halfD = wallDepth / 2 + 1.5;
+                        const dx = Math.abs(newX - mtn.x);
+                        const dz = Math.abs(newZ - mtn.z);
+                        if (dx < halfW && dz < halfD) {
+                            G.player2Group.position.copy(prevPos);
+                            collided = true;
+                            break;
+                        }
+                    } else {
+                        // Circular collision for cone mountains
+                        const dist = Math.sqrt((newX - mtn.x) ** 2 + (newZ - mtn.z) ** 2);
+                        if (dist < mtn.width / 2 + 1.5) {
+                            G.player2Group.position.copy(prevPos);
+                            collided = true;
+                            break;
+                        }
+                    }
+                }
+            }
+            
+            // Check rocks
+            if (!collided && G.rocks) {
+                for (const rock of G.rocks) {
+                    const dist = Math.sqrt((newX - rock.mesh.position.x) ** 2 + (newZ - rock.mesh.position.z) ** 2);
+                    if (dist < rock.radius + 0.8) {
+                        G.player2Group.position.copy(prevPos);
+                        collided = true;
+                        break;
+                    }
+                }
+            }
+            
+            // Check boulders
+            if (!collided && G.boulders) {
+                for (const boulder of G.boulders) {
+                    const dist = Math.sqrt((newX - boulder.mesh.position.x) ** 2 + (newZ - boulder.mesh.position.z) ** 2);
+                    if (dist < boulder.radius + 0.8) {
+                        G.player2Group.position.copy(prevPos);
+                        collided = true;
+                        break;
+                    }
+                }
+            }
+            
+            // Check canyon walls
+            if (!collided && G.canyonWalls) {
+                for (const wall of G.canyonWalls) {
+                    const cos = Math.cos(-wall.rotation);
+                    const sin = Math.sin(-wall.rotation);
+                    const dx = newX - wall.x;
+                    const dz = newZ - wall.z;
+                    const localX = dx * cos - dz * sin;
+                    const localZ = dx * sin + dz * cos;
+                    const halfWidth = wall.width / 2 + 1.0;
+                    const halfDepth = wall.depth / 2 + 1.0;
+                    if (Math.abs(localX) < halfWidth && Math.abs(localZ) < halfDepth) {
+                        G.player2Group.position.copy(prevPos);
+                        collided = true;
+                        break;
+                    }
+                }
+            }
+            
+            // Check trees
+            if (!collided && G.trees) {
+                for (const tree of G.trees) {
+                    const dist = Math.sqrt((newX - tree.mesh.position.x) ** 2 + (newZ - tree.mesh.position.z) ** 2);
+                    if (dist < tree.radius + 0.8) {
+                        G.player2Group.position.copy(prevPos);
+                        collided = true;
+                        break;
+                    }
+                }
+            }
+            
+            // River collision (blocks movement if not on bridge and not gliding)
+            if (!collided && G.riverObj && newZ > G.riverObj.minZ && newZ < G.riverObj.maxZ) {
+                const onBridge = G.bridgeRepaired &&
+                                newX > G.bridgeObj.minX && 
+                                newX < G.bridgeObj.maxX &&
+                                newZ > G.bridgeObj.minZ && 
+                                newZ < G.bridgeObj.maxZ;
+                if (!onBridge) {
+                    G.player2Group.position.copy(prevPos);
+                    collided = true;
+                }
+            }
+        }
+        
+        // Update terrain height
+        const terrainHeight = getTerrainHeight(G.player2Group.position.x, G.player2Group.position.z);
+        
+        if (G.player2.isGliding && G.player2.glideState !== 'none') {
+            const groundHeight = 0.1;
+            const currentHeight = groundHeight + (G.player2.glideHeight - groundHeight) * G.player2.glideLiftProgress;
+            G.player2Group.position.y = terrainHeight + currentHeight;
+        } else {
+            G.player2Group.position.y = terrainHeight + 0.1;
+        }
+        
+        // Check damage from goblins, lava, etc.
+        checkPlayer2Damage();
+    }
+    
+    // Check damage for player 2 in native splitscreen
+    function checkPlayer2Damage() {
+        if (!isNativeSplitscreen || godMode) return;
+        
+        const now = Date.now();
+        
+        // Goblin damage check
+        G.goblins.forEach(gob => {
+            if (!gob.alive) return;
+            
+            const dist = Math.sqrt(
+                (G.player2Group.position.x - gob.mesh.position.x) ** 2 +
+                (G.player2Group.position.z - gob.mesh.position.z) ** 2
+            );
+            
+            const damageRange = gob.isGiant ? 3.5 : 1.5;
+            
+            if (dist < damageRange && now - (G.lastDamageTime2 || 0) > G.damageCooldown) {
+                G.player2Health--;
+                G.lastDamageTime2 = now;
+                G.damageFlashTime2 = now;
+                Audio.playStuckSound();
+                
+                if (G.player2Health <= 0) {
+                    // Player 2 died - both players die together
+                    gameDead = true;
+                    Audio.stopBackgroundMusic();
+                    Audio.playDeathSound();
+                }
+            }
+        });
+        
+        // Lava damage check
+        if (G.lavaTheme || (G.levelConfig.lavaPools && G.levelConfig.lavaPools.length > 0)) {
+            const isOnLava = checkIfOnLava(G.player2Group.position.x, G.player2Group.position.z);
+            if (isOnLava && !G.player2.isGliding) {
+                if (now - (G.lastDamageTime2 || 0) > 500) {
+                    G.player2Health--;
+                    G.lastDamageTime2 = now;
+                    G.damageFlashTime2 = now;
+                    
+                    if (G.player2Health <= 0) {
+                        gameDead = true;
+                        Audio.stopBackgroundMusic();
+                        Audio.playDeathSound();
+                    }
+                }
+            }
+        }
+    }
+    
+    // Helper to check if position is on lava
+    function checkIfOnLava(x, z) {
+        if (!G.levelConfig.lavaPools) return false;
+        for (const pool of G.levelConfig.lavaPools) {
+            const dist = Math.sqrt((x - pool.x) ** 2 + (z - pool.z) ** 2);
+            if (dist < pool.radius) return true;
+        }
+        return false;
+    }
+    
+    // Shoot bullet from specific player (for splitscreen)
+    function shootBulletForPlayer(playerNum) {
+        if (playerNum === 1) {
+            shootBullet();
+        } else if (playerNum === 2 && isNativeSplitscreen) {
+            if (G.player2Ammo <= 0) return;
+            
+            G.player2Ammo--;
+            Audio.playShootSound();
+            
+            const bulletGeometry = new THREE.SphereGeometry(0.15, 8, 8);
+            const bulletMaterial = new THREE.MeshLambertMaterial({ color: 0x4488FF });
+            const bulletMesh = new THREE.Mesh(bulletGeometry, bulletMaterial);
+            
+            bulletMesh.position.set(
+                G.player2Group.position.x + Math.sin(G.player2.rotation) * 1.2,
+                G.player2Group.position.y + 1,
+                G.player2Group.position.z + Math.cos(G.player2.rotation) * 1.2
+            );
+            
+            const speed = 0.5;
+            const velocity = new THREE.Vector3(
+                Math.sin(G.player2.rotation) * speed,
+                0,
+                Math.cos(G.player2.rotation) * speed
+            );
+            
+            G.scene.add(bulletMesh);
+            G.bullets.push({
+                mesh: bulletMesh,
+                velocity: velocity,
+                startPos: { x: bulletMesh.position.x, z: bulletMesh.position.z },
+                fromPlayer: 2,
+                radius: 0.15
+            });
+        }
+    }
+    
+    // Placeholder functions for player 2 actions (simplified for now)
+    function activateIcePowerForPlayer(playerNum) {
+        if (playerNum === 1) {
+            activateIcePower();
+        } else {
+            // Player 2 shares ice power activation with player 1's cooldown
+            activateIcePower();
+        }
+    }
+    
+    function placeBananaForPlayer(playerNum) {
+        if (playerNum === 2 && isNativeSplitscreen && G.player2BananaInventory > 0) {
+            G.player2BananaInventory--;
+            // Place banana at player 2's position
+            const bananaX = G.player2Group.position.x;
+            const bananaZ = G.player2Group.position.z;
+            placeBananaAt(bananaX, bananaZ);
+        } else {
+            placeBanana();
+        }
+    }
+    
+    function placeBombForPlayer(playerNum) {
+        if (playerNum === 2 && isNativeSplitscreen && G.player2BombInventory > 0) {
+            G.player2BombInventory--;
+            const bombX = G.player2Group.position.x;
+            const bombZ = G.player2Group.position.z;
+            placeBombAt(bombX, bombZ);
+        } else {
+            placeBomb();
+        }
+    }
+    
+    function placeHerzmanForPlayer(playerNum) {
+        if (playerNum === 2 && isNativeSplitscreen && G.player2HerzmanInventory > 0) {
+            G.player2HerzmanInventory--;
+            const hx = G.player2Group.position.x + Math.sin(G.player2.rotation) * 2;
+            const hz = G.player2Group.position.z + Math.cos(G.player2.rotation) * 2;
+            placeHerzmanAt(hx, hz);
+        } else {
+            placeHerzman();
+        }
+    }
+    
+    // Export splitscreen functions
+    window.updatePlayer2 = updatePlayer2;
+    window.shootBulletForPlayer = shootBulletForPlayer;
+    window.activateIcePowerForPlayer = activateIcePowerForPlayer;
+    window.placeBananaForPlayer = placeBananaForPlayer;
+    window.placeBombForPlayer = placeBombForPlayer;
+    window.placeHerzmanForPlayer = placeHerzmanForPlayer;
 
     function updateBullets() {
         for (let i = G.bullets.length - 1; i >= 0; i--) {
@@ -2840,49 +3377,14 @@
             const oldX = gob.mesh.position.x;
             const oldZ = gob.mesh.position.z;
             
-            // Check distance to both players (if multiplayer)
-            const distToPlayer = Math.sqrt(
-                Math.pow(G.playerGroup.position.x - gob.mesh.position.x, 2) + 
-                Math.pow(G.playerGroup.position.z - gob.mesh.position.z, 2)
-            );
+            // Get nearest player target (handles both native splitscreen and network multiplayer)
+            const targetInfo = getNearestPlayerTarget(gob.mesh.position.x, gob.mesh.position.z);
+            let targetPlayer = targetInfo.target;
+            let distToTarget = targetInfo.distance;
+            let targetInIceBerg = targetInfo.inIceBerg;
             
-            // Check if player is in ice berg (safe zone) - only if iceBerg exists
-            const playerInIceBerg = G.iceBerg ? Math.sqrt(
-                Math.pow(G.playerGroup.position.x - G.iceBerg.position.x, 2) +
-                Math.pow(G.playerGroup.position.z - G.iceBerg.position.z, 2)
-            ) < G.iceBerg.radius : false;
-            
-            let targetPlayer = G.playerGroup;
-            let distToTarget = distToPlayer;
-            let targetInIceBerg = playerInIceBerg;
-            
-            // If multiplayer and other player is visible, check distance to them too
-            if (multiplayerManager && multiplayerManager.isConnected() && otherPlayerMesh.visible) {
-                const distToOther = Math.sqrt(
-                    Math.pow(otherPlayerMesh.position.x - gob.mesh.position.x, 2) + 
-                    Math.pow(otherPlayerMesh.position.z - gob.mesh.position.z, 2)
-                );
-                
-                const otherInIceBerg = G.iceBerg ? Math.sqrt(
-                    Math.pow(otherPlayerMesh.position.x - G.iceBerg.position.x, 2) +
-                    Math.pow(otherPlayerMesh.position.z - G.iceBerg.position.z, 2)
-                ) < G.iceBerg.radius : false;
-                
-                // Chase the closer player who is NOT in ice berg
-                if (!playerInIceBerg && (otherInIceBerg || distToPlayer < distToOther)) {
-                    targetPlayer = G.playerGroup;
-                    distToTarget = distToPlayer;
-                    targetInIceBerg = playerInIceBerg;
-                } else if (!otherInIceBerg) {
-                    targetPlayer = otherPlayerMesh;
-                    distToTarget = distToOther;
-                    targetInIceBerg = otherInIceBerg;
-                } else {
-                    // Both in ice berg, don't chase anyone
-                    return;
-                }
-            } else if (playerInIceBerg) {
-                // Single player in ice berg, don't chase
+            // If all players in ice berg, don't chase
+            if (targetInIceBerg) {
                 return;
             }
             
@@ -3005,6 +3507,27 @@
                 }
             }
             
+            // Check PLAYER 2 collision in native splitscreen
+            if (isNativeSplitscreen && G.player2Group) {
+                const distToP2 = G.player2Group.position.distanceTo(gob.mesh.position);
+                if (distToP2 < 1.5) {
+                    const now = Date.now();
+                    if (!gob.lastPlayer2DamageTime) gob.lastPlayer2DamageTime = 0;
+                    
+                    if (now - gob.lastPlayer2DamageTime > G.damageCooldown) {
+                        G.player2Health--;
+                        gob.lastPlayer2DamageTime = now;
+                        G.damageFlashTime2 = now;
+                        
+                        if (G.player2Health <= 0) {
+                            // Player 2 died
+                        } else {
+                            Audio.playStuckSound();
+                        }
+                    }
+                }
+            }
+            
             // Guardian arrows (ink balls in water theme, mini-ghosts in graveyard)
             if (gob.isGuardian && distToTarget < 25) {
                 const now = Date.now();
@@ -3076,25 +3599,11 @@
                     
                     Audio.playArrowShootSound();
                     
-                    // Target the closest player
-                    let targetPlayer = G.playerGroup;
-                    let closestDist = Math.sqrt(
-                        Math.pow(G.playerGroup.position.x - gob.mesh.position.x, 2) +
-                        Math.pow(G.playerGroup.position.z - gob.mesh.position.z, 2)
-                    );
+                    // Target the closest player (works with native splitscreen and network multiplayer)
+                    const arrowTargetInfo = getNearestPlayerTarget(gob.mesh.position.x, gob.mesh.position.z);
+                    const arrowTargetPlayer = arrowTargetInfo.target;
                     
-                    // Check if other player is closer
-                    if (multiplayerManager && multiplayerManager.isConnected() && otherPlayerMesh.visible) {
-                        const distToOther = Math.sqrt(
-                            Math.pow(otherPlayerMesh.position.x - gob.mesh.position.x, 2) +
-                            Math.pow(otherPlayerMesh.position.z - gob.mesh.position.z, 2)
-                        );
-                        if (distToOther < closestDist) {
-                            targetPlayer = otherPlayerMesh;
-                        }
-                    }
-                    
-                    const dirX = targetPlayer.position.x - gob.mesh.position.x;
+                    const dirX = arrowTargetPlayer.position.x - gob.mesh.position.x;
                     const dirZ = targetPlayer.position.z - gob.mesh.position.z;
                     const length = Math.sqrt(dirX * dirX + dirZ * dirZ);
                     
@@ -3161,25 +3670,12 @@
                     
                     Audio.playArrowShootSound();
                     
-                    // Target the closest player
-                    let targetPlayer = G.playerGroup;
-                    let closestDist = Math.sqrt(
-                        Math.pow(G.playerGroup.position.x - gob.mesh.position.x, 2) +
-                        Math.pow(G.playerGroup.position.z - gob.mesh.position.z, 2)
-                    );
+                    // Target the closest player (works with native splitscreen and network multiplayer)
+                    const skelTargetInfo = getNearestPlayerTarget(gob.mesh.position.x, gob.mesh.position.z);
+                    const skelTargetPlayer = skelTargetInfo.target;
                     
-                    if (multiplayerManager && multiplayerManager.isConnected() && otherPlayerMesh.visible) {
-                        const distToOther = Math.sqrt(
-                            Math.pow(otherPlayerMesh.position.x - gob.mesh.position.x, 2) +
-                            Math.pow(otherPlayerMesh.position.z - gob.mesh.position.z, 2)
-                        );
-                        if (distToOther < closestDist) {
-                            targetPlayer = otherPlayerMesh;
-                        }
-                    }
-                    
-                    const dirX = targetPlayer.position.x - gob.mesh.position.x;
-                    const dirZ = targetPlayer.position.z - gob.mesh.position.z;
+                    const dirX = skelTargetPlayer.position.x - gob.mesh.position.x;
+                    const dirZ = skelTargetPlayer.position.z - gob.mesh.position.z;
                     const length = Math.sqrt(dirX * dirX + dirZ * dirZ);
                     
                     const direction = new THREE.Vector3(dirX / length, 0, dirZ / length);
@@ -3351,6 +3847,25 @@
                     // Arrow hit other player - send damage event to them
                     // Note: Don't modify otherPlayerHealth here, it will be updated via sync
                     multiplayerManager.sendGameEvent('playerDamage', {});
+                    hitPlayer = true;
+                }
+            }
+            
+            // Check collision with player 2 (in native splitscreen)
+            if (!hitPlayer && isNativeSplitscreen && G.player2Group) {
+                const distToP2 = new THREE.Vector2(
+                    G.player2Group.position.x - arrow.mesh.position.x,
+                    G.player2Group.position.z - arrow.mesh.position.z
+                ).length();
+                
+                if (distToP2 < 1.0) {
+                    G.player2Health--;
+                    G.damageFlashTime2 = Date.now();
+                    if (G.player2Health <= 0) {
+                        // Player 2 died - TODO: handle player 2 death
+                    } else {
+                        Audio.playStuckSound();
+                    }
                     hitPlayer = true;
                 }
             }
@@ -3561,6 +4076,28 @@
                     }
                 }
                 
+                // Check if player 2 is in blast radius (native splitscreen)
+                if (G.isNativeSplitscreen && G.player2Group && !godMode) {
+                    const distToPlayer2 = new THREE.Vector2(
+                        G.player2Group.position.x - bomb.mesh.position.x,
+                        G.player2Group.position.z - bomb.mesh.position.z
+                    ).length();
+                    
+                    if (distToPlayer2 < bomb.radius) {
+                        G.player2Health--;
+                        G.damageFlashTime2 = Date.now();
+                        if (G.player2Health <= 0) {
+                            if (!gameDead) {
+                                gameDead = true;
+                                Audio.stopBackgroundMusic();
+                                Audio.playDeathSound();
+                            }
+                        } else {
+                            Audio.playStuckSound();
+                        }
+                    }
+                }
+                
                 G.scene.remove(bomb.mesh);
                 G.bombs.splice(i, 1);
             }
@@ -3705,6 +4242,23 @@
                     );
                     if (distToOther < 6) {  // Bigger hit radius
                         multiplayerManager.sendGameEvent('playerDamage', {});
+                    }
+                }
+                
+                // Check hit on player 2 (native splitscreen)
+                if (G.isNativeSplitscreen && G.player2Group && !godMode) {
+                    const distToP2 = Math.sqrt(
+                        (ball.mesh.position.x - G.player2Group.position.x) ** 2 +
+                        (ball.mesh.position.z - G.player2Group.position.z) ** 2
+                    );
+                    if (distToP2 < 6) {
+                        G.player2Health -= 2;
+                        G.damageFlashTime2 = Date.now();
+                        Audio.playDeathSound();
+                        if (G.player2Health <= 0) {
+                            gameDead = true;
+                            Audio.stopBackgroundMusic();
+                        }
                     }
                 }
 
@@ -4648,6 +5202,24 @@
                 }
             }
             
+            // Check collision with player 2 in native splitscreen
+            if (isNativeSplitscreen && G.player2Group) {
+                const p2Dist = Math.sqrt(
+                    (tornado.mesh.position.x - G.player2Group.position.x) ** 2 +
+                    (tornado.mesh.position.z - G.player2Group.position.z) ** 2
+                );
+                if (p2Dist < tornado.radius + 0.8) {
+                    G.player2Health -= tornado.damage;
+                    G.damageFlashTime2 = Date.now();
+                    if (G.player2Health <= 0) {
+                        // Player 2 died
+                    }
+                    G.scene.remove(tornado.mesh);
+                    G.mummyTornados.splice(i, 1);
+                    continue;
+                }
+            }
+            
             // Check collision with canyon walls
             let hitCanyonWall = false;
             for (const wall of G.canyonWalls) {
@@ -4738,6 +5310,18 @@
                     if (otherDist < trail.radius * scale - 0.3 && !otherPlayerIsGliding) {
                         // Notify client of lava trail death
                         multiplayerManager.sendGameEvent('lavaTrailDeath', {});
+                    }
+                }
+                
+                // Check collision with player 2 in native splitscreen (unless gliding)
+                if (isNativeSplitscreen && G.player2Group && G.player2 && !G.player2.isGliding) {
+                    const p2Dist = Math.sqrt(
+                        (G.player2Group.position.x - trail.x) ** 2 +
+                        (G.player2Group.position.z - trail.z) ** 2
+                    );
+                    if (p2Dist < trail.radius * scale - 0.3) {
+                        G.player2Health = 0;
+                        G.damageFlashTime2 = Date.now();
                     }
                 }
             } else {
@@ -4844,6 +5428,31 @@
                     }
                     createFireballExplosion(fireball.mesh.position.x, fireball.mesh.position.y, fireball.mesh.position.z);
                     // Clean up trail particles
+                    if (fireball.trail) {
+                        fireball.trail.forEach(t => G.scene.remove(t.sprite));
+                    }
+                    G.scene.remove(fireball.mesh);
+                    G.fireballs.splice(i, 1);
+                    continue;
+                }
+            }
+            
+            // Check collision with player 2 (native splitscreen)
+            if (isNativeSplitscreen && G.player2Group) {
+                const distToP2 = new THREE.Vector2(
+                    G.player2Group.position.x - fireball.mesh.position.x,
+                    G.player2Group.position.z - fireball.mesh.position.z
+                ).length();
+                
+                if (distToP2 < fireball.radius) {
+                    G.player2Health -= fireball.damage;
+                    G.damageFlashTime2 = Date.now();
+                    if (G.player2Health <= 0) {
+                        // Player 2 died
+                    } else {
+                        Audio.playStuckSound();
+                    }
+                    createFireballExplosion(fireball.mesh.position.x, fireball.mesh.position.y, fireball.mesh.position.z);
                     if (fireball.trail) {
                         fireball.trail.forEach(t => G.scene.remove(t.sprite));
                     }
@@ -4983,6 +5592,18 @@
                     multiplayerManager.sendGameEvent('lavaPoolDeath', {});
                 }
             }
+            
+            // Check player 2 in native splitscreen
+            if (isNativeSplitscreen && G.player2Group && G.player2 && !G.player2.isGliding) {
+                const p2Dist = Math.sqrt(
+                    (G.player2Group.position.x - pool.x) ** 2 +
+                    (G.player2Group.position.z - pool.z) ** 2
+                );
+                if (p2Dist < pool.radius - 0.5) {
+                    G.player2Health = 0;
+                    G.damageFlashTime2 = Date.now();
+                }
+            }
         });
 
         // Crevice collision - falling into deep pits (unless gliding)
@@ -5019,6 +5640,19 @@
                 if (Math.abs(otherLocalX) < halfWidth && Math.abs(otherLocalZ) < halfLength && !otherPlayerIsGliding) {
                     // Notify client of crevice death
                     multiplayerManager.sendGameEvent('creviceDeath', {});
+                }
+            }
+            
+            // Check player 2 in native splitscreen
+            if (isNativeSplitscreen && G.player2Group && G.player2 && !G.player2.isGliding) {
+                const p2Dx = G.player2Group.position.x - crevice.x;
+                const p2Dz = G.player2Group.position.z - crevice.z;
+                const p2LocalX = p2Dx * cos - p2Dz * sin;
+                const p2LocalZ = p2Dx * sin + p2Dz * cos;
+                
+                if (Math.abs(p2LocalX) < halfWidth && Math.abs(p2LocalZ) < halfLength) {
+                    G.player2Health = 0;
+                    G.damageFlashTime2 = Date.now();
                 }
             }
         });
@@ -5318,6 +5952,16 @@
                         multiplayerManager.sendGameEvent('itemCollected', { type: 'G.ammo', index: idx });
                     }
                 }
+                // Check player 2 collection in native splitscreen
+                if (!pickup.collected && isNativeSplitscreen && G.player2Group) {
+                    const dist2 = G.player2Group.position.distanceTo(pickup.mesh.position);
+                    if (dist2 < pickup.radius) {
+                        pickup.collected = true;
+                        pickup.mesh.visible = false;
+                        G.player2Ammo = Math.min(G.player2Ammo + pickup.amount, G.maxAmmo);
+                        Audio.playCollectSound();
+                    }
+                }
             }
         });
         
@@ -5336,6 +5980,16 @@
                         multiplayerManager.sendGameEvent('itemCollected', { type: 'health', index: idx });
                     }
                 }
+                // Check player 2 collection in native splitscreen
+                if (!pickup.collected && isNativeSplitscreen && G.player2Group) {
+                    const dist2 = G.player2Group.position.distanceTo(pickup.mesh.position);
+                    if (dist2 < pickup.radius) {
+                        pickup.collected = true;
+                        pickup.mesh.visible = false;
+                        G.player2Health = Math.min(G.player2Health + 1, G.maxPlayerHealth);
+                        Audio.playCollectSound();
+                    }
+                }
             }
         });
         
@@ -5346,7 +6000,18 @@
                     Math.pow(G.playerGroup.position.x - pickup.x, 2) +
                     Math.pow(G.playerGroup.position.z - pickup.z, 2)
                 );
-                if (dist < 1.5) {
+                let collected = dist < 1.5;
+                
+                // Check player 2 in native splitscreen
+                if (!collected && isNativeSplitscreen && G.player2Group) {
+                    const dist2 = Math.sqrt(
+                        Math.pow(G.player2Group.position.x - pickup.x, 2) +
+                        Math.pow(G.player2Group.position.z - pickup.z, 2)
+                    );
+                    collected = dist2 < 1.5;
+                }
+                
+                if (collected) {
                     pickup.collected = true;
                     G.scene.remove(pickup.mesh);
                     G.scarabsCollected++;
@@ -5394,7 +6059,18 @@
                         Math.pow(G.playerGroup.position.x - pickup.x, 2) +
                         Math.pow(G.playerGroup.position.z - pickup.z, 2)
                     );
-                    if (dist < 1.5) {
+                    let collected = dist < 1.5;
+                    
+                    // Check player 2 in native splitscreen
+                    if (!collected && isNativeSplitscreen && G.player2Group) {
+                        const dist2 = Math.sqrt(
+                            Math.pow(G.player2Group.position.x - pickup.x, 2) +
+                            Math.pow(G.player2Group.position.z - pickup.z, 2)
+                        );
+                        collected = dist2 < 1.5;
+                    }
+                    
+                    if (collected) {
                         pickup.collected = true;
                         G.scene.remove(pickup.mesh);
                         G.candyCollected++;
@@ -5441,7 +6117,17 @@
                 Math.pow(G.playerGroup.position.x - G.portal.x, 2) +
                 Math.pow(G.playerGroup.position.z - G.portal.z, 2)
             );
-            if (distToPortal < G.portal.radius) {
+            
+            // Also check player 2 distance in native splitscreen
+            let distToPortal2 = Infinity;
+            if (isNativeSplitscreen && G.player2Group) {
+                distToPortal2 = Math.sqrt(
+                    Math.pow(G.player2Group.position.x - G.portal.x, 2) +
+                    Math.pow(G.player2Group.position.z - G.portal.z, 2)
+                );
+            }
+            
+            if (distToPortal < G.portal.radius || distToPortal2 < G.portal.radius) {
                 // Switch to destination level
                 const destinationLevel = G.portal.destinationLevel;
                 console.log(`Entering G.portal to Level ${destinationLevel}!`);
@@ -5452,6 +6138,16 @@
                 persistentInventory.health = G.playerHealth;
                 persistentInventory.hasKite = G.worldKiteCollected || G.player.hasKite;
                 persistentInventory.herzmen = G.herzmanInventory;
+                
+                // Save player 2 inventory in native splitscreen
+                if (isNativeSplitscreen) {
+                    persistentInventory.ammo2 = G.player2Ammo;
+                    persistentInventory.bombs2 = G.player2BombInventory;
+                    persistentInventory.health2 = G.player2Health;
+                    persistentInventory.hasKite2 = G.player2.hasKite;
+                    persistentInventory.herzmen2 = G.player2HerzmanInventory;
+                    persistentInventory.bananas2 = G.player2BananaInventory;
+                }
                 
                 // Notify multiplayer if connected
                 if (multiplayerManager && multiplayerManager.isConnected()) {
@@ -5494,6 +6190,21 @@
                 if (distToTrap < trap.radius) {
                     // Notify client of trap death
                     multiplayerManager.sendGameEvent('trapDeath', {});
+                }
+            });
+        }
+        
+        // Check if player 2 hit a trap (native splitscreen)
+        if (isNativeSplitscreen && G.player2Group && !G.player2.isGliding && !godMode) {
+            G.traps.forEach(trap => {
+                const distToTrap = new THREE.Vector2(
+                    G.player2Group.position.x - trap.mesh.position.x,
+                    G.player2Group.position.z - trap.mesh.position.z
+                ).length();
+                if (distToTrap < trap.radius) {
+                    gameDead = true;
+                    Audio.stopBackgroundMusic();
+                    Audio.playDeathSound();
                 }
             });
         }
@@ -5569,6 +6280,25 @@
                     }
                 }
             }
+            
+            // Native splitscreen: Check player 2 treasure collection (either player can win)
+            if (isNativeSplitscreen && G.player2Group) {
+                const dist2 = G.player2Group.position.distanceTo(G.treasureGroup.position);
+                if (dist2 < G.treasure.radius + 0.8) {
+                    // Same requirements as player 1
+                    const scarabsRequired = G.totalScarabs > 0;
+                    const allScarabsCollected = G.scarabsCollected >= G.totalScarabs;
+                    const candyRequired = G.candyTheme && G.totalCandy > 0;
+                    const allCandyCollected = !candyRequired || (G.candyCollected >= G.totalCandy);
+                    
+                    if (!scarabsRequired || allScarabsCollected) {
+                        if (!candyRequired || allCandyCollected) {
+                            gameWon = true;
+                            Audio.playWinSound();
+                        }
+                    }
+                }
+            }
         }
         
         // Ice power collection - only if iceBerg exists
@@ -5577,7 +6307,15 @@
                 (px - G.iceBerg.position.x) ** 2 +
                 (pz - G.iceBerg.position.z) ** 2
             );
-            if (iceDist < G.iceBerg.powerRadius) {
+            // Check player 2 distance in native splitscreen
+            let iceDistP2 = Infinity;
+            if (isNativeSplitscreen && G.player2Group) {
+                iceDistP2 = Math.sqrt(
+                    (G.player2Group.position.x - G.iceBerg.position.x) ** 2 +
+                    (G.player2Group.position.z - G.iceBerg.position.z) ** 2
+                );
+            }
+            if (iceDist < G.iceBerg.powerRadius || iceDistP2 < G.iceBerg.powerRadius) {
                 G.icePowerCollected = true;
                 G.hasIcePower = true;
                 Audio.playCollectSound();
@@ -5594,21 +6332,40 @@
             (px - G.bananaIceBerg.position.x) ** 2 +
             (pz - G.bananaIceBerg.position.z) ** 2
         );
-        if (bananaDist < G.bananaIceBerg.powerRadius) {
+        // Also check player 2 distance in native splitscreen
+        let bananaDistP2 = Infinity;
+        if (isNativeSplitscreen && G.player2Group) {
+            bananaDistP2 = Math.sqrt(
+                (G.player2Group.position.x - G.bananaIceBerg.position.x) ** 2 +
+                (G.player2Group.position.z - G.bananaIceBerg.position.z) ** 2
+            );
+        }
+        const anyPlayerNearBanana = bananaDist < G.bananaIceBerg.powerRadius || bananaDistP2 < G.bananaIceBerg.powerRadius;
+        
+        if (anyPlayerNearBanana) {
             if (!G.worldBananaPowerCollected) {
                 G.worldBananaPowerCollected = true;
                 G.hasBananaPower = true;
                 G.bananaInventory = G.maxBananas;
+                if (isNativeSplitscreen) {
+                    G.player2BananaInventory = G.maxBananas;
+                }
                 Audio.playCollectSound();
                 
                 // Notify other player in multiplayer - both get the power
                 if (multiplayerManager && multiplayerManager.isConnected()) {
                     multiplayerManager.sendGameEvent('G.bananaPowerCollected', {});
                 }
-            } else if (G.hasBananaPower && G.bananaInventory < G.maxBananas) {
+            } else if (G.hasBananaPower) {
                 // Refill bananas when returning to ice berg
-                G.bananaInventory = G.maxBananas;
-                Audio.playCollectSound();
+                if (bananaDist < G.bananaIceBerg.powerRadius && G.bananaInventory < G.maxBananas) {
+                    G.bananaInventory = G.maxBananas;
+                    Audio.playCollectSound();
+                }
+                if (bananaDistP2 < G.bananaIceBerg.powerRadius && isNativeSplitscreen && G.player2BananaInventory < G.maxBananas) {
+                    G.player2BananaInventory = G.maxBananas;
+                    Audio.playCollectSound();
+                }
             }
         }
         
@@ -5629,6 +6386,20 @@
                 // Notify other player
                 if (multiplayerManager && multiplayerManager.isConnected()) {
                     multiplayerManager.sendGameEvent('bananaCollected', { id: banana.id });
+                }
+                continue;
+            }
+            // Check player 2 collection in native splitscreen
+            if (isNativeSplitscreen && G.player2Group) {
+                const distToBanana2 = Math.sqrt(
+                    (G.player2Group.position.x - banana.x) ** 2 +
+                    (G.player2Group.position.z - banana.z) ** 2
+                );
+                if (distToBanana2 < banana.radius) {
+                    G.player2BananaInventory = Math.min(G.player2BananaInventory + 1, G.maxBananas);
+                    G.scene.remove(banana.mesh);
+                    G.placedBananas.splice(i, 1);
+                    Audio.playCollectSound();
                 }
             }
         }
@@ -5652,6 +6423,19 @@
                             type: 'bomb',
                             index: idx
                         });
+                    }
+                }
+                // Check player 2 collection in native splitscreen
+                if (!pickup.collected && isNativeSplitscreen && G.player2Group && G.player2BombInventory < G.maxBombs) {
+                    const distToPickup2 = Math.sqrt(
+                        (G.player2Group.position.x - pickup.mesh.position.x) ** 2 +
+                        (G.player2Group.position.z - pickup.mesh.position.z) ** 2
+                    );
+                    if (distToPickup2 < pickup.radius) {
+                        G.player2BombInventory++;
+                        pickup.collected = true;
+                        pickup.mesh.visible = false;
+                        Audio.playCollectSound();
                     }
                 }
             }
@@ -5678,6 +6462,19 @@
                         });
                     }
                 }
+                // Check player 2 collection in native splitscreen
+                if (!pickup.collected && isNativeSplitscreen && G.player2Group) {
+                    const distToPickup2 = Math.sqrt(
+                        (G.player2Group.position.x - pickup.mesh.position.x) ** 2 +
+                        (G.player2Group.position.z - pickup.mesh.position.z) ** 2
+                    );
+                    if (distToPickup2 < pickup.radius) {
+                        G.player2HerzmanInventory++;
+                        pickup.collected = true;
+                        pickup.mesh.visible = false;
+                        Audio.playCollectSound();
+                    }
+                }
             }
         });
         
@@ -5691,6 +6488,17 @@
                 G.scene.remove(G.worldKiteGroup);
                 Audio.playCollectSound();
                 // Note: Kite state is synced via fullSync, not individual events
+            }
+            // Check player 2 collection in native splitscreen
+            if (!G.worldKiteCollected && isNativeSplitscreen && G.player2Group) {
+                const kiteDistSqP2 = (G.player2Group.position.x - G.worldKiteGroup.position.x) ** 2 + (G.player2Group.position.z - G.worldKiteGroup.position.z) ** 2;
+                if (kiteDistSqP2 < 4) {
+                    G.worldKiteCollected = true;
+                    G.player2.hasKite = true;
+                    G.player2.glideCharge = G.player2.maxGlideCharge || 100;
+                    G.scene.remove(G.worldKiteGroup);
+                    Audio.playCollectSound();
+                }
             }
         }
         

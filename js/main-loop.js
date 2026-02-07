@@ -27,19 +27,49 @@ function initLoop() {
         // Reset other player gliding state
         otherPlayerIsGliding = false;
         otherPlayerGlideLiftProgress = 0;
-        if (otherPlayerMesh.kiteGroup) {
+        if (otherPlayerMesh && otherPlayerMesh.kiteGroup) {
             otherPlayerMesh.kiteGroup.visible = false;
         }
         
-        // Reset other player position and health
-        const otherStartX = (!multiplayerManager || multiplayerManager.isHost) ? 2 : -2;
-        otherPlayerMesh.position.set(otherStartX, getTerrainHeight(otherStartX, 40), 40);
-        otherPlayerMesh.rotation.y = Math.PI;
+        // Reset other player position and health (for network multiplayer)
+        if (otherPlayerMesh) {
+            const otherStartX = (!multiplayerManager || multiplayerManager.isHost) ? 2 : -2;
+            otherPlayerMesh.position.set(otherStartX, getTerrainHeight(otherStartX, 40), 40);
+            otherPlayerMesh.rotation.y = Math.PI;
+        }
         G.otherPlayerHealth = 1;
         otherPlayerVelocity.x = 0;
         otherPlayerVelocity.z = 0;
-        otherPlayerLastPos.x = otherStartX;
+        otherPlayerLastPos.x = 0;
         otherPlayerLastPos.z = 40;
+        
+        // Native splitscreen: Reset player 2
+        if (isNativeSplitscreen && G.player2 && G.player2Group) {
+            const p2StartX = G.levelConfig.playerStart.x + 2;
+            const p2StartZ = G.levelConfig.playerStart.z;
+            G.player2Group.position.set(p2StartX, getTerrainHeight(p2StartX, p2StartZ), p2StartZ);
+            G.player2.rotation = Math.PI;
+            G.player2Group.rotation.y = Math.PI;
+            G.player2Group.rotation.x = 0;
+            G.player2Group.rotation.z = 0;
+            G.player2.isGliding = false;
+            G.player2.glideCharge = 100;
+            G.player2.glideState = 'none';
+            G.player2.glideLiftProgress = 0;
+            G.player2.hasKite = false;
+            if (G.player2Group.kiteGroup) {
+                G.player2Group.kiteGroup.visible = false;
+            }
+            
+            // Reset player 2 stats
+            G.player2Health = 1;
+            G.player2Ammo = GAME_CONFIG.STARTING_AMMO;
+            G.player2BananaInventory = 0;
+            G.player2BombInventory = 0;
+            G.player2HerzmanInventory = GAME_CONFIG.HERZMAN_STARTING_COUNT;
+            G.lastDamageTime2 = 0;
+            G.damageFlashTime2 = 0;
+        }
         
         // Reset world kite
         if (G.worldKiteCollected) {
@@ -471,6 +501,214 @@ function initLoop() {
             }
         }
     }
+    
+    // Splitscreen HUD - draws HUD for both players side by side
+    function drawSplitscreenHUD() {
+        G.hudCtx.clearRect(0, 0, G.hudCanvas.width, G.hudCanvas.height);
+        
+        const halfWidth = Math.floor(G.hudCanvas.width / 2);
+        const fullHeight = G.hudCanvas.height;
+        
+        // Draw divider line
+        G.hudCtx.strokeStyle = '#333';
+        G.hudCtx.lineWidth = 3;
+        G.hudCtx.beginPath();
+        G.hudCtx.moveTo(halfWidth, 0);
+        G.hudCtx.lineTo(halfWidth, fullHeight);
+        G.hudCtx.stroke();
+        
+        // Level indicator (top center)
+        G.hudCtx.fillStyle = '#6600cc';
+        G.hudCtx.font = 'bold 20px Arial';
+        G.hudCtx.textAlign = 'center';
+        G.hudCtx.fillText(`Level ${currentLevel}`, G.hudCanvas.width / 2, 20);
+        
+        // Player labels at top
+        G.hudCtx.font = 'bold 18px Arial';
+        
+        // Player 1 label (left side)
+        G.hudCtx.fillStyle = '#FF6B9D';
+        G.hudCtx.fillText('Spieler 1', halfWidth / 2, 25);
+        
+        // Player 2 label (right side)
+        G.hudCtx.fillStyle = '#4488FF';
+        G.hudCtx.fillText('Spieler 2', halfWidth + halfWidth / 2, 25);
+        
+        G.hudCtx.textAlign = 'left';
+        
+        // Draw HUD for Player 1 (left side)
+        drawPlayerHUD(0, 0, halfWidth, G.player, G.playerHealth, G.ammo, G.bananaInventory, G.bombInventory, G.herzmanInventory, 1);
+        
+        // Draw HUD for Player 2 (right side)
+        drawPlayerHUD(halfWidth + 5, 0, halfWidth, G.player2, G.player2Health, G.player2Ammo, G.player2BananaInventory, G.player2BombInventory, G.player2HerzmanInventory, 2);
+        
+        // Shared state HUD (center bottom area)
+        G.hudCtx.font = 'bold 14px Arial';
+        G.hudCtx.textAlign = 'center';
+        G.hudCtx.fillStyle = '#000';
+        
+        let bottomY = fullHeight - 85;
+        
+        const aliveGoblins = G.goblins.filter(g => g.alive).length;
+        G.hudCtx.fillText(`Kobolde: ${aliveGoblins} | Material: ${G.materialsCollected}/${G.materialsNeeded}`, G.hudCanvas.width / 2, bottomY);
+        bottomY += 18;
+        
+        // Scarab display (only if level has scarabs)
+        if (G.totalScarabs > 0) {
+            G.hudCtx.fillStyle = G.scarabsCollected >= G.totalScarabs ? '#00ff88' : '#00ccaa';
+            G.hudCtx.fillText(`Scarabs: ${G.scarabsCollected}/${G.totalScarabs}`, G.hudCanvas.width / 2, bottomY);
+            G.hudCtx.fillStyle = '#000';
+            bottomY += 18;
+        }
+        
+        // Candy display (only if candy theme with candy to collect)
+        if (G.candyTheme && G.totalCandy > 0) {
+            G.hudCtx.fillStyle = G.candyCollected >= G.totalCandy ? '#FF69B4' : '#FFB6C1';
+            G.hudCtx.fillText(`Süßigkeiten: ${G.candyCollected}/${G.totalCandy}`, G.hudCanvas.width / 2, bottomY);
+            G.hudCtx.fillStyle = '#000';
+            bottomY += 18;
+        }
+        
+        // Bridge status
+        if (!G.bridgeRepaired && G.materialsCollected >= G.materialsNeeded) {
+            G.hudCtx.fillStyle = '#FFD700';
+            G.hudCtx.fillText('Gehe zur Brücke um sie zu reparieren!', G.hudCanvas.width / 2, bottomY);
+        } else if (G.bridgeRepaired) {
+            G.hudCtx.fillStyle = '#00FF00';
+            G.hudCtx.fillText('Brücke repariert!', G.hudCanvas.width / 2, bottomY);
+        }
+        
+        // Portal proximity indicator for either player
+        if (G.portal) {
+            const distToPortal1 = Math.sqrt(
+                Math.pow(G.playerGroup.position.x - G.portal.x, 2) +
+                Math.pow(G.playerGroup.position.z - G.portal.z, 2)
+            );
+            const distToPortal2 = G.player2Group ? Math.sqrt(
+                Math.pow(G.player2Group.position.x - G.portal.x, 2) +
+                Math.pow(G.player2Group.position.z - G.portal.z, 2)
+            ) : Infinity;
+            
+            if (distToPortal1 < 8 || distToPortal2 < 8) {
+                G.hudCtx.fillStyle = '#00ffff';
+                G.hudCtx.font = 'bold 22px Arial';
+                G.hudCtx.fillText(`Betrete das Portal zu Level ${G.portal.destinationLevel}!`, G.hudCanvas.width / 2, fullHeight - 100);
+            }
+        }
+        
+        G.hudCtx.textAlign = 'left';
+        
+        // Damage flash effect for both players
+        const now = Date.now();
+        if (now - G.damageFlashTime < 300) {
+            const flashOpacity = 0.3 * (1 - (now - G.damageFlashTime) / 300);
+            G.hudCtx.fillStyle = `rgba(255, 0, 0, ${flashOpacity})`;
+            G.hudCtx.fillRect(0, 0, halfWidth, fullHeight);
+        }
+        if (G.damageFlashTime2 && now - G.damageFlashTime2 < 300) {
+            const flashOpacity = 0.3 * (1 - (now - G.damageFlashTime2) / 300);
+            G.hudCtx.fillStyle = `rgba(255, 0, 0, ${flashOpacity})`;
+            G.hudCtx.fillRect(halfWidth, 0, halfWidth, fullHeight);
+        }
+        
+        // Win/Lose overlays
+        if (gameWon) {
+            G.hudCtx.fillStyle = 'rgba(255, 215, 0, 0.9)';
+            G.hudCtx.fillRect(G.hudCanvas.width / 2 - 150, G.hudCanvas.height / 2 - 80, 300, 160);
+            
+            G.hudCtx.fillStyle = '#000';
+            G.hudCtx.font = 'bold 36px Arial';
+            G.hudCtx.textAlign = 'center';
+            G.hudCtx.fillText('GEWONNEN!', G.hudCanvas.width / 2, G.hudCanvas.height / 2);
+            G.hudCtx.font = '18px Arial';
+            G.hudCtx.fillText('Drücke Options zum Neustart', G.hudCanvas.width / 2, G.hudCanvas.height / 2 + 40);
+            G.hudCtx.textAlign = 'left';
+        }
+        
+        if (gameDead) {
+            G.hudCtx.fillStyle = 'rgba(200, 0, 0, 0.6)';
+            G.hudCtx.fillRect(0, 0, G.hudCanvas.width, G.hudCanvas.height);
+            
+            G.hudCtx.fillStyle = '#FFF';
+            G.hudCtx.font = 'bold 48px Arial';
+            G.hudCtx.textAlign = 'center';
+            G.hudCtx.fillText('GESTORBEN', G.hudCanvas.width / 2, G.hudCanvas.height / 2 - 20);
+            G.hudCtx.font = '20px Arial';
+            G.hudCtx.fillText('Drücke Options zum Neustart', G.hudCanvas.width / 2, G.hudCanvas.height / 2 + 25);
+            G.hudCtx.textAlign = 'left';
+        }
+    }
+    
+    // Draw HUD for a single player in a viewport region
+    function drawPlayerHUD(offsetX, offsetY, width, player, health, ammo, bananas, bombs, herzmen, playerNum) {
+        const x = offsetX + 10;
+        let y = offsetY + 45;
+        const lineHeight = 20;
+        const now = Date.now();
+        
+        G.hudCtx.font = 'bold 13px Arial';
+        
+        // Health
+        G.hudCtx.fillStyle = '#000';
+        G.hudCtx.fillText(`Leben: ${health}/${G.maxPlayerHealth}`, x, y);
+        y += lineHeight;
+        
+        // Ammo
+        G.hudCtx.fillText(`Schüsse: ${ammo}/${G.maxAmmo}`, x, y);
+        y += lineHeight;
+        
+        // Kite charge or hint
+        if (player.hasKite || G.worldKiteCollected) {
+            G.hudCtx.fillText(`Drachen: ${Math.floor(player.glideCharge)}%`, x, y);
+            G.hudCtx.fillStyle = player.glideCharge >= 20 ? '#00FF00' : '#FF0000';
+            G.hudCtx.fillRect(x, y + 3, player.glideCharge * 0.8, 6);
+            G.hudCtx.strokeStyle = '#000';
+            G.hudCtx.strokeRect(x, y + 3, 80, 6);
+            G.hudCtx.fillStyle = '#000';
+            y += lineHeight;
+        } else {
+            G.hudCtx.fillStyle = '#FFD700';
+            G.hudCtx.font = 'bold 11px Arial';
+            G.hudCtx.fillText('Finde den Drachen!', x, y);
+            G.hudCtx.font = 'bold 13px Arial';
+            G.hudCtx.fillStyle = '#000';
+            y += lineHeight;
+        }
+        
+        // Ice power status (shared between players)
+        if (G.hasIcePower) {
+            const cooldownRemaining = Math.max(0, G.icePowerCooldown - (now - G.lastIcePowerTime));
+            if (cooldownRemaining > 0) {
+                G.hudCtx.fillStyle = '#666';
+                G.hudCtx.fillText('Eis: ' + Math.ceil(cooldownRemaining / 1000) + 's', x, y);
+            } else {
+                G.hudCtx.fillStyle = '#00BFFF';
+                G.hudCtx.fillText('Eis: Bereit (□)', x, y);
+            }
+            G.hudCtx.fillStyle = '#000';
+            y += lineHeight;
+        }
+        
+        // Bananas
+        if (G.hasBananaPower) {
+            G.hudCtx.fillStyle = '#FFD700';
+            G.hudCtx.fillText(`🍌 ${bananas}/${G.maxBananas}`, x, y);
+            G.hudCtx.fillStyle = '#000';
+            y += lineHeight;
+        }
+        
+        // Bombs
+        G.hudCtx.fillStyle = '#FF4500';
+        G.hudCtx.fillText(`💣 ${bombs}/${G.maxBombs}`, x, y);
+        G.hudCtx.fillStyle = '#000';
+        y += lineHeight;
+        
+        // Herzmen with placed count
+        const placedCount = G.placedHerzmen ? G.placedHerzmen.length : 0;
+        G.hudCtx.fillStyle = '#FF69B4';
+        G.hudCtx.fillText(`💕 ${herzmen} (${placedCount} aktiv)`, x, y);
+        G.hudCtx.fillStyle = '#000';
+    }
 
     // Start background music
     Audio.startBackgroundMusic();
@@ -726,6 +964,20 @@ function initLoop() {
                     multiplayerManager.sendGameEvent('whirlpoolDeath', {});
                 }
             }
+            
+            // Check collision with player 2 (native splitscreen)
+            if (isNativeSplitscreen && G.player2Group && !G.player2.isGliding && !godMode) {
+                const p2Dist = Math.sqrt(
+                    (G.player2Group.position.x - newX) ** 2 +
+                    (G.player2Group.position.z - newZ) ** 2
+                );
+                if (p2Dist < trap.radius) {
+                    G.player2Health = 0;
+                    gameDead = true;
+                    Audio.stopBackgroundMusic();
+                    Audio.playDeathSound();
+                }
+            }
         });
 
         // Fixed timestep game logic updates
@@ -733,8 +985,18 @@ function initLoop() {
             // Update gamepad input
             updateGamepad();
             
+            // Native splitscreen: Update player 2 gamepad
+            if (isNativeSplitscreen && typeof updateGamepad2 === 'function') {
+                updateGamepad2();
+            }
+            
             if (!gameDead && !mathExerciseActive) {
                 updatePlayer();
+                
+                // Native splitscreen: Update player 2 movement
+                if (isNativeSplitscreen) {
+                    updatePlayer2();
+                }
                 
                 // Camera shake when close to giant (runs every frame)
                 const now = Date.now();
@@ -779,6 +1041,25 @@ function initLoop() {
                             });
                         }
                     }
+                }
+                
+                // Camera2 shake for player 2 when near giants (native splitscreen)
+                if (isNativeSplitscreen && G.camera2 && G.player2Group) {
+                    G.goblins.forEach(gob => {
+                        if (!gob.alive || !gob.isGiant || gob.frozen) return;
+                        const distToGiant = Math.sqrt(
+                            (G.player2Group.position.x - gob.mesh.position.x) ** 2 +
+                            (G.player2Group.position.z - gob.mesh.position.z) ** 2
+                        );
+                        
+                        if (distToGiant < 50) {
+                            const shakeIntensity = (1 - distToGiant / 50) * 0.3;
+                            const shakeSpeed = now * 0.015;
+                            G.camera2.position.x += Math.sin(shakeSpeed * 3.7) * shakeIntensity;
+                            G.camera2.position.y += Math.sin(shakeSpeed * 4.3) * shakeIntensity;
+                            G.camera2.position.z += Math.sin(shakeSpeed * 3.1) * shakeIntensity;
+                        }
+                    });
                 }
                 
                 // Optimistic update for other player position (interpolation between syncs)
@@ -957,8 +1238,33 @@ function initLoop() {
             G.accumulator -= G.targetFrameTime;
         }
         
-        drawHUD();
-        G.renderer.render(G.scene, G.camera);
+        // Native splitscreen rendering with scissor
+        if (isNativeSplitscreen) {
+            const halfWidth = Math.floor(window.innerWidth / 2);
+            const fullHeight = window.innerHeight;
+            
+            // Clear once
+            G.renderer.setScissorTest(false);
+            G.renderer.clear();
+            G.renderer.setScissorTest(true);
+            
+            // Left viewport - Player 1
+            G.renderer.setViewport(0, 0, halfWidth, fullHeight);
+            G.renderer.setScissor(0, 0, halfWidth, fullHeight);
+            G.renderer.render(G.scene, G.camera);
+            
+            // Right viewport - Player 2
+            G.renderer.setViewport(halfWidth, 0, halfWidth, fullHeight);
+            G.renderer.setScissor(halfWidth, 0, halfWidth, fullHeight);
+            G.renderer.render(G.scene, G.camera2);
+            
+            // Draw splitscreen HUD (after 3D rendering)
+            drawSplitscreenHUD();
+        } else {
+            // Normal single-player/multiplayer rendering
+            drawHUD();
+            G.renderer.render(G.scene, G.camera);
+        }
     }
 
     currentAnimationId = requestAnimationFrame(animate);
