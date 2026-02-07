@@ -153,6 +153,69 @@
       "levels": [6],
       "health": 7,
       "damage": 1
+    },
+    {
+      "id": "zombie",
+      "name": "Zombie",
+      "description": "Verrottende Leiche mit grüner Haut und freiliegenden Knochen. Erhebt sich aus den Gräbern des Friedhofs und schlurft auf Spieler zu.",
+      "tags": ["Friedhof", "Nahkampf", "Untot"],
+      "levels": [7],
+      "health": 3,
+      "damage": 1
+    },
+    {
+      "id": "ghost",
+      "name": "Geist",
+      "description": "Durchscheinender Spuk mit ätherischem Leuchten. Schwebt lautlos über dem Friedhof und schießt gespenstische Pfeile auf Eindringlinge.",
+      "tags": ["Friedhof", "Fernkampf", "Schwebend"],
+      "levels": [7],
+      "health": 5,
+      "damage": 1
+    },
+    {
+      "id": "skeleton",
+      "name": "Skelett",
+      "description": "Knöcherner Bogenschütze mit Knochenbogen und rot glühenden Augenhöhlen. Schießt tödliche Knochenpfeile auf jeden, der dem Schatz zu nahe kommt.",
+      "tags": ["Friedhof", "Fernkampf", "Untot"],
+      "levels": [7],
+      "health": 4,
+      "damage": 1
+    },
+    {
+      "id": "witch",
+      "name": "Hexe",
+      "description": "Grünhäutige Magierin mit spitzem Hut und Warze. Reitet auf einem Besen und wirft verfluchte Feuerbälle auf ahnungslose Opfer.",
+      "tags": ["Friedhof", "Magie", "Fernkampf"],
+      "levels": [7],
+      "health": 7,
+      "damage": 1
+    },
+    {
+      "id": "executioner",
+      "name": "Henker",
+      "description": "Riesiger vermummter Henker mit blutverschmierter Axt. Ein stummer Wächter des Friedhofs, der keine Gnade kennt.",
+      "tags": ["Friedhof", "Boss", "Schwer"],
+      "levels": [7],
+      "health": 20,
+      "damage": 2
+    },
+    {
+      "id": "bat",
+      "name": "Fledermaus",
+      "description": "Dunkle Kreatur der Nacht mit ledrigen Flügeln und rot leuchtenden Augen. Kreist über dem Friedhof und wirft explosive Bomben ab.",
+      "tags": ["Friedhof", "Fliegend", "Bomben"],
+      "levels": [7],
+      "health": 2,
+      "damage": 1
+    },
+    {
+      "id": "reaper",
+      "name": "Sensenmann",
+      "description": "Massiver verhüllter Todesengel mit riesiger Sense. Seine glühenden roten Augen durchbohren die Dunkelheit der Kapuze. Der ultimative Wächter des Friedhofs.",
+      "tags": ["Friedhof", "Boss", "Fliegend", "Feuerball"],
+      "levels": [7],
+      "health": 60,
+      "damage": 2
     }
   ],
   "items": [
@@ -298,6 +361,26 @@
       "id": "cupcake-hill",
       "name": "Cupcake-Hügel",
       "description": "Sanfte Hügel geformt wie riesige Cupcakes mit Zuckerguss-Spitze und bunten Streuseln."
+    },
+    {
+      "id": "tombstone",
+      "name": "Grabstein",
+      "description": "Verwitterter Grabstein mit unlesbarer Inschrift. Markiert die Ruhestätte der Untoten auf dem Friedhof."
+    },
+    {
+      "id": "dead-tree",
+      "name": "Toter Baum",
+      "description": "Kahler, verdrehter Baum ohne Blätter. Seine knorrigen Äste greifen wie Skelettfinger in den Himmel."
+    },
+    {
+      "id": "grave-mound",
+      "name": "Grabhügel",
+      "description": "Aufgeworfener Erdhügel über einem frischen Grab. Manchmal bewegt sich die Erde..."
+    },
+    {
+      "id": "mist-pool",
+      "name": "Nebelteich",
+      "description": "Geheimnisvoller Teich, aus dem unheimlicher Nebel aufsteigt. Was lauert in seinen Tiefen?"
     }
   ]
 }

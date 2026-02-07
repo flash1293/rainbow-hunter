@@ -270,7 +270,176 @@ function generateCandyTexture(THREE) {
     return texture;
 }
 
-// Generate a volcanic rock texture for lava caves
+// Generate a graveyard/halloween texture for the spooky level
+function generateGraveyardTexture(THREE) {
+    const canvas = document.createElement('canvas');
+    canvas.width = 512;
+    canvas.height = 512;
+    const ctx = canvas.getContext('2d');
+    
+    // Base earthy color - dead grass and dirt (lighter for visibility)
+    ctx.fillStyle = '#4a4a3f';
+    ctx.fillRect(0, 0, 512, 512);
+    
+    // Add dead grass/dirt variation
+    for (let i = 0; i < 10000; i++) {
+        const x = Math.random() * 512;
+        const y = Math.random() * 512;
+        const brightness = 0.7 + Math.random() * 0.3;
+        const r = Math.floor(80 * brightness);
+        const g = Math.floor(75 * brightness);
+        const b = Math.floor(55 * brightness);
+        ctx.fillStyle = `rgb(${r}, ${g}, ${b})`;
+        ctx.fillRect(x, y, 2, 2);
+    }
+    
+    // Add darker muddy patches
+    for (let i = 0; i < 35; i++) {
+        const x = Math.random() * 512;
+        const y = Math.random() * 512;
+        const radius = 15 + Math.random() * 40;
+        const gradient = ctx.createRadialGradient(x, y, 0, x, y, radius);
+        gradient.addColorStop(0, 'rgba(40, 38, 25, 0.35)');
+        gradient.addColorStop(1, 'rgba(40, 38, 25, 0)');
+        ctx.fillStyle = gradient;
+        ctx.fillRect(x - radius, y - radius, radius * 2, radius * 2);
+    }
+    
+    // Add some sickly green patches (moss/mold)
+    for (let i = 0; i < 30; i++) {
+        const x = Math.random() * 512;
+        const y = Math.random() * 512;
+        const radius = 10 + Math.random() * 25;
+        const gradient = ctx.createRadialGradient(x, y, 0, x, y, radius);
+        gradient.addColorStop(0, 'rgba(50, 70, 30, 0.25)');
+        gradient.addColorStop(1, 'rgba(50, 70, 30, 0)');
+        ctx.fillStyle = gradient;
+        ctx.fillRect(x - radius, y - radius, radius * 2, radius * 2);
+    }
+    
+    // Add eerie purple fog patches
+    for (let i = 0; i < 20; i++) {
+        const x = Math.random() * 512;
+        const y = Math.random() * 512;
+        const radius = 20 + Math.random() * 35;
+        const gradient = ctx.createRadialGradient(x, y, 0, x, y, radius);
+        gradient.addColorStop(0, 'rgba(60, 30, 70, 0.15)');
+        gradient.addColorStop(1, 'rgba(60, 30, 70, 0)');
+        ctx.fillStyle = gradient;
+        ctx.fillRect(x - radius, y - radius, radius * 2, radius * 2);
+    }
+    
+    // Add some scattered bones/debris
+    ctx.fillStyle = 'rgba(200, 190, 170, 0.3)';
+    for (let i = 0; i < 40; i++) {
+        const x = Math.random() * 512;
+        const y = Math.random() * 512;
+        const length = 3 + Math.random() * 8;
+        const angle = Math.random() * Math.PI;
+        
+        ctx.save();
+        ctx.translate(x, y);
+        ctx.rotate(angle);
+        ctx.fillRect(-length/2, -1, length, 2);
+        ctx.restore();
+    }
+    
+    const texture = new THREE.CanvasTexture(canvas);
+    texture.wrapS = THREE.RepeatWrapping;
+    texture.wrapT = THREE.RepeatWrapping;
+    texture.repeat.set(30, 30);
+    return texture;
+}
+
+// Generate old English brick wall texture for graveyard
+function generateBrickWallTexture(THREE) {
+    const canvas = document.createElement('canvas');
+    canvas.width = 256;
+    canvas.height = 256;
+    const ctx = canvas.getContext('2d');
+    
+    // Base mortar color (weathered gray)
+    ctx.fillStyle = '#3a3a38';
+    ctx.fillRect(0, 0, 256, 256);
+    
+    const brickWidth = 32;
+    const brickHeight = 16;
+    const mortarWidth = 3;
+    
+    // Draw brick rows
+    for (let row = 0; row < Math.ceil(256 / brickHeight); row++) {
+        const offsetX = (row % 2) * (brickWidth / 2); // Staggered pattern
+        
+        for (let col = -1; col < Math.ceil(256 / brickWidth) + 1; col++) {
+            const x = col * brickWidth + offsetX;
+            const y = row * brickHeight;
+            
+            // Vary brick color (old weathered red/brown bricks)
+            const baseR = 80 + Math.random() * 40;
+            const baseG = 50 + Math.random() * 25;
+            const baseB = 40 + Math.random() * 20;
+            
+            // Some bricks are darker (soot/age)
+            const darken = Math.random() > 0.7 ? 0.6 : 1;
+            const r = Math.floor(baseR * darken);
+            const g = Math.floor(baseG * darken);
+            const b = Math.floor(baseB * darken);
+            
+            ctx.fillStyle = `rgb(${r}, ${g}, ${b})`;
+            ctx.fillRect(
+                x + mortarWidth/2, 
+                y + mortarWidth/2, 
+                brickWidth - mortarWidth, 
+                brickHeight - mortarWidth
+            );
+            
+            // Add some texture/variation within brick
+            for (let i = 0; i < 5; i++) {
+                const px = x + mortarWidth + Math.random() * (brickWidth - mortarWidth * 2);
+                const py = y + mortarWidth + Math.random() * (brickHeight - mortarWidth * 2);
+                const shade = Math.random() > 0.5 ? 20 : -20;
+                ctx.fillStyle = `rgb(${Math.max(0, Math.min(255, r + shade))}, ${Math.max(0, Math.min(255, g + shade))}, ${Math.max(0, Math.min(255, b + shade))})`;
+                ctx.fillRect(px, py, 3, 2);
+            }
+        }
+    }
+    
+    // Add moss/age patches
+    for (let i = 0; i < 15; i++) {
+        const x = Math.random() * 256;
+        const y = Math.random() * 256;
+        const radius = 8 + Math.random() * 15;
+        const gradient = ctx.createRadialGradient(x, y, 0, x, y, radius);
+        gradient.addColorStop(0, 'rgba(40, 60, 35, 0.4)');
+        gradient.addColorStop(1, 'rgba(40, 60, 35, 0)');
+        ctx.fillStyle = gradient;
+        ctx.fillRect(x - radius, y - radius, radius * 2, radius * 2);
+    }
+    
+    // Add cracks
+    ctx.strokeStyle = 'rgba(20, 20, 18, 0.5)';
+    ctx.lineWidth = 1;
+    for (let i = 0; i < 8; i++) {
+        ctx.beginPath();
+        let x = Math.random() * 256;
+        let y = Math.random() * 256;
+        ctx.moveTo(x, y);
+        for (let j = 0; j < 3; j++) {
+            x += (Math.random() - 0.5) * 20;
+            y += Math.random() * 15;
+            ctx.lineTo(x, y);
+        }
+        ctx.stroke();
+    }
+    
+    const texture = new THREE.CanvasTexture(canvas);
+    texture.wrapS = THREE.RepeatWrapping;
+    texture.wrapT = THREE.RepeatWrapping;
+    texture.repeat.set(2, 2);
+    return texture;
+}
+
+// Generate volcanic rock texture for lava caves
 function generateRockTexture(THREE) {
     const canvas = document.createElement('canvas');
     canvas.width = 512;
@@ -1594,6 +1763,123 @@ function generateDragonBellyTexture(THREE) {
     return texture;
 }
 
+// Generate Reaper cloak texture (dark, tattered, ghostly)
+function generateReaperCloakTexture(THREE) {
+    const canvas = document.createElement('canvas');
+    canvas.width = 256;
+    canvas.height = 256;
+    const ctx = canvas.getContext('2d');
+    
+    // Base black cloak color
+    ctx.fillStyle = '#0a0a0f';
+    ctx.fillRect(0, 0, 256, 256);
+    
+    // Add fabric fold shadows
+    for (let i = 0; i < 40; i++) {
+        const x = Math.random() * 256;
+        const y1 = Math.random() * 50;
+        const y2 = y1 + 150 + Math.random() * 100;
+        const width = 5 + Math.random() * 15;
+        
+        const gradient = ctx.createLinearGradient(x, y1, x + width * 0.3, y2);
+        gradient.addColorStop(0, 'rgba(30, 30, 40, 0.4)');
+        gradient.addColorStop(0.5, 'rgba(10, 10, 20, 0.6)');
+        gradient.addColorStop(1, 'rgba(30, 30, 40, 0.3)');
+        
+        ctx.fillStyle = gradient;
+        ctx.fillRect(x, y1, width, y2 - y1);
+    }
+    
+    // Add ethereal purple/green glow patches
+    for (let i = 0; i < 25; i++) {
+        const x = Math.random() * 256;
+        const y = Math.random() * 256;
+        const radius = 15 + Math.random() * 30;
+        const gradient = ctx.createRadialGradient(x, y, 0, x, y, radius);
+        const isGreen = Math.random() > 0.5;
+        if (isGreen) {
+            gradient.addColorStop(0, 'rgba(0, 80, 40, 0.15)');
+            gradient.addColorStop(1, 'rgba(0, 50, 30, 0)');
+        } else {
+            gradient.addColorStop(0, 'rgba(60, 0, 80, 0.15)');
+            gradient.addColorStop(1, 'rgba(40, 0, 60, 0)');
+        }
+        ctx.fillStyle = gradient;
+        ctx.fillRect(x - radius, y - radius, radius * 2, radius * 2);
+    }
+    
+    // Add tattered edges / holes (darker voids)
+    for (let i = 0; i < 15; i++) {
+        const x = Math.random() * 256;
+        const y = 180 + Math.random() * 76; // Bottom part of cloak
+        const w = 3 + Math.random() * 10;
+        const h = 10 + Math.random() * 30;
+        ctx.fillStyle = 'rgba(0, 0, 0, 0.8)';
+        ctx.beginPath();
+        ctx.ellipse(x, y, w, h, Math.random() * 0.5, 0, Math.PI * 2);
+        ctx.fill();
+    }
+    
+    // Add ghostly wisps
+    ctx.strokeStyle = 'rgba(100, 80, 120, 0.1)';
+    ctx.lineWidth = 2;
+    for (let i = 0; i < 30; i++) {
+        const x = Math.random() * 256;
+        const y = Math.random() * 256;
+        ctx.beginPath();
+        ctx.moveTo(x, y);
+        ctx.bezierCurveTo(
+            x + 20, y - 10,
+            x + 40, y + 20,
+            x + 60, y - 5
+        );
+        ctx.stroke();
+    }
+    
+    const texture = new THREE.CanvasTexture(canvas);
+    return texture;
+}
+
+// Generate reaper eye texture (glowing sinister red)
+function generateReaperEyeTexture(THREE) {
+    const canvas = document.createElement('canvas');
+    canvas.width = 64;
+    canvas.height = 64;
+    const ctx = canvas.getContext('2d');
+    
+    // Dark void background
+    ctx.fillStyle = '#000000';
+    ctx.fillRect(0, 0, 64, 64);
+    
+    // Glowing red core
+    const gradient = ctx.createRadialGradient(32, 32, 0, 32, 32, 32);
+    gradient.addColorStop(0, '#FFFFFF');
+    gradient.addColorStop(0.15, '#FF4444');
+    gradient.addColorStop(0.4, '#CC0000');
+    gradient.addColorStop(0.7, '#660000');
+    gradient.addColorStop(1, '#000000');
+    ctx.fillStyle = gradient;
+    ctx.beginPath();
+    ctx.arc(32, 32, 30, 0, Math.PI * 2);
+    ctx.fill();
+    
+    // Sinister pupil/slit
+    ctx.fillStyle = '#000000';
+    ctx.beginPath();
+    ctx.ellipse(32, 32, 3, 15, 0, 0, Math.PI * 2);
+    ctx.fill();
+    
+    // Outer hellfire glow
+    ctx.strokeStyle = 'rgba(255, 100, 0, 0.5)';
+    ctx.lineWidth = 3;
+    ctx.beginPath();
+    ctx.arc(32, 32, 26, 0, Math.PI * 2);
+    ctx.stroke();
+    
+    const texture = new THREE.CanvasTexture(canvas);
+    return texture;
+}
+
 // Generate fireball texture (fiery plasma, or icy blue)
 function generateFireballTexture(THREE, iceTheme = false) {
     const canvas = document.createElement('canvas');
@@ -2042,6 +2328,8 @@ function getTerrainTextures(THREE) {
             grassIce: generateGrassTexture(THREE, true),
             sand: generateSandTexture(THREE),
             candy: generateCandyTexture(THREE),
+            graveyard: generateGraveyardTexture(THREE),
+            brickWall: generateBrickWallTexture(THREE),
             rock: generateRockTexture(THREE),
             bark: generateBarkTexture(THREE),
             foliage: generateFoliageTexture(THREE, false),
@@ -2065,6 +2353,7 @@ function getTerrainTextures(THREE) {
             dragonScaleLava: generateDragonScaleTextureLava(THREE),
             dragonScaleWater: generateDragonScaleTextureWater(THREE),
             dragonScaleCandy: generateDragonScaleTextureCandy(THREE),
+            reaperCloak: generateReaperCloakTexture(THREE),
             dragonBelly: generateDragonBellyTexture(THREE),
             fireball: generateFireballTexture(THREE, false),
             fireballIce: generateFireballTexture(THREE, true),
@@ -2082,6 +2371,7 @@ function getTerrainTextures(THREE) {
             dragonEyeLava: generateGlowingEyeTexture(THREE, 0xFFFF00),
             dragonEyeWater: generateGlowingEyeTexture(THREE, 0x00FF88),
             dragonEyeCandy: generateGlowingEyeTexture(THREE, 0xFF69B4),
+            reaperEye: generateReaperEyeTexture(THREE),
             giantEyeLava: generateGlowingEyeTexture(THREE, 0xFF4400),
             wizardRobe: generateWizardRobeTexture(THREE, false),
             wizardRobeIce: generateWizardRobeTexture(THREE, true),
@@ -2127,7 +2417,7 @@ function getTerrainHeight(x, z) {
 }
 
 // Create visual hill meshes
-function createHills(scene, THREE, hillPositions, hillColor, iceTheme, desertTheme, lavaTheme, waterTheme, candyTheme) {
+function createHills(scene, THREE, hillPositions, hillColor, iceTheme, desertTheme, lavaTheme, waterTheme, candyTheme, graveyardTheme) {
     const textures = getTerrainTextures(THREE);
     const hills = hillPositions || HILLS;
     const color = hillColor || 0x88cc88;
@@ -2140,6 +2430,8 @@ function createHills(scene, THREE, hillPositions, hillColor, iceTheme, desertThe
         textureToUse = textures.sand;
     } else if (candyTheme) {
         textureToUse = textures.candy; // Candy frosting hills
+    } else if (graveyardTheme) {
+        textureToUse = textures.graveyard; // Burial mound texture
     } else if (iceTheme) {
         textureToUse = textures.grassIce;
     } else {
@@ -2154,6 +2446,12 @@ function createHills(scene, THREE, hillPositions, hillColor, iceTheme, desertThe
                 map: textureToUse,
                 color: color,
                 shininess: 50
+            });
+        } else if (graveyardTheme) {
+            // Dark burial mounds
+            hillMaterial = new THREE.MeshLambertMaterial({ 
+                map: textureToUse,
+                color: 0x2a2a20
             });
         } else {
             hillMaterial = new THREE.MeshLambertMaterial({ 
@@ -2187,69 +2485,202 @@ function createHills(scene, THREE, hillPositions, hillColor, iceTheme, desertThe
                 scene.add(sprinkle);
             }
         }
+        
+        // Add gravestones on graveyard hills
+        if (graveyardTheme) {
+            const numGravestones = 1 + Math.floor(Math.random() * 3);
+            for (let i = 0; i < numGravestones; i++) {
+                const gravestoneGroup = new THREE.Group();
+                
+                // Gravestone base
+                const baseGeometry = new THREE.BoxGeometry(1.2, 0.3, 0.6);
+                const stoneMaterial = new THREE.MeshLambertMaterial({ color: 0x4a4a4a });
+                const base = new THREE.Mesh(baseGeometry, stoneMaterial);
+                base.position.y = 0.15;
+                gravestoneGroup.add(base);
+                
+                // Gravestone body (rounded top)
+                const bodyGeometry = new THREE.BoxGeometry(1, 1.5, 0.3);
+                const body = new THREE.Mesh(bodyGeometry, stoneMaterial);
+                body.position.y = 1.05;
+                gravestoneGroup.add(body);
+                
+                // Rounded top
+                const topGeometry = new THREE.CylinderGeometry(0.5, 0.5, 0.3, 16, 1, false, 0, Math.PI);
+                const top = new THREE.Mesh(topGeometry, stoneMaterial);
+                top.rotation.x = Math.PI / 2;
+                top.rotation.z = Math.PI / 2;
+                top.position.y = 1.8;
+                gravestoneGroup.add(top);
+                
+                // Position on hill
+                const angle = (i / numGravestones) * Math.PI * 2 + Math.random() * 0.5;
+                const dist = hill.radius * 0.3 + Math.random() * hill.radius * 0.3;
+                gravestoneGroup.position.set(
+                    hill.x + Math.cos(angle) * dist,
+                    hill.height * 0.3,
+                    hill.z + Math.sin(angle) * dist
+                );
+                gravestoneGroup.rotation.y = Math.random() * 0.3 - 0.15;
+                gravestoneGroup.castShadow = true;
+                scene.add(gravestoneGroup);
+            }
+        }
     });
 }
 
 // Create mountains (world boundaries)
-function createMountains(scene, THREE, mountainPositions, candyTheme) {
+function createMountains(scene, THREE, mountainPositions, candyTheme, graveyardTheme) {
     const textures = getTerrainTextures(THREE);
     mountainPositions.forEach(mtn => {
-        const mountainGeometry = new THREE.ConeGeometry(mtn.width/2, mtn.height, 6);
-        let mountainMaterial;
-        
-        if (candyTheme) {
-            // Rock candy / crystal mountains
-            const crystalColors = [0xFF69B4, 0x87CEEB, 0xDDA0DD, 0x98FB98];
-            const crystalColor = crystalColors[Math.floor(Math.random() * crystalColors.length)];
-            mountainMaterial = new THREE.MeshPhongMaterial({ 
-                color: crystalColor,
-                shininess: 100,
-                transparent: true,
-                opacity: 0.85
-            });
-        } else {
-            mountainMaterial = new THREE.MeshLambertMaterial({ 
-                map: textures.mountain,
-                color: 0xaaaaaa
-            });
-        }
-        const mountain = new THREE.Mesh(mountainGeometry, mountainMaterial);
-        mountain.position.set(mtn.x, mtn.height/2, mtn.z);
-        scene.add(mountain);
-        
-        if (candyTheme) {
-            // Frosting top instead of snow
-            const frostingGeometry = new THREE.ConeGeometry(mtn.width/4, mtn.height/3, 6);
-            const frostingMaterial = new THREE.MeshPhongMaterial({ 
-                color: 0xFFFFFF,
-                shininess: 80
-            });
-            const frosting = new THREE.Mesh(frostingGeometry, frostingMaterial);
-            frosting.position.set(mtn.x, mtn.height * 0.75, mtn.z);
-            scene.add(frosting);
+        if (graveyardTheme) {
+            // Old English brick wall with iron fence
+            const wallHeight = mtn.height;
+            const wallWidth = mtn.width;
+            // Walls are thin - fixed depth for realistic brick wall (~0.3m)
+            const wallDepth = 1;
             
-            // Add cherry on top
-            const cherryGeometry = new THREE.SphereGeometry(mtn.width/8, 12, 12);
-            const cherryMaterial = new THREE.MeshPhongMaterial({ color: 0xFF0000, shininess: 100 });
-            const cherry = new THREE.Mesh(cherryGeometry, cherryMaterial);
-            cherry.position.set(mtn.x, mtn.height * 0.95, mtn.z);
-            scene.add(cherry);
-        } else {
-            // Snow cap on top
-            const snowGeometry = new THREE.ConeGeometry(mtn.width/4, mtn.height/3, 6);
-            const snowMaterial = new THREE.MeshLambertMaterial({ 
-                map: textures.snow,
-                color: 0xffffff
+            // Brick wall body
+            const wallGeometry = new THREE.BoxGeometry(wallWidth, wallHeight, wallDepth);
+            const wallMaterial = new THREE.MeshLambertMaterial({ 
+                color: 0x8b7355,
+                map: textures.brickWall
             });
-            const snow = new THREE.Mesh(snowGeometry, snowMaterial);
-            snow.position.set(mtn.x, mtn.height * 0.75, mtn.z);
-            scene.add(snow);
+            const wall = new THREE.Mesh(wallGeometry, wallMaterial);
+            wall.position.set(mtn.x, wallHeight/2, mtn.z);
+            scene.add(wall);
+            
+            // Stone cap on top of wall (proportional to wall)
+            const capHeight = Math.min(0.3, wallHeight * 0.1);
+            const capGeometry = new THREE.BoxGeometry(wallWidth + 0.4, capHeight, wallDepth + 0.4);
+            const capMaterial = new THREE.MeshLambertMaterial({ 
+                color: 0x4a4a4a,
+                map: textures.rock
+            });
+            const cap = new THREE.Mesh(capGeometry, capMaterial);
+            cap.position.set(mtn.x, wallHeight + capHeight/2, mtn.z);
+            scene.add(cap);
+            
+            // Iron fence on top (realistic height ~1m)
+            const fenceHeight = 1.5;
+            const postCount = Math.max(2, Math.floor(wallWidth / 6));
+            const spacing = wallWidth / (postCount + 1);
+            const fenceBase = wallHeight + capHeight; // Start fence on top of cap
+            
+            // Fence posts
+            for (let i = 1; i <= postCount; i++) {
+                const postX = mtn.x - wallWidth/2 + i * spacing;
+                
+                // Main post
+                const postGeometry = new THREE.CylinderGeometry(0.08, 0.08, fenceHeight, 6);
+                const postMaterial = new THREE.MeshPhongMaterial({ 
+                    color: 0x1a1a1a,
+                    shininess: 30
+                });
+                const post = new THREE.Mesh(postGeometry, postMaterial);
+                post.position.set(postX, fenceBase + fenceHeight/2, mtn.z);
+                scene.add(post);
+                
+                // Spear tip on post
+                const tipGeometry = new THREE.ConeGeometry(0.12, 0.25, 6);
+                const tipMaterial = new THREE.MeshPhongMaterial({ 
+                    color: 0x1a1a1a,
+                    shininess: 50
+                });
+                const tip = new THREE.Mesh(tipGeometry, tipMaterial);
+                tip.position.set(postX, fenceBase + fenceHeight + 0.12, mtn.z);
+                scene.add(tip);
+            }
+            
+            // Horizontal rails
+            const railGeometry = new THREE.BoxGeometry(wallWidth, 0.06, 0.06);
+            const railMaterial = new THREE.MeshPhongMaterial({ 
+                color: 0x1a1a1a,
+                shininess: 30
+            });
+            
+            // Lower rail
+            const lowerRail = new THREE.Mesh(railGeometry, railMaterial);
+            lowerRail.position.set(mtn.x, fenceBase + fenceHeight * 0.35, mtn.z);
+            scene.add(lowerRail);
+            
+            // Upper rail
+            const upperRail = new THREE.Mesh(railGeometry, railMaterial);
+            upperRail.position.set(mtn.x, fenceBase + fenceHeight * 0.75, mtn.z);
+            scene.add(upperRail);
+            
+            // Eerie green glow behind fence (only on some walls)
+            if (Math.random() > 0.5) {
+                const glowGeometry = new THREE.SphereGeometry(Math.min(mtn.width/8, 5), 12, 12);
+                const glowMaterial = new THREE.MeshBasicMaterial({ 
+                    color: 0x44ff44,
+                    transparent: true,
+                    opacity: 0.2
+                });
+                const glow = new THREE.Mesh(glowGeometry, glowMaterial);
+                glow.position.set(mtn.x, fenceBase + fenceHeight/2, mtn.z - wallDepth/2 - 3);
+                scene.add(glow);
+            }
+            
+        } else {
+            // Regular mountain (cone shape)
+            const mountainGeometry = new THREE.ConeGeometry(mtn.width/2, mtn.height, 6);
+            let mountainMaterial;
+            
+            if (candyTheme) {
+                // Rock candy / crystal mountains
+                const crystalColors = [0xFF69B4, 0x87CEEB, 0xDDA0DD, 0x98FB98];
+                const crystalColor = crystalColors[Math.floor(Math.random() * crystalColors.length)];
+                mountainMaterial = new THREE.MeshPhongMaterial({ 
+                    color: crystalColor,
+                    shininess: 100,
+                    transparent: true,
+                    opacity: 0.85
+                });
+            } else {
+                mountainMaterial = new THREE.MeshLambertMaterial({ 
+                    map: textures.mountain,
+                    color: 0xaaaaaa
+                });
+            }
+            const mountain = new THREE.Mesh(mountainGeometry, mountainMaterial);
+            mountain.position.set(mtn.x, mtn.height/2, mtn.z);
+            scene.add(mountain);
+            
+            if (candyTheme) {
+                // Frosting top instead of snow
+                const frostingGeometry = new THREE.ConeGeometry(mtn.width/4, mtn.height/3, 6);
+                const frostingMaterial = new THREE.MeshPhongMaterial({ 
+                    color: 0xFFFFFF,
+                    shininess: 80
+                });
+                const frosting = new THREE.Mesh(frostingGeometry, frostingMaterial);
+                frosting.position.set(mtn.x, mtn.height * 0.75, mtn.z);
+                scene.add(frosting);
+                
+                // Add cherry on top
+                const cherryGeometry = new THREE.SphereGeometry(mtn.width/8, 12, 12);
+                const cherryMaterial = new THREE.MeshPhongMaterial({ color: 0xFF0000, shininess: 100 });
+                const cherry = new THREE.Mesh(cherryGeometry, cherryMaterial);
+                cherry.position.set(mtn.x, mtn.height * 0.95, mtn.z);
+                scene.add(cherry);
+            } else {
+                // Snow cap on top
+                const snowGeometry = new THREE.ConeGeometry(mtn.width/4, mtn.height/3, 6);
+                const snowMaterial = new THREE.MeshLambertMaterial({ 
+                    map: textures.snow,
+                    color: 0xffffff
+                });
+                const snow = new THREE.Mesh(snowGeometry, snowMaterial);
+                snow.position.set(mtn.x, mtn.height * 0.75, mtn.z);
+                scene.add(snow);
+            }
         }
     });
 }
 
 // Create ground plane
-function createGround(scene, THREE, groundColor, iceTheme, desertTheme, lavaTheme, waterTheme, candyTheme) {
+function createGround(scene, THREE, groundColor, iceTheme, desertTheme, lavaTheme, waterTheme, candyTheme, graveyardTheme) {
     const textures = getTerrainTextures(THREE);
     const color = groundColor || 0xffffff; // Tint color applied over texture
     let textureToUse;
@@ -2298,6 +2729,8 @@ function createGround(scene, THREE, groundColor, iceTheme, desertTheme, lavaThem
         textureToUse = textures.sand || textures.grass; // Fall back to grass if no sand texture
     } else if (candyTheme) {
         textureToUse = textures.candy || textures.grass; // Candy frosting texture
+    } else if (graveyardTheme) {
+        textureToUse = textures.graveyard || textures.grass; // Graveyard dead grass/dirt texture
     } else if (iceTheme) {
         textureToUse = textures.grassIce;
     } else {

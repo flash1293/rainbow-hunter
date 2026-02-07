@@ -646,6 +646,27 @@ function initLoop() {
             }
         });
 
+        // Animate mist pools (rising mist particles)
+        if (G.mistPools) {
+            G.mistPools.forEach(pool => {
+                pool.phase += 0.02;
+                // Animate mist particles rising and fading
+                if (pool.mesh.userData.mistParticles) {
+                    pool.mesh.userData.mistParticles.children.forEach((particle, idx) => {
+                        particle.userData.phase += 0.02 + idx * 0.003;
+                        particle.position.y = particle.userData.baseY + Math.sin(particle.userData.phase) * 0.5;
+                        particle.material.opacity = 0.2 + Math.sin(particle.userData.phase * 0.7) * 0.15;
+                        particle.scale.setScalar(1 + Math.sin(particle.userData.phase * 0.5) * 0.2);
+                    });
+                }
+                // Pulse the mist layer
+                const mistMesh = pool.mesh.children[1];
+                if (mistMesh && mistMesh.material) {
+                    mistMesh.material.opacity = 0.3 + Math.sin(pool.phase) * 0.15;
+                }
+            });
+        }
+
         // Animate whirlpool traps (spinning effect)
         G.traps.forEach(trap => {
             if (trap.type === 'whirlpool') {
@@ -881,6 +902,8 @@ function initLoop() {
                     }
                     
                     updateGoblins();
+                    updateZombieSpawns();
+                    updateOvenSpawns();
                     updateGuardianArrows();
                     updateMummyTornados();
                     updateLavaTrails();

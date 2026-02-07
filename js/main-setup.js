@@ -865,9 +865,12 @@ function initSetup() {
             }
         }
         
-        // Update goblins (only if array lengths match - skip during level transitions)
-        if (data.goblins && data.goblins.length === G.goblins.length) {
-            data.goblins.forEach((gobData, i) => {
+        // Update goblins (sync up to the number available from host)
+        // Client may have extra spawned zombies that were created via events
+        if (data.goblins && G.goblins) {
+            const syncCount = Math.min(data.goblins.length, G.goblins.length);
+            for (let i = 0; i < syncCount; i++) {
+                const gobData = data.goblins[i];
                 const gob = G.goblins[i];
                 gob.mesh.position.set(gobData.x, gobData.y, gobData.z);
                 gob.mesh.rotation.y = gobData.rotation;
@@ -907,7 +910,7 @@ function initSetup() {
                 if (!gobData.alive && gob.mesh.rotation.z !== Math.PI / 2) {
                     gob.mesh.rotation.z = Math.PI / 2;
                 }
-            });
+            }
         }
         
         // Update guardian arrows
@@ -1034,8 +1037,12 @@ function initSetup() {
         // Update dragon state
         if (data.dragon) {
             if (!G.dragon && currentDifficulty === 'hard') {
-                // Create dragon if it doesn't exist yet
-                G.dragon = createDragon();
+                // Create dragon/reaper if it doesn't exist yet
+                if (G.graveyardTheme || G.levelConfig.useReaper) {
+                    G.dragon = createReaper();
+                } else {
+                    G.dragon = createDragon();
+                }
                 G.scene.add(G.dragon.mesh);
             }
             if (G.dragon) {
@@ -1918,6 +1925,183 @@ function initSetup() {
             hookStripe.rotation.z = Math.PI / 2;
             treeGroup.add(hookStripe);
             
+        } else if (treeType === 'tombstone') {
+            // Graveyard tombstone
+            const stoneColor = 0x5a5a5a;
+            const mossColor = 0x2a3a2a;
+            
+            // Main tombstone slab
+            const slabGeometry = new THREE.BoxGeometry(0.8, 1.5, 0.2);
+            const slabMaterial = new THREE.MeshLambertMaterial({ color: stoneColor });
+            const slab = new THREE.Mesh(slabGeometry, slabMaterial);
+            slab.position.y = 0.75;
+            slab.castShadow = true;
+            treeGroup.add(slab);
+            
+            // Rounded top
+            const topGeometry = new THREE.CylinderGeometry(0.4, 0.4, 0.2, 16, 1, false, 0, Math.PI);
+            const top = new THREE.Mesh(topGeometry, slabMaterial);
+            top.position.set(0, 1.5, 0);
+            top.rotation.z = Math.PI / 2;
+            top.rotation.y = Math.PI / 2;
+            top.castShadow = true;
+            treeGroup.add(top);
+            
+            // Base
+            const baseGeometry = new THREE.BoxGeometry(1.0, 0.2, 0.3);
+            const base = new THREE.Mesh(baseGeometry, slabMaterial);
+            base.position.y = 0.1;
+            treeGroup.add(base);
+            
+            // Moss patches
+            const mossMaterial = new THREE.MeshLambertMaterial({ color: mossColor });
+            for (let i = 0; i < 3; i++) {
+                const mossGeometry = new THREE.SphereGeometry(0.1 + Math.random() * 0.1, 6, 6);
+                const moss = new THREE.Mesh(mossGeometry, mossMaterial);
+                moss.position.set(
+                    (Math.random() - 0.5) * 0.6,
+                    Math.random() * 1.2,
+                    0.12
+                );
+                moss.scale.z = 0.3;
+                treeGroup.add(moss);
+            }
+            
+            // Random tilt for aged look
+            treeGroup.rotation.x = (Math.random() - 0.5) * 0.15;
+            treeGroup.rotation.z = (Math.random() - 0.5) * 0.1;
+            
+        } else if (treeType === 'deadtree') {
+            // Dead/bare tree for graveyard
+            const deadWoodColor = 0x2a2018;
+            const deadMaterial = new THREE.MeshLambertMaterial({ color: deadWoodColor });
+            
+            // Gnarled trunk
+            const trunkGeometry = new THREE.CylinderGeometry(0.2, 0.4, 3, 8);
+            const trunk = new THREE.Mesh(trunkGeometry, deadMaterial);
+            trunk.position.y = 1.5;
+            trunk.rotation.z = (Math.random() - 0.5) * 0.2;
+            trunk.castShadow = true;
+            treeGroup.add(trunk);
+            
+            // Dead branches
+            for (let i = 0; i < 5; i++) {
+                const branchLength = 0.8 + Math.random() * 1.2;
+                const branchGeometry = new THREE.CylinderGeometry(0.03, 0.08, branchLength, 6);
+                const branch = new THREE.Mesh(branchGeometry, deadMaterial);
+                const height = 1.5 + Math.random() * 1.5;
+                const angle = (i / 5) * Math.PI * 2 + Math.random() * 0.5;
+                branch.position.set(
+                    Math.cos(angle) * 0.3,
+                    height,
+                    Math.sin(angle) * 0.3
+                );
+                branch.rotation.x = Math.PI / 4 + Math.random() * 0.5;
+                branch.rotation.z = angle + Math.PI / 2;
+                branch.castShadow = true;
+                treeGroup.add(branch);
+            }
+            
+            // Twisted top
+            const topGeometry = new THREE.ConeGeometry(0.15, 1, 6);
+            const topBranch = new THREE.Mesh(topGeometry, deadMaterial);
+            topBranch.position.y = 3.2;
+            topBranch.rotation.z = (Math.random() - 0.5) * 0.4;
+            topBranch.castShadow = true;
+            treeGroup.add(topBranch);
+            
+        } else if (treeType === 'jackolantern') {
+            // Halloween Jack-o-lantern pumpkin
+            const pumpkinOrange = 0xFF6600;
+            const pumpkinDark = 0xCC4400;
+            const stemBrown = 0x4a3020;
+            const glowYellow = 0xFFDD00;
+            
+            // Main pumpkin body - slightly squashed sphere with ridges
+            const pumpkinGeometry = new THREE.SphereGeometry(0.6, 12, 12);
+            const pumpkinMaterial = new THREE.MeshLambertMaterial({ color: pumpkinOrange });
+            const pumpkin = new THREE.Mesh(pumpkinGeometry, pumpkinMaterial);
+            pumpkin.scale.set(1, 0.8, 1);
+            pumpkin.position.y = 0.5;
+            pumpkin.castShadow = true;
+            treeGroup.add(pumpkin);
+            
+            // Pumpkin ridges (vertical darker segments)
+            for (let i = 0; i < 8; i++) {
+                const ridgeGeometry = new THREE.CylinderGeometry(0.05, 0.05, 0.9, 6);
+                const ridgeMaterial = new THREE.MeshLambertMaterial({ color: pumpkinDark });
+                const ridge = new THREE.Mesh(ridgeGeometry, ridgeMaterial);
+                const angle = (i / 8) * Math.PI * 2;
+                ridge.position.set(
+                    Math.cos(angle) * 0.55,
+                    0.5,
+                    Math.sin(angle) * 0.55
+                );
+                ridge.scale.y = 0.8;
+                treeGroup.add(ridge);
+            }
+            
+            // Stem on top
+            const stemGeometry = new THREE.CylinderGeometry(0.08, 0.12, 0.3, 8);
+            const stemMaterial = new THREE.MeshLambertMaterial({ color: stemBrown });
+            const stem = new THREE.Mesh(stemGeometry, stemMaterial);
+            stem.position.set(0, 1.0, 0);
+            stem.rotation.z = (Math.random() - 0.5) * 0.3;
+            stem.castShadow = true;
+            treeGroup.add(stem);
+            
+            // Glowing face - triangular eyes
+            const glowMaterial = new THREE.MeshBasicMaterial({ 
+                color: glowYellow,
+                transparent: true,
+                opacity: 0.95
+            });
+            
+            // Left eye (triangle)
+            const eyeGeometry = new THREE.ConeGeometry(0.12, 0.15, 3);
+            const leftEye = new THREE.Mesh(eyeGeometry, glowMaterial);
+            leftEye.position.set(-0.2, 0.6, 0.5);
+            leftEye.rotation.x = Math.PI;
+            treeGroup.add(leftEye);
+            
+            // Right eye (triangle)
+            const rightEye = new THREE.Mesh(eyeGeometry, glowMaterial);
+            rightEye.position.set(0.2, 0.6, 0.5);
+            rightEye.rotation.x = Math.PI;
+            treeGroup.add(rightEye);
+            
+            // Nose (small triangle)
+            const noseGeometry = new THREE.ConeGeometry(0.08, 0.1, 3);
+            const nose = new THREE.Mesh(noseGeometry, glowMaterial);
+            nose.position.set(0, 0.45, 0.52);
+            nose.rotation.x = Math.PI;
+            treeGroup.add(nose);
+            
+            // Mouth - jagged smile
+            const mouthGeometry = new THREE.BoxGeometry(0.4, 0.1, 0.15);
+            const mouth = new THREE.Mesh(mouthGeometry, glowMaterial);
+            mouth.position.set(0, 0.3, 0.48);
+            treeGroup.add(mouth);
+            
+            // Teeth gaps in mouth
+            const toothGapMaterial = new THREE.MeshLambertMaterial({ color: pumpkinOrange });
+            for (let i = 0; i < 3; i++) {
+                const toothGap = new THREE.Mesh(
+                    new THREE.BoxGeometry(0.06, 0.12, 0.16),
+                    toothGapMaterial
+                );
+                toothGap.position.set(-0.12 + i * 0.12, 0.3, 0.48);
+                treeGroup.add(toothGap);
+            }
+            
+            // Inner glow light
+            const glowLight = new THREE.PointLight(0xFFAA00, 0.8, 5);
+            glowLight.position.set(0, 0.5, 0);
+            treeGroup.add(glowLight);
+            
+            // Random rotation for variety
+            treeGroup.rotation.y = Math.random() * Math.PI * 2;
+            
         } else {
             // Regular tree
             const trunkGeometry = new THREE.CylinderGeometry(0.3, 0.4, 2, 8);
@@ -1944,7 +2128,13 @@ function initSetup() {
         const terrainHeight = getTerrainHeight(pos.x, pos.z);
         treeGroup.position.set(pos.x, terrainHeight, pos.z);
         G.scene.add(treeGroup);
-        G.trees.push({ mesh: treeGroup, type: treeType, radius: treeType === 'cactus' ? 0.5 : 1.5 });
+        // Different collision radii for different tree types
+        let treeRadius = 1.5;
+        if (treeType === 'cactus') treeRadius = 0.5;
+        else if (treeType === 'tombstone') treeRadius = 0.5;
+        else if (treeType === 'deadtree') treeRadius = 0.4;
+        else if (treeType === 'jackolantern') treeRadius = 0.6;
+        G.trees.push({ mesh: treeGroup, type: treeType, radius: treeRadius });
     });
 
     // Rocks - use level config if available, otherwise use default positions
@@ -2158,6 +2348,48 @@ function initSetup() {
                 const y = Math.random() * 128;
                 rockCtx.fillRect(x, y, 3, 1);
             }
+        } else if (G.graveyardTheme) {
+            // Graveyard theme - dark weathered brick wall texture
+            rockCtx.fillStyle = '#2a2520';
+            rockCtx.fillRect(0, 0, 128, 128);
+            
+            // Draw brick pattern
+            const brickHeight = 8;
+            const brickWidth = 20;
+            for (let row = 0; row < 16; row++) {
+                const offset = (row % 2) * (brickWidth / 2);
+                for (let col = -1; col < 8; col++) {
+                    const x = col * brickWidth + offset;
+                    const y = row * brickHeight;
+                    // Randomize brick color (dark grays/browns)
+                    const shade = 0.7 + Math.random() * 0.3;
+                    const r = Math.floor(50 * shade);
+                    const g = Math.floor(45 * shade);
+                    const b = Math.floor(40 * shade);
+                    rockCtx.fillStyle = `rgb(${r},${g},${b})`;
+                    rockCtx.fillRect(x + 1, y + 1, brickWidth - 2, brickHeight - 2);
+                }
+            }
+            
+            // Mortar lines
+            rockCtx.strokeStyle = '#1a1515';
+            rockCtx.lineWidth = 1;
+            for (let row = 0; row <= 16; row++) {
+                rockCtx.beginPath();
+                rockCtx.moveTo(0, row * brickHeight);
+                rockCtx.lineTo(128, row * brickHeight);
+                rockCtx.stroke();
+            }
+            
+            // Add weathering and moss
+            for (let i = 0; i < 20; i++) {
+                const x = Math.random() * 128;
+                const y = Math.random() * 128;
+                rockCtx.fillStyle = `rgba(20, 40, 20, ${0.2 + Math.random() * 0.3})`;
+                rockCtx.beginPath();
+                rockCtx.arc(x, y, 3 + Math.random() * 5, 0, Math.PI * 2);
+                rockCtx.fill();
+            }
         } else {
             // Base sandy rock color
             rockCtx.fillStyle = '#a08060';
@@ -2200,17 +2432,71 @@ function initSetup() {
         rockTexture.wrapT = THREE.RepeatWrapping;
         rockTexture.repeat.set(2, 2);
         
-        // Create irregular cliff using multiple jagged shapes
+        // Create wall segments
         const segmentCount = Math.floor(wallWidth / 3);
-        for (let s = 0; s < segmentCount; s++) {
-            const segWidth = 3 + Math.random() * 2;
-            const segHeight = wallHeight * (0.6 + Math.random() * 0.5);
-            const segDepth = wallDepth * (0.5 + Math.random() * 0.5);
+        
+        if (G.graveyardTheme) {
+            // Graveyard - solid brick wall with iron fence on top
+            // Main brick wall body
+            const mainWallGeometry = new THREE.BoxGeometry(wallWidth, wallHeight * 0.7, wallDepth);
+            const mainWallMaterial = new THREE.MeshLambertMaterial({
+                map: rockTexture,
+                color: 0x3a3530
+            });
+            const mainWall = new THREE.Mesh(mainWallGeometry, mainWallMaterial);
+            mainWall.position.y = wallHeight * 0.35;
+            mainWall.castShadow = true;
+            mainWall.receiveShadow = true;
+            wallGroup.add(mainWall);
             
-            // Use irregular dodecahedron for more rugged look (or smooth spheres for candy)
-            const segGeometry = s % 3 === 0 
-                ? (G.candyTheme ? new THREE.SphereGeometry(segWidth * 0.8, 8, 8) : new THREE.DodecahedronGeometry(segWidth * 0.8, 0))
-                : new THREE.BoxGeometry(segWidth, segHeight, segDepth);
+            // Iron fence on top
+            const fenceSpacing = 1.5;
+            const fenceCount = Math.floor(wallWidth / fenceSpacing);
+            for (let f = 0; f < fenceCount; f++) {
+                // Vertical bar
+                const barGeometry = new THREE.CylinderGeometry(0.08, 0.08, wallHeight * 0.4, 6);
+                const barMaterial = new THREE.MeshLambertMaterial({ color: 0x1a1a1a });
+                const bar = new THREE.Mesh(barGeometry, barMaterial);
+                bar.position.set(
+                    (f - fenceCount / 2) * fenceSpacing,
+                    wallHeight * 0.7 + wallHeight * 0.2,
+                    0
+                );
+                bar.castShadow = true;
+                wallGroup.add(bar);
+                
+                // Spear point on top
+                const pointGeometry = new THREE.ConeGeometry(0.12, 0.3, 6);
+                const pointMaterial = new THREE.MeshLambertMaterial({ color: 0x2a2a2a });
+                const point = new THREE.Mesh(pointGeometry, pointMaterial);
+                point.position.set(
+                    (f - fenceCount / 2) * fenceSpacing,
+                    wallHeight * 0.7 + wallHeight * 0.4 + 0.15,
+                    0
+                );
+                wallGroup.add(point);
+            }
+            
+            // Horizontal fence rails
+            const railGeometry = new THREE.BoxGeometry(wallWidth, 0.1, 0.1);
+            const railMaterial = new THREE.MeshLambertMaterial({ color: 0x1a1a1a });
+            const topRail = new THREE.Mesh(railGeometry, railMaterial);
+            topRail.position.y = wallHeight * 0.7 + wallHeight * 0.35;
+            wallGroup.add(topRail);
+            const bottomRail = new THREE.Mesh(railGeometry.clone(), railMaterial);
+            bottomRail.position.y = wallHeight * 0.7 + wallHeight * 0.1;
+            wallGroup.add(bottomRail);
+        } else {
+            // Original rocky/candy wall segments
+            for (let s = 0; s < segmentCount; s++) {
+                const segWidth = 3 + Math.random() * 2;
+                const segHeight = wallHeight * (0.6 + Math.random() * 0.5);
+                const segDepth = wallDepth * (0.5 + Math.random() * 0.5);
+                
+                // Use irregular dodecahedron for more rugged look (or smooth spheres for candy)
+                const segGeometry = s % 3 === 0 
+                    ? (G.candyTheme ? new THREE.SphereGeometry(segWidth * 0.8, 8, 8) : new THREE.DodecahedronGeometry(segWidth * 0.8, 0))
+                    : new THREE.BoxGeometry(segWidth, segHeight, segDepth);
             
             const segMaterial = new THREE.MeshLambertMaterial({ 
                 map: rockTexture,
@@ -2227,6 +2513,7 @@ function initSetup() {
             segment.castShadow = true;
             segment.receiveShadow = true;
             wallGroup.add(segment);
+            }
         }
         
         if (G.candyTheme) {
@@ -2295,8 +2582,8 @@ function initSetup() {
                 candyPiece.castShadow = true;
                 wallGroup.add(candyPiece);
             }
-        } else {
-            // Add jagged rocks on top for rugged silhouette
+        } else if (!G.graveyardTheme) {
+            // Add jagged rocks on top for rugged silhouette (not for graveyard - it has fence already)
             for (let t = 0; t < wallWidth / 5; t++) {
                 const topRockGeometry = new THREE.ConeGeometry(1 + Math.random() * 1.5, 2 + Math.random() * 3, 5);
                 const topRockMaterial = new THREE.MeshLambertMaterial({ 
@@ -2441,8 +2728,7 @@ function initSetup() {
             const bladeHeight = G.desertTheme ? 0.2 + Math.random() * 0.15 : 0.4 + Math.random() * 0.3;
             const bladeGeometry = new THREE.ConeGeometry(0.05, bladeHeight, 3);
             const bladeMaterial = new THREE.MeshLambertMaterial({ 
-                color: G.desertTheme ? 0x8B7355 : G.grassColor, // Brown-ish dead grass in desert
-                flatShading: true
+                color: G.desertTheme ? 0x8B7355 : G.grassColor // Brown-ish dead grass in desert
             });
             const blade = new THREE.Mesh(bladeGeometry, bladeMaterial);
             blade.position.x = (Math.random() - 0.5) * 0.2;
@@ -2474,8 +2760,7 @@ function initSetup() {
             for (let j = 0; j < bladeCount; j++) {
                 const bladeGeometry = new THREE.ConeGeometry(0.05, 0.4 + Math.random() * 0.3, 3);
                 const bladeMaterial = new THREE.MeshLambertMaterial({ 
-                    color: G.grassColor,
-                    flatShading: true
+                    color: G.grassColor
                 });
                 const blade = new THREE.Mesh(bladeGeometry, bladeMaterial);
                 blade.position.x = (Math.random() - 0.5) * 0.2;
@@ -2513,8 +2798,7 @@ function initSetup() {
         const markGeometry = new THREE.BoxGeometry(0.61, 0.15, 0.41);
         const markMaterial = new THREE.MeshLambertMaterial({ 
             color: 0xFFFF00,
-            emissive: 0xFFAA00,
-            emissiveIntensity: 0.3
+            emissive: 0xFFAA00
         });
         const mark = new THREE.Mesh(markGeometry, markMaterial);
         mark.position.y = 0.3;
@@ -2561,9 +2845,7 @@ function initSetup() {
         // Spark at top of fuse
         const sparkGeometry = new THREE.SphereGeometry(0.1, 8, 8);
         const sparkMaterial = new THREE.MeshBasicMaterial({ 
-            color: 0xFF4500,
-            emissive: 0xFF4500,
-            emissiveIntensity: 1.0
+            color: 0xFF4500
         });
         const spark = new THREE.Mesh(sparkGeometry, sparkMaterial);
         spark.position.y = 1.0;
@@ -2597,8 +2879,7 @@ function initSetup() {
         const sphereGeometry = new THREE.SphereGeometry(0.3, 16, 16);
         const heartMaterial = new THREE.MeshLambertMaterial({ 
             color: 0xFF0000,
-            emissive: 0xFF0000,
-            emissiveIntensity: 0.3
+            emissive: 0xFF0000
         });
         
         const leftSphere = new THREE.Mesh(sphereGeometry, heartMaterial);
@@ -2648,8 +2929,7 @@ function initSetup() {
         const boxGeometry = new THREE.BoxGeometry(0.8, 0.7, 0.8);
         const boxMaterial = new THREE.MeshLambertMaterial({ 
             color: 0xFF69B4, // Hot pink
-            emissive: 0xFF1493,
-            emissiveIntensity: 0.2
+            emissive: 0xFF1493
         });
         const box = new THREE.Mesh(boxGeometry, boxMaterial);
         box.position.y = 0.4;
@@ -2659,8 +2939,7 @@ function initSetup() {
         // Ribbon horizontal strips (Schleife bands)
         const ribbonMaterial = new THREE.MeshLambertMaterial({ 
             color: 0xFFD700, // Gold
-            emissive: 0xFFD700,
-            emissiveIntensity: 0.3
+            emissive: 0xFFD700
         });
         
         // Vertical ribbon
@@ -2767,16 +3046,14 @@ function initSetup() {
                     color: config.color,
                     transparent: true,
                     opacity: 0.6,
-                    emissive: 0x4488FF,
-                    emissiveIntensity: 0.3
+                    emissive: 0x4488FF
             });
             materialMesh = new THREE.Mesh(glassGeometry, glassMaterial);
         } else if (config.type === 'metal') {
             const metalGeometry = new THREE.CylinderGeometry(0.15, 0.15, 1.2, 8);
             const metalMaterial = new THREE.MeshLambertMaterial({ 
                 color: config.color,
-                emissive: 0x444444,
-                emissiveIntensity: 0.2
+                emissive: 0x444444
             });
             materialMesh = new THREE.Mesh(metalGeometry, metalMaterial);
             materialMesh.rotation.z = Math.PI / 2;

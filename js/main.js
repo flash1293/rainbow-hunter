@@ -318,6 +318,9 @@ function initGame() {
     // Check if this is a candy-themed level
     G.candyTheme = G.levelConfig.candyTheme || false;
     
+    // Check if this is a graveyard/halloween-themed level
+    G.graveyardTheme = G.levelConfig.graveyardTheme || false;
+    
     // Three.js setup
     G.container = document.getElementById('gameCanvas');
     G.scene = new THREE.Scene();
@@ -400,12 +403,12 @@ function initGame() {
     G.grassColor = G.levelConfig.grassColor || 0x228B22;
 
     // Create terrain (use level-specific ground color and theme)
-    createGround(G.scene, THREE, G.levelConfig.groundColor, G.iceTheme, G.desertTheme, G.lavaTheme, G.waterTheme, G.candyTheme);
-    createHills(G.scene, THREE, G.levelConfig.hills, G.hillColor, G.iceTheme, G.desertTheme, G.lavaTheme, G.waterTheme, G.candyTheme);
+    createGround(G.scene, THREE, G.levelConfig.groundColor, G.iceTheme, G.desertTheme, G.lavaTheme, G.waterTheme, G.candyTheme, G.graveyardTheme);
+    createHills(G.scene, THREE, G.levelConfig.hills, G.hillColor, G.iceTheme, G.desertTheme, G.lavaTheme, G.waterTheme, G.candyTheme, G.graveyardTheme);
     
     // Mountains are optional (disabled in desert)
     if (G.levelConfig.hasMountains !== false && G.levelConfig.mountains && G.levelConfig.mountains.length > 0) {
-        createMountains(G.scene, THREE, G.levelConfig.mountains, G.candyTheme);
+        createMountains(G.scene, THREE, G.levelConfig.mountains, G.candyTheme, G.graveyardTheme);
     }
 
     // Impassable cliffs - towering formations that block everything including gliding

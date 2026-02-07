@@ -448,6 +448,87 @@ function initEntities() {
             const leg2 = new THREE.Mesh(legGeometry, bodyMaterial);
             leg2.position.set(0.2, 0.15, 0);
             goblinGrp.add(leg2);
+        } else if (G.graveyardTheme) {
+            // ZOMBIE - rotting undead creature for graveyard level
+            const zombieGreen = 0x4a6040;
+            const zombieDark = 0x2a3020;
+            const rotColor = 0x3a4030;
+
+            // Zombie body - hunched torso
+            const bodyGeometry = new THREE.BoxGeometry(0.6, 0.9, 0.4);
+            const bodyMaterial = new THREE.MeshLambertMaterial({ color: zombieGreen });
+            const body = new THREE.Mesh(bodyGeometry, bodyMaterial);
+            body.position.y = 0.75;
+            body.rotation.x = 0.2; // Hunched forward
+            body.castShadow = true;
+            goblinGrp.add(body);
+
+            // Zombie head - slightly lopsided
+            const headGeometry = new THREE.SphereGeometry(0.38, 16, 16);
+            const headMaterial = new THREE.MeshLambertMaterial({ color: zombieGreen });
+            const head = new THREE.Mesh(headGeometry, headMaterial);
+            head.position.set(0.05, 1.45, 0.1);
+            head.rotation.z = 0.15; // Tilted head
+            head.castShadow = true;
+            goblinGrp.add(head);
+
+            // Sunken glowing eyes
+            const eyeGeometry = new THREE.SphereGeometry(0.08, 12, 12);
+            const eyeMaterial = new THREE.MeshBasicMaterial({
+                color: 0xFFFF00,
+                transparent: true,
+                opacity: 0.8
+            });
+            const eye1 = new THREE.Mesh(eyeGeometry, eyeMaterial);
+            eye1.position.set(-0.12, 1.48, 0.32);
+            goblinGrp.add(eye1);
+
+            const eye2 = new THREE.Mesh(eyeGeometry, eyeMaterial);
+            eye2.position.set(0.15, 1.45, 0.32);
+            goblinGrp.add(eye2);
+
+            // Gaping mouth
+            const mouthGeometry = new THREE.BoxGeometry(0.2, 0.15, 0.1);
+            const mouthMaterial = new THREE.MeshBasicMaterial({ color: 0x1a1010 });
+            const mouth = new THREE.Mesh(mouthGeometry, mouthMaterial);
+            mouth.position.set(0.02, 1.32, 0.35);
+            goblinGrp.add(mouth);
+
+            // Exposed bones/ribs
+            const ribMaterial = new THREE.MeshLambertMaterial({ color: 0xd0c8b0 });
+            for (let i = 0; i < 3; i++) {
+                const ribGeometry = new THREE.CylinderGeometry(0.03, 0.03, 0.25, 6);
+                const rib = new THREE.Mesh(ribGeometry, ribMaterial);
+                rib.position.set(0, 0.6 + i * 0.12, 0.22);
+                rib.rotation.z = Math.PI / 2;
+                goblinGrp.add(rib);
+            }
+
+            // Tattered arms
+            const armGeometry = new THREE.CylinderGeometry(0.08, 0.06, 0.6, 6);
+            const armMaterial = new THREE.MeshLambertMaterial({ color: rotColor });
+            const arm1 = new THREE.Mesh(armGeometry, armMaterial);
+            arm1.position.set(-0.4, 0.6, 0.15);
+            arm1.rotation.z = 0.8;
+            arm1.rotation.x = -0.3;
+            goblinGrp.add(arm1);
+
+            const arm2 = new THREE.Mesh(armGeometry, armMaterial);
+            arm2.position.set(0.4, 0.55, 0.15);
+            arm2.rotation.z = -0.6;
+            arm2.rotation.x = -0.4;
+            goblinGrp.add(arm2);
+
+            // Shambling legs
+            const legGeometry = new THREE.CylinderGeometry(0.1, 0.08, 0.5, 6);
+            const leg1 = new THREE.Mesh(legGeometry, armMaterial);
+            leg1.position.set(-0.15, 0.25, 0);
+            goblinGrp.add(leg1);
+
+            const leg2 = new THREE.Mesh(legGeometry, armMaterial);
+            leg2.position.set(0.15, 0.25, 0);
+            leg2.rotation.x = 0.1;
+            goblinGrp.add(leg2);
         } else {
             const bodyGeometry = new THREE.BoxGeometry(0.6, 0.8, 0.4);
             const bodyMaterial = new THREE.MeshLambertMaterial({ map: textures.goblinArmor });
@@ -836,6 +917,108 @@ function initEntities() {
             hook.rotation.x = Math.PI / 2;
             hook.rotation.z = -0.3;
             goblinGrp.add(hook);
+        } else if (G.graveyardTheme) {
+            // GHOST/SPECTRE - ethereal floating spirit
+            const ghostColor = 0x88aacc;
+            const ghostGlow = 0x6688aa;
+
+            // Ghost body - flowing sheet-like form
+            const bodyGeometry = new THREE.ConeGeometry(0.8, 2.2, 8);
+            const bodyMaterial = new THREE.MeshPhongMaterial({
+                color: ghostColor,
+                transparent: true,
+                opacity: 0.7,
+                emissive: ghostGlow,
+                emissiveIntensity: 0.3,
+                side: THREE.DoubleSide
+            });
+            const body = new THREE.Mesh(bodyGeometry, bodyMaterial);
+            body.position.y = 1.1;
+            body.rotation.x = Math.PI; // Inverted cone for ghost shape
+            goblinGrp.add(body);
+
+            // Ghost head
+            const headGeometry = new THREE.SphereGeometry(0.5, 16, 16);
+            const headMaterial = new THREE.MeshPhongMaterial({
+                color: ghostColor,
+                transparent: true,
+                opacity: 0.75,
+                emissive: ghostGlow,
+                emissiveIntensity: 0.2
+            });
+            const head = new THREE.Mesh(headGeometry, headMaterial);
+            head.position.y = 2.3;
+            goblinGrp.add(head);
+
+            // Hollow eye sockets with eerie glow
+            const eyeSocketGeometry = new THREE.SphereGeometry(0.15, 12, 12);
+            const eyeSocketMaterial = new THREE.MeshBasicMaterial({
+                color: 0x000000,
+                transparent: true,
+                opacity: 0.9
+            });
+            const socket1 = new THREE.Mesh(eyeSocketGeometry, eyeSocketMaterial);
+            socket1.position.set(-0.18, 2.35, 0.4);
+            goblinGrp.add(socket1);
+
+            const socket2 = new THREE.Mesh(eyeSocketGeometry, eyeSocketMaterial);
+            socket2.position.set(0.18, 2.35, 0.4);
+            goblinGrp.add(socket2);
+
+            // Glowing pupils
+            const pupilGeometry = new THREE.SphereGeometry(0.06, 8, 8);
+            const pupilMaterial = new THREE.MeshBasicMaterial({
+                color: 0xFF4400,
+                transparent: true,
+                opacity: 1.0
+            });
+            const pupil1 = new THREE.Mesh(pupilGeometry, pupilMaterial);
+            pupil1.position.set(-0.18, 2.35, 0.48);
+            goblinGrp.add(pupil1);
+
+            const pupil2 = new THREE.Mesh(pupilGeometry, pupilMaterial);
+            pupil2.position.set(0.18, 2.35, 0.48);
+            goblinGrp.add(pupil2);
+
+            // Wailing mouth
+            const mouthGeometry = new THREE.RingGeometry(0.08, 0.15, 8);
+            const mouthMaterial = new THREE.MeshBasicMaterial({
+                color: 0x1a1a2a,
+                side: THREE.DoubleSide
+            });
+            const mouth = new THREE.Mesh(mouthGeometry, mouthMaterial);
+            mouth.position.set(0, 2.1, 0.48);
+            goblinGrp.add(mouth);
+
+            // Ghostly arms/wisps
+            const armGeometry = new THREE.CylinderGeometry(0.08, 0.15, 1.0, 6);
+            const armMaterial = new THREE.MeshPhongMaterial({
+                color: ghostColor,
+                transparent: true,
+                opacity: 0.5,
+                emissive: ghostGlow,
+                emissiveIntensity: 0.2
+            });
+            const arm1 = new THREE.Mesh(armGeometry, armMaterial);
+            arm1.position.set(-0.6, 1.5, 0.2);
+            arm1.rotation.z = 0.7;
+            arm1.rotation.x = -0.3;
+            goblinGrp.add(arm1);
+
+            const arm2 = new THREE.Mesh(armGeometry, armMaterial);
+            arm2.position.set(0.6, 1.5, 0.2);
+            arm2.rotation.z = -0.7;
+            arm2.rotation.x = -0.3;
+            goblinGrp.add(arm2);
+
+            // Ethereal glow light
+            const ghostLight = new THREE.PointLight(0x6688ff, 0.4, 5);
+            ghostLight.position.set(0, 2.0, 0);
+            goblinGrp.add(ghostLight);
+
+            // Floating effect handled by game loop
+            goblinGrp.userData.isGhost = true;
+            goblinGrp.userData.floatOffset = Math.random() * Math.PI * 2;
         } else {
             const bodyGeometry = new THREE.BoxGeometry(0.8, 1.0, 0.5);
             const bodyMaterial = new THREE.MeshLambertMaterial({ map: textures.goblinArmor });
@@ -903,6 +1086,209 @@ function initEntities() {
             initialZ: z,
             initialPatrolLeft: patrolLeft,
             initialPatrolRight: patrolRight
+        };
+    }
+
+    // Skeleton warrior helper - undead skeletal enemy for graveyard
+    function createSkeleton(x, z, patrolLeft, patrolRight, speed = 0.012) {
+        const skeletonGrp = new THREE.Group();
+        
+        const boneWhite = 0xe8e0d0;
+        const boneShadow = 0xc0b8a8;
+        const eyeGlow = 0xFF4444;
+        
+        // Skull
+        const skullGeometry = new THREE.SphereGeometry(0.4, 12, 12);
+        const skullMaterial = new THREE.MeshLambertMaterial({ color: boneWhite });
+        const skull = new THREE.Mesh(skullGeometry, skullMaterial);
+        skull.scale.set(1, 1.1, 0.9);
+        skull.position.y = 1.8;
+        skull.castShadow = true;
+        skeletonGrp.add(skull);
+        
+        // Eye sockets (dark hollows)
+        const socketGeometry = new THREE.SphereGeometry(0.12, 8, 8);
+        const socketMaterial = new THREE.MeshBasicMaterial({ color: 0x1a1010 });
+        const socket1 = new THREE.Mesh(socketGeometry, socketMaterial);
+        socket1.position.set(-0.12, 1.85, 0.32);
+        skeletonGrp.add(socket1);
+        
+        const socket2 = new THREE.Mesh(socketGeometry, socketMaterial);
+        socket2.position.set(0.12, 1.85, 0.32);
+        skeletonGrp.add(socket2);
+        
+        // Glowing red eyes
+        const eyeGlowGeometry = new THREE.SphereGeometry(0.05, 6, 6);
+        const eyeGlowMaterial = new THREE.MeshBasicMaterial({ 
+            color: eyeGlow,
+            transparent: true,
+            opacity: 0.9
+        });
+        const glow1 = new THREE.Mesh(eyeGlowGeometry, eyeGlowMaterial);
+        glow1.position.set(-0.12, 1.85, 0.35);
+        skeletonGrp.add(glow1);
+        
+        const glow2 = new THREE.Mesh(eyeGlowGeometry, eyeGlowMaterial);
+        glow2.position.set(0.12, 1.85, 0.35);
+        skeletonGrp.add(glow2);
+        
+        // Nose hole (triangle)
+        const noseGeometry = new THREE.ConeGeometry(0.06, 0.1, 3);
+        const noseMaterial = new THREE.MeshBasicMaterial({ color: 0x1a1010 });
+        const nose = new THREE.Mesh(noseGeometry, noseMaterial);
+        nose.position.set(0, 1.75, 0.35);
+        nose.rotation.x = Math.PI;
+        skeletonGrp.add(nose);
+        
+        // Jaw with teeth
+        const jawGeometry = new THREE.BoxGeometry(0.3, 0.12, 0.15);
+        const jawMaterial = new THREE.MeshLambertMaterial({ color: boneShadow });
+        const jaw = new THREE.Mesh(jawGeometry, jawMaterial);
+        jaw.position.set(0, 1.58, 0.28);
+        skeletonGrp.add(jaw);
+        
+        // Teeth
+        for (let i = 0; i < 5; i++) {
+            const toothGeometry = new THREE.BoxGeometry(0.04, 0.08, 0.04);
+            const toothMaterial = new THREE.MeshLambertMaterial({ color: boneWhite });
+            const tooth = new THREE.Mesh(toothGeometry, toothMaterial);
+            tooth.position.set(-0.1 + i * 0.05, 1.62, 0.35);
+            skeletonGrp.add(tooth);
+        }
+        
+        // Spine/ribcage
+        const spineGeometry = new THREE.CylinderGeometry(0.08, 0.1, 0.9, 6);
+        const spineMaterial = new THREE.MeshLambertMaterial({ color: boneShadow });
+        const spine = new THREE.Mesh(spineGeometry, spineMaterial);
+        spine.position.y = 1.1;
+        skeletonGrp.add(spine);
+        
+        // Ribs
+        for (let i = 0; i < 4; i++) {
+            const ribGeometry = new THREE.TorusGeometry(0.25, 0.03, 6, 12, Math.PI);
+            const ribMaterial = new THREE.MeshLambertMaterial({ color: boneWhite });
+            const rib = new THREE.Mesh(ribGeometry, ribMaterial);
+            rib.position.set(0, 1.35 - i * 0.15, 0.1);
+            rib.rotation.x = -Math.PI / 2;
+            rib.rotation.z = Math.PI;
+            skeletonGrp.add(rib);
+        }
+        
+        // Pelvis
+        const pelvisGeometry = new THREE.BoxGeometry(0.4, 0.15, 0.2);
+        const pelvisMaterial = new THREE.MeshLambertMaterial({ color: boneShadow });
+        const pelvis = new THREE.Mesh(pelvisGeometry, pelvisMaterial);
+        pelvis.position.y = 0.6;
+        skeletonGrp.add(pelvis);
+        
+        // Arms (bones)
+        const armGeometry = new THREE.CylinderGeometry(0.04, 0.05, 0.6, 6);
+        const armMaterial = new THREE.MeshLambertMaterial({ color: boneWhite });
+        
+        // Upper arms
+        const upperArm1 = new THREE.Mesh(armGeometry, armMaterial);
+        upperArm1.position.set(-0.35, 1.2, 0);
+        upperArm1.rotation.z = 0.3;
+        skeletonGrp.add(upperArm1);
+        
+        const upperArm2 = new THREE.Mesh(armGeometry, armMaterial);
+        upperArm2.position.set(0.35, 1.2, 0);
+        upperArm2.rotation.z = -0.3;
+        skeletonGrp.add(upperArm2);
+        
+        // Forearms
+        const forearm1 = new THREE.Mesh(armGeometry, armMaterial);
+        forearm1.position.set(-0.55, 0.75, 0.1);
+        forearm1.rotation.z = 0.8;
+        forearm1.rotation.x = -0.3;
+        skeletonGrp.add(forearm1);
+        
+        const forearm2 = new THREE.Mesh(armGeometry, armMaterial);
+        forearm2.position.set(0.55, 0.75, 0.1);
+        forearm2.rotation.z = -0.8;
+        forearm2.rotation.x = -0.3;
+        skeletonGrp.add(forearm2);
+        
+        // Legs (bones)
+        const legGeometry = new THREE.CylinderGeometry(0.05, 0.06, 0.5, 6);
+        const leg1 = new THREE.Mesh(legGeometry, armMaterial);
+        leg1.position.set(-0.12, 0.3, 0);
+        skeletonGrp.add(leg1);
+        
+        const leg2 = new THREE.Mesh(legGeometry, armMaterial);
+        leg2.position.set(0.12, 0.3, 0);
+        skeletonGrp.add(leg2);
+        
+        // Bone bow (instead of sword - skeleton archers!)
+        const bowGroup = new THREE.Group();
+        
+        // Bow limb (curved bone shape)
+        const bowCurve = new THREE.QuadraticBezierCurve3(
+            new THREE.Vector3(0, -0.5, 0),
+            new THREE.Vector3(0.3, 0, 0),
+            new THREE.Vector3(0, 0.5, 0)
+        );
+        const bowTubeGeometry = new THREE.TubeGeometry(bowCurve, 20, 0.04, 8, false);
+        const bowMaterial = new THREE.MeshLambertMaterial({ color: boneWhite });
+        const bowLimb = new THREE.Mesh(bowTubeGeometry, bowMaterial);
+        bowGroup.add(bowLimb);
+        
+        // Bowstring
+        const stringGeometry = new THREE.CylinderGeometry(0.01, 0.01, 1.0, 4);
+        const stringMaterial = new THREE.MeshBasicMaterial({ color: 0x3a3a3a });
+        const bowString = new THREE.Mesh(stringGeometry, stringMaterial);
+        bowString.position.set(0, 0, 0);
+        bowGroup.add(bowString);
+        
+        bowGroup.position.set(-0.65, 1.0, 0.2);
+        bowGroup.rotation.z = 0.3;
+        skeletonGrp.add(bowGroup);
+        
+        // Quiver of arrows on back
+        const quiverGeometry = new THREE.CylinderGeometry(0.12, 0.15, 0.6, 8);
+        const quiverMaterial = new THREE.MeshLambertMaterial({ color: boneShadow });
+        const quiver = new THREE.Mesh(quiverGeometry, quiverMaterial);
+        quiver.position.set(0, 1.2, -0.25);
+        quiver.rotation.x = 0.2;
+        skeletonGrp.add(quiver);
+        
+        // Arrows sticking out of quiver
+        for (let i = 0; i < 3; i++) {
+            const arrowShaftGeometry = new THREE.CylinderGeometry(0.02, 0.02, 0.4, 4);
+            const arrowShaftMaterial = new THREE.MeshLambertMaterial({ color: 0x4a3a2a });
+            const arrowShaft = new THREE.Mesh(arrowShaftGeometry, arrowShaftMaterial);
+            arrowShaft.position.set(-0.05 + i * 0.05, 1.5, -0.25);
+            arrowShaft.rotation.x = 0.15;
+            skeletonGrp.add(arrowShaft);
+        }
+        
+        // Eye glow point light
+        const skeletonLight = new THREE.PointLight(eyeGlow, 0.3, 3);
+        skeletonLight.position.set(0, 1.85, 0.3);
+        skeletonGrp.add(skeletonLight);
+        
+        skeletonGrp.position.set(x, getTerrainHeight(x, z), z);
+        G.scene.add(skeletonGrp);
+        
+        const health = 4;
+        
+        return {
+            mesh: skeletonGrp,
+            speed: speed * speedMultiplier,
+            direction: 1,
+            patrolLeft: patrolLeft,
+            patrolRight: patrolRight,
+            alive: true,
+            radius: 1.5,
+            health: health,
+            maxHealth: health,
+            isSkeleton: true,
+            isChasing: false,
+            initialX: x,
+            initialZ: z,
+            initialPatrolLeft: patrolLeft,
+            initialPatrolRight: patrolRight,
+            lastFireTime: 0
         };
     }
 
@@ -1023,6 +1409,154 @@ function initEntities() {
 
             const rightLeg = new THREE.Mesh(legGeometry, bodyMaterial);
             rightLeg.position.set(1.0, 0.8, 0);
+            rightLeg.castShadow = true;
+            giantGrp.add(rightLeg);
+
+        } else if (G.graveyardTheme) {
+            // EXECUTIONER - massive hooded figure with giant axe
+            const hoodBlack = 0x0a0a0f;
+            const skinPale = 0x6a5a5a;
+            const bloodRed = 0x660000;
+
+            // Massive robed body
+            const bodyGeometry = new THREE.CylinderGeometry(1.4, 2.2, 5.0, 12);
+            const bodyMaterial = new THREE.MeshLambertMaterial({ color: hoodBlack });
+            const body = new THREE.Mesh(bodyGeometry, bodyMaterial);
+            body.position.y = 3.2;
+            body.castShadow = true;
+            giantGrp.add(body);
+
+            // Ragged cape edges
+            for (let i = 0; i < 12; i++) {
+                const ragGeometry = new THREE.ConeGeometry(0.25, 1.0, 4);
+                const ragMaterial = new THREE.MeshLambertMaterial({ color: 0x050508 });
+                const rag = new THREE.Mesh(ragGeometry, ragMaterial);
+                const angle = (i / 12) * Math.PI * 2;
+                rag.position.set(Math.cos(angle) * 2.0, 0.5, Math.sin(angle) * 2.0);
+                rag.rotation.x = Math.PI;
+                giantGrp.add(rag);
+            }
+
+            // Hood
+            const hoodGeometry = new THREE.ConeGeometry(1.2, 2.0, 12);
+            const hood = new THREE.Mesh(hoodGeometry, bodyMaterial);
+            hood.position.y = 6.5;
+            hood.castShadow = true;
+            giantGrp.add(hood);
+
+            // Shadowed face (only glowing eyes visible)
+            const faceGeometry = new THREE.SphereGeometry(0.8, 12, 12);
+            const faceMaterial = new THREE.MeshBasicMaterial({ color: 0x000000 });
+            const face = new THREE.Mesh(faceGeometry, faceMaterial);
+            face.position.set(0, 5.8, 0.4);
+            face.scale.z = 0.6;
+            giantGrp.add(face);
+
+            // Glowing red eyes in the darkness
+            const eyeGeometry = new THREE.SphereGeometry(0.15, 12, 12);
+            const eyeMaterial = new THREE.MeshBasicMaterial({
+                color: 0xFF0000,
+                transparent: true,
+                opacity: 1.0
+            });
+            const e1 = new THREE.Mesh(eyeGeometry, eyeMaterial);
+            e1.position.set(-0.25, 5.85, 0.85);
+            giantGrp.add(e1);
+
+            const e2 = new THREE.Mesh(eyeGeometry, eyeMaterial);
+            e2.position.set(0.25, 5.85, 0.85);
+            giantGrp.add(e2);
+
+            // Eye glow light
+            const eyeLight = new THREE.PointLight(0xFF0000, 0.3, 3);
+            eyeLight.position.set(0, 5.85, 0.9);
+            giantGrp.add(eyeLight);
+
+            // Massive arms
+            const armGeometry = new THREE.CylinderGeometry(0.4, 0.7, 3.5, 8);
+            const armMaterial = new THREE.MeshLambertMaterial({ color: hoodBlack });
+
+            const leftArm = new THREE.Mesh(armGeometry, armMaterial);
+            leftArm.position.set(-2.0, 3.5, 0);
+            leftArm.rotation.z = 0.4;
+            leftArm.castShadow = true;
+            giantGrp.add(leftArm);
+            giantGrp.leftArm = leftArm;
+
+            const rightArm = new THREE.Mesh(armGeometry, armMaterial);
+            rightArm.position.set(2.0, 3.5, 0);
+            rightArm.rotation.z = -0.4;
+            rightArm.castShadow = true;
+            giantGrp.add(rightArm);
+            giantGrp.rightArm = rightArm;
+
+            // Pale hands
+            const handGeometry = new THREE.BoxGeometry(0.6, 0.6, 0.5);
+            const handMaterial = new THREE.MeshLambertMaterial({ color: skinPale });
+
+            const leftFist = new THREE.Mesh(handGeometry, handMaterial);
+            leftFist.position.set(-2.6, 1.5, 0);
+            leftFist.castShadow = true;
+            giantGrp.add(leftFist);
+            giantGrp.leftFist = leftFist;
+
+            const rightFist = new THREE.Mesh(handGeometry, handMaterial);
+            rightFist.position.set(2.6, 1.5, 0);
+            rightFist.castShadow = true;
+            giantGrp.add(rightFist);
+            giantGrp.rightFist = rightFist;
+
+            // GIANT AXE
+            // Axe handle
+            const handleGeometry = new THREE.CylinderGeometry(0.12, 0.12, 5.0, 8);
+            const handleMaterial = new THREE.MeshLambertMaterial({ color: 0x3a2a1a });
+            const handle = new THREE.Mesh(handleGeometry, handleMaterial);
+            handle.position.set(2.8, 3.5, 0.5);
+            handle.rotation.z = -0.3;
+            giantGrp.add(handle);
+
+            // Axe blade (double-sided)
+            const bladeGeometry = new THREE.BoxGeometry(2.0, 2.5, 0.15);
+            const bladeMaterial = new THREE.MeshLambertMaterial({ color: 0x4a4a4a });
+            const blade = new THREE.Mesh(bladeGeometry, bladeMaterial);
+            blade.position.set(3.5, 5.5, 0.5);
+            blade.rotation.z = -0.3;
+            giantGrp.add(blade);
+
+            // Blade edge (sharper triangle)
+            const edgeGeometry = new THREE.ConeGeometry(0.8, 2.5, 4);
+            const edgeMaterial = new THREE.MeshLambertMaterial({ color: 0x6a6a6a });
+            const edge1 = new THREE.Mesh(edgeGeometry, edgeMaterial);
+            edge1.position.set(4.5, 5.5, 0.5);
+            edge1.rotation.z = Math.PI / 2 - 0.3;
+            giantGrp.add(edge1);
+
+            // Blood stains on blade
+            const bloodGeometry = new THREE.PlaneGeometry(0.5, 0.8);
+            const bloodMaterial = new THREE.MeshBasicMaterial({
+                color: bloodRed,
+                transparent: true,
+                opacity: 0.7,
+                side: THREE.DoubleSide
+            });
+            for (let i = 0; i < 3; i++) {
+                const blood = new THREE.Mesh(bloodGeometry, bloodMaterial);
+                blood.position.set(3.5 + i * 0.4, 5.0 + i * 0.3, 0.52);
+                blood.rotation.z = Math.random() * 0.5;
+                giantGrp.add(blood);
+            }
+
+            // Thick legs
+            const legGeometry = new THREE.CylinderGeometry(0.6, 0.8, 2.5, 8);
+            const legMaterial = new THREE.MeshLambertMaterial({ color: hoodBlack });
+
+            const leftLeg = new THREE.Mesh(legGeometry, legMaterial);
+            leftLeg.position.set(-0.8, 1.0, 0);
+            leftLeg.castShadow = true;
+            giantGrp.add(leftLeg);
+
+            const rightLeg = new THREE.Mesh(legGeometry, legMaterial);
+            rightLeg.position.set(0.8, 1.0, 0);
             rightLeg.castShadow = true;
             giantGrp.add(rightLeg);
 
@@ -1299,6 +1833,157 @@ function initEntities() {
             const lolliSwirl = new THREE.Mesh(lolliSwirlGeometry, lolliSwirlMaterial);
             lolliSwirl.position.set(0.8, 3.0, 0.35);
             wizardGrp.add(lolliSwirl);
+
+        } else if (G.graveyardTheme) {
+            // WITCH - green-skinned crone with pointy hat and broomstick
+            const witchGreen = 0x3a6030;
+            const witchDark = 0x1a3010;
+            const hatBlack = 0x1a1a1a;
+
+            // Hunched robed body
+            const bodyGeometry = new THREE.CylinderGeometry(0.5, 0.9, 2.2, 12);
+            const bodyMaterial = new THREE.MeshLambertMaterial({ color: 0x1a1a2a });
+            const body = new THREE.Mesh(bodyGeometry, bodyMaterial);
+            body.position.y = 1.3;
+            body.rotation.x = 0.15;
+            body.castShadow = true;
+            wizardGrp.add(body);
+
+            // Ragged cloak edges
+            for (let i = 0; i < 8; i++) {
+                const ragGeometry = new THREE.ConeGeometry(0.15, 0.5, 4);
+                const ragMaterial = new THREE.MeshLambertMaterial({ color: 0x0a0a15 });
+                const rag = new THREE.Mesh(ragGeometry, ragMaterial);
+                const angle = (i / 8) * Math.PI * 2;
+                rag.position.set(Math.cos(angle) * 0.8, 0.25, Math.sin(angle) * 0.8);
+                rag.rotation.x = Math.PI;
+                wizardGrp.add(rag);
+            }
+
+            // Witch head - pointed chin
+            const headGeometry = new THREE.SphereGeometry(0.45, 16, 16);
+            headGeometry.scale(1, 1.1, 0.9);
+            const headMaterial = new THREE.MeshLambertMaterial({ color: witchGreen });
+            const head = new THREE.Mesh(headGeometry, headMaterial);
+            head.position.y = 2.7;
+            head.castShadow = true;
+            wizardGrp.add(head);
+
+            // Pointed chin
+            const chinGeometry = new THREE.ConeGeometry(0.15, 0.3, 6);
+            const chin = new THREE.Mesh(chinGeometry, headMaterial);
+            chin.position.set(0, 2.3, 0.25);
+            chin.rotation.x = -0.5;
+            wizardGrp.add(chin);
+
+            // Long hooked nose
+            const noseGeometry = new THREE.ConeGeometry(0.08, 0.35, 6);
+            const nose = new THREE.Mesh(noseGeometry, headMaterial);
+            nose.position.set(0, 2.65, 0.5);
+            nose.rotation.x = Math.PI / 2 + 0.4;
+            wizardGrp.add(nose);
+
+            // Wart on nose
+            const wartGeometry = new THREE.SphereGeometry(0.04, 8, 8);
+            const wartMaterial = new THREE.MeshLambertMaterial({ color: witchDark });
+            const wart = new THREE.Mesh(wartGeometry, wartMaterial);
+            wart.position.set(0.05, 2.62, 0.58);
+            wizardGrp.add(wart);
+
+            // Glowing evil eyes
+            const eyeGeometry = new THREE.SphereGeometry(0.1, 12, 12);
+            const eyeMaterial = new THREE.MeshBasicMaterial({
+                color: 0x00FF00,
+                transparent: true,
+                opacity: 0.9
+            });
+            const e1 = new THREE.Mesh(eyeGeometry, eyeMaterial);
+            e1.position.set(-0.15, 2.75, 0.38);
+            wizardGrp.add(e1);
+
+            const e2 = new THREE.Mesh(eyeGeometry, eyeMaterial);
+            e2.position.set(0.15, 2.75, 0.38);
+            wizardGrp.add(e2);
+
+            // Sinister grin
+            const mouthGeometry = new THREE.TorusGeometry(0.12, 0.02, 8, 16, Math.PI);
+            const mouthMaterial = new THREE.MeshBasicMaterial({ color: 0x400000 });
+            const mouth = new THREE.Mesh(mouthGeometry, mouthMaterial);
+            mouth.position.set(0, 2.45, 0.4);
+            wizardGrp.add(mouth);
+
+            // Pointy witch hat
+            const hatBrimGeometry = new THREE.CylinderGeometry(0.7, 0.7, 0.08, 12);
+            const hatMaterial = new THREE.MeshLambertMaterial({ color: hatBlack });
+            const hatBrim = new THREE.Mesh(hatBrimGeometry, hatMaterial);
+            hatBrim.position.y = 3.15;
+            wizardGrp.add(hatBrim);
+
+            const hatConeGeometry = new THREE.ConeGeometry(0.4, 1.2, 12);
+            const hatCone = new THREE.Mesh(hatConeGeometry, hatMaterial);
+            hatCone.position.y = 3.8;
+            hatCone.rotation.z = 0.15; // Slightly crooked
+            wizardGrp.add(hatCone);
+
+            // Hat buckle
+            const buckleGeometry = new THREE.BoxGeometry(0.2, 0.15, 0.05);
+            const buckleMaterial = new THREE.MeshLambertMaterial({ color: 0xFFD700 });
+            const buckle = new THREE.Mesh(buckleGeometry, buckleMaterial);
+            buckle.position.set(0, 3.25, 0.38);
+            wizardGrp.add(buckle);
+
+            // Scraggly hair
+            const hairMaterial = new THREE.MeshLambertMaterial({ color: 0x333333 });
+            for (let i = 0; i < 5; i++) {
+                const hairGeometry = new THREE.CylinderGeometry(0.02, 0.01, 0.4 + Math.random() * 0.3, 4);
+                const hair = new THREE.Mesh(hairGeometry, hairMaterial);
+                const angle = Math.PI + (i - 2) * 0.3;
+                hair.position.set(Math.cos(angle) * 0.35, 2.45, Math.sin(angle) * 0.35);
+                hair.rotation.x = 0.5 + Math.random() * 0.3;
+                hair.rotation.z = (Math.random() - 0.5) * 0.4;
+                wizardGrp.add(hair);
+            }
+
+            // Broomstick (staff equivalent)
+            const broomStickGeometry = new THREE.CylinderGeometry(0.04, 0.04, 2.8, 6);
+            const broomStickMaterial = new THREE.MeshLambertMaterial({ color: 0x5c3d2e });
+            const broomStick = new THREE.Mesh(broomStickGeometry, broomStickMaterial);
+            broomStick.position.set(0.7, 1.6, 0.2);
+            broomStick.rotation.z = -0.15;
+            wizardGrp.add(broomStick);
+
+            // Broom bristles
+            const bristleMaterial = new THREE.MeshLambertMaterial({ color: 0x8B7355 });
+            for (let i = 0; i < 12; i++) {
+                const bristleGeometry = new THREE.CylinderGeometry(0.02, 0.01, 0.5, 4);
+                const bristle = new THREE.Mesh(bristleGeometry, bristleMaterial);
+                const angle = (i / 12) * Math.PI * 2;
+                bristle.position.set(
+                    0.7 + Math.cos(angle) * 0.1,
+                    0.15,
+                    0.2 + Math.sin(angle) * 0.1
+                );
+                bristle.rotation.x = 0.2 + Math.random() * 0.2;
+                bristle.rotation.z = (Math.random() - 0.5) * 0.3;
+                wizardGrp.add(bristle);
+            }
+
+            // Magic orb (glowing green)
+            const orbGeometry = new THREE.SphereGeometry(0.2, 16, 16);
+            const orbMaterial = new THREE.MeshBasicMaterial({
+                color: 0x00FF44,
+                transparent: true,
+                opacity: 0.8
+            });
+            const orb = new THREE.Mesh(orbGeometry, orbMaterial);
+            orb.position.set(-0.5, 2.2, 0.4);
+            wizardGrp.add(orb);
+            wizardGrp.staffOrb = orb;
+
+            // Orb glow light
+            const orbLight = new THREE.PointLight(0x00FF44, 0.5, 4);
+            orbLight.position.copy(orb.position);
+            wizardGrp.add(orbLight);
 
         } else {
             // Use ice theme robe texture if in ice level
@@ -1854,6 +2539,13 @@ function initEntities() {
         G.goblins.push(createGuardianGoblin(guardian[0], guardian[1], guardian[2], guardian[3], guardian[4]));
     });
     
+    // Create skeleton warriors from level config (graveyard level)
+    if (G.levelConfig.skeletons) {
+        G.levelConfig.skeletons.forEach(skeleton => {
+            G.goblins.push(createSkeleton(skeleton[0], skeleton[1], skeleton[2], skeleton[3], skeleton[4]));
+        });
+    }
+    
     // Guardians in a ring around treasure (both difficulties, only if level has treasure)
     if (G.levelConfig.hasTreasure !== false) {
         const treasureGuardX = G.levelConfig.treasurePosition?.x ?? GAME_CONFIG.TREASURE_X;
@@ -1897,6 +2589,94 @@ function initEntities() {
         // Additional regular goblins for hard mode
         G.levelConfig.hardModeGoblins.forEach(goblin => {
             G.goblins.push(createGoblin(goblin[0], goblin[1], goblin[2], goblin[3], goblin[4]));
+        });
+    }
+    
+    // Helper function to create candy ovens
+    function createOvenEntity(x, z) {
+        const ovenGroup = new THREE.Group();
+        
+        // Main oven body (brick red with candy accents)
+        const ovenBodyGeometry = new THREE.BoxGeometry(3, 3, 2.5);
+        const ovenBodyMaterial = new THREE.MeshLambertMaterial({ color: 0x8B4513 });
+        const ovenBody = new THREE.Mesh(ovenBodyGeometry, ovenBodyMaterial);
+        ovenBody.position.y = 1.5;
+        ovenBody.castShadow = true;
+        ovenGroup.add(ovenBody);
+        
+        // Oven door (black with golden trim)
+        const doorGeometry = new THREE.BoxGeometry(1.5, 1.2, 0.2);
+        const doorMaterial = new THREE.MeshLambertMaterial({ color: 0x1a1a1a });
+        const door = new THREE.Mesh(doorGeometry, doorMaterial);
+        door.position.set(0, 1.2, 1.35);
+        ovenGroup.add(door);
+        
+        // Door window (orange glow)
+        const windowGeometry = new THREE.BoxGeometry(0.8, 0.6, 0.1);
+        const windowMaterial = new THREE.MeshBasicMaterial({ 
+            color: 0xFF6600,
+            transparent: true,
+            opacity: 0.8
+        });
+        const windowMesh = new THREE.Mesh(windowGeometry, windowMaterial);
+        windowMesh.position.set(0, 1.3, 1.45);
+        ovenGroup.add(windowMesh);
+        
+        // Door handle (gold)
+        const handleGeometry = new THREE.CylinderGeometry(0.08, 0.08, 0.4, 8);
+        const handleMaterial = new THREE.MeshLambertMaterial({ color: 0xDAA520 });
+        const handle = new THREE.Mesh(handleGeometry, handleMaterial);
+        handle.position.set(0.5, 1.0, 1.5);
+        handle.rotation.z = Math.PI / 2;
+        ovenGroup.add(handle);
+        
+        // Chimney
+        const chimneyGeometry = new THREE.CylinderGeometry(0.4, 0.5, 2, 8);
+        const chimneyMaterial = new THREE.MeshLambertMaterial({ color: 0x654321 });
+        const chimney = new THREE.Mesh(chimneyGeometry, chimneyMaterial);
+        chimney.position.set(0, 4, -0.5);
+        ovenGroup.add(chimney);
+        
+        // Chimney top rim
+        const rimGeometry = new THREE.TorusGeometry(0.5, 0.1, 8, 12);
+        const rim = new THREE.Mesh(rimGeometry, chimneyMaterial);
+        rim.position.set(0, 5, -0.5);
+        rim.rotation.x = Math.PI / 2;
+        ovenGroup.add(rim);
+        
+        // Decorative icing trim on oven
+        const icingMaterial = new THREE.MeshBasicMaterial({ color: 0xFFFFFF });
+        const topTrimGeometry = new THREE.BoxGeometry(3.2, 0.15, 2.7);
+        const topTrim = new THREE.Mesh(topTrimGeometry, icingMaterial);
+        topTrim.position.y = 3.05;
+        ovenGroup.add(topTrim);
+        
+        // Fire glow light
+        const fireLight = new THREE.PointLight(0xFF4500, 0.8, 8);
+        fireLight.position.set(0, 1.2, 1);
+        ovenGroup.add(fireLight);
+        
+        const terrainH = getTerrainHeight(x, z);
+        ovenGroup.position.set(x, terrainH, z);
+        G.scene.add(ovenGroup);
+        
+        return {
+            mesh: ovenGroup,
+            x: x,
+            z: z,
+            fireLight: fireLight,
+            smokeParticles: [],
+            lastSmokeTime: 0,
+            lastSpawnTime: Date.now()
+        };
+    }
+    
+    // Create candy ovens for gingerbread spawning (candy theme only)
+    G.ovens = [];
+    if (G.candyTheme && G.levelConfig.ovens) {
+        G.levelConfig.ovens.forEach(ovenConfig => {
+            const oven = createOvenEntity(ovenConfig.x, ovenConfig.z);
+            G.ovens.push(oven);
         });
     }
 
@@ -2601,6 +3381,77 @@ function initEntities() {
         });
     }
 
+    // Level 7 unique elements - mist pools (Nebelteiche)
+    G.mistPools = [];
+    if (G.levelConfig.mistPools) {
+        G.levelConfig.mistPools.forEach(pool => {
+            const poolGroup = new THREE.Group();
+            
+            // Dark water surface
+            const poolGeometry = new THREE.CircleGeometry(pool.radius, 32);
+            const poolMaterial = new THREE.MeshLambertMaterial({
+                color: 0x1a2a3a,
+                transparent: true,
+                opacity: 0.85
+            });
+            const poolMesh = new THREE.Mesh(poolGeometry, poolMaterial);
+            poolMesh.rotation.x = -Math.PI / 2;
+            poolMesh.position.y = 0.02;
+            poolGroup.add(poolMesh);
+            
+            // Mist/fog layer
+            const mistGeometry = new THREE.CircleGeometry(pool.radius * 1.3, 32);
+            const mistMaterial = new THREE.MeshBasicMaterial({
+                color: 0x445566,
+                transparent: true,
+                opacity: 0.4
+            });
+            const mistMesh = new THREE.Mesh(mistGeometry, mistMaterial);
+            mistMesh.rotation.x = -Math.PI / 2;
+            mistMesh.position.y = 0.5;
+            poolGroup.add(mistMesh);
+            
+            // Rising mist particles
+            const particleGroup = new THREE.Group();
+            for (let i = 0; i < 8; i++) {
+                const particleGeometry = new THREE.SphereGeometry(0.3 + Math.random() * 0.3, 8, 8);
+                const particleMaterial = new THREE.MeshBasicMaterial({
+                    color: 0x667788,
+                    transparent: true,
+                    opacity: 0.3
+                });
+                const particle = new THREE.Mesh(particleGeometry, particleMaterial);
+                const angle = (i / 8) * Math.PI * 2;
+                const dist = pool.radius * 0.5 * Math.random();
+                particle.position.set(
+                    Math.cos(angle) * dist,
+                    0.5 + Math.random() * 1.5,
+                    Math.sin(angle) * dist
+                );
+                particle.userData.baseY = particle.position.y;
+                particle.userData.phase = Math.random() * Math.PI * 2;
+                particleGroup.add(particle);
+            }
+            poolGroup.add(particleGroup);
+            poolGroup.userData.mistParticles = particleGroup;
+            
+            // Eerie purple glow
+            const glowLight = new THREE.PointLight(0x6644aa, 0.5, pool.radius * 2);
+            glowLight.position.y = 1;
+            poolGroup.add(glowLight);
+            
+            poolGroup.position.set(pool.x, getTerrainHeight(pool.x, pool.z), pool.z);
+            G.scene.add(poolGroup);
+            G.mistPools.push({
+                mesh: poolGroup,
+                x: pool.x,
+                z: pool.z,
+                radius: pool.radius,
+                phase: Math.random() * Math.PI * 2
+            });
+        });
+    }
+
     // Create lava flows from rocks
     G.lavaFlows = [];
     if (G.levelConfig.lavaFlows) {
@@ -2999,21 +3850,278 @@ function initEntities() {
             frozenUntil: 0
         };
     }
+
+    // Create Reaper (boss enemy for graveyard theme - replaces dragon)
+    function createReaper(posConfig, scale = 1, health = 60) {
+        const textures = getTerrainTextures(THREE);
+        const reaperGroup = new THREE.Group();
+
+        // MASSIVE HOODED DEATH FIGURE - using visible dark colors (not pure black)
+        const cloakBlack = 0x2a2035;  // Dark purple-gray (visible against dark sky)
+        const cloakDark = 0x1a1520;   // Slightly lighter dark
+        const boneWhite = 0xd0c8b0;
+        const glowGreen = 0x00FF44;
+
+        // Main body/robe - massive flowing cloak
+        const robeGeometry = new THREE.CylinderGeometry(2.5, 4.5, 12, 16);
+        const robeMaterial = new THREE.MeshLambertMaterial({
+            color: cloakBlack
+        });
+        const robe = new THREE.Mesh(robeGeometry, robeMaterial);
+        robe.position.y = 6;
+        robe.castShadow = true;
+        reaperGroup.add(robe);
+
+        // Flowing tattered edges
+        for (let i = 0; i < 16; i++) {
+            const tatGeometry = new THREE.ConeGeometry(0.5, 3 + Math.random() * 2, 4);
+            const tatMaterial = new THREE.MeshLambertMaterial({ color: cloakDark });
+            const tatter = new THREE.Mesh(tatGeometry, tatMaterial);
+            const angle = (i / 16) * Math.PI * 2;
+            tatter.position.set(Math.cos(angle) * 4.2, 0.5, Math.sin(angle) * 4.2);
+            tatter.rotation.x = Math.PI;
+            reaperGroup.add(tatter);
+        }
+
+        // Upper body shroud
+        const shroudGeometry = new THREE.CylinderGeometry(2.0, 2.5, 4, 12);
+        const shroud = new THREE.Mesh(shroudGeometry, robeMaterial);
+        shroud.position.y = 12.5;
+        shroud.castShadow = true;
+        reaperGroup.add(shroud);
+
+        // Hood - deep and dark
+        const hoodGeometry = new THREE.ConeGeometry(2.5, 4, 12);
+        const hoodMaterial = new THREE.MeshLambertMaterial({ color: cloakBlack });
+        const hood = new THREE.Mesh(hoodGeometry, hoodMaterial);
+        hood.position.y = 16;
+        hood.rotation.x = 0.2;
+        hood.castShadow = true;
+        reaperGroup.add(hood);
+
+        // Hood opening (shadowed face area)
+        const faceVoidGeometry = new THREE.SphereGeometry(1.5, 16, 16);
+        const faceVoidMaterial = new THREE.MeshBasicMaterial({
+            color: 0x000000,
+            transparent: true,
+            opacity: 0.95
+        });
+        const faceVoid = new THREE.Mesh(faceVoidGeometry, faceVoidMaterial);
+        faceVoid.position.set(0, 14.5, 1.2);
+        faceVoid.scale.z = 0.5;
+        reaperGroup.add(faceVoid);
+
+        // Skull face (barely visible in hood darkness)
+        const skullGeometry = new THREE.SphereGeometry(1.2, 16, 16);
+        const skullMaterial = new THREE.MeshLambertMaterial({
+            color: boneWhite,
+            transparent: true,
+            opacity: 0.4
+        });
+        const skull = new THREE.Mesh(skullGeometry, skullMaterial);
+        skull.position.set(0, 14.5, 0.8);
+        skull.scale.z = 0.8;
+        reaperGroup.add(skull);
+
+        // Glowing eye sockets
+        const eyeGeometry = new THREE.SphereGeometry(0.35, 12, 12);
+        const eyeMaterial = new THREE.MeshBasicMaterial({
+            color: 0xFF0000,
+            transparent: true,
+            blending: THREE.AdditiveBlending
+        });
+        const leftEye = new THREE.Mesh(eyeGeometry, eyeMaterial);
+        leftEye.position.set(-0.5, 14.7, 1.8);
+        reaperGroup.add(leftEye);
+
+        const rightEye = new THREE.Mesh(eyeGeometry, eyeMaterial);
+        rightEye.position.set(0.5, 14.7, 1.8);
+        reaperGroup.add(rightEye);
+
+        // Eye glow effect - brighter
+        const eyeGlowLight = new THREE.PointLight(0xFF0000, 3.0, 20);
+        eyeGlowLight.position.set(0, 14.7, 2);
+        reaperGroup.add(eyeGlowLight);
+
+        // Skeletal hands emerging from sleeves
+        const handMaterial = new THREE.MeshLambertMaterial({ color: boneWhite });
+
+        // Left hand holding scythe
+        const leftHandGeometry = new THREE.BoxGeometry(0.8, 1.5, 0.4);
+        const leftHand = new THREE.Mesh(leftHandGeometry, handMaterial);
+        leftHand.position.set(-3.5, 10, 2);
+        leftHand.rotation.z = 0.3;
+        reaperGroup.add(leftHand);
+
+        // Left arm sleeve
+        const leftSleeveGeometry = new THREE.CylinderGeometry(0.6, 1.2, 4, 8);
+        const leftSleeve = new THREE.Mesh(leftSleeveGeometry, robeMaterial);
+        leftSleeve.position.set(-3, 11, 1);
+        leftSleeve.rotation.z = 0.4;
+        leftSleeve.rotation.x = -0.3;
+        reaperGroup.add(leftSleeve);
+
+        // Right hand reaching out
+        const rightHandGeometry = new THREE.BoxGeometry(0.8, 1.5, 0.4);
+        const rightHand = new THREE.Mesh(rightHandGeometry, handMaterial);
+        rightHand.position.set(3.5, 10, 2);
+        rightHand.rotation.z = -0.3;
+        reaperGroup.add(rightHand);
+
+        // Right arm sleeve
+        const rightSleeveGeometry = new THREE.CylinderGeometry(0.6, 1.2, 4, 8);
+        const rightSleeve = new THREE.Mesh(rightSleeveGeometry, robeMaterial);
+        rightSleeve.position.set(3, 11, 1);
+        rightSleeve.rotation.z = -0.4;
+        rightSleeve.rotation.x = -0.3;
+        reaperGroup.add(rightSleeve);
+
+        // GIANT SCYTHE
+        // Scythe handle
+        const handleGeometry = new THREE.CylinderGeometry(0.2, 0.2, 16, 8);
+        const handleMaterial = new THREE.MeshLambertMaterial({ color: 0x2a1a0a });
+        const handle = new THREE.Mesh(handleGeometry, handleMaterial);
+        handle.position.set(-4, 12, 2.5);
+        handle.rotation.z = 0.3;
+        handle.rotation.x = -0.15;
+        reaperGroup.add(handle);
+
+        // Scythe blade - curved deadly
+        const bladeShape = new THREE.Shape();
+        bladeShape.moveTo(0, 0);
+        bladeShape.lineTo(5, 1);
+        bladeShape.quadraticCurveTo(7, 0.5, 8, -1);
+        bladeShape.quadraticCurveTo(6, -0.5, 4, 0);
+        bladeShape.lineTo(0, 0);
+
+        const bladeExtrudeSettings = {
+            steps: 1,
+            depth: 0.1,
+            bevelEnabled: false
+        };
+        const bladeGeometry = new THREE.ExtrudeGeometry(bladeShape, bladeExtrudeSettings);
+        const bladeMaterial = new THREE.MeshPhongMaterial({
+            color: 0x3a3a3a,
+            shininess: 100,
+            specular: 0x666666
+        });
+        const blade = new THREE.Mesh(bladeGeometry, bladeMaterial);
+        blade.position.set(-5, 19, 2);
+        blade.rotation.y = Math.PI / 2;
+        blade.rotation.z = 0.5;
+        reaperGroup.add(blade);
+
+        // Blade edge glow
+        const edgeGeometry = new THREE.CylinderGeometry(0.05, 0.05, 6, 8);
+        const edgeMaterial = new THREE.MeshBasicMaterial({
+            color: glowGreen,
+            transparent: true,
+            opacity: 0.6
+        });
+        const edge = new THREE.Mesh(edgeGeometry, edgeMaterial);
+        edge.position.set(-3, 19.5, 5);
+        edge.rotation.z = 0.8;
+        reaperGroup.add(edge);
+
+        // Ghostly trail particles (ethereal essence)
+        const trailGeometry = new THREE.SphereGeometry(0.5, 8, 8);
+        const trailMaterial = new THREE.MeshBasicMaterial({
+            color: glowGreen,
+            transparent: true,
+            opacity: 0.3
+        });
+        for (let i = 0; i < 8; i++) {
+            const trail = new THREE.Mesh(trailGeometry, trailMaterial);
+            trail.position.set(
+                (Math.random() - 0.5) * 6,
+                Math.random() * 12,
+                (Math.random() - 0.5) * 6
+            );
+            trail.scale.setScalar(0.3 + Math.random() * 0.7);
+            reaperGroup.add(trail);
+        }
+
+        // Eerie ambient light
+        const ambientGlow = new THREE.PointLight(glowGreen, 0.5, 15);
+        ambientGlow.position.set(0, 8, 0);
+        reaperGroup.add(ambientGlow);
+
+        // Position reaper
+        const reaperConfig = posConfig || G.levelConfig.dragon || { x: 0, z: -200 };
+        const reaperX = reaperConfig.x;
+        const reaperZ = reaperConfig.z;
+        const terrainH = getTerrainHeight(reaperX, reaperZ);
+        // Reaper should be at ground level
+        const reaperY = reaperConfig.y !== undefined ? reaperConfig.y : terrainH;
+
+        // Apply scale (use config scale or default 0.5)
+        const finalScale = reaperConfig.scale !== undefined ? reaperConfig.scale : scale;
+        reaperGroup.scale.set(finalScale, finalScale, finalScale);
+        reaperGroup.position.set(reaperX, reaperY, reaperZ);
+        G.scene.add(reaperGroup);
+
+        // Store blade and handle for attack animations
+        reaperGroup.blade = blade;
+        reaperGroup.handle = handle;
+
+        return {
+            mesh: reaperGroup,
+            head: hood,
+            leftEye: leftEye,
+            rightEye: rightEye,
+            blade: blade,
+            health: health,
+            maxHealth: health,
+            scale: finalScale,
+            alive: true,
+            speed: 0.025 * speedMultiplier * finalScale, // Slower reaper
+            patrolLeft: reaperX - 40,
+            patrolRight: reaperX + 40,
+            patrolFront: reaperZ - 25,
+            patrolBack: reaperZ + 25,
+            direction: 1,
+            lastFireTime: Date.now(),
+            fireInterval: finalScale < 0.5 ? 4000 : 3000,
+            isFlying: false, // Reapers float/hover
+            flyStartTime: 0,
+            flyDuration: 0,
+            flyTargetY: 0,
+            groundY: reaperY,
+            frozen: false,
+            frozenUntil: 0,
+            isReaper: true, // Flag to identify as reaper for special behavior
+            hoverPhase: Math.random() * Math.PI * 2,
+            chaseRange: 40, // Only chase player within this range
+            homeX: reaperX,
+            homeZ: reaperZ
+        };
+    }
     
     G.dragon = null;
     G.extraDragons = [];
     G.fireballs = [];
     
-    if (difficulty === 'hard') {
+    // Spawn boss - Reaper for graveyard (always, both difficulties), Dragon for others on hard
+    if (G.graveyardTheme || G.levelConfig.useReaper) {
+        G.dragon = createReaper();
+    } else if (difficulty === 'hard') {
         G.dragon = createDragon();
+    }
+    
+    if (difficulty === 'hard') {
         
-        // Create extra dragons for levels with multiple dragons
+        // Create extra bosses for levels with multiple dragons/reapers
         if (G.levelConfig.extraDragons) {
             G.levelConfig.extraDragons.forEach(pos => {
-                const dragonScale = pos.scale || 0.6;
-                const dragonHealth = pos.health || 25;
-                const extraDragon = createDragon(pos, dragonScale, dragonHealth);
-                G.extraDragons.push(extraDragon);
+                const bossScale = pos.scale || 0.6;
+                const bossHealth = pos.health || 25;
+                if (G.graveyardTheme || pos.useReaper) {
+                    const extraReaper = createReaper(pos, bossScale, bossHealth);
+                    G.extraDragons.push(extraReaper);
+                } else {
+                    const extraDragon = createDragon(pos, bossScale, bossHealth);
+                    G.extraDragons.push(extraDragon);
+                }
             });
         }
     }
@@ -3035,33 +4143,171 @@ function initEntities() {
     function createBird(centerX, centerZ, radius, speed) {
         const birdGroup = new THREE.Group();
         
-        // Bird body
-        const bodyGeometry = new THREE.SphereGeometry(0.4, 8, 8);
-        const bodyMaterial = new THREE.MeshLambertMaterial({ color: 0x4a3a2a });
-        const body = new THREE.Mesh(bodyGeometry, bodyMaterial);
-        body.castShadow = true;
-        birdGroup.add(body);
-        
-        // Wings
-        const wingGeometry = new THREE.BoxGeometry(1.2, 0.1, 0.4);
-        const wingMaterial = new THREE.MeshLambertMaterial({ color: 0x3a2a1a });
-        const leftWing = new THREE.Mesh(wingGeometry, wingMaterial);
-        leftWing.position.set(-0.6, 0, 0);
-        leftWing.castShadow = true;
-        birdGroup.add(leftWing);
-        
-        const rightWing = new THREE.Mesh(wingGeometry, wingMaterial);
-        rightWing.position.set(0.6, 0, 0);
-        rightWing.castShadow = true;
-        birdGroup.add(rightWing);
-        
-        // Beak
-        const beakGeometry = new THREE.ConeGeometry(0.15, 0.3, 6);
-        const beakMaterial = new THREE.MeshLambertMaterial({ color: 0xFFA500 });
-        const beak = new THREE.Mesh(beakGeometry, beakMaterial);
-        beak.rotation.z = -Math.PI / 2;
-        beak.position.set(0, 0, -0.4);
-        birdGroup.add(beak);
+        if (G.graveyardTheme) {
+            // BAT - dark flying creature for graveyard
+            const batColor = 0x1a1a1a;
+            const batWingColor = 0x2a2020;
+
+            // Bat body - small and furry
+            const bodyGeometry = new THREE.SphereGeometry(0.35, 12, 12);
+            bodyGeometry.scale(1, 1, 1.3);
+            const bodyMaterial = new THREE.MeshLambertMaterial({ color: batColor });
+            const body = new THREE.Mesh(bodyGeometry, bodyMaterial);
+            body.castShadow = true;
+            birdGroup.add(body);
+
+            // Bat head
+            const headGeometry = new THREE.SphereGeometry(0.2, 10, 10);
+            const head = new THREE.Mesh(headGeometry, bodyMaterial);
+            head.position.set(0, 0.1, -0.35);
+            birdGroup.add(head);
+
+            // Pointy ears
+            const earGeometry = new THREE.ConeGeometry(0.08, 0.2, 4);
+            const ear1 = new THREE.Mesh(earGeometry, bodyMaterial);
+            ear1.position.set(-0.1, 0.25, -0.35);
+            ear1.rotation.z = -0.2;
+            birdGroup.add(ear1);
+
+            const ear2 = new THREE.Mesh(earGeometry, bodyMaterial);
+            ear2.position.set(0.1, 0.25, -0.35);
+            ear2.rotation.z = 0.2;
+            birdGroup.add(ear2);
+
+            // Glowing red eyes
+            const eyeGeometry = new THREE.SphereGeometry(0.04, 8, 8);
+            const eyeMaterial = new THREE.MeshBasicMaterial({
+                color: 0xFF0000,
+                transparent: true,
+                opacity: 0.9
+            });
+            const eye1 = new THREE.Mesh(eyeGeometry, eyeMaterial);
+            eye1.position.set(-0.08, 0.12, -0.5);
+            birdGroup.add(eye1);
+
+            const eye2 = new THREE.Mesh(eyeGeometry, eyeMaterial);
+            eye2.position.set(0.08, 0.12, -0.5);
+            birdGroup.add(eye2);
+
+            // Bat wings - membrane-like
+            const wingShape = new THREE.Shape();
+            wingShape.moveTo(0, 0);
+            wingShape.lineTo(0.8, 0.3);
+            wingShape.lineTo(1.0, 0);
+            wingShape.lineTo(0.9, -0.2);
+            wingShape.lineTo(0.6, -0.1);
+            wingShape.lineTo(0.3, -0.2);
+            wingShape.lineTo(0, 0);
+
+            const wingGeometry = new THREE.ShapeGeometry(wingShape);
+            const wingMaterial = new THREE.MeshLambertMaterial({
+                color: batWingColor,
+                side: THREE.DoubleSide,
+                transparent: true,
+                opacity: 0.9
+            });
+
+            const leftWing = new THREE.Mesh(wingGeometry, wingMaterial);
+            leftWing.position.set(-0.1, 0, 0);
+            leftWing.rotation.y = Math.PI / 2;
+            leftWing.scale.x = -1;
+            leftWing.castShadow = true;
+            birdGroup.add(leftWing);
+
+            const rightWing = new THREE.Mesh(wingGeometry, wingMaterial);
+            rightWing.position.set(0.1, 0, 0);
+            rightWing.rotation.y = -Math.PI / 2;
+            rightWing.castShadow = true;
+            birdGroup.add(rightWing);
+
+            birdGroup.leftWing = leftWing;
+            birdGroup.rightWing = rightWing;
+        } else if (G.candyTheme) {
+            // CANDY BUTTERFLY - colorful flying candy
+            const butterflyColors = [0xFF69B4, 0x87CEEB, 0xFFD700, 0x98FB98, 0xDDA0DD];
+            const butterflyColor = butterflyColors[Math.floor(Math.random() * butterflyColors.length)];
+
+            // Small round body
+            const bodyGeometry = new THREE.SphereGeometry(0.25, 10, 10);
+            bodyGeometry.scale(1, 1, 1.5);
+            const bodyMaterial = new THREE.MeshPhongMaterial({
+                color: butterflyColor,
+                shininess: 80
+            });
+            const body = new THREE.Mesh(bodyGeometry, bodyMaterial);
+            body.castShadow = true;
+            birdGroup.add(body);
+
+            // Butterfly wings
+            const wingGeometry = new THREE.CircleGeometry(0.6, 16);
+            const wingMaterial = new THREE.MeshPhongMaterial({
+                color: butterflyColor,
+                side: THREE.DoubleSide,
+                transparent: true,
+                opacity: 0.8,
+                shininess: 100
+            });
+
+            const leftWing = new THREE.Mesh(wingGeometry, wingMaterial);
+            leftWing.position.set(-0.5, 0, 0);
+            leftWing.rotation.y = 0.3;
+            leftWing.castShadow = true;
+            birdGroup.add(leftWing);
+
+            const rightWing = new THREE.Mesh(wingGeometry, wingMaterial);
+            rightWing.position.set(0.5, 0, 0);
+            rightWing.rotation.y = -0.3;
+            rightWing.castShadow = true;
+            birdGroup.add(rightWing);
+
+            // Sparkle on wings
+            const sparkleGeometry = new THREE.SphereGeometry(0.05, 8, 8);
+            const sparkleMaterial = new THREE.MeshBasicMaterial({ color: 0xFFFFFF });
+            for (let i = 0; i < 4; i++) {
+                const sparkle = new THREE.Mesh(sparkleGeometry, sparkleMaterial);
+                sparkle.position.set(
+                    (Math.random() - 0.5) * 1.2,
+                    (Math.random() - 0.5) * 0.3,
+                    0
+                );
+                birdGroup.add(sparkle);
+            }
+
+            birdGroup.leftWing = leftWing;
+            birdGroup.rightWing = rightWing;
+        } else {
+            // Standard bird
+            // Bird body
+            const bodyGeometry = new THREE.SphereGeometry(0.4, 8, 8);
+            const bodyMaterial = new THREE.MeshLambertMaterial({ color: 0x4a3a2a });
+            const body = new THREE.Mesh(bodyGeometry, bodyMaterial);
+            body.castShadow = true;
+            birdGroup.add(body);
+            
+            // Wings
+            const wingGeometry = new THREE.BoxGeometry(1.2, 0.1, 0.4);
+            const wingMaterial = new THREE.MeshLambertMaterial({ color: 0x3a2a1a });
+            const leftWing = new THREE.Mesh(wingGeometry, wingMaterial);
+            leftWing.position.set(-0.6, 0, 0);
+            leftWing.castShadow = true;
+            birdGroup.add(leftWing);
+            
+            const rightWing = new THREE.Mesh(wingGeometry, wingMaterial);
+            rightWing.position.set(0.6, 0, 0);
+            rightWing.castShadow = true;
+            birdGroup.add(rightWing);
+            
+            // Beak
+            const beakGeometry = new THREE.ConeGeometry(0.15, 0.3, 6);
+            const beakMaterial = new THREE.MeshLambertMaterial({ color: 0xFFA500 });
+            const beak = new THREE.Mesh(beakGeometry, beakMaterial);
+            beak.rotation.z = -Math.PI / 2;
+            beak.position.set(0, 0, -0.4);
+            birdGroup.add(beak);
+
+            birdGroup.leftWing = leftWing;
+            birdGroup.rightWing = rightWing;
+        }
         
         const angle = Math.random() * Math.PI * 2;
         const startX = centerX + Math.cos(angle) * radius;
@@ -3079,8 +4325,8 @@ function initEntities() {
             speed: speed,
             angle: angle,
             height: startY,
-            leftWing: leftWing,
-            rightWing: rightWing,
+            leftWing: birdGroup.leftWing,
+            rightWing: birdGroup.rightWing,
             lastBombTime: Date.now(),
             wingFlapPhase: 0
         };

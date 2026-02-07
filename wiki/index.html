@@ -268,7 +268,6 @@
         .level-3 .level-header { background: #c4a35a; }
         .level-4 .level-header { background: #8a3a2a; }
         .level-5 .level-header { background: #2a5a7a; }
-        .level-6 .level-header { background: #FF69B4; }
         
         .feature-list { margin: 20px 0; list-style: none; }
         .feature-list li { padding: 8px 0; display: flex; align-items: center; gap: 10px; }
@@ -431,23 +430,6 @@
                             <li>Gefährliche Strudel und Wasserhosen</li>
                             <li>Haie und Oktopusse greifen an</li>
                             <li>Piratenschiffe feuern Kanonenkugeln</li>
-                        </ul>
-                    </div>
-                </div>
-                
-                <div class="level-card level-6">
-                    <div class="level-header">
-                        <span class="level-number">Level 6</span>
-                        <h3 class="level-title">Candy Kingdom</h3>
-                        <p class="level-subtitle">Süßes Abenteuer</p>
-                    </div>
-                    <div class="level-content">
-                        <p>Eine zuckersüße Welt voller bunter Gefahren und leckerer Landschaften.</p>
-                        <ul class="feature-list">
-                            <li>Gummibären und Lebkuchenmänner</li>
-                            <li>Marshmallow-Monster bewachen die Wege</li>
-                            <li>Zuckerwatte-Zauberer werfen süße Magie</li>
-                            <li>Schokoladenflüsse und Cupcake-Hügel</li>
                         </ul>
                     </div>
                 </div>
@@ -652,7 +634,7 @@
                         <p style="color:var(--accent-gold);font-size:0.9em;margin-bottom:10px;">❤️ 5 HP • ⚔️ 1 DMG</p>
                         <p class="entity-desc">Keksiger Wächter mit Zuckerguss-Details und Knopfaugen. Trägt eine Zuckerstange als Waffe und schießt Bonbon-Pfeile.</p>
                         <div class="entity-tags">
-                            <span class="tag ">Candy</span><span class="tag ">Elite</span><span class="tag danger">Fernkampf</span>
+                            <span class="tag ">Candy</span><span class="tag special">Elite</span><span class="tag danger">Fernkampf</span>
                         </div>
                     </div>
                 </div>
@@ -665,7 +647,7 @@
                         <p style="color:var(--accent-gold);font-size:0.9em;margin-bottom:10px;">❤️ 20 HP • ⚔️ 2 DMG</p>
                         <p class="entity-desc">Riesiges flauschiges weißes Wesen mit rosa Wangen und stummligen Armen. Langsam aber mächtig, bewacht wichtige Bereiche des Zuckerlandes.</p>
                         <div class="entity-tags">
-                            <span class="tag ">Candy</span><span class="tag ">Boss</span><span class="tag danger">Schwer</span>
+                            <span class="tag ">Candy</span><span class="tag special">Boss</span><span class="tag ">Schwer</span>
                         </div>
                     </div>
                 </div>
@@ -678,7 +660,98 @@
                         <p style="color:var(--accent-gold);font-size:0.9em;margin-bottom:10px;">❤️ 7 HP • ⚔️ 1 DMG</p>
                         <p class="entity-desc">Flauschiger Magier aus rosa und blauer Zuckerwatte mit wirbeligen Mustern. Trägt einen Lutscher als Zauberstab und wirft süße Magieprojektile.</p>
                         <div class="entity-tags">
-                            <span class="tag ">Candy</span><span class="tag ">Magie</span><span class="tag danger">Fernkampf</span>
+                            <span class="tag ">Candy</span><span class="tag special">Magie</span><span class="tag danger">Fernkampf</span>
+                        </div>
+                    </div>
+                </div>
+                <div class="entity-card">
+                    <div class="entity-image">
+                        <img src="images/mobs-zombie.png" alt="Zombie">
+                    </div>
+                    <div class="entity-info">
+                        <h4 class="entity-name">Zombie</h4>
+                        <p style="color:var(--accent-gold);font-size:0.9em;margin-bottom:10px;">❤️ 3 HP • ⚔️ 1 DMG</p>
+                        <p class="entity-desc">Verrottende Leiche mit grüner Haut und freiliegenden Knochen. Erhebt sich aus den Gräbern des Friedhofs und schlurft auf Spieler zu.</p>
+                        <div class="entity-tags">
+                            <span class="tag ">Friedhof</span><span class="tag danger">Nahkampf</span><span class="tag ">Untot</span>
+                        </div>
+                    </div>
+                </div>
+                <div class="entity-card">
+                    <div class="entity-image">
+                        <img src="images/mobs-ghost.png" alt="Geist">
+                    </div>
+                    <div class="entity-info">
+                        <h4 class="entity-name">Geist</h4>
+                        <p style="color:var(--accent-gold);font-size:0.9em;margin-bottom:10px;">❤️ 5 HP • ⚔️ 1 DMG</p>
+                        <p class="entity-desc">Durchscheinender Spuk mit ätherischem Leuchten. Schwebt lautlos über dem Friedhof und schießt gespenstische Pfeile auf Eindringlinge.</p>
+                        <div class="entity-tags">
+                            <span class="tag ">Friedhof</span><span class="tag danger">Fernkampf</span><span class="tag ">Schwebend</span>
+                        </div>
+                    </div>
+                </div>
+                <div class="entity-card">
+                    <div class="entity-image">
+                        <img src="images/mobs-skeleton.png" alt="Skelett">
+                    </div>
+                    <div class="entity-info">
+                        <h4 class="entity-name">Skelett</h4>
+                        <p style="color:var(--accent-gold);font-size:0.9em;margin-bottom:10px;">❤️ 4 HP • ⚔️ 1 DMG</p>
+                        <p class="entity-desc">Knöcherner Bogenschütze mit Knochenbogen und rot glühenden Augenhöhlen. Schießt tödliche Knochenpfeile auf jeden, der dem Schatz zu nahe kommt.</p>
+                        <div class="entity-tags">
+                            <span class="tag ">Friedhof</span><span class="tag danger">Fernkampf</span><span class="tag ">Untot</span>
+                        </div>
+                    </div>
+                </div>
+                <div class="entity-card">
+                    <div class="entity-image">
+                        <img src="images/mobs-witch.png" alt="Hexe">
+                    </div>
+                    <div class="entity-info">
+                        <h4 class="entity-name">Hexe</h4>
+                        <p style="color:var(--accent-gold);font-size:0.9em;margin-bottom:10px;">❤️ 7 HP • ⚔️ 1 DMG</p>
+                        <p class="entity-desc">Grünhäutige Magierin mit spitzem Hut und Warze. Reitet auf einem Besen und wirft verfluchte Feuerbälle auf ahnungslose Opfer.</p>
+                        <div class="entity-tags">
+                            <span class="tag ">Friedhof</span><span class="tag special">Magie</span><span class="tag danger">Fernkampf</span>
+                        </div>
+                    </div>
+                </div>
+                <div class="entity-card">
+                    <div class="entity-image">
+                        <img src="images/mobs-executioner.png" alt="Henker">
+                    </div>
+                    <div class="entity-info">
+                        <h4 class="entity-name">Henker</h4>
+                        <p style="color:var(--accent-gold);font-size:0.9em;margin-bottom:10px;">❤️ 20 HP • ⚔️ 2 DMG</p>
+                        <p class="entity-desc">Riesiger vermummter Henker mit blutverschmierter Axt. Ein stummer Wächter des Friedhofs, der keine Gnade kennt.</p>
+                        <div class="entity-tags">
+                            <span class="tag ">Friedhof</span><span class="tag special">Boss</span><span class="tag ">Schwer</span>
+                        </div>
+                    </div>
+                </div>
+                <div class="entity-card">
+                    <div class="entity-image">
+                        <img src="images/mobs-bat.png" alt="Fledermaus">
+                    </div>
+                    <div class="entity-info">
+                        <h4 class="entity-name">Fledermaus</h4>
+                        <p style="color:var(--accent-gold);font-size:0.9em;margin-bottom:10px;">❤️ 2 HP • ⚔️ 1 DMG</p>
+                        <p class="entity-desc">Dunkle Kreatur der Nacht mit ledrigen Flügeln und rot leuchtenden Augen. Kreist über dem Friedhof und wirft explosive Bomben ab.</p>
+                        <div class="entity-tags">
+                            <span class="tag ">Friedhof</span><span class="tag ">Fliegend</span><span class="tag danger">Bomben</span>
+                        </div>
+                    </div>
+                </div>
+                <div class="entity-card">
+                    <div class="entity-image">
+                        <img src="images/mobs-reaper.png" alt="Sensenmann">
+                    </div>
+                    <div class="entity-info">
+                        <h4 class="entity-name">Sensenmann</h4>
+                        <p style="color:var(--accent-gold);font-size:0.9em;margin-bottom:10px;">❤️ 60 HP • ⚔️ 2 DMG</p>
+                        <p class="entity-desc">Massiver verhüllter Todesengel mit riesiger Sense. Seine glühenden roten Augen durchbohren die Dunkelheit der Kapuze. Der ultimative Wächter des Friedhofs.</p>
+                        <div class="entity-tags">
+                            <span class="tag ">Friedhof</span><span class="tag special">Boss</span><span class="tag ">Fliegend</span><span class="tag danger">Feuerball</span>
                         </div>
                     </div>
                 </div>
@@ -897,6 +970,78 @@
                     <div class="entity-info">
                         <h4 class="entity-name">Pyramide</h4>
                         <p class="entity-desc">Uraltes sandfarbenes Bauwerk. Wahrzeichen in Wüsten-Leveln.</p>
+                    </div>
+                </div>
+                <div class="entity-card">
+                    <div class="entity-image">
+                        <img src="images/environment-lollipop.png" alt="Lutscher">
+                    </div>
+                    <div class="entity-info">
+                        <h4 class="entity-name">Lutscher</h4>
+                        <p class="entity-desc">Riesiger spiralförmiger Lutscher auf weißem Stiel. Dienen als bunte Bäume im Candy Kingdom.</p>
+                    </div>
+                </div>
+                <div class="entity-card">
+                    <div class="entity-image">
+                        <img src="images/environment-candy-cane.png" alt="Zuckerstange">
+                    </div>
+                    <div class="entity-info">
+                        <h4 class="entity-name">Zuckerstange</h4>
+                        <p class="entity-desc">Rot-weiß gestreifte gebogene Zuckerstangen, die wie Bäume aus dem Boden wachsen.</p>
+                    </div>
+                </div>
+                <div class="entity-card">
+                    <div class="entity-image">
+                        <img src="images/environment-chocolate-river.png" alt="Schokoladenfluss">
+                    </div>
+                    <div class="entity-info">
+                        <h4 class="entity-name">Schokoladenfluss</h4>
+                        <p class="entity-desc">Fließender Strom aus geschmolzener Schokolade. Vorsicht: Kann klebrig sein!</p>
+                    </div>
+                </div>
+                <div class="entity-card">
+                    <div class="entity-image">
+                        <img src="images/environment-cupcake-hill.png" alt="Cupcake-Hügel">
+                    </div>
+                    <div class="entity-info">
+                        <h4 class="entity-name">Cupcake-Hügel</h4>
+                        <p class="entity-desc">Sanfte Hügel geformt wie riesige Cupcakes mit Zuckerguss-Spitze und bunten Streuseln.</p>
+                    </div>
+                </div>
+                <div class="entity-card">
+                    <div class="entity-image">
+                        <img src="images/environment-tombstone.png" alt="Grabstein">
+                    </div>
+                    <div class="entity-info">
+                        <h4 class="entity-name">Grabstein</h4>
+                        <p class="entity-desc">Verwitterter Grabstein mit unlesbarer Inschrift. Markiert die Ruhestätte der Untoten auf dem Friedhof.</p>
+                    </div>
+                </div>
+                <div class="entity-card">
+                    <div class="entity-image">
+                        <img src="images/environment-dead-tree.png" alt="Toter Baum">
+                    </div>
+                    <div class="entity-info">
+                        <h4 class="entity-name">Toter Baum</h4>
+                        <p class="entity-desc">Kahler, verdrehter Baum ohne Blätter. Seine knorrigen Äste greifen wie Skelettfinger in den Himmel.</p>
+                    </div>
+                </div>
+                <div class="entity-card">
+                    <div class="entity-image">
+                        <img src="images/environment-grave-mound.png" alt="Grabhügel">
+                    </div>
+                    <div class="entity-info">
+                        <h4 class="entity-name">Grabhügel</h4>
+                        <p class="entity-desc">Aufgeworfener Erdhügel über einem frischen Grab. Manchmal bewegt sich die Erde...</p>
+                    </div>
+                </div>
+                <div class="entity-card">
+                    <div class="entity-image">
+                        <img src="images/environment-mist-pool.png" alt="Nebelteich">
+                    </div>
+                    <div class="entity-info">
+                        <h4 class="entity-name">Nebelteich</h4>
+                        <p class="entity-desc">Geheimnisvoller Teich, aus dem unheimlicher Nebel aufsteigt. Was lauert in seinen Tiefen?</p>
                     </div>
                 </div>
             </div>

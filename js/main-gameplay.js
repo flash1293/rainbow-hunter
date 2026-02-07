@@ -1805,6 +1805,51 @@
             persistentInventory.herzmen = G.herzmanInventory;
             
             switchLevel(data.level);
+        } else if (eventType === 'zombieSpawned') {
+            // Host spawned a zombie, client needs to create it
+            if (!G.graveyardTheme) return;
+            
+            // Initialize spawn state if not present
+            if (!G.zombieSpawnState) {
+                G.zombieSpawnState = {
+                    lastSpawnTime: Date.now(),
+                    spawnInterval: 8000,
+                    maxSpawnedZombies: 15,
+                    spawnedCount: 0,
+                    risingZombies: []
+                };
+            }
+            
+            const zombie = createSpawnedZombie(data.x, data.z);
+            zombie.spawnId = data.spawnId;
+            zombie.speed = data.speed;
+            zombie.targetY = data.targetY;
+            G.goblins.push(zombie);
+            G.zombieSpawnState.risingZombies.push(zombie);
+            G.zombieSpawnState.spawnedCount++;
+            
+        } else if (eventType === 'gingerbreadSpawned') {
+            // Host spawned a gingerbread, client needs to create it
+            if (!G.candyTheme) return;
+            
+            // Initialize spawn state if not present
+            if (!G.ovenSpawnState) {
+                G.ovenSpawnState = {
+                    spawnInterval: 12000,
+                    maxSpawnedGingerbreads: 10,
+                    spawnedCount: 0,
+                    risingGingerbreads: []
+                };
+            }
+            
+            const gingerbread = createSpawnedGingerbread(data.x, data.z);
+            gingerbread.spawnId = data.spawnId;
+            gingerbread.speed = data.speed;
+            gingerbread.targetY = data.targetY;
+            G.goblins.push(gingerbread);
+            G.ovenSpawnState.risingGingerbreads.push(gingerbread);
+            G.ovenSpawnState.spawnedCount++;
+            
         } else if (eventType === 'lavaTrailCreate') {
             // Host created a lava trail, client needs to show it
             const trailGroup = new THREE.Group();
@@ -2309,6 +2354,462 @@
         }
     }
 
+    // Zombie ground spawn system for graveyard theme
+    function createSpawnedZombie(x, z) {
+        const zombieGrp = new THREE.Group();
+        
+        // ZOMBIE - rotting undead creature rising from ground
+        const zombieGreen = 0x4a6040;
+        const zombieDark = 0x2a3020;
+        const rotColor = 0x3a4030;
+
+        // Zombie body - hunched torso
+        const bodyGeometry = new THREE.BoxGeometry(0.6, 0.9, 0.4);
+        const bodyMaterial = new THREE.MeshLambertMaterial({ color: zombieGreen });
+        const body = new THREE.Mesh(bodyGeometry, bodyMaterial);
+        body.position.y = 0.75;
+        body.rotation.x = 0.2;
+        body.castShadow = true;
+        zombieGrp.add(body);
+
+        // Zombie head
+        const headGeometry = new THREE.SphereGeometry(0.38, 16, 16);
+        const headMaterial = new THREE.MeshLambertMaterial({ color: zombieGreen });
+        const head = new THREE.Mesh(headGeometry, headMaterial);
+        head.position.set(0.05, 1.45, 0.1);
+        head.rotation.z = 0.15;
+        head.castShadow = true;
+        zombieGrp.add(head);
+
+        // Glowing eyes
+        const eyeGeometry = new THREE.SphereGeometry(0.08, 12, 12);
+        const eyeMaterial = new THREE.MeshBasicMaterial({
+            color: 0xFFFF00,
+            transparent: true,
+            opacity: 0.8
+        });
+        const eye1 = new THREE.Mesh(eyeGeometry, eyeMaterial);
+        eye1.position.set(-0.12, 1.48, 0.32);
+        zombieGrp.add(eye1);
+
+        const eye2 = new THREE.Mesh(eyeGeometry, eyeMaterial);
+        eye2.position.set(0.15, 1.45, 0.32);
+        zombieGrp.add(eye2);
+
+        // Gaping mouth
+        const mouthGeometry = new THREE.BoxGeometry(0.2, 0.15, 0.1);
+        const mouthMaterial = new THREE.MeshBasicMaterial({ color: 0x1a1010 });
+        const mouth = new THREE.Mesh(mouthGeometry, mouthMaterial);
+        mouth.position.set(0.02, 1.32, 0.35);
+        zombieGrp.add(mouth);
+
+        // Exposed ribs
+        const ribMaterial = new THREE.MeshLambertMaterial({ color: 0xd0c8b0 });
+        for (let i = 0; i < 3; i++) {
+            const ribGeometry = new THREE.CylinderGeometry(0.03, 0.03, 0.25, 6);
+            const rib = new THREE.Mesh(ribGeometry, ribMaterial);
+            rib.position.set(0, 0.6 + i * 0.12, 0.22);
+            rib.rotation.z = Math.PI / 2;
+            zombieGrp.add(rib);
+        }
+
+        // Arms reaching up
+        const armGeometry = new THREE.CylinderGeometry(0.08, 0.06, 0.6, 6);
+        const armMaterial = new THREE.MeshLambertMaterial({ color: rotColor });
+        const arm1 = new THREE.Mesh(armGeometry, armMaterial);
+        arm1.position.set(-0.4, 0.6, 0.15);
+        arm1.rotation.z = 0.8;
+        arm1.rotation.x = -0.3;
+        zombieGrp.add(arm1);
+
+        const arm2 = new THREE.Mesh(armGeometry, armMaterial);
+        arm2.position.set(0.4, 0.55, 0.15);
+        arm2.rotation.z = -0.6;
+        arm2.rotation.x = -0.4;
+        zombieGrp.add(arm2);
+
+        // Legs
+        const legGeometry = new THREE.CylinderGeometry(0.1, 0.08, 0.5, 6);
+        const leg1 = new THREE.Mesh(legGeometry, armMaterial);
+        leg1.position.set(-0.15, 0.25, 0);
+        zombieGrp.add(leg1);
+
+        const leg2 = new THREE.Mesh(legGeometry, armMaterial);
+        leg2.position.set(0.15, 0.25, 0);
+        leg2.rotation.x = 0.1;
+        zombieGrp.add(leg2);
+
+        // Add dirt particles around the zombie
+        const dirtMaterial = new THREE.MeshLambertMaterial({ color: 0x3a3025 });
+        for (let i = 0; i < 8; i++) {
+            const dirtGeometry = new THREE.BoxGeometry(0.15, 0.1, 0.15);
+            const dirt = new THREE.Mesh(dirtGeometry, dirtMaterial);
+            const angle = (i / 8) * Math.PI * 2;
+            dirt.position.set(
+                Math.cos(angle) * 0.8,
+                0.05,
+                Math.sin(angle) * 0.8
+            );
+            dirt.rotation.y = Math.random() * Math.PI;
+            zombieGrp.add(dirt);
+        }
+
+        const terrainHeight = getTerrainHeight(x, z);
+        // Start zombie underground
+        zombieGrp.position.set(x, terrainHeight - 2, z);
+        G.scene.add(zombieGrp);
+
+        const patrolRange = 5;
+        
+        return {
+            mesh: zombieGrp,
+            speed: 0.012 + Math.random() * 0.005,
+            direction: 1,
+            patrolLeft: x - patrolRange,
+            patrolRight: x + patrolRange,
+            alive: true,
+            radius: 1.5,
+            health: 2,
+            maxHealth: 2,
+            isChasing: true, // Spawned zombies immediately chase
+            initialX: x,
+            initialZ: z,
+            initialPatrolLeft: x - patrolRange,
+            initialPatrolRight: x + patrolRange,
+            // Rising animation state
+            isRising: true,
+            targetY: terrainHeight,
+            riseSpeed: 0.03,
+            spawnTime: Date.now()
+        };
+    }
+
+    function updateZombieSpawns() {
+        if (!G.graveyardTheme) return;
+        
+        // Initialize spawn state if not present
+        if (!G.zombieSpawnState) {
+            G.zombieSpawnState = {
+                lastSpawnTime: Date.now(),
+                spawnInterval: 8000, // 8 seconds between spawns
+                maxSpawnedZombies: 15, // Max additional zombies
+                spawnedCount: 0,
+                risingZombies: [] // Zombies currently rising from ground
+            };
+        }
+        
+        const state = G.zombieSpawnState;
+        const now = Date.now();
+        
+        // Update rising zombies
+        for (let i = state.risingZombies.length - 1; i >= 0; i--) {
+            const zombie = state.risingZombies[i];
+            if (zombie.isRising) {
+                zombie.mesh.position.y += zombie.riseSpeed;
+                // Add slight wobble as zombie emerges
+                zombie.mesh.rotation.z = Math.sin(now * 0.01) * 0.1;
+                
+                if (zombie.mesh.position.y >= zombie.targetY) {
+                    zombie.mesh.position.y = zombie.targetY;
+                    zombie.mesh.rotation.z = 0;
+                    zombie.isRising = false;
+                    state.risingZombies.splice(i, 1);
+                }
+            }
+        }
+        
+        // Only host spawns new zombies - client receives them via events
+        if (multiplayerManager && multiplayerManager.isConnected() && !multiplayerManager.isHost) {
+            return;
+        }
+        
+        // Check if enough time has passed for new spawn
+        if (now - state.lastSpawnTime < state.spawnInterval) return;
+        if (state.spawnedCount >= state.maxSpawnedZombies) return;
+        
+        // Find a spawn position near a player
+        const player = G.playerGroup;
+        const spawnDistance = 15 + Math.random() * 10; // 15-25 units away
+        const angle = Math.random() * Math.PI * 2;
+        
+        let spawnX = player.position.x + Math.cos(angle) * spawnDistance;
+        let spawnZ = player.position.z + Math.sin(angle) * spawnDistance;
+        
+        // Keep within level bounds
+        const bounds = G.levelConfig.safeZoneBounds || { minX: -100, maxX: 100, minZ: -200, maxZ: 200 };
+        spawnX = Math.max(bounds.minX + 10, Math.min(bounds.maxX - 10, spawnX));
+        spawnZ = Math.max(bounds.minZ + 10, Math.min(bounds.maxZ - 10, spawnZ));
+        
+        // Create the rising zombie
+        const zombie = createSpawnedZombie(spawnX, spawnZ);
+        zombie.spawnId = Date.now() + '_' + Math.random(); // Unique ID for sync
+        G.goblins.push(zombie);
+        state.risingZombies.push(zombie);
+        state.spawnedCount++;
+        state.lastSpawnTime = now;
+        
+        // Send spawn event to client
+        if (multiplayerManager && multiplayerManager.isConnected() && multiplayerManager.isHost) {
+            multiplayerManager.sendGameEvent('zombieSpawned', {
+                x: spawnX,
+                z: spawnZ,
+                spawnId: zombie.spawnId,
+                speed: zombie.speed,
+                targetY: zombie.targetY
+            });
+        }
+        
+        // Decrease spawn interval slightly for more pressure (min 4 seconds)
+        state.spawnInterval = Math.max(4000, state.spawnInterval - 200);
+    }
+
+    // Gingerbread oven spawn system for candy theme
+    // Note: createOvenEntity is in main-entities.js
+    
+    function createSpawnedGingerbread(x, z) {
+        const gingerbreadGrp = new THREE.Group();
+        
+        const cookieColor = 0xB5651D;
+        const icingWhite = 0xFFFFFF;
+        const icingPink = 0xFF69B4;
+
+        // Gingerbread body
+        const bodyGeometry = new THREE.CylinderGeometry(0.5, 0.5, 0.25, 16);
+        const bodyMaterial = new THREE.MeshLambertMaterial({ color: cookieColor });
+        const body = new THREE.Mesh(bodyGeometry, bodyMaterial);
+        body.rotation.x = Math.PI / 2;
+        body.position.y = 1.0;
+        body.castShadow = true;
+        gingerbreadGrp.add(body);
+
+        // Gingerbread head
+        const headGeometry = new THREE.CylinderGeometry(0.35, 0.35, 0.2, 16);
+        const head = new THREE.Mesh(headGeometry, bodyMaterial);
+        head.rotation.x = Math.PI / 2;
+        head.position.y = 1.6;
+        head.castShadow = true;
+        gingerbreadGrp.add(head);
+
+        // Icing buttons
+        const buttonGeometry = new THREE.CylinderGeometry(0.06, 0.06, 0.04, 8);
+        const icingMaterial = new THREE.MeshBasicMaterial({ color: icingWhite });
+        for (let i = 0; i < 2; i++) {
+            const button = new THREE.Mesh(buttonGeometry, icingMaterial);
+            button.rotation.x = Math.PI / 2;
+            button.position.set(0, 0.85 + i * 0.2, 0.14);
+            gingerbreadGrp.add(button);
+        }
+
+        // Icing smile
+        const smileGeometry = new THREE.TorusGeometry(0.1, 0.02, 8, 12, Math.PI);
+        const smileMaterial = new THREE.MeshBasicMaterial({ color: icingPink });
+        const smile = new THREE.Mesh(smileGeometry, smileMaterial);
+        smile.position.set(0, 1.5, 0.12);
+        smile.rotation.x = -0.2;
+        gingerbreadGrp.add(smile);
+
+        // Eyes
+        const eyeGeometry = new THREE.SphereGeometry(0.06, 8, 8);
+        const eyeMaterial = new THREE.MeshBasicMaterial({ color: 0x000000 });
+        const eye1 = new THREE.Mesh(eyeGeometry, eyeMaterial);
+        eye1.position.set(-0.1, 1.65, 0.15);
+        gingerbreadGrp.add(eye1);
+        const eye2 = new THREE.Mesh(eyeGeometry, eyeMaterial);
+        eye2.position.set(0.1, 1.65, 0.15);
+        gingerbreadGrp.add(eye2);
+
+        // Arms
+        const armGeometry = new THREE.CylinderGeometry(0.08, 0.1, 0.5, 6);
+        const arm1 = new THREE.Mesh(armGeometry, bodyMaterial);
+        arm1.position.set(-0.45, 1.1, 0);
+        arm1.rotation.z = 0.6;
+        gingerbreadGrp.add(arm1);
+        const arm2 = new THREE.Mesh(armGeometry, bodyMaterial);
+        arm2.position.set(0.45, 1.1, 0);
+        arm2.rotation.z = -0.6;
+        gingerbreadGrp.add(arm2);
+
+        // Legs
+        const legGeometry = new THREE.CylinderGeometry(0.1, 0.12, 0.6, 6);
+        const leg1 = new THREE.Mesh(legGeometry, bodyMaterial);
+        leg1.position.set(-0.18, 0.4, 0);
+        gingerbreadGrp.add(leg1);
+        const leg2 = new THREE.Mesh(legGeometry, bodyMaterial);
+        leg2.position.set(0.18, 0.4, 0);
+        gingerbreadGrp.add(leg2);
+
+        const terrainH = getTerrainHeight(x, z);
+        const startY = terrainH - 1.5; // Start below ground
+        gingerbreadGrp.position.set(x, startY, z);
+        G.scene.add(gingerbreadGrp);
+
+        // Random patrol area
+        const patrolW = 8 + Math.random() * 4;
+        
+        return {
+            mesh: gingerbreadGrp,
+            speed: (0.012 + Math.random() * 0.004) * speedMultiplier,
+            direction: Math.random() > 0.5 ? 1 : -1,
+            patrolLeft: x - patrolW,
+            patrolRight: x + patrolW,
+            alive: true,
+            radius: 1.2,
+            health: 3,
+            maxHealth: 3,
+            isGoblin: true,
+            isChasing: true,  // Immediately chase player when spawned from oven
+            initialX: x,
+            initialZ: z,
+            initialPatrolLeft: x - patrolW,
+            initialPatrolRight: x + patrolW,
+            // Rising animation
+            isRising: true,
+            targetY: terrainH,
+            riseSpeed: 0.04,
+            spawnTime: Date.now(),
+            isOvenSpawned: true
+        };
+    }
+    
+    function createSmokeParticle(oven) {
+        const smokeGeometry = new THREE.SphereGeometry(0.3 + Math.random() * 0.2, 8, 8);
+        const smokeMaterial = new THREE.MeshBasicMaterial({
+            color: 0x888888,
+            transparent: true,
+            opacity: 0.6
+        });
+        const smoke = new THREE.Mesh(smokeGeometry, smokeMaterial);
+        
+        // Start at chimney top with slight random offset
+        smoke.position.set(
+            oven.x + (Math.random() - 0.5) * 0.3,
+            getTerrainHeight(oven.x, oven.z) + 5.2,
+            oven.z - 0.5 + (Math.random() - 0.5) * 0.3
+        );
+        
+        G.scene.add(smoke);
+        
+        return {
+            mesh: smoke,
+            velocity: {
+                x: (Math.random() - 0.5) * 0.02,
+                y: 0.03 + Math.random() * 0.02,
+                z: (Math.random() - 0.5) * 0.02
+            },
+            life: 1.0, // Starts at full life
+            decay: 0.008 + Math.random() * 0.005
+        };
+    }
+    
+    function updateOvenSpawns() {
+        if (!G.candyTheme) return;
+        if (!G.ovens) return;
+        
+        // Initialize spawn state if not present
+        if (!G.ovenSpawnState) {
+            G.ovenSpawnState = {
+                spawnInterval: 12000, // 12 seconds between spawns per oven
+                maxSpawnedGingerbreads: 10,
+                spawnedCount: 0,
+                risingGingerbreads: []
+            };
+        }
+        
+        const state = G.ovenSpawnState;
+        const now = Date.now();
+        
+        // Update rising gingerbreads
+        for (let i = state.risingGingerbreads.length - 1; i >= 0; i--) {
+            const gb = state.risingGingerbreads[i];
+            if (gb.isRising) {
+                gb.mesh.position.y += gb.riseSpeed;
+                // Wobble as it rises (like coming out of oven)
+                gb.mesh.rotation.y = Math.sin(now * 0.01) * 0.2;
+                
+                if (gb.mesh.position.y >= gb.targetY) {
+                    gb.mesh.position.y = gb.targetY;
+                    gb.mesh.rotation.y = 0;
+                    gb.isRising = false;
+                    state.risingGingerbreads.splice(i, 1);
+                }
+            }
+        }
+        
+        // Update smoke particles for all ovens
+        G.ovens.forEach(oven => {
+            // Spawn new smoke particles regularly
+            if (now - oven.lastSmokeTime > 200) { // Every 200ms
+                const particle = createSmokeParticle(oven);
+                oven.smokeParticles.push(particle);
+                oven.lastSmokeTime = now;
+            }
+            
+            // Update smoke particles
+            for (let i = oven.smokeParticles.length - 1; i >= 0; i--) {
+                const particle = oven.smokeParticles[i];
+                
+                // Move particle
+                particle.mesh.position.x += particle.velocity.x;
+                particle.mesh.position.y += particle.velocity.y;
+                particle.mesh.position.z += particle.velocity.z;
+                
+                // Fade out
+                particle.life -= particle.decay;
+                particle.mesh.material.opacity = particle.life * 0.6;
+                particle.mesh.scale.setScalar(1 + (1 - particle.life) * 0.5); // Grow as it rises
+                
+                // Remove dead particles
+                if (particle.life <= 0) {
+                    G.scene.remove(particle.mesh);
+                    particle.mesh.geometry.dispose();
+                    particle.mesh.material.dispose();
+                    oven.smokeParticles.splice(i, 1);
+                }
+            }
+            
+            // Animate fire glow
+            if (oven.fireLight) {
+                oven.fireLight.intensity = 0.6 + Math.sin(now * 0.005) * 0.3;
+            }
+        });
+        
+        // Only host spawns new gingerbreads
+        if (multiplayerManager && multiplayerManager.isConnected() && !multiplayerManager.isHost) {
+            return;
+        }
+        
+        // Check each oven for spawning
+        G.ovens.forEach(oven => {
+            if (now - oven.lastSpawnTime < state.spawnInterval) return;
+            if (state.spawnedCount >= state.maxSpawnedGingerbreads) return;
+            
+            // Spawn in front of the oven
+            const spawnX = oven.x + (Math.random() - 0.5) * 2;
+            const spawnZ = oven.z + 3 + Math.random() * 2;
+            
+            const gingerbread = createSpawnedGingerbread(spawnX, spawnZ);
+            gingerbread.spawnId = Date.now() + '_' + Math.random();
+            G.goblins.push(gingerbread);
+            state.risingGingerbreads.push(gingerbread);
+            state.spawnedCount++;
+            oven.lastSpawnTime = now;
+            
+            // Send spawn event to client
+            if (multiplayerManager && multiplayerManager.isConnected() && multiplayerManager.isHost) {
+                multiplayerManager.sendGameEvent('gingerbreadSpawned', {
+                    x: spawnX,
+                    z: spawnZ,
+                    spawnId: gingerbread.spawnId,
+                    speed: gingerbread.speed,
+                    targetY: gingerbread.targetY
+                });
+            }
+        });
+        
+        // Gradually decrease spawn interval (min 6 seconds)
+        state.spawnInterval = Math.max(6000, state.spawnInterval - 100);
+    }
+
     function updateGoblins() {
         G.goblins.forEach(gob => {
             if (!gob.alive || gameWon) return;
@@ -2504,7 +3005,7 @@
                 }
             }
             
-            // Guardian arrows (or ink balls in water theme)
+            // Guardian arrows (ink balls in water theme, mini-ghosts in graveyard)
             if (gob.isGuardian && distToTarget < 25) {
                 const now = Date.now();
                 const fireInterval = 4000 + Math.random() * 2000;
@@ -2520,6 +3021,43 @@
                         arrowMesh.position.copy(gob.mesh.position);
                         arrowMesh.position.y += 1.2;
                         G.scene.add(arrowMesh);
+                    } else if (G.graveyardTheme) {
+                        // Mini-ghost projectile for ghost guardians
+                        const ghostGroup = new THREE.Group();
+                        
+                        // Mini ghost body (inverted cone)
+                        const bodyGeometry = new THREE.ConeGeometry(0.25, 0.5, 8);
+                        const bodyMaterial = new THREE.MeshPhongMaterial({ 
+                            color: 0x88aacc,
+                            transparent: true,
+                            opacity: 0.7,
+                            emissive: 0x4466aa,
+                            emissiveIntensity: 0.3
+                        });
+                        const body = new THREE.Mesh(bodyGeometry, bodyMaterial);
+                        body.rotation.x = Math.PI;
+                        ghostGroup.add(body);
+                        
+                        // Mini ghost head
+                        const headGeometry = new THREE.SphereGeometry(0.15, 8, 8);
+                        const head = new THREE.Mesh(headGeometry, bodyMaterial);
+                        head.position.y = 0.3;
+                        ghostGroup.add(head);
+                        
+                        // Tiny eyes (black dots)
+                        const eyeGeometry = new THREE.SphereGeometry(0.04, 6, 6);
+                        const eyeMaterial = new THREE.MeshBasicMaterial({ color: 0x000000 });
+                        const leftEye = new THREE.Mesh(eyeGeometry, eyeMaterial);
+                        leftEye.position.set(-0.06, 0.32, 0.12);
+                        ghostGroup.add(leftEye);
+                        const rightEye = new THREE.Mesh(eyeGeometry, eyeMaterial);
+                        rightEye.position.set(0.06, 0.32, 0.12);
+                        ghostGroup.add(rightEye);
+                        
+                        ghostGroup.position.copy(gob.mesh.position);
+                        ghostGroup.position.y += 1.5;
+                        G.scene.add(ghostGroup);
+                        arrowMesh = ghostGroup;
                     } else {
                         // Regular arrow
                         const arrowGeometry = new THREE.CylinderGeometry(0.05, 0.05, 0.8, 8);
@@ -2576,6 +3114,83 @@
                     
                     G.guardianArrows.push({
                         mesh: arrowMesh,
+                        velocity: direction.multiplyScalar(arrowSpeed * speedMultiplier),
+                        radius: 0.3
+                    });
+                }
+            }
+            
+            // Skeleton arrows (bone arrows from skeleton archers)
+            if (gob.isSkeleton && distToTarget < 30 && !gob.frozen) {
+                const now = Date.now();
+                const fireInterval = 3000 + Math.random() * 1500; // Slightly faster than guardians
+                if (now - gob.lastFireTime > fireInterval) {
+                    gob.lastFireTime = now;
+                    
+                    // Bone arrow projectile
+                    const arrowGroup = new THREE.Group();
+                    
+                    // Arrow shaft (bone color)
+                    const shaftGeometry = new THREE.CylinderGeometry(0.04, 0.04, 0.7, 6);
+                    const shaftMaterial = new THREE.MeshLambertMaterial({ color: 0xe8e0d0 });
+                    const shaft = new THREE.Mesh(shaftGeometry, shaftMaterial);
+                    arrowGroup.add(shaft);
+                    
+                    // Arrow tip (dark bone)
+                    const tipGeometry = new THREE.ConeGeometry(0.08, 0.2, 6);
+                    const tipMaterial = new THREE.MeshLambertMaterial({ color: 0x4a4a4a });
+                    const tip = new THREE.Mesh(tipGeometry, tipMaterial);
+                    tip.position.y = 0.45;
+                    arrowGroup.add(tip);
+                    
+                    // Feather fletching (dark red)
+                    const fletchGeometry = new THREE.BoxGeometry(0.15, 0.12, 0.02);
+                    const fletchMaterial = new THREE.MeshLambertMaterial({ color: 0x8B0000 });
+                    const fletch1 = new THREE.Mesh(fletchGeometry, fletchMaterial);
+                    fletch1.position.set(0, -0.3, 0.05);
+                    fletch1.rotation.z = 0.3;
+                    arrowGroup.add(fletch1);
+                    const fletch2 = new THREE.Mesh(fletchGeometry, fletchMaterial);
+                    fletch2.position.set(0, -0.3, -0.05);
+                    fletch2.rotation.z = -0.3;
+                    arrowGroup.add(fletch2);
+                    
+                    arrowGroup.position.copy(gob.mesh.position);
+                    arrowGroup.position.y += 1.5;
+                    G.scene.add(arrowGroup);
+                    
+                    Audio.playArrowShootSound();
+                    
+                    // Target the closest player
+                    let targetPlayer = G.playerGroup;
+                    let closestDist = Math.sqrt(
+                        Math.pow(G.playerGroup.position.x - gob.mesh.position.x, 2) +
+                        Math.pow(G.playerGroup.position.z - gob.mesh.position.z, 2)
+                    );
+                    
+                    if (multiplayerManager && multiplayerManager.isConnected() && otherPlayerMesh.visible) {
+                        const distToOther = Math.sqrt(
+                            Math.pow(otherPlayerMesh.position.x - gob.mesh.position.x, 2) +
+                            Math.pow(otherPlayerMesh.position.z - gob.mesh.position.z, 2)
+                        );
+                        if (distToOther < closestDist) {
+                            targetPlayer = otherPlayerMesh;
+                        }
+                    }
+                    
+                    const dirX = targetPlayer.position.x - gob.mesh.position.x;
+                    const dirZ = targetPlayer.position.z - gob.mesh.position.z;
+                    const length = Math.sqrt(dirX * dirX + dirZ * dirZ);
+                    
+                    const direction = new THREE.Vector3(dirX / length, 0, dirZ / length);
+                    const angle = Math.atan2(dirX, dirZ);
+                    arrowGroup.rotation.x = Math.PI / 2;
+                    arrowGroup.rotation.z = -angle;
+                    
+                    const arrowSpeed = difficulty === 'hard' ? 0.14 : 0.10;
+                    
+                    G.guardianArrows.push({
+                        mesh: arrowGroup,
                         velocity: direction.multiplyScalar(arrowSpeed * speedMultiplier),
                         radius: 0.3
                     });
@@ -3120,7 +3735,28 @@
                 });
             }
             
-            // Wing flap animation
+            // Skip dragon-specific animations for Reapers
+            if (d.isReaper) {
+                // Reaper hover animation - subtle bobbing near ground
+                d.hoverPhase = (d.hoverPhase || 0) + 0.03;
+                const hoverOffset = Math.sin(d.hoverPhase) * 0.3; // Smaller bob
+                // Fix: use !== undefined to properly handle groundY of 0
+                const baseY = d.groundY !== undefined ? d.groundY : 0;
+                d.mesh.position.y = baseY + hoverOffset + 0.5; // Just above ground
+                
+                // Subtle swaying
+                d.mesh.rotation.y += 0.002;
+                
+                // Eye glow pulse
+                if (d.leftEye && d.rightEye) {
+                    const glowIntensity = 0.7 + Math.sin(now * 0.005) * 0.3;
+                    if (d.leftEye.material) d.leftEye.material.opacity = glowIntensity;
+                    if (d.rightEye.material) d.rightEye.material.opacity = glowIntensity;
+                }
+                return;
+            }
+            
+            // Wing flap animation (dragons only)
             d.wingFlapPhase += 0.15;
             const flapAngle = Math.sin(d.wingFlapPhase) * 0.5;
             d.leftWing.rotation.x = flapAngle;
@@ -3222,42 +3858,86 @@
                 }
             }
             
-            // Flying behavior - randomly fly up sometimes
-            const flyHeight = (d.scale || 1) * 15;
-            if (!d.isFlying && Math.random() < 0.0005) {
-                d.isFlying = true;
-                d.flyStartTime = now;
-                d.flyDuration = 3000 + Math.random() * 2000;
-                d.groundY = d.mesh.position.y;
-                d.flyTargetY = d.groundY + flyHeight + Math.random() * 10;
-            }
-            
-            // Handle flying state
-            if (d.isFlying) {
-                const flyElapsed = now - d.flyStartTime;
-                const flyProgress = flyElapsed / d.flyDuration;
+            // Flying behavior - randomly fly up sometimes (dragons only, not reapers)
+            if (!d.isReaper) {
+                const flyHeight = (d.scale || 1) * 15;
+                if (!d.isFlying && Math.random() < 0.0005) {
+                    d.isFlying = true;
+                    d.flyStartTime = now;
+                    d.flyDuration = 3000 + Math.random() * 2000;
+                    d.groundY = d.mesh.position.y;
+                    d.flyTargetY = d.groundY + flyHeight + Math.random() * 10;
+                }
                 
-                if (flyProgress < 0.3) {
-                    const ascendProgress = flyProgress / 0.3;
-                    d.mesh.position.y = d.groundY + (d.flyTargetY - d.groundY) * ascendProgress;
-                } else if (flyProgress < 0.7) {
-                    d.mesh.position.y = d.flyTargetY;
-                } else if (flyProgress < 1.0) {
-                    const descendProgress = (flyProgress - 0.7) / 0.3;
-                    d.mesh.position.y = d.flyTargetY - (d.flyTargetY - d.groundY) * descendProgress;
-                } else {
-                    d.mesh.position.y = d.groundY;
-                    d.isFlying = false;
+                // Handle flying state
+                if (d.isFlying) {
+                    const flyElapsed = now - d.flyStartTime;
+                    const flyProgress = flyElapsed / d.flyDuration;
+                    
+                    if (flyProgress < 0.3) {
+                        const ascendProgress = flyProgress / 0.3;
+                        d.mesh.position.y = d.groundY + (d.flyTargetY - d.groundY) * ascendProgress;
+                    } else if (flyProgress < 0.7) {
+                        d.mesh.position.y = d.flyTargetY;
+                    } else if (flyProgress < 1.0) {
+                        const descendProgress = (flyProgress - 0.7) / 0.3;
+                        d.mesh.position.y = d.flyTargetY - (d.flyTargetY - d.groundY) * descendProgress;
+                    } else {
+                        d.mesh.position.y = d.groundY;
+                        d.isFlying = false;
+                    }
                 }
             }
             
-            // Patrol movement
-            d.mesh.position.x += d.speed * d.direction;
-            
-            if (d.mesh.position.x <= d.patrolLeft) {
-                d.direction = 1;
-            } else if (d.mesh.position.x >= d.patrolRight) {
-                d.direction = -1;
+            // Patrol movement - Reapers chase player within range, dragons patrol
+            if (d.isReaper) {
+                // Reaper only chases if player is within chase range
+                const chaseRange = d.chaseRange || 40;
+                const distToTarget = Math.sqrt(
+                    Math.pow(targetPlayer.position.x - d.mesh.position.x, 2) +
+                    Math.pow(targetPlayer.position.z - d.mesh.position.z, 2)
+                );
+                
+                if (distToTarget < chaseRange) {
+                    // Chase the player
+                    const chaseSpeed = d.speed;
+                    const dirToPlayer = new THREE.Vector3(
+                        targetPlayer.position.x - d.mesh.position.x,
+                        0,
+                        targetPlayer.position.z - d.mesh.position.z
+                    ).normalize();
+                    
+                    d.mesh.position.x += dirToPlayer.x * chaseSpeed;
+                    d.mesh.position.z += dirToPlayer.z * chaseSpeed;
+                    d.mesh.rotation.y = Math.atan2(dirToPlayer.x, dirToPlayer.z);
+                } else {
+                    // Slowly drift back toward home position
+                    const homeX = d.homeX || d.mesh.position.x;
+                    const homeZ = d.homeZ || d.mesh.position.z;
+                    const distToHome = Math.sqrt(
+                        Math.pow(homeX - d.mesh.position.x, 2) +
+                        Math.pow(homeZ - d.mesh.position.z, 2)
+                    );
+                    
+                    if (distToHome > 2) {
+                        const dirToHome = new THREE.Vector3(
+                            homeX - d.mesh.position.x,
+                            0,
+                            homeZ - d.mesh.position.z
+                        ).normalize();
+                        d.mesh.position.x += dirToHome.x * d.speed * 0.5;
+                        d.mesh.position.z += dirToHome.z * d.speed * 0.5;
+                    }
+                }
+            } else {
+                // Dragons patrol back and forth
+                d.mesh.position.x += d.speed * d.direction;
+                
+                if (d.mesh.position.x <= d.patrolLeft) {
+                    d.direction = 1;
+                } else if (d.mesh.position.x >= d.patrolRight) {
+                    d.direction = -1;
+                }
             }
             
             // Fire fireballs at players (not when frozen)
@@ -3277,8 +3957,15 @@
                 }
                 
                 // Only fire if player is in range
-                if (fireTargetDist < 100) {
-                    createDragonFireball(d, fireTargetPlayer);
+                // Reapers have shorter range (melee scythe), dragons have longer range
+                const fireRange = d.isReaper ? 35 : 100;
+                if (fireTargetDist < fireRange) {
+                    // Reapers use scythe wave attack, dragons use fireballs
+                    if (d.isReaper) {
+                        createScytheWave(d, fireTargetPlayer);
+                    } else {
+                        createDragonFireball(d, fireTargetPlayer);
+                    }
                     d.lastFireTime = now;
                     Audio.playExplosionSound();
                 }
@@ -3362,6 +4049,92 @@
         });
     }
 
+    // Helper function to create a scythe wave attack from a Reaper
+    function createScytheWave(reaper, targetPlayer) {
+        const waveGroup = new THREE.Group();
+        const scale = reaper.scale || 0.5;
+        
+        // Create a crescent-shaped wave of dark energy
+        const waveShape = new THREE.Shape();
+        waveShape.moveTo(0, 0);
+        waveShape.quadraticCurveTo(2, 1.5, 4, 0);
+        waveShape.quadraticCurveTo(2, -0.5, 0, 0);
+        
+        const extrudeSettings = {
+            steps: 1,
+            depth: 0.3,
+            bevelEnabled: false
+        };
+        
+        const waveGeometry = new THREE.ExtrudeGeometry(waveShape, extrudeSettings);
+        const waveMaterial = new THREE.MeshBasicMaterial({
+            color: 0x00FF44, // Ghostly green
+            transparent: true,
+            opacity: 0.8,
+            side: THREE.DoubleSide
+        });
+        const wave = new THREE.Mesh(waveGeometry, waveMaterial);
+        wave.scale.set(scale * 2, scale * 2, scale * 2);
+        waveGroup.add(wave);
+        
+        // Add glowing edge
+        const edgeGeometry = new THREE.TorusGeometry(2 * scale, 0.1 * scale, 8, 32, Math.PI);
+        const edgeMaterial = new THREE.MeshBasicMaterial({
+            color: 0x88FF88,
+            transparent: true,
+            opacity: 0.9
+        });
+        const edge = new THREE.Mesh(edgeGeometry, edgeMaterial);
+        edge.rotation.x = Math.PI / 2;
+        waveGroup.add(edge);
+        
+        // Add particle trail effect
+        for (let i = 0; i < 5; i++) {
+            const particleGeometry = new THREE.SphereGeometry(0.2 * scale, 8, 8);
+            const particleMaterial = new THREE.MeshBasicMaterial({
+                color: 0x00FF44,
+                transparent: true,
+                opacity: 0.6
+            });
+            const particle = new THREE.Mesh(particleGeometry, particleMaterial);
+            particle.position.set(
+                (Math.random() - 0.5) * 3 * scale,
+                (Math.random() - 0.5) * 2 * scale,
+                0
+            );
+            waveGroup.add(particle);
+        }
+        
+        // Position at Reaper's position, at player height level for better collision
+        waveGroup.position.copy(reaper.mesh.position);
+        waveGroup.position.y = 1.5; // At player chest height for reliable hit
+        
+        // Calculate direction to target (2D, same height)
+        const dirX = targetPlayer.position.x - waveGroup.position.x;
+        const dirZ = targetPlayer.position.z - waveGroup.position.z;
+        const length = Math.sqrt(dirX * dirX + dirZ * dirZ);
+        
+        // Rotate wave to face target
+        waveGroup.lookAt(new THREE.Vector3(targetPlayer.position.x, waveGroup.position.y, targetPlayer.position.z));
+        
+        G.scene.add(waveGroup);
+        
+        // Speed for scythe wave - slower, menacing crawl
+        const speed = 0.18;
+        
+        G.fireballs.push({
+            mesh: waveGroup,
+            velocity: new THREE.Vector3(dirX / length * speed, 0, dirZ / length * speed), // No Y velocity - travels at constant height
+            radius: 3.5, // Large hit area for melee wave attack
+            damage: 1,
+            trail: [],
+            lastTrailTime: 0,
+            isScytheWave: true,
+            spawnTime: Date.now(),
+            maxLifetime: 5000 // 5 seconds before fading
+        });
+    }
+
     // Helper function to create a fireball from a wizard goblin
     function createWizardFireball(wizard, targetPlayer) {
         const fbTextures = getTerrainTextures(THREE);
@@ -3410,11 +4183,21 @@
         innerGlow.scale.set(1.2 * fbScale, 1.2 * fbScale, 1);
         fireballGroup.add(innerGlow);
         
-        // Position fireball at wizard's staff position
+        // Position fireball at wizard's staff/orb position
         fireballGroup.position.copy(wizard.mesh.position);
-        fireballGroup.position.x += 0.9;
-        fireballGroup.position.y += 3.2;
-        fireballGroup.position.z += 0.3;
+        if (G.graveyardTheme) {
+            // Witch's magic orb is in her left hand - spawn at safe height above terrain
+            fireballGroup.position.x -= 0.5;
+            fireballGroup.position.z += 0.5;
+            // Ensure fireball is at least 2 units above local terrain
+            const localTerrain = getTerrainHeight(fireballGroup.position.x, fireballGroup.position.z);
+            fireballGroup.position.y = Math.max(wizard.mesh.position.y + 2.4, localTerrain + 2);
+        } else {
+            // Regular wizard's staff position
+            fireballGroup.position.x += 0.9;
+            fireballGroup.position.y += 3.2;
+            fireballGroup.position.z += 0.3;
+        }
         G.scene.add(fireballGroup);
         
         // Calculate direction to target (including Y axis)
@@ -3433,7 +4216,8 @@
             damage: 1,
             trail: [],
             lastTrailTime: 0,
-            isWizardFireball: true
+            isWizardFireball: true,
+            spawnTime: Date.now() // Track when spawned to prevent early terrain collision
         });
         
         // Play a sound effect
@@ -4072,57 +4856,87 @@
             // Remove if out of bounds or hit ground
             const terrainHeight = getTerrainHeight(fireball.mesh.position.x, fireball.mesh.position.z);
             
-            // Check collision with mountains (if level has them)
+            // Check scythe wave lifetime - remove after max lifetime
+            if (fireball.isScytheWave && fireball.maxLifetime) {
+                const lifeElapsed = Date.now() - (fireball.spawnTime || 0);
+                if (lifeElapsed > fireball.maxLifetime) {
+                    // Fade out and remove
+                    if (fireball.trail) {
+                        fireball.trail.forEach(t => G.scene.remove(t.sprite));
+                    }
+                    G.scene.remove(fireball.mesh);
+                    G.fireballs.splice(i, 1);
+                    continue;
+                }
+            }
+            
+            // Grace period for wizard/witch fireballs - skip terrain collision entirely during grace
+            const graceTime = fireball.isWizardFireball || fireball.isScytheWave ? 800 : 0;
+            const elapsed = Date.now() - (fireball.spawnTime || 0);
+            const inGracePeriod = elapsed < graceTime;
+            
+            // Check collision with mountains (if level has them) - skip during grace period
+            // Also skip for wizard fireballs and scythe waves - magical projectiles pass through walls
             let hitMountain = false;
-            if (G.levelConfig.mountains && G.levelConfig.mountains.length > 0) {
+            if (!inGracePeriod && !fireball.isWizardFireball && !fireball.isScytheWave && G.levelConfig.mountains && G.levelConfig.mountains.length > 0) {
                 for (const mtn of G.levelConfig.mountains) {
                     const distToMountain = Math.sqrt(
                         (fireball.mesh.position.x - mtn.x) ** 2 +
                         (fireball.mesh.position.z - mtn.z) ** 2
                     );
-                    // Mountain radius is half its width
-                    if (distToMountain < mtn.width / 2) {
+                    // Mountain collision: within radius AND below mountain height
+                    const mtnHeight = mtn.height || 15;
+                    if (distToMountain < mtn.width / 2 && fireball.mesh.position.y < mtnHeight) {
                         hitMountain = true;
                         break;
                     }
                 }
             }
             
-            // Check collision with canyon walls
+            // Check collision with canyon walls - skip during grace period
+            // Also skip for wizard fireballs and scythe waves - magical projectiles pass through walls
             let hitCanyonWall = false;
-            for (const wall of G.canyonWalls) {
-                // Transform fireball position into wall's local space
-                const cos = Math.cos(-wall.rotation);
-                const sin = Math.sin(-wall.rotation);
-                const dx = fireball.mesh.position.x - wall.x;
-                const dz = fireball.mesh.position.z - wall.z;
-                const localX = dx * cos - dz * sin;
-                const localZ = dx * sin + dz * cos;
+            if (!inGracePeriod && !fireball.isWizardFireball && !fireball.isScytheWave) {
+                for (const wall of G.canyonWalls) {
+                    // Transform fireball position into wall's local space
+                    const cos = Math.cos(-wall.rotation);
+                    const sin = Math.sin(-wall.rotation);
+                    const dx = fireball.mesh.position.x - wall.x;
+                    const dz = fireball.mesh.position.z - wall.z;
+                    const localX = dx * cos - dz * sin;
+                    const localZ = dx * sin + dz * cos;
 
-                // Check if inside wall bounds
-                const halfWidth = wall.width / 2;
-                const halfDepth = wall.depth / 2;
+                    // Check if inside wall bounds
+                    const halfWidth = wall.width / 2;
+                    const halfDepth = wall.depth / 2;
 
-                if (Math.abs(localX) < halfWidth && Math.abs(localZ) < halfDepth && fireball.mesh.position.y < wall.height) {
-                    hitCanyonWall = true;
-                    break;
+                    if (Math.abs(localX) < halfWidth && Math.abs(localZ) < halfDepth && fireball.mesh.position.y < wall.height) {
+                        hitCanyonWall = true;
+                        break;
+                    }
                 }
             }
 
-            // Check collision with impassable cliffs
+            // Check collision with impassable cliffs - skip during grace period
+            // Also skip for wizard fireballs and scythe waves - magical projectiles pass through obstacles
             let hitCliff = false;
-            for (const cliff of G.impassableCliffs) {
-                const distToCliff = Math.sqrt(
-                    (fireball.mesh.position.x - cliff.x) ** 2 +
-                    (fireball.mesh.position.z - cliff.z) ** 2
-                );
-                if (distToCliff < cliff.radius && fireball.mesh.position.y < cliff.height) {
-                    hitCliff = true;
-                    break;
+            if (!inGracePeriod && !fireball.isWizardFireball && !fireball.isScytheWave) {
+                for (const cliff of G.impassableCliffs) {
+                    const distToCliff = Math.sqrt(
+                        (fireball.mesh.position.x - cliff.x) ** 2 +
+                        (fireball.mesh.position.z - cliff.z) ** 2
+                    );
+                    if (distToCliff < cliff.radius && fireball.mesh.position.y < cliff.height) {
+                        hitCliff = true;
+                        break;
+                    }
                 }
             }
 
-            if (fireball.mesh.position.y < terrainHeight || hitMountain || hitCanyonWall || hitCliff ||
+            // Check terrain collision - skip during grace period and for scythe waves
+            const hitTerrain = !inGracePeriod && !fireball.isScytheWave && fireball.mesh.position.y < terrainHeight;
+            
+            if (hitTerrain || hitMountain || hitCanyonWall || hitCliff ||
                 Math.abs(fireball.mesh.position.x) > GAME_CONFIG.WORLD_BOUND ||
                 Math.abs(fireball.mesh.position.z) > GAME_CONFIG.WORLD_BOUND) {
                 createFireballExplosion(fireball.mesh.position.x, terrainHeight, fireball.mesh.position.z);
@@ -4214,13 +5028,28 @@
             const canPassMountains = G.waterTheme && G.player.isGliding;
             if (!canPassMountains) {
                 G.levelConfig.mountains.forEach(mtn => {
-                    const dist = new THREE.Vector2(
-                        G.playerGroup.position.x - mtn.x,
-                        G.playerGroup.position.z - mtn.z
-                    ).length();
-                    if (dist < mtn.width/2 + 1.5) {
-                        G.playerGroup.position.copy(prevPos);
-                        isStuck = true;
+                    // For graveyard theme walls, use rectangular (box) collision
+                    if (G.graveyardTheme) {
+                        const wallWidth = mtn.width;
+                        const wallDepth = Math.min(mtn.width * 0.15, 8);
+                        const halfW = wallWidth / 2 + 1.5;
+                        const halfD = wallDepth / 2 + 1.5;
+                        const dx = Math.abs(G.playerGroup.position.x - mtn.x);
+                        const dz = Math.abs(G.playerGroup.position.z - mtn.z);
+                        if (dx < halfW && dz < halfD) {
+                            G.playerGroup.position.copy(prevPos);
+                            isStuck = true;
+                        }
+                    } else {
+                        // Circular collision for regular cone mountains
+                        const dist = new THREE.Vector2(
+                            G.playerGroup.position.x - mtn.x,
+                            G.playerGroup.position.z - mtn.z
+                        ).length();
+                        if (dist < mtn.width/2 + 1.5) {
+                            G.playerGroup.position.copy(prevPos);
+                            isStuck = true;
+                        }
                     }
                 });
             }
