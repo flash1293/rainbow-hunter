@@ -12,6 +12,9 @@
     <div id="difficulty-menu">
         <h1>🚴 Fahrrad-Abenteuer</h1>
         <a href="wiki/index.html" class="wiki-link">📖 Spiel-Wiki</a>
+        <div id="splitscreen-toggle">
+            <button id="splitscreen-btn" class="mode-btn">🎮 Splitscreen: AUS</button>
+        </div>
         <h2>Wähle Schwierigkeit:</h2>
         <button id="easy-btn" class="difficulty-btn">🌲 Leicht</button>
         <button id="hard-btn" class="difficulty-btn">🔥 Schwierig</button>
@@ -52,5 +55,30 @@
     <script src="js/main-gameplay.js"></script>
     <script src="js/main-loop.js"></script>
     <script src="js/main.js"></script>
+    <script>
+        // Splitscreen toggle functionality
+        (function() {
+            const urlParams = new URLSearchParams(window.location.search);
+            const isSplitscreen = urlParams.get('splitscreen') === 'native';
+            const btn = document.getElementById('splitscreen-btn');
+            
+            if (btn) {
+                if (isSplitscreen) {
+                    btn.textContent = '🎮 Splitscreen: AN';
+                    btn.classList.add('active');
+                }
+                
+                btn.addEventListener('click', function() {
+                    const url = new URL(window.location.href);
+                    if (isSplitscreen) {
+                        url.searchParams.delete('splitscreen');
+                    } else {
+                        url.searchParams.set('splitscreen', 'native');
+                    }
+                    window.location.href = url.toString();
+                });
+            }
+        })();
+    </script>
 </body>
 </html>
