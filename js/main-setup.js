@@ -796,6 +796,19 @@ function initSetup() {
                 createdAt: lt.createdAt,
                 creatorId: lt.creatorId
             })),
+            herzmen: G.placedHerzmen.map(h => ({
+                id: h.id,
+                x: h.x,
+                z: h.z,
+                rotation: h.mesh.rotation.y
+            })),
+            heartBombs: G.heartBombs.filter(hb => !hb.isRemote).map(hb => ({
+                x: hb.mesh.position.x,
+                y: hb.mesh.position.y,
+                z: hb.mesh.position.z,
+                vx: hb.velocity.x,
+                vz: hb.velocity.z
+            })),
             items: {
                 materials: G.materials.map(m => m.collected),
                 ammoPickups: G.ammoPickups.map(a => a.collected),
@@ -1342,6 +1355,16 @@ function initSetup() {
             });
         }
         
+        // Update Herz-Men positions and rotations
+        if (data.herzmen && G.placedHerzmen) {
+            data.herzmen.forEach((hData, i) => {
+                if (i < G.placedHerzmen.length) {
+                    // Update existing herzman rotation
+                    G.placedHerzmen[i].mesh.rotation.y = hData.rotation;
+                }
+            });
+        }
+        
         // Update item collection states
         if (data.items) {
             if (data.items.materials) {
@@ -1561,6 +1584,14 @@ function initSetup() {
             bombButtonWasPressed = false;
         }
         
+        // L1/Left Bumper (button 4) for Herz-Man placement
+        if (!herzmanButtonWasPressed && G.gamepad.buttons[4]?.pressed && G.herzmanInventory > 0 && !gameWon && !gameDead) {
+            placeHerzman();
+            herzmanButtonWasPressed = true;
+        } else if (!G.gamepad.buttons[4]?.pressed) {
+            herzmanButtonWasPressed = false;
+        }
+        
         // Options (button 9) for restart
         if (G.gamepad.buttons[9]?.pressed && (gameWon || gameDead)) {
             resetGame();
@@ -1578,6 +1609,10 @@ function initSetup() {
         // Reset bomb key debounce
         if (e.key === 'x' || e.key === 'X') {
             G.keys.bombKeyPressed = false;
+        }
+        // Reset Herz-Man key debounce
+        if (e.key === 'h' || e.key === 'H') {
+            G.keys.herzmanKeyPressed = false;
         }
     }, { signal: G.eventSignal });
 
@@ -1637,6 +1672,14 @@ function initSetup() {
             if (!G.keys.bombKeyPressed) {
                 placeBomb();
                 G.keys.bombKeyPressed = true;
+            }
+            e.preventDefault();
+        }
+        // Herz-Man placement (debounced)
+        if ((e.key === 'h' || e.key === 'H') && G.herzmanInventory > 0 && !gameWon && !gameDead) {
+            if (!G.keys.herzmanKeyPressed) {
+                placeHerzman();
+                G.keys.herzmanKeyPressed = true;
             }
             e.preventDefault();
         }
@@ -2372,6 +2415,115 @@ function initSetup() {
         heartGroup.position.set(pos.x, terrainHeight, pos.z);
         G.scene.add(heartGroup);
         G.healthPickups.push({ mesh: heartGroup, collected: false, radius: 1.2 });
+    });
+
+    // Herz-Man pickups (presents with ribbon/bow)
+    G.herzmanPickups = [];
+    const herzmanPositions = G.levelConfig.herzmanPositions || [];
+
+    herzmanPositions.forEach(pos => {
+        const presentGroup = new THREE.Group();
+        
+        // Present box (gift box base)
+        const boxGeometry = new THREE.BoxGeometry(0.8, 0.7, 0.8);
+        const boxMaterial = new THREE.MeshLambertMaterial({ 
+            color: 0xFF69B4, // Hot pink
+            emissive: 0xFF1493,
+            emissiveIntensity: 0.2
+        });
+        const box = new THREE.Mesh(boxGeometry, boxMaterial);
+        box.position.y = 0.4;
+        box.castShadow = true;
+        presentGroup.add(box);
+        
+        // Ribbon horizontal strips (Schleife bands)
+        const ribbonMaterial = new THREE.MeshLambertMaterial({ 
+            color: 0xFFD700, // Gold
+            emissive: 0xFFD700,
+            emissiveIntensity: 0.3
+        });
+        
+        // Vertical ribbon
+        const ribbonVGeometry = new THREE.BoxGeometry(0.15, 0.72, 0.82);
+        const ribbonV = new THREE.Mesh(ribbonVGeometry, ribbonMaterial);
+        ribbonV.position.y = 0.4;
+        presentGroup.add(ribbonV);
+        
+        // Horizontal ribbon
+        const ribbonHGeometry = new THREE.BoxGeometry(0.82, 0.72, 0.15);
+        const ribbonH = new THREE.Mesh(ribbonHGeometry, ribbonMaterial);
+        ribbonH.position.y = 0.4;
+        presentGroup.add(ribbonH);
+        
+        // Bow on top (Schleife) - two loops
+        const bowLoopGeometry = new THREE.TorusGeometry(0.15, 0.05, 8, 16);
+        
+        // Left bow loop
+        const bowLeft = new THREE.Mesh(bowLoopGeometry, ribbonMaterial);
+        bowLeft.position.set(-0.15, 0.85, 0);
+        bowLeft.rotation.y = Math.PI / 2;
+        bowLeft.rotation.x = Math.PI / 6;
+        presentGroup.add(bowLeft);
+        
+        // Right bow loop
+        const bowRight = new THREE.Mesh(bowLoopGeometry, ribbonMaterial);
+        bowRight.position.set(0.15, 0.85, 0);
+        bowRight.rotation.y = Math.PI / 2;
+        bowRight.rotation.x = -Math.PI / 6;
+        presentGroup.add(bowRight);
+        
+        // Center knot of bow
+        const knotGeometry = new THREE.SphereGeometry(0.1, 8, 8);
+        const knot = new THREE.Mesh(knotGeometry, ribbonMaterial);
+        knot.position.set(0, 0.82, 0);
+        presentGroup.add(knot);
+        
+        // Bow tails (hanging ribbons)
+        const tailGeometry = new THREE.BoxGeometry(0.08, 0.25, 0.02);
+        const tailLeft = new THREE.Mesh(tailGeometry, ribbonMaterial);
+        tailLeft.position.set(-0.08, 0.65, 0.1);
+        tailLeft.rotation.z = -0.3;
+        presentGroup.add(tailLeft);
+        
+        const tailRight = new THREE.Mesh(tailGeometry, ribbonMaterial);
+        tailRight.position.set(0.08, 0.65, 0.1);
+        tailRight.rotation.z = 0.3;
+        presentGroup.add(tailRight);
+        
+        // Small heart decoration on front
+        const heartShape = new THREE.Shape();
+        heartShape.moveTo(0, 0.1);
+        heartShape.bezierCurveTo(0, 0.12, -0.02, 0.15, -0.08, 0.15);
+        heartShape.bezierCurveTo(-0.12, 0.15, -0.12, 0.08, -0.12, 0.08);
+        heartShape.bezierCurveTo(-0.12, 0.02, -0.08, -0.02, 0, -0.08);
+        heartShape.bezierCurveTo(0.08, -0.02, 0.12, 0.02, 0.12, 0.08);
+        heartShape.bezierCurveTo(0.12, 0.08, 0.12, 0.15, 0.08, 0.15);
+        heartShape.bezierCurveTo(0.02, 0.15, 0, 0.12, 0, 0.1);
+        
+        const heartExtrudeSettings = { depth: 0.02, bevelEnabled: false };
+        const heartGeometry = new THREE.ExtrudeGeometry(heartShape, heartExtrudeSettings);
+        const heartMaterial = new THREE.MeshBasicMaterial({ color: 0xFF1493 });
+        const heart = new THREE.Mesh(heartGeometry, heartMaterial);
+        heart.position.set(0.25, 0.35, 0.42);
+        heart.rotation.y = 0.3;
+        heart.scale.set(1.5, 1.5, 1);
+        presentGroup.add(heart);
+        
+        // Glow effect
+        const glowGeometry = new THREE.SphereGeometry(0.7, 8, 8);
+        const glowMaterial = new THREE.MeshBasicMaterial({ 
+            color: 0xFF69B4, 
+            transparent: true, 
+            opacity: 0.25 
+        });
+        const glow = new THREE.Mesh(glowGeometry, glowMaterial);
+        glow.position.y = 0.5;
+        presentGroup.add(glow);
+        
+        const terrainHeight = getTerrainHeight(pos.x, pos.z);
+        presentGroup.position.set(pos.x, terrainHeight, pos.z);
+        G.scene.add(presentGroup);
+        G.herzmanPickups.push({ mesh: presentGroup, collected: false, radius: 1.5 });
     });
 
     // Materials for bridge repair - only if level has materials

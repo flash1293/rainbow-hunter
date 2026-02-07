@@ -20,13 +20,15 @@ let godModeSpeed = 2.0;
 // Controller state
 let bananaButtonWasPressed = false;
 let bombButtonWasPressed = false;
+let herzmanButtonWasPressed = false;
 
 // Persistent inventory across levels
 let persistentInventory = {
     ammo: null,        // null means use default, number means carry over
     bombs: null,
     health: null,
-    hasKite: false
+    hasKite: false,
+    herzmen: null
 };
 
 // Multiplayer
@@ -125,7 +127,8 @@ function startGame(selectedDifficulty, startLevel = null) {
         ammo: null,
         bombs: null,
         health: null,
-        hasKite: false
+        hasKite: false,
+        herzmen: null
     };
     
     // Get selected level from dropdown or use provided startLevel

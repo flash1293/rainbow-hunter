@@ -91,6 +91,7 @@ function initLoop() {
         G.worldBananaPowerCollected = false;
         G.bananaInventory = 0;
         G.bombInventory = 0;
+        G.herzmanInventory = GAME_CONFIG.HERZMAN_STARTING_COUNT;
         if (G.bridgeObj) {
             G.bridgeObj.mesh.visible = false;
         }
@@ -105,6 +106,14 @@ function initLoop() {
         // Remove all placed bombs
         G.placedBombs.forEach(bomb => G.scene.remove(bomb.mesh));
         G.placedBombs.length = 0;
+        
+        // Remove all placed Herz-Men
+        G.placedHerzmen.forEach(herzman => G.scene.remove(herzman.mesh));
+        G.placedHerzmen.length = 0;
+        
+        // Remove all heart bombs
+        G.heartBombs.forEach(hb => G.scene.remove(hb.mesh));
+        G.heartBombs.length = 0;
         
         // Remove all lava trails
         G.lavaTrails.forEach(trail => G.scene.remove(trail.mesh));
@@ -268,6 +277,13 @@ function initLoop() {
         // Bomb inventory
         G.hudCtx.fillStyle = '#FF4500';
         G.hudCtx.fillText(`💣 Bomben: ${G.bombInventory}/${G.maxBombs} (Drücke X)`, 10, nextYPos);
+        G.hudCtx.fillStyle = '#000';
+        nextYPos += 25;
+        
+        // Herz-Man inventory - show inventory count
+        G.hudCtx.fillStyle = '#FF69B4';
+        const placedCount = G.placedHerzmen ? G.placedHerzmen.length : 0;
+        G.hudCtx.fillText(`💕 Herz-Man: ${G.herzmanInventory} bereit, ${placedCount} aktiv (H/L1)`, 10, nextYPos);
         G.hudCtx.fillStyle = '#000';
         
         if (!G.bridgeRepaired && G.materialsCollected >= G.materialsNeeded) {
@@ -865,10 +881,18 @@ function initLoop() {
                     updateBombs();
                     updatePirateShips();
                     updateDragon();
+                    updateHerzmen();
+                    updateHeartBombs();
                 }
                 
                 // Dragon visuals run on both host and client
                 updateDragonVisuals();
+                
+                // Herz-Men visuals run on both host and client
+                updateHerzmenVisuals();
+                
+                // Heart bomb visuals run on both host and client
+                updateHeartBombVisuals();
                 
                 // Client does optimistic updates
                 if (multiplayerManager && !multiplayerManager.isHost) {

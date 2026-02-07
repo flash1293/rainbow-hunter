@@ -49,6 +49,16 @@ const GAME_CONFIG = {
     LAVA_TRAIL_DURATION: 8000,
     LAVA_TRAIL_RADIUS: 1.5,
 
+    // Herz-Man turret settings
+    HERZMAN_FIRE_INTERVAL: 1500,      // Time between shots (ms)
+    HERZMAN_RANGE: 20,                 // Detection range
+    HERZMAN_HEART_SPEED: 0.3,         // Heart bomb speed
+    HERZMAN_HEART_DAMAGE: 2,          // Damage per heart bomb
+    HERZMAN_HEART_RADIUS: 4,          // Explosion radius
+    HERZMAN_MAX_PLACED: 3,            // Max turrets that can be placed (legacy, not enforced)
+    HERZMAN_STARTING_COUNT: 2,        // Starting inventory
+    HERZMAN_LIFETIME: 60000,          // Lifetime in ms (1 minute)
+
     // Difficulty settings
     EASY_GOBLIN_COUNT: 53,
     HARD_GOBLIN_COUNT: 53,
@@ -402,6 +412,13 @@ const LEVELS = {
             { x: 70, z: -255 }
         ],
         
+        // Herz-Man pickup positions (presents with bow)
+        herzmanPositions: [
+            { x: 20, z: 40 }, { x: -30, z: -20 }, { x: 50, z: -40 },
+            { x: -60, z: -100 }, { x: 40, z: -150 },
+            { x: -80, z: -200 }, { x: 60, z: -230 }
+        ],
+        
         // Bridge repair materials
         materials: [
             { x: -20, z: 35, type: 'wood', color: 0x8B4513, glowColor: 0xFFAA00 },
@@ -747,6 +764,12 @@ const LEVELS = {
             { x: -175, z: -110 }
         ],
         
+        // Herz-Man pickup positions (presents with bow)
+        herzmanPositions: [
+            { x: 0, z: 150 }, { x: -10, z: 80 }, { x: 15, z: 10 },
+            { x: -5, z: -60 }, { x: -100, z: -100 }, { x: -160, z: -95 }
+        ],
+        
         // No materials in Level 2
         materials: [],
         
@@ -1039,6 +1062,12 @@ const LEVELS = {
             { x: 25, z: 165 },
             { x: -25, z: -175 },
             { x: 0, z: -165 }
+        ],
+        
+        // Herz-Man pickup positions (presents with bow)
+        herzmanPositions: [
+            { x: 25, z: 150 }, { x: -30, z: 100 }, { x: 40, z: 40 },
+            { x: -35, z: -30 }, { x: 30, z: -90 }, { x: -20, z: -150 }
         ],
         
         // Trap positions (quicksand pits in desert)
@@ -1444,6 +1473,12 @@ const LEVELS = {
             { x: 0, z: -60 }, { x: 0, z: -120 }
         ],
         
+        // Herz-Man pickup positions (presents with bow)
+        herzmanPositions: [
+            { x: 5, z: 160 }, { x: -10, z: 90 }, { x: 10, z: 20 },
+            { x: -5, z: -50 }, { x: 5, z: -120 }
+        ],
+        
         // Trap positions (lava vents)
         trapPositions: [
             { x: 35, z: 150 },
@@ -1790,6 +1825,12 @@ const LEVELS = {
             { x: 5, z: -120 }, { x: -10, z: -155 }, { x: 15, z: -185 },
             { x: 0, z: 170 }, { x: 0, z: 110 }, { x: 0, z: 50 },
             { x: 0, z: -80 }, { x: 0, z: -140 }
+        ],
+        
+        // Herz-Man pickup positions (presents with bow)
+        herzmanPositions: [
+            { x: 20, z: 155 }, { x: -25, z: 95 }, { x: 30, z: 30 },
+            { x: -20, z: -40 }, { x: 25, z: -100 }, { x: -15, z: -160 }
         ],
         
         // Trap positions (whirlpools/Strudel) - blocking center path to enforce slalom

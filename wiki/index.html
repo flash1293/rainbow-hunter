@@ -1,0 +1,902 @@
+<!DOCTYPE html>
+<html lang="de">
+<head>
+    <meta charset="UTF-8">
+    <title>🚴 Fahrrad-Abenteuer Spiel-Wiki</title>
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Press+Start+2P&display=swap');
+        
+        :root {
+            --bg-primary: #1a1a2e;
+            --bg-secondary: #2d2d44;
+            --bg-card: #252540;
+            --bg-dark: #0f0f1a;
+            --text-primary: #f5f5f5;
+            --text-secondary: #b0b0c0;
+            --accent-gold: #FFD700;
+            --accent-silver: #C0C0C0;
+            --accent-bronze: #CD7F32;
+            --accent-ice: #87CEEB;
+            --accent-sand: #e8c36a;
+            --accent-lava: #ff4422;
+            --accent-ocean: #1E90FF;
+            --accent-forest: #228B22;
+        }
+        
+        * { box-sizing: border-box; margin: 0; padding: 0; }
+        
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: var(--bg-dark);
+            background-image: 
+                linear-gradient(90deg, rgba(255,215,0,0.02) 1px, transparent 1px),
+                linear-gradient(rgba(192,192,192,0.02) 1px, transparent 1px);
+            background-size: 20px 20px;
+            color: var(--text-primary);
+            line-height: 1.6;
+        }
+        
+        header {
+            background: var(--bg-primary);
+            padding: 50px 20px;
+            text-align: center;
+            border-bottom: 6px solid var(--accent-gold);
+            position: relative;
+            clip-path: polygon(0 0, 100% 0, 100% calc(100% - 20px), 50% 100%, 0 calc(100% - 20px));
+        }
+        
+        header::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background: repeating-linear-gradient(
+                45deg,
+                transparent,
+                transparent 10px,
+                rgba(255,255,255,0.02) 10px,
+                rgba(255,255,255,0.02) 20px
+            );
+        }
+        
+        header h1 {
+            font-family: 'Press Start 2P', cursive;
+            font-size: 2em;
+            margin-bottom: 15px;
+            color: var(--accent-gold);
+            text-shadow: 4px 4px 0 var(--accent-bronze), 6px 6px 0 rgba(0,0,0,0.3);
+            letter-spacing: 2px;
+        }
+        
+        header p { 
+            color: var(--text-secondary); 
+            font-size: 1.1em;
+            text-transform: uppercase;
+            letter-spacing: 3px;
+        }
+        
+        nav {
+            background: var(--bg-secondary);
+            padding: 15px;
+            position: sticky;
+            top: 0;
+            z-index: 100;
+            display: flex;
+            justify-content: center;
+            gap: 10px;
+            flex-wrap: wrap;
+            border-bottom: 4px solid var(--bg-dark);
+            box-shadow: 0 4px 0 var(--accent-bronze);
+        }
+        
+        nav a {
+            color: var(--text-primary);
+            text-decoration: none;
+            padding: 12px 20px;
+            background: var(--bg-card);
+            border: 3px solid var(--bg-dark);
+            font-weight: bold;
+            text-transform: uppercase;
+            font-size: 0.85em;
+            letter-spacing: 1px;
+            transition: all 0.15s ease;
+            clip-path: polygon(8px 0, 100% 0, 100% calc(100% - 8px), calc(100% - 8px) 100%, 0 100%, 0 8px);
+        }
+        
+        nav a:hover { 
+            background: var(--accent-gold); 
+            color: var(--bg-dark);
+            transform: translateY(-3px);
+            box-shadow: 0 4px 0 var(--accent-bronze);
+        }
+        nav a.active { background: var(--accent-gold); color: var(--bg-dark); }
+        
+        main { max-width: 1400px; margin: 0 auto; padding: 40px 20px; }
+        section { margin-bottom: 60px; }
+        
+        h2 {
+            font-family: 'Press Start 2P', cursive;
+            font-size: 1.4em;
+            margin-bottom: 30px;
+            padding: 15px 20px;
+            background: var(--bg-primary);
+            border-left: 6px solid var(--accent-gold);
+            color: var(--accent-gold);
+            text-shadow: 2px 2px 0 var(--bg-dark);
+            clip-path: polygon(0 0, 100% 0, calc(100% - 15px) 100%, 0 100%);
+        }
+        
+        h3 { 
+            color: var(--accent-sand); 
+            margin: 30px 0 20px; 
+            font-size: 1.3em;
+            border-bottom: 3px solid var(--accent-wood);
+            padding-bottom: 8px;
+            display: inline-block;
+        }
+        
+        .entity-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+            gap: 20px;
+        }
+        
+        .entity-card {
+            background: var(--bg-card);
+            border: 4px solid var(--bg-dark);
+            overflow: hidden;
+            transition: all 0.15s ease;
+            clip-path: polygon(0 0, calc(100% - 12px) 0, 100% 12px, 100% 100%, 12px 100%, 0 calc(100% - 12px));
+        }
+        
+        .entity-card:hover {
+            transform: translateY(-4px);
+            box-shadow: 0 8px 0 var(--accent-bronze);
+            border-color: var(--accent-gold);
+        }
+        
+        .entity-image {
+            background: var(--bg-primary);
+            height: 200px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            border-bottom: 4px solid var(--bg-dark);
+            position: relative;
+        }
+        
+        .entity-image::after {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background: 
+                linear-gradient(45deg, transparent 49%, rgba(255,255,255,0.02) 49%, rgba(255,255,255,0.02) 51%, transparent 51%),
+                linear-gradient(-45deg, transparent 49%, rgba(255,255,255,0.02) 49%, rgba(255,255,255,0.02) 51%, transparent 51%);
+            background-size: 20px 20px;
+        }
+        
+        .entity-image img {
+            max-width: 180px;
+            max-height: 180px;
+            object-fit: contain;
+            image-rendering: pixelated;
+        }
+        
+        .entity-info { padding: 20px; }
+        .entity-name { 
+            font-size: 1.2em; 
+            color: var(--accent-gold); 
+            margin-bottom: 10px;
+            font-weight: bold;
+            text-transform: uppercase;
+        }
+        .entity-desc { color: var(--text-secondary); font-size: 0.95em; margin-bottom: 15px; }
+        .entity-tags { display: flex; gap: 8px; flex-wrap: wrap; }
+        
+        .tag {
+            padding: 5px 12px;
+            font-size: 0.8em;
+            font-weight: bold;
+            text-transform: uppercase;
+            background: var(--bg-primary);
+            color: var(--accent-ice);
+            border: 2px solid var(--accent-ice);
+            clip-path: polygon(6px 0, 100% 0, 100% calc(100% - 6px), calc(100% - 6px) 100%, 0 100%, 0 6px);
+        }
+        
+        .tag.danger { 
+            background: rgba(255,68,34,0.2); 
+            color: var(--accent-lava); 
+            border-color: var(--accent-lava);
+        }
+        .tag.reward { 
+            background: rgba(255,170,0,0.2); 
+            color: var(--accent-gold);
+            border-color: var(--accent-gold);
+        }
+        .tag.special { 
+            background: rgba(192,192,192,0.2); 
+            color: var(--accent-silver);
+            border-color: var(--accent-silver);
+        }
+        
+        .level-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(380px, 1fr));
+            gap: 25px;
+        }
+        
+        .level-card {
+            background: var(--bg-card);
+            border: 4px solid var(--bg-dark);
+            overflow: hidden;
+            box-shadow: 6px 6px 0 var(--bg-dark);
+            clip-path: polygon(0 0, calc(100% - 20px) 0, 100% 20px, 100% 100%, 20px 100%, 0 calc(100% - 20px));
+        }
+        
+        .level-header { 
+            padding: 25px; 
+            position: relative;
+            border-bottom: 4px solid var(--bg-dark);
+        }
+        .level-number { 
+            position: absolute; 
+            top: 15px; 
+            right: 15px; 
+            background: var(--bg-dark); 
+            padding: 6px 14px; 
+            font-size: 0.85em;
+            font-weight: bold;
+            border: 2px solid currentColor;
+        }
+        .level-title { 
+            font-family: 'Press Start 2P', cursive;
+            font-size: 1em; 
+            margin-bottom: 8px;
+            text-shadow: 2px 2px 0 rgba(0,0,0,0.5);
+        }
+        .level-subtitle { color: var(--text-secondary); font-style: italic; }
+        .level-content { padding: 0 25px 25px; }
+        
+        .level-1 .level-header { background: var(--accent-silver); }
+        .level-2 .level-header { background: #4a7a9a; }
+        .level-3 .level-header { background: #c4a35a; }
+        .level-4 .level-header { background: #8a3a2a; }
+        .level-5 .level-header { background: #2a5a7a; }
+        
+        .feature-list { margin: 20px 0; list-style: none; }
+        .feature-list li { padding: 8px 0; display: flex; align-items: center; gap: 10px; }
+        .feature-list li::before { content: "▶"; color: var(--accent-gold); font-size: 0.7em; }
+        
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            margin: 20px 0;
+            background: var(--bg-card);
+            border: 4px solid var(--bg-dark);
+            box-shadow: 4px 4px 0 var(--bg-dark);
+        }
+        
+        th, td { 
+            padding: 15px; 
+            text-align: left; 
+            border-bottom: 3px solid var(--bg-dark);
+            border-right: 3px solid var(--bg-dark);
+        }
+        th { 
+            background: var(--bg-primary); 
+            color: var(--accent-gold); 
+            font-weight: bold;
+            text-transform: uppercase;
+            font-size: 0.9em;
+        }
+        tr:hover { background: rgba(255,215,0,0.1); }
+        
+        .info-box {
+            background: var(--bg-card);
+            border: 4px solid var(--accent-silver);
+            border-left: 8px solid var(--accent-gold);
+            padding: 20px;
+            margin: 20px 0;
+            clip-path: polygon(0 0, 100% 0, 100% calc(100% - 10px), calc(100% - 10px) 100%, 0 100%);
+        }
+        
+        footer {
+            background: var(--bg-primary);
+            padding: 40px 20px;
+            text-align: center;
+            margin-top: 60px;
+            border-top: 6px solid var(--accent-gold);
+            clip-path: polygon(0 20px, 50% 0, 100% 20px, 100% 100%, 0 100%);
+        }
+        
+        footer p { color: var(--text-secondary); }
+        footer code { 
+            background: var(--bg-dark); 
+            padding: 4px 10px; 
+            border: 2px solid var(--accent-silver);
+            font-family: monospace;
+        }
+        
+        @media (max-width: 768px) {
+            header h1 { font-size: 1.2em; }
+            h2 { font-size: 1em; padding: 12px 15px; }
+            .level-grid { grid-template-columns: 1fr; }
+            .level-title { font-size: 0.85em; }
+            nav { gap: 8px; padding: 10px; }
+            nav a { padding: 10px 14px; font-size: 0.75em; }
+            .entity-grid { grid-template-columns: 1fr; }
+        }
+    </style>
+</head>
+<body>
+    <header>
+        <h1>🚴 Fahrrad-Abenteuer</h1>
+        <p>Komplettes Spiel-Wiki - Level, Gegner, Gegenstände & mehr</p>
+    </header>
+    
+    <nav>
+        <a href="#levels">🗺️ Level</a>
+        <a href="#mobs">👾 Gegner</a>
+        <a href="#items">🎒 Gegenstände</a>
+        <a href="#hazards">⚠️ Gefahren</a>
+        <a href="#environment">🌳 Umgebung</a>
+        <a href="#mechanics">⚙️ Spielmechanik</a>
+    </nav>
+    
+    <main>
+        <!-- LEVELS -->
+        <section id="levels">
+            <h2>🗺️ Spiel-Level</h2>
+            <div class="level-grid">
+                <div class="level-card level-1">
+                    <div class="level-header">
+                        <span class="level-number">Level 1</span>
+                        <h3 class="level-title">Drachenhorst</h3>
+                        <p class="level-subtitle">Der Zauberwald</p>
+                    </div>
+                    <div class="level-content">
+                        <p>Beginne dein Abenteuer in einem mystischen Wald, bewacht von einem furchterregenden Drachen.</p>
+                        <ul class="feature-list">
+                            <li>Dichtes Waldgelände mit magischen Bäumen</li>
+                            <li>Goblins und Riesen patrouillieren die Pfade</li>
+                            <li>Drachen-Boss verspüht tödliche Feuerbälle</li>
+                        </ul>
+                    </div>
+                </div>
+                
+                <div class="level-card level-2">
+                    <div class="level-header">
+                        <span class="level-number">Level 2</span>
+                        <h3 class="level-title">Die Eiswüste</h3>
+                        <p class="level-subtitle">Arktische Wildnis</p>
+                    </div>
+                    <div class="level-content">
+                        <p>Trotze der tückischen gefrorenen Tundra mit Zauberern und gefrorenen Seen.</p>
+                        <ul class="feature-list">
+                            <li>Rutschiges Eisgelände beeinflusst Bewegung</li>
+                            <li>Eis-Zauberer wirken magische Projektile</li>
+                            <li>Finde Eisberge verstreut in der Tundra</li>
+                        </ul>
+                    </div>
+                </div>
+                
+                <div class="level-card level-3">
+                    <div class="level-header">
+                        <span class="level-number">Level 3</span>
+                        <h3 class="level-title">Der glühende Sand</h3>
+                        <p class="level-subtitle">Uralte Wüste</p>
+                    </div>
+                    <div class="level-content">
+                        <p>Überquere die endlose Wüste, wo Mumien uralte Pyramiden bewachen.</p>
+                        <ul class="feature-list">
+                            <li>Sandiges Gelände mit aufragenden Pyramiden</li>
+                            <li>Mumien erheben sich aus dem Sand</li>
+                            <li>Vögel werfen Bomben von oben</li>
+                        </ul>
+                    </div>
+                </div>
+                
+                <div class="level-card level-4">
+                    <div class="level-header">
+                        <span class="level-number">Level 4</span>
+                        <h3 class="level-title">Die Lavahöhlen</h3>
+                        <p class="level-subtitle">Vulkanische Tiefen</p>
+                    </div>
+                    <div class="level-content">
+                        <p>Steige hinab in feurige Tiefen mit Lava-Monstern und Teufeln.</p>
+                        <ul class="feature-list">
+                            <li>Gefährliche Lava-Becken und -Ströme</li>
+                            <li>Teufel und Große Teufel greifen an</li>
+                            <li>Baue Brücken über Schluchten</li>
+                        </ul>
+                    </div>
+                </div>
+                
+                <div class="level-card level-5">
+                    <div class="level-header">
+                        <span class="level-number">Level 5</span>
+                        <h3 class="level-title">Die Tiefe See</h3>
+                        <p class="level-subtitle">Ozean-Abgrund</p>
+                    </div>
+                    <div class="level-content">
+                        <p>Navigiere durch tückische Gewässer mit Haien und Piratenschiffen.</p>
+                        <ul class="feature-list">
+                            <li>Gefährliche Strudel und Wasserhosen</li>
+                            <li>Haie und Oktopusse greifen an</li>
+                            <li>Piratenschiffe feuern Kanonenkugeln</li>
+                        </ul>
+                    </div>
+                </div>
+            </div>
+        </section>
+        
+        <!-- MOBS -->
+        <section id="mobs">
+            <h2>👾 Gegner</h2>
+            <div class="info-box" style="margin-bottom:25px;">
+                <p><strong>Hinweis:</strong> Gegner-Texturen werden prozedural generiert und variieren je nach Level-Thema. Die gezeigten Bilder sind repräsentative Darstellungen.</p>
+            </div>
+            <div class="entity-grid">
+                <div class="entity-card">
+                    <div class="entity-image">
+                        <img src="images/mobs-goblin.png" alt="Goblin">
+                    </div>
+                    <div class="entity-info">
+                        <h4 class="entity-name">Goblin</h4>
+                        <p style="color:var(--accent-gold);font-size:0.9em;margin-bottom:10px;">❤️ 3 HP • ⚔️ 1 DMG</p>
+                        <p class="entity-desc">Einfacher Bodengegner, der das Gelände patrouilliert. Stürmt auf Spieler zu, wenn sie in Reichweite sind. Erscheint in Wald- und Eis-Leveln.</p>
+                        <div class="entity-tags">
+                            <span class="tag ">Boden</span><span class="tag danger">Nahkampf</span>
+                        </div>
+                    </div>
+                </div>
+                <div class="entity-card">
+                    <div class="entity-image">
+                        <img src="images/mobs-shark.png" alt="Hai">
+                    </div>
+                    <div class="entity-info">
+                        <h4 class="entity-name">Hai</h4>
+                        <p style="color:var(--accent-gold);font-size:0.9em;margin-bottom:10px;">❤️ 3 HP • ⚔️ 1 DMG</p>
+                        <p class="entity-desc">Wassergegner, der als bedrohliche Rückenflosse erscheint. Patrouilliert die Meerestiefen und stürmt auf Spieler zu.</p>
+                        <div class="entity-tags">
+                            <span class="tag ">Wasser</span><span class="tag danger">Schnell</span>
+                        </div>
+                    </div>
+                </div>
+                <div class="entity-card">
+                    <div class="entity-image">
+                        <img src="images/mobs-devil.png" alt="Teufel">
+                    </div>
+                    <div class="entity-info">
+                        <h4 class="entity-name">Teufel</h4>
+                        <p style="color:var(--accent-gold);font-size:0.9em;margin-bottom:10px;">❤️ 3 HP • ⚔️ 1 DMG</p>
+                        <p class="entity-desc">Lava-Höhlen-Variante mit roter Haut, Hörnern und spitzem Schwanz. Taucht aus den vulkanischen Tiefen auf, um anzugreifen.</p>
+                        <div class="entity-tags">
+                            <span class="tag ">Lava</span><span class="tag danger">Nahkampf</span>
+                        </div>
+                    </div>
+                </div>
+                <div class="entity-card">
+                    <div class="entity-image">
+                        <img src="images/mobs-mummy.png" alt="Mumie">
+                    </div>
+                    <div class="entity-info">
+                        <h4 class="entity-name">Mumie</h4>
+                        <p style="color:var(--accent-gold);font-size:0.9em;margin-bottom:10px;">❤️ 6 HP • ⚔️ 1 DMG</p>
+                        <p class="entity-desc">Uralte bandagierte Leiche mit leuchtend grünen Augen. Erhebt sich aus dem Wüstensand, umgeben von schwebenden Sandpartikeln. Wirkt Sand-Tornados.</p>
+                        <div class="entity-tags">
+                            <span class="tag ">Wüste</span><span class="tag danger">Fernkampf</span>
+                        </div>
+                    </div>
+                </div>
+                <div class="entity-card">
+                    <div class="entity-image">
+                        <img src="images/mobs-guardian.png" alt="Wächter-Goblin">
+                    </div>
+                    <div class="entity-info">
+                        <h4 class="entity-name">Wächter-Goblin</h4>
+                        <p style="color:var(--accent-gold);font-size:0.9em;margin-bottom:10px;">❤️ 5 HP • ⚔️ 1 DMG</p>
+                        <p class="entity-desc">Größere, stärkere Goblin-Variante mit verbesserter Rüstung und leuchtend orangefarbenen Augen. Bewacht wichtige Bereiche und schießt Pfeile auf Spieler.</p>
+                        <div class="entity-tags">
+                            <span class="tag special">Elite</span><span class="tag danger">Fernkampf</span>
+                        </div>
+                    </div>
+                </div>
+                <div class="entity-card">
+                    <div class="entity-image">
+                        <img src="images/mobs-octopus.png" alt="Oktopus">
+                    </div>
+                    <div class="entity-info">
+                        <h4 class="entity-name">Oktopus</h4>
+                        <p style="color:var(--accent-gold);font-size:0.9em;margin-bottom:10px;">❤️ 5 HP • ⚔️ 1 DMG</p>
+                        <p class="entity-desc">Wasserwächter mit 8 winkenden Tentakeln. Lila Körper mit weißen Augen. Wächter-Variante für das Ozean-Level, die Pfeile schießt.</p>
+                        <div class="entity-tags">
+                            <span class="tag ">Wasser</span><span class="tag danger">Fernkampf</span>
+                        </div>
+                    </div>
+                </div>
+                <div class="entity-card">
+                    <div class="entity-image">
+                        <img src="images/mobs-greater-devil.png" alt="Großer Teufel">
+                    </div>
+                    <div class="entity-info">
+                        <h4 class="entity-name">Großer Teufel</h4>
+                        <p style="color:var(--accent-gold);font-size:0.9em;margin-bottom:10px;">❤️ 5 HP • ⚔️ 1 DMG</p>
+                        <p class="entity-desc">Elite-Lava-Wächter mit dunklen Flügeln und gebogenen Hörnern. Größere dämonische Kreatur, die Pfeile schießt und Lava-Schluchten bewacht.</p>
+                        <div class="entity-tags">
+                            <span class="tag special">Elite</span><span class="tag danger">Fernkampf</span>
+                        </div>
+                    </div>
+                </div>
+                <div class="entity-card">
+                    <div class="entity-image">
+                        <img src="images/mobs-giant.png" alt="Riese">
+                    </div>
+                    <div class="entity-info">
+                        <h4 class="entity-name">Riese</h4>
+                        <p style="color:var(--accent-gold);font-size:0.9em;margin-bottom:10px;">❤️ 20 HP • ⚔️ 2 DMG</p>
+                        <p class="entity-desc">Massiver Gegner mit Rüstungsplatten, Hörnern, Armen und Fäusten. Langsam aber mächtig mit großer Schadensreichweite.</p>
+                        <div class="entity-tags">
+                            <span class="tag special">Boss</span><span class="tag ">Schwer</span>
+                        </div>
+                    </div>
+                </div>
+                <div class="entity-card">
+                    <div class="entity-image">
+                        <img src="images/mobs-wizard.png" alt="Zauberer">
+                    </div>
+                    <div class="entity-info">
+                        <h4 class="entity-name">Zauberer</h4>
+                        <p style="color:var(--accent-gold);font-size:0.9em;margin-bottom:10px;">❤️ 7 HP • ⚔️ 1 DMG</p>
+                        <p class="entity-desc">Gewandeter Magier mit leuchtendem Stab-Orb und Spitzhut. Wirft magische Feuerbälle auf Spieler. Eis-Version erscheint in der Eiswüste, Feuer-Version in Wäldern.</p>
+                        <div class="entity-tags">
+                            <span class="tag special">Magie</span><span class="tag danger">Fernkampf</span>
+                        </div>
+                    </div>
+                </div>
+                <div class="entity-card">
+                    <div class="entity-image">
+                        <img src="images/mobs-lava-monster.png" alt="Lava-Monster">
+                    </div>
+                    <div class="entity-info">
+                        <h4 class="entity-name">Lava-Monster</h4>
+                        <p style="color:var(--accent-gold);font-size:0.9em;margin-bottom:10px;">❤️ 8 HP • ⚔️ 1 DMG</p>
+                        <p class="entity-desc">Humanoide Kreatur mit sichtbarem geschmolzenem Kern durch gebrochene Obsidian-Hülle. Hat Arme mit klauenartigen Händen und schießt Feuerbälle.</p>
+                        <div class="entity-tags">
+                            <span class="tag ">Lava</span><span class="tag danger">Fernkampf</span><span class="tag ">Panzer</span>
+                        </div>
+                    </div>
+                </div>
+                <div class="entity-card">
+                    <div class="entity-image">
+                        <img src="images/mobs-dragon.png" alt="Drache">
+                    </div>
+                    <div class="entity-info">
+                        <h4 class="entity-name">Drache</h4>
+                        <p style="color:var(--accent-gold);font-size:0.9em;margin-bottom:10px;">❤️ 50 HP • ⚔️ 2 DMG</p>
+                        <p class="entity-desc">Massiver fliegender Boss mit segmentiertem Körper, Schwanz mit Stacheln, Flügeln und tödlichem Feueratem. Aussehen variiert je nach Level-Thema.</p>
+                        <div class="entity-tags">
+                            <span class="tag special">Boss</span><span class="tag ">Fliegend</span><span class="tag danger">Feuerball</span>
+                        </div>
+                    </div>
+                </div>
+                <div class="entity-card">
+                    <div class="entity-image">
+                        <img src="images/mobs-bird.png" alt="Bombenvogel">
+                    </div>
+                    <div class="entity-info">
+                        <h4 class="entity-name">Bombenvogel</h4>
+                        <p style="color:var(--accent-gold);font-size:0.9em;margin-bottom:10px;">❤️ 2 HP • ⚔️ 1 DMG</p>
+                        <p class="entity-desc">Fliegender Gegner, der über dem Spieler kreist und explosive Bomben abwirft. Erscheint im schweren Wüsten-Level.</p>
+                        <div class="entity-tags">
+                            <span class="tag ">Fliegend</span><span class="tag danger">Bomben</span>
+                        </div>
+                    </div>
+                </div>
+                <div class="entity-card">
+                    <div class="entity-image">
+                        <img src="images/mobs-pirate-ship.png" alt="Piratenschiff">
+                    </div>
+                    <div class="entity-info">
+                        <h4 class="entity-name">Piratenschiff</h4>
+                        <p style="color:var(--accent-gold);font-size:0.9em;margin-bottom:10px;">❤️ 30 HP • ⚔️ 2 DMG</p>
+                        <p class="entity-desc">Großes feindliches Schiff mit schwarzen Segeln und mehreren Kanonen. Segelt über die Gewässer und feuert verheerende Kanonenkugeln auf Spieler.</p>
+                        <div class="entity-tags">
+                            <span class="tag ">Wasser</span><span class="tag danger">Kanonen</span><span class="tag ">Schwer</span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </section>
+        
+        <!-- ITEMS -->
+        <section id="items">
+            <h2>🎒 Gegenstände & Sammelobjekte</h2>
+            <h3>Sammelgegenstände</h3>
+            <div class="entity-grid">
+                    <div class="entity-card">
+                        <div class="entity-image">
+                            <img src="images/items-ammo.png" alt="Munitionskiste">
+                        </div>
+                        <div class="entity-info">
+                            <h4 class="entity-name">Munitionskiste</h4>
+                            <p class="entity-desc">Braune Kiste mit leuchtend gelbem Streifen. Stellt 15 Schuss Munition für deine Waffe wieder her.</p>
+                        </div>
+                    </div>
+                    <div class="entity-card">
+                        <div class="entity-image">
+                            <img src="images/items-health.png" alt="Gesundheitsherz">
+                        </div>
+                        <div class="entity-info">
+                            <h4 class="entity-name">Gesundheitsherz</h4>
+                            <p class="entity-desc">Rotes Herz, das beim Einsammeln ein Herz Gesundheit wiederherstellt.</p>
+                        </div>
+                    </div>
+                    <div class="entity-card">
+                        <div class="entity-image">
+                            <img src="images/items-bomb.png" alt="Bomben-Pickup">
+                        </div>
+                        <div class="entity-info">
+                            <h4 class="entity-name">Bomben-Pickup</h4>
+                            <p class="entity-desc">Schwarzer Sprengstoff mit brennender Lunte, der auf Gegner geworfen werden kann. Verursacht Flächenschaden beim Aufprall.</p>
+                        </div>
+                    </div>
+                    <div class="entity-card">
+                        <div class="entity-image">
+                            <img src="images/items-material.png" alt="Brückenmaterial">
+                        </div>
+                        <div class="entity-info">
+                            <h4 class="entity-name">Brückenmaterial</h4>
+                            <p class="entity-desc">Holzplanken zum Bau von Brücken über Schluchten und Lava.</p>
+                        </div>
+                    </div>
+            </div>
+
+            <h3>Spezielle Gegenstände</h3>
+            <div class="entity-grid">
+                    <div class="entity-card">
+                        <div class="entity-image">
+                            <img src="images/items-kite.png" alt="Welt-Drachen">
+                        </div>
+                        <div class="entity-info">
+                            <h4 class="entity-name">Welt-Drachen</h4>
+                            <p class="entity-desc">Sammelbarer Drachengegenstand, der überall in der Welt zu finden ist.</p>
+                        </div>
+                    </div>
+                    <div class="entity-card">
+                        <div class="entity-image">
+                            <img src="images/items-iceberg.png" alt="Eisberg (Eis-Kraft)">
+                        </div>
+                        <div class="entity-info">
+                            <h4 class="entity-name">Eisberg (Eis-Kraft)</h4>
+                            <p class="entity-desc">Gefrorener Kristall, der die Eis-Kraft verleiht. Drücke E, um alle Gegner im Umkreis von 20 Einheiten für 5 Sekunden einzufrieren. Hat eine Abklingzeit.</p>
+                        </div>
+                    </div>
+                    <div class="entity-card">
+                        <div class="entity-image">
+                            <img src="images/items-scarab.png" alt="Heiliger Skarabäus">
+                        </div>
+                        <div class="entity-info">
+                            <h4 class="entity-name">Heiliger Skarabäus</h4>
+                            <p class="entity-desc">Uraltes Wüstenartefakt mit mystisch leuchtender Aura.</p>
+                        </div>
+                    </div>
+                    <div class="entity-card">
+                        <div class="entity-image">
+                            <img src="images/items-treasure.png" alt="Schatztruhe">
+                        </div>
+                        <div class="entity-info">
+                            <h4 class="entity-name">Schatztruhe</h4>
+                            <p class="entity-desc">Holzkiste, die vor goldenen Münzen überquillt.</p>
+                        </div>
+                    </div>
+            </div>
+
+            <h3>Platzierbare</h3>
+            <div class="entity-grid">
+                    <div class="entity-card">
+                        <div class="entity-image">
+                            <img src="images/items-banana.png" alt="Banane (Bananen-Kraft)">
+                        </div>
+                        <div class="entity-info">
+                            <h4 class="entity-name">Banane (Bananen-Kraft)</h4>
+                            <p class="entity-desc">Gelbe Bananenfalle, die auf dem Boden platziert werden kann. Gegner, die darüber laufen, sterben sofort. Drücke Q zum Platzieren.</p>
+                        </div>
+                    </div>
+                    <div class="entity-card">
+                        <div class="entity-image">
+                            <img src="images/items-herzman.png" alt="Herz-Man Geschütz">
+                        </div>
+                        <div class="entity-info">
+                            <h4 class="entity-name">Herz-Man Geschütz</h4>
+                            <p class="entity-desc">Platzierbares rosa herzförmiges Auto-Geschütz auf einem Sockel. Schießt Herz-Projektile auf nahegelegene Gegner.</p>
+                        </div>
+                    </div>
+            </div>
+
+            <h3>Strukturen</h3>
+            <div class="entity-grid">
+                    <div class="entity-card">
+                        <div class="entity-image">
+                            <img src="images/items-portal.png" alt="Portal">
+                        </div>
+                        <div class="entity-info">
+                            <h4 class="entity-name">Portal</h4>
+                            <p class="entity-desc">Leuchtende Teleportationsringe mit Säulen und Kugeln. Transportiert dich zum nächsten Level.</p>
+                        </div>
+                    </div>
+            </div>
+        </section>
+        
+        <!-- HAZARDS -->
+        <section id="hazards">
+            <h2>⚠️ Umweltgefahren</h2>
+            <table>
+                <thead>
+                    <tr>
+                        <th style="width:80px">Bild</th>
+                        <th>Gefahr</th>
+                        <th>Level</th>
+                        <th>Effekt</th>
+                        <th>Gegenmaßnahme</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <tr>
+                        <td><img src="images/hazards-trap.png" alt="Falle" style="width:60px;height:60px;object-fit:contain;"></td>
+                        <td><strong>Falle</strong></td>
+                        <td>Level 1</td>
+                        <td>Versteckte Stachelfalle, die bei Kontakt Schaden verursacht.</td>
+                        <td>Achte auf aufgewühlte Bodenstellen</td>
+                    </tr>
+                    <tr>
+                        <td><img src="images/hazards-whirlpool.png" alt="Strudel" style="width:60px;height:60px;object-fit:contain;"></td>
+                        <td><strong>Strudel</strong></td>
+                        <td>Level 5</td>
+                        <td>Zieht Spieler zur Mitte, verursacht Schaden.</td>
+                        <td>Steuere gegen die Strömung</td>
+                    </tr>
+                    <tr>
+                        <td><img src="images/hazards-waterspout.png" alt="Wasserhose" style="width:60px;height:60px;object-fit:contain;"></td>
+                        <td><strong>Wasserhose</strong></td>
+                        <td>Level 5</td>
+                        <td>Schleudert Spieler in die Luft.</td>
+                        <td>Nutze für Abkürzungen oder weiche mit Timing aus</td>
+                    </tr>
+                    <tr>
+                        <td><img src="images/hazards-lava-pool.png" alt="Lava-Becken" style="width:60px;height:60px;object-fit:contain;"></td>
+                        <td><strong>Lava-Becken</strong></td>
+                        <td>Level 4</td>
+                        <td>Sofortiger Schaden, mehrschichtiger Leuchteffekt.</td>
+                        <td>Überspringen oder Brücken bauen</td>
+                    </tr>
+                </tbody>
+            </table>
+        </section>
+        
+        <!-- ENVIRONMENT -->
+        <section id="environment">
+            <h2>🌳 Umgebung & Strukturen</h2>
+            <div class="entity-grid">
+                <div class="entity-card">
+                    <div class="entity-image">
+                        <img src="images/environment-rainbow.png" alt="Regenbogen">
+                    </div>
+                    <div class="entity-info">
+                        <h4 class="entity-name">Regenbogen</h4>
+                        <p class="entity-desc">Wunderschöner Regenbogenbogen mit Discokugel. Markiert die Level-Zielzone.</p>
+                    </div>
+                </div>
+                <div class="entity-card">
+                    <div class="entity-image">
+                        <img src="images/environment-tree.png" alt="Baum">
+                    </div>
+                    <div class="entity-info">
+                        <h4 class="entity-name">Baum</h4>
+                        <p class="entity-desc">Waldhindernisse, die Bewegung blockieren, aber Deckung bieten.</p>
+                    </div>
+                </div>
+                <div class="entity-card">
+                    <div class="entity-image">
+                        <img src="images/environment-cactus.png" alt="Kaktus">
+                    </div>
+                    <div class="entity-info">
+                        <h4 class="entity-name">Kaktus</h4>
+                        <p class="entity-desc">Wüstenpflanzen, die Spieler bei Kontakt verletzen.</p>
+                    </div>
+                </div>
+                <div class="entity-card">
+                    <div class="entity-image">
+                        <img src="images/environment-palm.png" alt="Palme">
+                    </div>
+                    <div class="entity-info">
+                        <h4 class="entity-name">Palme</h4>
+                        <p class="entity-desc">Tropischer Baum, der in Wasser-Leveln vorkommt.</p>
+                    </div>
+                </div>
+                <div class="entity-card">
+                    <div class="entity-image">
+                        <img src="images/environment-pyramid.png" alt="Pyramide">
+                    </div>
+                    <div class="entity-info">
+                        <h4 class="entity-name">Pyramide</h4>
+                        <p class="entity-desc">Uraltes sandfarbenes Bauwerk. Wahrzeichen in Wüsten-Leveln.</p>
+                    </div>
+                </div>
+            </div>
+        </section>
+        
+        <!-- MECHANICS -->
+        <section id="mechanics">
+            <h2>⚙️ Spielmechanik</h2>
+            
+            <div class="info-box">
+                <h3 style="margin-top: 0;">🎮 Steuerung</h3>
+                <p><strong>Bewegung:</strong> WASD / Pfeiltasten</p>
+                <p><strong>Schießen:</strong> Linksklick / Leertaste</p>
+                <p><strong>Bombe platzieren:</strong> Rechtsklick / B</p>
+                <p><strong>Brücke bauen:</strong> E (mit Materialien)</p>
+            </div>
+            
+            <h3>❤️ Gesundheitssystem</h3>
+            <p>Spieler starten mit 3 Herzen. Schaden entfernt Herzen. Sammle Gesundheitsherzen, um Gesundheit wiederherzustellen. Wenn alle Herzen verloren sind, endet das Spiel.</p>
+            
+            <h3>🔫 Kampf</h3>
+            <p>Schieße auf Gegner, um sie zu besiegen. Jeder Gegner benötigt je nach Gesundheit unterschiedlich viele Treffer. Sammle Munitionskisten, um Munition aufzufüllen.</p>
+            
+            <h3>💣 Bomben</h3>
+            <p>Platziere Bomben, um Flächenschaden zu verursachen. Bomben explodieren nach kurzer Verzögerung. Ideal für Gegnergruppen oder zum Zerstören von Hindernissen.</p>
+            
+            <h3>🌉 Brückenbau</h3>
+            <p>Sammle Brückenmaterial, um Brücken über Schluchten und Lava zu bauen. Drücke E in der Nähe einer Lücke, um eine Brücke zu bauen (erfordert Materialien).</p>
+            
+            <h3>🎯 Ziel</h3>
+            <p>Erreiche den Regenbogen am Ende jedes Levels, um es abzuschließen. Weiche Gegnern aus, sammle Gegenstände und überlebe, um alle 5 Level zu durchqueren.</p>
+            
+            <h3>🏆 Schwierigkeitsmodi</h3>
+            <table>
+                <thead><tr><th>Modus</th><th>Gegner</th><th>Spezielle Feinde</th><th>Empfohlen für</th></tr></thead>
+                <tbody>
+                    <tr><td>Leicht</td><td>Weniger</td><td>Keine</td><td>Neue Spieler</td></tr>
+                    <tr><td>Schwer</td><td>Viele</td><td>Riesen, Zauberer, Bosse</td><td>Erfahrene Spieler</td></tr>
+                </tbody>
+            </table>
+            
+            <h3>⚔️ Schadensreferenz</h3>
+            <table>
+                <thead><tr><th>Quelle</th><th>Schaden</th><th>Typ</th><th>Hinweise</th></tr></thead>
+                <tbody>
+                    <tr><td>Einfacher Gegner</td><td>1 Herz</td><td>Kontakt</td><td>Berührungsschaden</td></tr>
+                    <tr><td>Projektil</td><td>1 Herz</td><td>Fernkampf</td><td>Feuerbälle, Pfeile</td></tr>
+                    <tr><td>Lava</td><td>1 Herz</td><td>Gefahr</td><td>Kontinuierlich bei Berührung</td></tr>
+                    <tr><td>Falle</td><td>1 Herz</td><td>Gefahr</td><td>Stachelfallen</td></tr>
+                    <tr><td>Spieler-Schuss</td><td>1 LP</td><td>Angriff</td><td>Dein Basisangriff</td></tr>
+                    <tr><td>Bombe</td><td>3 LP</td><td>Fläche</td><td>Flächenschaden</td></tr>
+                    <tr><td>💕 Herz-Man</td><td>2 LP/Schuss</td><td>Mittel</td><td>Auto-zielen Geschütz</td></tr>
+                </tbody>
+            </table>
+        </section>
+    </main>
+    
+    <footer>
+        <p>🚴 Fahrrad-Abenteuer Spiel-Wiki</p>
+        <p>Führe <code>node build-wiki.js</code> aus, um neu zu generieren</p>
+    </footer>
+
+    <script>
+        // Smooth scroll
+        document.querySelectorAll('nav a[href^="#"]').forEach(anchor => {
+            anchor.addEventListener('click', function(e) {
+                e.preventDefault();
+                document.querySelector(this.getAttribute('href'))?.scrollIntoView({ behavior: 'smooth' });
+            });
+        });
+    </script>
+</body>
+</html>

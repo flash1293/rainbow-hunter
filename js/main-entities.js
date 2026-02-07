@@ -1880,6 +1880,15 @@ function initEntities() {
     G.placedBombs = []; // {id, mesh, x, z, radius, explodeAt}
 
     // ============================================
+    // HERZ-MAN TURRET SYSTEM
+    // ============================================
+    G.herzmanInventory = persistentInventory.herzmen !== null ? persistentInventory.herzmen : GAME_CONFIG.HERZMAN_STARTING_COUNT;
+    G.maxHerzmen = GAME_CONFIG.HERZMAN_MAX_PLACED;
+    G.placedHerzmen = []; // {id, mesh, x, z, lastFireTime}
+    G.heartBombs = []; // Projectiles shot by Herz-Men
+    // Note: G.herzmanPickups is initialized and populated in initSetup()
+
+    // ============================================
     // PORTAL SYSTEM - For level switching
     // ============================================
     G.portalGroup = new THREE.Group();
@@ -2563,6 +2572,8 @@ function initEntities() {
     G.scorchMarks = [];
     G.guardianArrows = [];
     G.mummyTornados = [];
+    G.lastWildTornadoSpawn = 0;
+    G.wildTornadoBaseInterval = 2000; // Base spawn interval for out-of-bounds tornados
     G.lavaTrails = [];
     G.birds = [];
     G.bombs = [];

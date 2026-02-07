@@ -1,0 +1,247 @@
+{
+  "note": "Gegner-Texturen werden prozedural generiert und variieren je nach Level-Thema. Das Wiki zeigt Standard-/repräsentative Darstellungen.",
+  "mobs": [
+    {
+      "id": "goblin",
+      "name": "Goblin",
+      "description": "Einfacher Bodengegner, der das Gelände patrouilliert. Stürmt auf Spieler zu, wenn sie in Reichweite sind. Erscheint in Wald- und Eis-Leveln.",
+      "tags": ["Boden", "Nahkampf"],
+      "levels": [1, 2],
+      "health": 3,
+      "damage": 1
+    },
+    {
+      "id": "shark",
+      "name": "Hai",
+      "description": "Wassergegner, der als bedrohliche Rückenflosse erscheint. Patrouilliert die Meerestiefen und stürmt auf Spieler zu.",
+      "tags": ["Wasser", "Schnell"],
+      "levels": [5],
+      "health": 3,
+      "damage": 1
+    },
+    {
+      "id": "devil",
+      "name": "Teufel",
+      "description": "Lava-Höhlen-Variante mit roter Haut, Hörnern und spitzem Schwanz. Taucht aus den vulkanischen Tiefen auf, um anzugreifen.",
+      "tags": ["Lava", "Nahkampf"],
+      "levels": [4],
+      "health": 3,
+      "damage": 1
+    },
+    {
+      "id": "mummy",
+      "name": "Mumie",
+      "description": "Uralte bandagierte Leiche mit leuchtend grünen Augen. Erhebt sich aus dem Wüstensand, umgeben von schwebenden Sandpartikeln. Wirkt Sand-Tornados.",
+      "tags": ["Wüste", "Fernkampf"],
+      "levels": [3],
+      "health": 6,
+      "damage": 1
+    },
+    {
+      "id": "guardian",
+      "name": "Wächter-Goblin",
+      "description": "Größere, stärkere Goblin-Variante mit verbesserter Rüstung und leuchtend orangefarbenen Augen. Bewacht wichtige Bereiche und schießt Pfeile auf Spieler.",
+      "tags": ["Elite", "Fernkampf"],
+      "levels": [1, 2],
+      "health": 5,
+      "damage": 1
+    },
+    {
+      "id": "octopus",
+      "name": "Oktopus",
+      "description": "Wasserwächter mit 8 winkenden Tentakeln. Lila Körper mit weißen Augen. Wächter-Variante für das Ozean-Level, die Pfeile schießt.",
+      "tags": ["Wasser", "Fernkampf"],
+      "levels": [5],
+      "health": 5,
+      "damage": 1
+    },
+    {
+      "id": "greater-devil",
+      "name": "Großer Teufel",
+      "description": "Elite-Lava-Wächter mit dunklen Flügeln und gebogenen Hörnern. Größere dämonische Kreatur, die Pfeile schießt und Lava-Schluchten bewacht.",
+      "tags": ["Elite", "Fernkampf"],
+      "levels": [4],
+      "health": 5,
+      "damage": 1
+    },
+    {
+      "id": "giant",
+      "name": "Riese",
+      "description": "Massiver Gegner mit Rüstungsplatten, Hörnern, Armen und Fäusten. Langsam aber mächtig mit großer Schadensreichweite.",
+      "tags": ["Boss", "Schwer"],
+      "levels": [1, 4],
+      "health": 20,
+      "damage": 2
+    },
+    {
+      "id": "wizard",
+      "name": "Zauberer",
+      "description": "Gewandeter Magier mit leuchtendem Stab-Orb und Spitzhut. Wirft magische Feuerbälle auf Spieler. Eis-Version erscheint in der Eiswüste, Feuer-Version in Wäldern.",
+      "tags": ["Magie", "Fernkampf"],
+      "levels": [1, 2],
+      "health": 7,
+      "damage": 1
+    },
+    {
+      "id": "lava-monster",
+      "name": "Lava-Monster",
+      "description": "Humanoide Kreatur mit sichtbarem geschmolzenem Kern durch gebrochene Obsidian-Hülle. Hat Arme mit klauenartigen Händen und schießt Feuerbälle.",
+      "tags": ["Lava", "Fernkampf", "Panzer"],
+      "levels": [4],
+      "health": 8,
+      "damage": 1
+    },
+    {
+      "id": "dragon",
+      "name": "Drache",
+      "description": "Massiver fliegender Boss mit segmentiertem Körper, Schwanz mit Stacheln, Flügeln und tödlichem Feueratem. Aussehen variiert je nach Level-Thema.",
+      "tags": ["Boss", "Fliegend", "Feuerball"],
+      "levels": [1, 2, 4, 5],
+      "health": 50,
+      "damage": 2
+    },
+    {
+      "id": "bird",
+      "name": "Bombenvogel",
+      "description": "Fliegender Gegner, der über dem Spieler kreist und explosive Bomben abwirft. Erscheint im schweren Wüsten-Level.",
+      "tags": ["Fliegend", "Bomben"],
+      "levels": [3],
+      "health": 2,
+      "damage": 1
+    },
+    {
+      "id": "pirate-ship",
+      "name": "Piratenschiff",
+      "description": "Großes feindliches Schiff mit schwarzen Segeln und mehreren Kanonen. Segelt über die Gewässer und feuert verheerende Kanonenkugeln auf Spieler.",
+      "tags": ["Wasser", "Kanonen", "Schwer"],
+      "levels": [5],
+      "health": 30,
+      "damage": 2
+    }
+  ],
+  "items": [
+    {
+      "id": "ammo",
+      "name": "Munitionskiste",
+      "description": "Braune Kiste mit leuchtend gelbem Streifen. Stellt 15 Schuss Munition für deine Waffe wieder her.",
+      "category": "pickup"
+    },
+    {
+      "id": "health",
+      "name": "Gesundheitsherz",
+      "description": "Rotes Herz, das beim Einsammeln ein Herz Gesundheit wiederherstellt.",
+      "category": "pickup"
+    },
+    {
+      "id": "bomb",
+      "name": "Bomben-Pickup",
+      "description": "Schwarzer Sprengstoff mit brennender Lunte, der auf Gegner geworfen werden kann. Verursacht Flächenschaden beim Aufprall.",
+      "category": "pickup"
+    },
+    {
+      "id": "material",
+      "name": "Brückenmaterial",
+      "description": "Holzplanken zum Bau von Brücken über Schluchten und Lava.",
+      "category": "pickup"
+    },
+    {
+      "id": "kite",
+      "name": "Welt-Drachen",
+      "description": "Sammelbarer Drachengegenstand, der überall in der Welt zu finden ist.",
+      "category": "special"
+    },
+    {
+      "id": "iceberg",
+      "name": "Eisberg (Eis-Kraft)",
+      "description": "Gefrorener Kristall, der die Eis-Kraft verleiht. Drücke E, um alle Gegner im Umkreis von 20 Einheiten für 5 Sekunden einzufrieren. Hat eine Abklingzeit.",
+      "category": "special"
+    },
+    {
+      "id": "banana",
+      "name": "Banane (Bananen-Kraft)",
+      "description": "Gelbe Bananenfalle, die auf dem Boden platziert werden kann. Gegner, die darüber laufen, sterben sofort. Drücke Q zum Platzieren.",
+      "category": "deployable"
+    },
+    {
+      "id": "scarab",
+      "name": "Heiliger Skarabäus",
+      "description": "Uraltes Wüstenartefakt mit mystisch leuchtender Aura.",
+      "category": "special"
+    },
+    {
+      "id": "treasure",
+      "name": "Schatztruhe",
+      "description": "Holzkiste, die vor goldenen Münzen überquillt.",
+      "category": "special"
+    },
+    {
+      "id": "herzman",
+      "name": "Herz-Man Geschütz",
+      "description": "Platzierbares rosa herzförmiges Auto-Geschütz auf einem Sockel. Schießt Herz-Projektile auf nahegelegene Gegner.",
+      "category": "deployable"
+    },
+    {
+      "id": "portal",
+      "name": "Portal",
+      "description": "Leuchtende Teleportationsringe mit Säulen und Kugeln. Transportiert dich zum nächsten Level.",
+      "category": "structure"
+    }
+  ],
+  "hazards": [
+    {
+      "id": "trap",
+      "name": "Falle",
+      "description": "Versteckte Stachelfalle, die bei Kontakt Schaden verursacht.",
+      "level": 1,
+      "counter": "Achte auf aufgewühlte Bodenstellen"
+    },
+    {
+      "id": "whirlpool",
+      "name": "Strudel",
+      "description": "Zieht Spieler zur Mitte, verursacht Schaden.",
+      "level": 5,
+      "counter": "Steuere gegen die Strömung"
+    },
+    {
+      "id": "waterspout",
+      "name": "Wasserhose",
+      "description": "Schleudert Spieler in die Luft.",
+      "level": 5,
+      "counter": "Nutze für Abkürzungen oder weiche mit Timing aus"
+    },
+    {
+      "id": "lava-pool",
+      "name": "Lava-Becken",
+      "description": "Sofortiger Schaden, mehrschichtiger Leuchteffekt.",
+      "level": 4,
+      "counter": "Überspringen oder Brücken bauen"
+    }
+  ],
+  "environment": [
+    {
+      "id": "rainbow",
+      "name": "Regenbogen",
+      "description": "Wunderschöner Regenbogenbogen mit Discokugel. Markiert die Level-Zielzone."
+    },
+    {
+      "id": "tree",
+      "name": "Baum",
+      "description": "Waldhindernisse, die Bewegung blockieren, aber Deckung bieten."
+    },
+    {
+      "id": "cactus",
+      "name": "Kaktus",
+      "description": "Wüstenpflanzen, die Spieler bei Kontakt verletzen."
+    },
+    {
+      "id": "palm",
+      "name": "Palme",
+      "description": "Tropischer Baum, der in Wasser-Leveln vorkommt."
+    },
+    {
+      "id": "pyramid",
+      "name": "Pyramide",
+      "description": "Uraltes sandfarbenes Bauwerk. Wahrzeichen in Wüsten-Leveln."
+    }
+  ]
+}

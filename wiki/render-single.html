@@ -1,0 +1,1491 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="UTF-8">
+    <title>Entity Renderer</title>
+    <style>
+        body { margin: 0; background: transparent; }
+        canvas { display: block; }
+    </style>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+</head>
+<body>
+    <script>
+        // Get entity ID from URL
+        const params = new URLSearchParams(window.location.search);
+        const entityId = params.get('entity') || 'goblin';
+
+        // ========== TEXTURES ==========
+        function createSimpleTexture(color) {
+            const canvas = document.createElement('canvas');
+            canvas.width = 64;
+            canvas.height = 64;
+            const ctx = canvas.getContext('2d');
+            ctx.fillStyle = color;
+            ctx.fillRect(0, 0, 64, 64);
+            return new THREE.CanvasTexture(canvas);
+        }
+
+        const textures = {
+            goblinSkin: createSimpleTexture('#5a8a5a'),
+            goblinArmor: createSimpleTexture('#3a4a3a'),
+            giantSkin: createSimpleTexture('#6a5a4a'),
+            giantArmor: createSimpleTexture('#4a3a2a'),
+            dragonScale: createSimpleTexture('#2a5a2a'),
+        };
+
+        // ========== ENTITY RENDERERS ==========
+        const entityRenderers = {
+            // MOBS
+            'goblin': function() {
+                const group = new THREE.Group();
+                const bodyGeometry = new THREE.BoxGeometry(0.6, 0.8, 0.4);
+                const bodyMaterial = new THREE.MeshLambertMaterial({ map: textures.goblinArmor });
+                const body = new THREE.Mesh(bodyGeometry, bodyMaterial);
+                body.position.y = 0.8;
+                group.add(body);
+                
+                const headGeometry = new THREE.SphereGeometry(0.4, 16, 16);
+                const headMaterial = new THREE.MeshLambertMaterial({ map: textures.goblinSkin });
+                const head = new THREE.Mesh(headGeometry, headMaterial);
+                head.position.y = 1.5;
+                group.add(head);
+                
+                const eyeMaterial = new THREE.MeshBasicMaterial({ color: 0xff0000 });
+                const eyeGeometry = new THREE.SphereGeometry(0.1, 16, 16);
+                [-0.15, 0.15].forEach(x => {
+                    const eye = new THREE.Mesh(eyeGeometry, eyeMaterial);
+                    eye.position.set(x, 1.5, 0.35);
+                    group.add(eye);
+                });
+                
+                const earGeometry = new THREE.ConeGeometry(0.15, 0.4, 4);
+                const earMaterial = new THREE.MeshLambertMaterial({ map: textures.goblinSkin });
+                [-0.5, 0.5].forEach((x, i) => {
+                    const ear = new THREE.Mesh(earGeometry, earMaterial);
+                    ear.rotation.z = i === 0 ? Math.PI / 2 : -Math.PI / 2;
+                    ear.position.set(x, 1.5, 0);
+                    group.add(ear);
+                });
+                
+                return group;
+            },
+
+            'shark': function() {
+                const group = new THREE.Group();
+                const finGeometry = new THREE.ConeGeometry(0.5, 2.5, 3);
+                const finMaterial = new THREE.MeshLambertMaterial({ color: 0x2a3a4a });
+                const fin = new THREE.Mesh(finGeometry, finMaterial);
+                fin.position.y = 1.0;
+                group.add(fin);
+                
+                const detailGeometry = new THREE.ConeGeometry(0.15, 0.5, 3);
+                const detail = new THREE.Mesh(detailGeometry, finMaterial);
+                detail.position.set(0, 0.3, -0.4);
+                group.add(detail);
+                
+                return group;
+            },
+
+            'devil': function() {
+                const group = new THREE.Group();
+                const devilRed = 0xCC2222;
+
+                const bodyGeometry = new THREE.BoxGeometry(0.6, 0.9, 0.4);
+                const bodyMaterial = new THREE.MeshLambertMaterial({ color: devilRed });
+                const body = new THREE.Mesh(bodyGeometry, bodyMaterial);
+                body.position.y = 0.85;
+                group.add(body);
+
+                const headGeometry = new THREE.SphereGeometry(0.4, 16, 16);
+                const head = new THREE.Mesh(headGeometry, bodyMaterial);
+                head.position.y = 1.55;
+                group.add(head);
+
+                const hornGeometry = new THREE.ConeGeometry(0.08, 0.5, 8);
+                const hornMaterial = new THREE.MeshLambertMaterial({ color: 0x222222 });
+                [[-0.25, 0.4], [0.25, -0.4]].forEach(([x, rot]) => {
+                    const horn = new THREE.Mesh(hornGeometry, hornMaterial);
+                    horn.position.set(x, 1.85, 0);
+                    horn.rotation.z = rot;
+                    group.add(horn);
+                });
+
+                const eyeMaterial = new THREE.MeshBasicMaterial({ color: 0xFFFF00 });
+                const eyeGeometry = new THREE.SphereGeometry(0.1, 12, 12);
+                [-0.15, 0.15].forEach(x => {
+                    const eye = new THREE.Mesh(eyeGeometry, eyeMaterial);
+                    eye.position.set(x, 1.55, 0.35);
+                    group.add(eye);
+                });
+
+                const tailGeometry = new THREE.CylinderGeometry(0.05, 0.03, 0.8, 6);
+                const tail = new THREE.Mesh(tailGeometry, bodyMaterial);
+                tail.position.set(0, 0.5, -0.4);
+                tail.rotation.x = 0.5;
+                group.add(tail);
+
+                return group;
+            },
+
+            'mummy': function() {
+                const group = new THREE.Group();
+                const bandageMaterial = new THREE.MeshLambertMaterial({ color: 0xd4c4a0 });
+                
+                // Wrapped body
+                const bodyGeometry = new THREE.CylinderGeometry(0.5, 0.6, 2.2, 12);
+                const body = new THREE.Mesh(bodyGeometry, bandageMaterial);
+                body.position.y = 1.3;
+                group.add(body);
+                
+                // Bandage strips wrapping around body (darker contrasting color)
+                for (let i = 0; i < 6; i++) {
+                    const stripGeometry = new THREE.TorusGeometry(0.55, 0.06, 4, 16);
+                    const stripMaterial = new THREE.MeshLambertMaterial({ color: 0x8a7a6a }); // Darker wraps for contrast
+                    const strip = new THREE.Mesh(stripGeometry, stripMaterial);
+                    strip.rotation.x = Math.PI / 2;
+                    strip.rotation.z = i * 0.3;
+                    strip.position.y = 0.5 + i * 0.35;
+                    group.add(strip);
+                }
+                
+                // Head wrapped in bandages
+                const headGeometry = new THREE.SphereGeometry(0.5, 16, 16);
+                const head = new THREE.Mesh(headGeometry, bandageMaterial);
+                head.position.y = 2.7;
+                group.add(head);
+                
+                // Glowing eyes peeking through bandages
+                const eyeMaterial = new THREE.MeshBasicMaterial({ 
+                    color: 0x00FF88,
+                    transparent: true
+                });
+                const eyeGeometry = new THREE.SphereGeometry(0.1, 16, 16);
+                [-0.18, 0.18].forEach(x => {
+                    const eye = new THREE.Mesh(eyeGeometry, eyeMaterial);
+                    eye.position.set(x, 2.75, 0.42);
+                    group.add(eye);
+                });
+                
+                // Arms (tattered bandage arms)
+                const armGeometry = new THREE.CylinderGeometry(0.12, 0.15, 1.2, 8);
+                const arm1 = new THREE.Mesh(armGeometry, bandageMaterial);
+                arm1.position.set(-0.65, 1.5, 0);
+                arm1.rotation.z = 0.3;
+                group.add(arm1);
+                
+                const arm2 = new THREE.Mesh(armGeometry, bandageMaterial);
+                arm2.position.set(0.65, 1.5, 0);
+                arm2.rotation.z = -0.3;
+                group.add(arm2);
+                
+                // Floating sand particles around mummy
+                for (let i = 0; i < 8; i++) {
+                    const sandGeometry = new THREE.SphereGeometry(0.05, 4, 4);
+                    const sandMaterial = new THREE.MeshBasicMaterial({ 
+                        color: 0xc4a14a,
+                        transparent: true,
+                        opacity: 0.6
+                    });
+                    const sand = new THREE.Mesh(sandGeometry, sandMaterial);
+                    const angle = (i / 8) * Math.PI * 2;
+                    sand.position.set(Math.cos(angle) * 0.8, 1.5 + (i % 3) * 0.3, Math.sin(angle) * 0.8);
+                    group.add(sand);
+                }
+                
+                return group;
+            },
+
+            'guardian': function() {
+                const group = new THREE.Group();
+                
+                const bodyGeometry = new THREE.BoxGeometry(0.8, 1.0, 0.5);
+                const bodyMaterial = new THREE.MeshLambertMaterial({ map: textures.goblinArmor });
+                const body = new THREE.Mesh(bodyGeometry, bodyMaterial);
+                body.position.y = 1.0;
+                group.add(body);
+                
+                const headGeometry = new THREE.SphereGeometry(0.5, 16, 16);
+                const headMaterial = new THREE.MeshLambertMaterial({ map: textures.goblinSkin });
+                const head = new THREE.Mesh(headGeometry, headMaterial);
+                head.position.y = 1.8;
+                group.add(head);
+                
+                const eyeMaterial = new THREE.MeshBasicMaterial({ color: 0xFFFF00 });
+                const eyeGeometry = new THREE.SphereGeometry(0.12, 16, 16);
+                [-0.18, 0.18].forEach(x => {
+                    const eye = new THREE.Mesh(eyeGeometry, eyeMaterial);
+                    eye.position.set(x, 1.8, 0.42);
+                    group.add(eye);
+                });
+                
+                const earGeometry = new THREE.ConeGeometry(0.18, 0.5, 4);
+                const earMaterial = new THREE.MeshLambertMaterial({ map: textures.goblinSkin });
+                [-0.6, 0.6].forEach((x, i) => {
+                    const ear = new THREE.Mesh(earGeometry, earMaterial);
+                    ear.rotation.z = i === 0 ? Math.PI / 2 : -Math.PI / 2;
+                    ear.position.set(x, 1.8, 0);
+                    group.add(ear);
+                });
+                
+                return group;
+            },
+
+            'octopus': function() {
+                const group = new THREE.Group();
+                
+                const bodyGeometry = new THREE.SphereGeometry(0.8, 16, 16);
+                bodyGeometry.scale(1, 1.2, 1);
+                const bodyMaterial = new THREE.MeshLambertMaterial({ color: 0x8B008B });
+                const body = new THREE.Mesh(bodyGeometry, bodyMaterial);
+                body.position.y = 1.2;
+                group.add(body);
+
+                const eyeMaterial = new THREE.MeshBasicMaterial({ color: 0xFFFFFF });
+                const eyeGeometry = new THREE.SphereGeometry(0.15, 12, 12);
+                [-0.3, 0.3].forEach(x => {
+                    const eye = new THREE.Mesh(eyeGeometry, eyeMaterial);
+                    eye.position.set(x, 1.4, 0.6);
+                    group.add(eye);
+                });
+
+                const tentacleGeometry = new THREE.CylinderGeometry(0.12, 0.06, 1.5, 6);
+                const tentacleMaterial = new THREE.MeshLambertMaterial({ color: 0x9932CC });
+                for (let i = 0; i < 8; i++) {
+                    const angle = (i / 8) * Math.PI * 2;
+                    const tentacle = new THREE.Mesh(tentacleGeometry, tentacleMaterial);
+                    tentacle.position.set(Math.cos(angle) * 0.6, 0.3, Math.sin(angle) * 0.6);
+                    tentacle.rotation.z = Math.cos(angle) * 0.3;
+                    tentacle.rotation.x = Math.sin(angle) * 0.3;
+                    group.add(tentacle);
+                }
+                
+                return group;
+            },
+
+            'greater-devil': function() {
+                const group = new THREE.Group();
+                const devilRed = 0xAA1111;
+
+                const bodyGeometry = new THREE.CylinderGeometry(0.5, 0.6, 1.3, 8);
+                const bodyMaterial = new THREE.MeshLambertMaterial({ color: devilRed });
+                const body = new THREE.Mesh(bodyGeometry, bodyMaterial);
+                body.position.y = 1.1;
+                group.add(body);
+
+                const headGeometry = new THREE.SphereGeometry(0.5, 16, 16);
+                const head = new THREE.Mesh(headGeometry, bodyMaterial);
+                head.position.y = 2.0;
+                group.add(head);
+
+                const hornGeometry = new THREE.ConeGeometry(0.12, 0.8, 8);
+                const hornMaterial = new THREE.MeshLambertMaterial({ color: 0x111111 });
+                [[-0.35, 0.5], [0.35, -0.5]].forEach(([x, rot]) => {
+                    const horn = new THREE.Mesh(hornGeometry, hornMaterial);
+                    horn.position.set(x, 2.4, 0);
+                    horn.rotation.z = rot;
+                    group.add(horn);
+                });
+
+                const eyeMaterial = new THREE.MeshBasicMaterial({ color: 0xFF4400 });
+                const eyeGeometry = new THREE.SphereGeometry(0.12, 12, 12);
+                [-0.18, 0.18].forEach(x => {
+                    const eye = new THREE.Mesh(eyeGeometry, eyeMaterial);
+                    eye.position.set(x, 2.0, 0.42);
+                    group.add(eye);
+                });
+
+                const wingGeometry = new THREE.PlaneGeometry(1.2, 0.8);
+                const wingMaterial = new THREE.MeshLambertMaterial({ color: 0x660000, side: THREE.DoubleSide });
+                [[-0.8, 0.8], [0.8, -0.8]].forEach(([x, rot]) => {
+                    const wing = new THREE.Mesh(wingGeometry, wingMaterial);
+                    wing.position.set(x, 1.5, -0.2);
+                    wing.rotation.y = rot;
+                    group.add(wing);
+                });
+
+                return group;
+            },
+
+            'giant': function() {
+                const group = new THREE.Group();
+                
+                const bodyGeometry = new THREE.CylinderGeometry(1.5, 1.8, 5.0, 12);
+                const bodyMaterial = new THREE.MeshLambertMaterial({ map: textures.giantSkin });
+                const body = new THREE.Mesh(bodyGeometry, bodyMaterial);
+                body.position.y = 3.5;
+                group.add(body);
+                
+                // Armor plates
+                const plateGeometry = new THREE.BoxGeometry(2.0, 0.4, 2.2);
+                const plateMaterial = new THREE.MeshLambertMaterial({ map: textures.giantArmor });
+                for (let i = 0; i < 4; i++) {
+                    const plate = new THREE.Mesh(plateGeometry, plateMaterial);
+                    plate.position.y = 2.0 + (i * 1.2);
+                    group.add(plate);
+                }
+                
+                const headGeometry = new THREE.BoxGeometry(1.8, 1.5, 1.6);
+                const head = new THREE.Mesh(headGeometry, bodyMaterial);
+                head.position.y = 6.5;
+                group.add(head);
+                
+                const hornGeometry = new THREE.ConeGeometry(0.3, 1.2, 6);
+                const hornMaterial = new THREE.MeshLambertMaterial({ map: textures.giantArmor });
+                [[-0.9, -0.3], [0.9, 0.3]].forEach(([x, rot]) => {
+                    const horn = new THREE.Mesh(hornGeometry, hornMaterial);
+                    horn.position.set(x, 7.5, 0);
+                    horn.rotation.z = rot;
+                    group.add(horn);
+                });
+                
+                const eyeMaterial = new THREE.MeshBasicMaterial({ color: 0xff8800 });
+                const eyeGeometry = new THREE.SphereGeometry(0.4, 16, 16);
+                [-0.5, 0.5].forEach(x => {
+                    const eye = new THREE.Mesh(eyeGeometry, eyeMaterial);
+                    eye.position.set(x, 6.5, 0.9);
+                    group.add(eye);
+                });
+                
+                // Arms
+                const armGeometry = new THREE.CylinderGeometry(0.4, 0.8, 4.0, 8);
+                const armMaterial = new THREE.MeshLambertMaterial({ map: textures.giantSkin });
+                const leftArm = new THREE.Mesh(armGeometry, armMaterial);
+                leftArm.position.set(-2.2, 4.0, 0);
+                leftArm.rotation.z = 0.3;
+                group.add(leftArm);
+                
+                const rightArm = new THREE.Mesh(armGeometry, armMaterial);
+                rightArm.position.set(2.2, 4.0, 0);
+                rightArm.rotation.z = -0.3;
+                group.add(rightArm);
+                
+                // Fists
+                const fistGeometry = new THREE.BoxGeometry(0.8, 0.8, 0.8);
+                const fistMaterial = new THREE.MeshLambertMaterial({ map: textures.giantSkin });
+                const leftFist = new THREE.Mesh(fistGeometry, fistMaterial);
+                leftFist.position.set(-2.8, 1.8, 0);
+                group.add(leftFist);
+                
+                const rightFist = new THREE.Mesh(fistGeometry, fistMaterial);
+                rightFist.position.set(2.8, 1.8, 0);
+                group.add(rightFist);
+                
+                // Legs
+                const legGeometry = new THREE.CylinderGeometry(0.7, 0.9, 3.5, 8);
+                const leftLeg = new THREE.Mesh(legGeometry, armMaterial);
+                leftLeg.position.set(-0.9, 1.2, 0);
+                group.add(leftLeg);
+                
+                const rightLeg = new THREE.Mesh(legGeometry, armMaterial);
+                rightLeg.position.set(0.9, 1.2, 0);
+                group.add(rightLeg);
+                
+                return group;
+            },
+
+            'wizard': function() {
+                const group = new THREE.Group();
+                
+                const bodyGeometry = new THREE.CylinderGeometry(0.6, 1.0, 2.5, 12);
+                const bodyMaterial = new THREE.MeshLambertMaterial({ color: 0x4466aa });
+                const body = new THREE.Mesh(bodyGeometry, bodyMaterial);
+                body.position.y = 1.5;
+                group.add(body);
+                
+                const headGeometry = new THREE.SphereGeometry(0.6, 16, 16);
+                const headMaterial = new THREE.MeshLambertMaterial({ color: 0xaaccff });
+                const head = new THREE.Mesh(headGeometry, headMaterial);
+                head.position.y = 3.0;
+                group.add(head);
+                
+                const hatGeometry = new THREE.ConeGeometry(0.7, 1.5, 8);
+                const hatMaterial = new THREE.MeshLambertMaterial({ color: 0x3355aa });
+                const hat = new THREE.Mesh(hatGeometry, hatMaterial);
+                hat.position.y = 4.0;
+                group.add(hat);
+                
+                const brimGeometry = new THREE.TorusGeometry(0.75, 0.15, 8, 16);
+                const brim = new THREE.Mesh(brimGeometry, hatMaterial);
+                brim.rotation.x = Math.PI / 2;
+                brim.position.y = 3.4;
+                group.add(brim);
+                
+                const eyeMaterial = new THREE.MeshBasicMaterial({ color: 0x00FFFF });
+                const eyeGeometry = new THREE.SphereGeometry(0.12, 16, 16);
+                [-0.22, 0.22].forEach(x => {
+                    const eye = new THREE.Mesh(eyeGeometry, eyeMaterial);
+                    eye.position.set(x, 3.0, 0.52);
+                    group.add(eye);
+                });
+                
+                const staffGeometry = new THREE.CylinderGeometry(0.06, 0.08, 3.0, 8);
+                const staffMaterial = new THREE.MeshLambertMaterial({ color: 0x8B4513 });
+                const staff = new THREE.Mesh(staffGeometry, staffMaterial);
+                staff.position.set(0.8, 1.5, 0.3);
+                staff.rotation.z = -0.2;
+                group.add(staff);
+                
+                const orbGeometry = new THREE.SphereGeometry(0.25, 12, 12);
+                const orbMaterial = new THREE.MeshBasicMaterial({ color: 0x00FFFF });
+                const orb = new THREE.Mesh(orbGeometry, orbMaterial);
+                orb.position.set(0.9, 3.2, 0.3);
+                group.add(orb);
+                
+                return group;
+            },
+
+            'lava-monster': function() {
+                const group = new THREE.Group();
+                
+                const torsoGeometry = new THREE.SphereGeometry(1.0, 16, 12);
+                torsoGeometry.scale(1.0, 1.3, 0.9);
+                const torsoMaterial = new THREE.MeshBasicMaterial({ color: 0xff3300, transparent: true, opacity: 0.9 });
+                const torso = new THREE.Mesh(torsoGeometry, torsoMaterial);
+                torso.position.y = 2.2;
+                group.add(torso);
+                
+                const shellGeometry = new THREE.DodecahedronGeometry(1.25, 1);
+                shellGeometry.scale(1.0, 1.3, 0.9);
+                const shellMaterial = new THREE.MeshLambertMaterial({ color: 0x1a0a05, transparent: true, opacity: 0.75 });
+                const shell = new THREE.Mesh(shellGeometry, shellMaterial);
+                shell.position.y = 2.2;
+                group.add(shell);
+                
+                const headGeometry = new THREE.DodecahedronGeometry(0.6, 0);
+                const headMaterial = new THREE.MeshLambertMaterial({ color: 0x2a1208 });
+                const head = new THREE.Mesh(headGeometry, headMaterial);
+                head.position.y = 3.5;
+                group.add(head);
+                
+                // Head glow
+                const headGlowGeometry = new THREE.DodecahedronGeometry(0.55, 0);
+                const headGlowMaterial = new THREE.MeshBasicMaterial({ color: 0xff4400, transparent: true, opacity: 0.6 });
+                const headGlow = new THREE.Mesh(headGlowGeometry, headGlowMaterial);
+                headGlow.position.y = 3.5;
+                group.add(headGlow);
+                
+                const hornMaterial = new THREE.MeshLambertMaterial({ color: 0x1a0805 });
+                const hornGeometry = new THREE.ConeGeometry(0.15, 0.6, 6);
+                [[-0.35, 0.4], [0.35, -0.4]].forEach(([x, rot]) => {
+                    const horn = new THREE.Mesh(hornGeometry, hornMaterial);
+                    horn.position.set(x, 3.9, 0);
+                    horn.rotation.z = rot;
+                    group.add(horn);
+                });
+                
+                const eyeMaterial = new THREE.MeshBasicMaterial({ color: 0xffff00 });
+                const eyeGeometry = new THREE.SphereGeometry(0.18, 12, 12);
+                eyeGeometry.scale(1.3, 0.7, 1);
+                [-0.25, 0.25].forEach(x => {
+                    const eye = new THREE.Mesh(eyeGeometry, eyeMaterial);
+                    eye.position.set(x, 3.55, 0.45);
+                    group.add(eye);
+                });
+                
+                // Mouth
+                const mouthGeometry = new THREE.BoxGeometry(0.5, 0.15, 0.2);
+                const mouthMaterial = new THREE.MeshBasicMaterial({ color: 0xff2200, transparent: true, opacity: 0.9 });
+                const mouth = new THREE.Mesh(mouthGeometry, mouthMaterial);
+                mouth.position.set(0, 3.25, 0.5);
+                group.add(mouth);
+                
+                // Arms with hands
+                const armMaterial = new THREE.MeshLambertMaterial({ color: 0x2a1510 });
+                const armGlowMaterial = new THREE.MeshBasicMaterial({ color: 0xff4400, transparent: true, opacity: 0.7 });
+                
+                // Left arm group
+                const leftArmGroup = new THREE.Group();
+                const leftUpperArm = new THREE.Mesh(new THREE.CylinderGeometry(0.25, 0.3, 1.0, 8), armMaterial);
+                leftUpperArm.position.y = -0.3;
+                leftUpperArm.rotation.z = 0.5;
+                leftArmGroup.add(leftUpperArm);
+                
+                const leftForearm = new THREE.Mesh(new THREE.CylinderGeometry(0.2, 0.25, 0.9, 8), armMaterial);
+                leftForearm.position.set(-0.4, -0.9, 0);
+                leftForearm.rotation.z = 0.3;
+                leftArmGroup.add(leftForearm);
+                
+                const leftHand = new THREE.Mesh(new THREE.DodecahedronGeometry(0.25, 0), armMaterial);
+                leftHand.position.set(-0.6, -1.5, 0);
+                leftArmGroup.add(leftHand);
+                
+                const leftArmGlow = new THREE.Mesh(new THREE.CylinderGeometry(0.15, 0.18, 0.6, 6), armGlowMaterial);
+                leftArmGlow.position.set(-0.2, -0.6, 0);
+                leftArmGlow.rotation.z = 0.4;
+                leftArmGroup.add(leftArmGlow);
+                
+                leftArmGroup.position.set(-1.1, 2.5, 0);
+                group.add(leftArmGroup);
+                
+                // Right arm group (mirrored)
+                const rightArmGroup = new THREE.Group();
+                const rightUpperArm = new THREE.Mesh(new THREE.CylinderGeometry(0.25, 0.3, 1.0, 8), armMaterial);
+                rightUpperArm.position.y = -0.3;
+                rightUpperArm.rotation.z = -0.5;
+                rightArmGroup.add(rightUpperArm);
+                
+                const rightForearm = new THREE.Mesh(new THREE.CylinderGeometry(0.2, 0.25, 0.9, 8), armMaterial);
+                rightForearm.position.set(0.4, -0.9, 0);
+                rightForearm.rotation.z = -0.3;
+                rightArmGroup.add(rightForearm);
+                
+                const rightHand = new THREE.Mesh(new THREE.DodecahedronGeometry(0.25, 0), armMaterial);
+                rightHand.position.set(0.6, -1.5, 0);
+                rightArmGroup.add(rightHand);
+                
+                const rightArmGlow = new THREE.Mesh(new THREE.CylinderGeometry(0.15, 0.18, 0.6, 6), armGlowMaterial);
+                rightArmGlow.position.set(0.2, -0.6, 0);
+                rightArmGlow.rotation.z = -0.4;
+                rightArmGroup.add(rightArmGlow);
+                
+                rightArmGroup.position.set(1.1, 2.5, 0);
+                group.add(rightArmGroup);
+                
+                // Legs
+                const legGeometry = new THREE.CylinderGeometry(0.3, 0.4, 1.5, 8);
+                const leftLeg = new THREE.Mesh(legGeometry, armMaterial);
+                leftLeg.position.set(-0.5, 0.5, 0);
+                group.add(leftLeg);
+                
+                const rightLeg = new THREE.Mesh(legGeometry, armMaterial);
+                rightLeg.position.set(0.5, 0.5, 0);
+                group.add(rightLeg);
+                
+                // Feet
+                const footGeometry = new THREE.BoxGeometry(0.4, 0.2, 0.6);
+                const leftFoot = new THREE.Mesh(footGeometry, armMaterial);
+                leftFoot.position.set(-0.5, -0.1, 0.1);
+                group.add(leftFoot);
+                
+                const rightFoot = new THREE.Mesh(footGeometry, armMaterial);
+                rightFoot.position.set(0.5, -0.1, 0.1);
+                group.add(rightFoot);
+                
+                return group;
+            },
+
+            'dragon': function() {
+                const group = new THREE.Group();
+                const dragonColor = 0x2a5a2a;
+                
+                // Body - long segmented shape
+                const bodyGeometry = new THREE.CylinderGeometry(2, 2.5, 10, 12);
+                const bodyMaterial = new THREE.MeshLambertMaterial({ color: dragonColor });
+                const body = new THREE.Mesh(bodyGeometry, bodyMaterial);
+                body.rotation.z = Math.PI / 2;
+                body.position.x = 5;
+                group.add(body);
+                
+                // Body scales/spines
+                for (let i = 0; i < 8; i++) {
+                    const scaleGeometry = new THREE.ConeGeometry(0.6, 1.2, 6);
+                    const scale = new THREE.Mesh(scaleGeometry, bodyMaterial);
+                    scale.position.set(i * 1.2, 2.8, 0);
+                    scale.rotation.z = 0;
+                    group.add(scale);
+                }
+                
+                // Neck
+                const neckGeometry = new THREE.CylinderGeometry(1.8, 2, 4, 8);
+                const neck = new THREE.Mesh(neckGeometry, bodyMaterial);
+                neck.rotation.z = Math.PI / 2;
+                neck.position.x = 10;
+                neck.position.y = 1;
+                group.add(neck);
+                
+                // Head - cone shape
+                const headGeometry = new THREE.ConeGeometry(2.5, 5, 8);
+                const head = new THREE.Mesh(headGeometry, bodyMaterial);
+                head.rotation.z = -Math.PI / 2;
+                head.position.x = 13;
+                head.position.y = 1.5;
+                group.add(head);
+                
+                // Jaw
+                const jawGeometry = new THREE.BoxGeometry(2, 1.5, 2);
+                const jaw = new THREE.Mesh(jawGeometry, bodyMaterial);
+                jaw.position.set(14, 0.5, 0);
+                group.add(jaw);
+                
+                // Teeth
+                for (let i = 0; i < 6; i++) {
+                    const toothGeometry = new THREE.ConeGeometry(0.15, 0.6, 4);
+                    const toothMaterial = new THREE.MeshLambertMaterial({ color: 0xFFFFFF });
+                    const tooth = new THREE.Mesh(toothGeometry, toothMaterial);
+                    tooth.position.set(14 + (i % 2) * 0.5, 1.2, -1 + i * 0.4);
+                    tooth.rotation.z = Math.PI;
+                    group.add(tooth);
+                }
+                
+                // Eyes - glowing
+                const eyeMaterial = new THREE.MeshBasicMaterial({ color: 0xffcc00 });
+                const eyeGeometry = new THREE.SphereGeometry(0.6, 16, 16);
+                [-1.2, 1.2].forEach(z => {
+                    const eye = new THREE.Mesh(eyeGeometry, eyeMaterial);
+                    eye.position.set(13.5, 2.5, z);
+                    group.add(eye);
+                });
+                
+                // Horns
+                const hornGeometry = new THREE.ConeGeometry(0.5, 2.5, 6);
+                const hornMaterial = new THREE.MeshLambertMaterial({ color: 0x2F2F2F });
+                [-1.5, 1.5].forEach((z, i) => {
+                    const horn = new THREE.Mesh(hornGeometry, hornMaterial);
+                    horn.position.set(12.5, 4, z);
+                    horn.rotation.z = -0.4;
+                    horn.rotation.x = i === 0 ? 0.2 : -0.2;
+                    group.add(horn);
+                });
+                
+                // Wings - triangular shape
+                const wingGeometry = new THREE.BufferGeometry();
+                const wingVertices = new Float32Array([
+                    0, 0, 0,
+                    6, 2, 0,
+                    8, 0, 0,
+                    6, -2, 0,
+                    4, -1, 0
+                ]);
+                wingGeometry.setAttribute('position', new THREE.BufferAttribute(wingVertices, 3));
+                wingGeometry.setIndex([0, 1, 2, 0, 2, 3, 0, 3, 4]);
+                wingGeometry.computeVertexNormals();
+                const wingMaterial = new THREE.MeshLambertMaterial({ color: dragonColor, side: THREE.DoubleSide });
+                
+                const leftWing = new THREE.Mesh(wingGeometry, wingMaterial);
+                leftWing.position.set(3, 3, 0);
+                leftWing.rotation.y = Math.PI / 2;
+                group.add(leftWing);
+                
+                const rightWing = new THREE.Mesh(wingGeometry, wingMaterial);
+                rightWing.position.set(3, 3, 0);
+                rightWing.rotation.y = -Math.PI / 2;
+                group.add(rightWing);
+                
+                // Tail segments
+                for (let i = 0; i < 3; i++) {
+                    const segmentGeometry = new THREE.CylinderGeometry(1.5 - i * 0.3, 1.8 - i * 0.3, 3, 8);
+                    const segment = new THREE.Mesh(segmentGeometry, bodyMaterial);
+                    segment.rotation.z = Math.PI / 2;
+                    segment.position.x = -3 - i * 2.5;
+                    segment.position.y = 0.5 - i * 0.3;
+                    group.add(segment);
+                }
+                
+                // Tail spikes
+                for (let i = 0; i < 10; i++) {
+                    const spikeGeometry = new THREE.ConeGeometry(0.3, 1, 6);
+                    const spike = new THREE.Mesh(spikeGeometry, bodyMaterial);
+                    spike.position.set(-i * 0.8, 2.5, 0);
+                    spike.rotation.z = Math.PI;
+                    group.add(spike);
+                }
+                
+                // Belly
+                const bellyGeometry = new THREE.CylinderGeometry(1.8, 2.2, 8, 12);
+                const bellyMaterial = new THREE.MeshLambertMaterial({ color: 0x4a6a4a });
+                const belly = new THREE.Mesh(bellyGeometry, bellyMaterial);
+                belly.rotation.z = Math.PI / 2;
+                belly.position.set(5, -1, 0);
+                group.add(belly);
+                
+                return group;
+            },
+
+            'bird': function() {
+                const group = new THREE.Group();
+                
+                const bodyGeometry = new THREE.SphereGeometry(0.4, 8, 8);
+                const bodyMaterial = new THREE.MeshLambertMaterial({ color: 0x4a3a2a });
+                const body = new THREE.Mesh(bodyGeometry, bodyMaterial);
+                group.add(body);
+                
+                const wingGeometry = new THREE.BoxGeometry(1.2, 0.1, 0.4);
+                const wingMaterial = new THREE.MeshLambertMaterial({ color: 0x3a2a1a });
+                [[-0.6, 0.3], [0.6, -0.3]].forEach(([x, rot]) => {
+                    const wing = new THREE.Mesh(wingGeometry, wingMaterial);
+                    wing.position.set(x, 0, 0);
+                    wing.rotation.z = rot;
+                    group.add(wing);
+                });
+                
+                const beakGeometry = new THREE.ConeGeometry(0.15, 0.3, 6);
+                const beakMaterial = new THREE.MeshLambertMaterial({ color: 0xFFA500 });
+                const beak = new THREE.Mesh(beakGeometry, beakMaterial);
+                beak.rotation.z = -Math.PI / 2;
+                beak.position.set(0, 0, -0.4);
+                group.add(beak);
+                
+                return group;
+            },
+
+            'pirate-ship': function() {
+                const group = new THREE.Group();
+
+                const hullGeometry = new THREE.BoxGeometry(8, 3, 20);
+                const hullMaterial = new THREE.MeshLambertMaterial({ color: 0x4a3020 });
+                const hull = new THREE.Mesh(hullGeometry, hullMaterial);
+                hull.position.y = 1.5;
+                group.add(hull);
+
+                const deckGeometry = new THREE.BoxGeometry(7, 0.5, 18);
+                const deckMaterial = new THREE.MeshLambertMaterial({ color: 0x6a5040 });
+                const deck = new THREE.Mesh(deckGeometry, deckMaterial);
+                deck.position.y = 3;
+                group.add(deck);
+
+                const mastGeometry = new THREE.CylinderGeometry(0.3, 0.4, 12, 8);
+                const mastMaterial = new THREE.MeshLambertMaterial({ color: 0x3a2510 });
+                const mast = new THREE.Mesh(mastGeometry, mastMaterial);
+                mast.position.y = 9;
+                group.add(mast);
+
+                const sailGeometry = new THREE.PlaneGeometry(6, 8);
+                const sailMaterial = new THREE.MeshLambertMaterial({ color: 0x111111, side: THREE.DoubleSide });
+                const sail = new THREE.Mesh(sailGeometry, sailMaterial);
+                sail.position.y = 10;
+                sail.position.z = 0.5;
+                group.add(sail);
+
+                return group;
+            },
+
+            // ITEMS
+            'ammo': function() {
+                const group = new THREE.Group();
+                
+                // Brown ammo box
+                const boxGeometry = new THREE.BoxGeometry(0.6, 0.4, 0.4);
+                const boxMaterial = new THREE.MeshLambertMaterial({ color: 0x8B4513 });
+                const ammoBox = new THREE.Mesh(boxGeometry, boxMaterial);
+                ammoBox.position.y = 0.3;
+                group.add(ammoBox);
+                
+                // Yellow stripe/mark
+                const markGeometry = new THREE.BoxGeometry(0.61, 0.15, 0.41);
+                const markMaterial = new THREE.MeshLambertMaterial({ 
+                    color: 0xFFFF00,
+                    emissive: 0xFFAA00,
+                    emissiveIntensity: 0.3
+                });
+                const mark = new THREE.Mesh(markGeometry, markMaterial);
+                mark.position.y = 0.3;
+                group.add(mark);
+                
+                // Glow effect
+                const glowGeometry = new THREE.SphereGeometry(0.4, 8, 8);
+                const glowMaterial = new THREE.MeshBasicMaterial({ 
+                    color: 0xFFFF00, 
+                    transparent: true, 
+                    opacity: 0.25 
+                });
+                const glow = new THREE.Mesh(glowGeometry, glowMaterial);
+                glow.position.y = 0.3;
+                group.add(glow);
+                
+                return group;
+            },
+
+            'health': function() {
+                const group = new THREE.Group();
+                const heartMaterial = new THREE.MeshLambertMaterial({ color: 0xFF0066 });
+                
+                const sphereGeom = new THREE.SphereGeometry(0.4, 16, 16);
+                [-0.3, 0.3].forEach(x => {
+                    const sphere = new THREE.Mesh(sphereGeom, heartMaterial);
+                    sphere.position.set(x, 0.8, 0);
+                    group.add(sphere);
+                });
+                
+                const coneGeom = new THREE.ConeGeometry(0.55, 1.0, 8);
+                const cone = new THREE.Mesh(coneGeom, heartMaterial);
+                cone.rotation.x = Math.PI;
+                cone.position.y = 0.3;
+                group.add(cone);
+                
+                return group;
+            },
+
+            'bomb': function() {
+                const group = new THREE.Group();
+                const bombGeometry = new THREE.SphereGeometry(0.5, 16, 16);
+                const bombMaterial = new THREE.MeshLambertMaterial({ color: 0x333333 });
+                const bomb = new THREE.Mesh(bombGeometry, bombMaterial);
+                bomb.position.y = 0.5;
+                group.add(bomb);
+                
+                const fuseGeometry = new THREE.CylinderGeometry(0.05, 0.05, 0.4, 6);
+                const fuseMaterial = new THREE.MeshLambertMaterial({ color: 0x8B4513 });
+                const fuse = new THREE.Mesh(fuseGeometry, fuseMaterial);
+                fuse.position.y = 1.0;
+                fuse.rotation.z = 0.3;
+                group.add(fuse);
+                
+                const sparkGeometry = new THREE.SphereGeometry(0.1, 8, 8);
+                const sparkMaterial = new THREE.MeshBasicMaterial({ color: 0xFFAA00 });
+                const spark = new THREE.Mesh(sparkGeometry, sparkMaterial);
+                spark.position.y = 1.25;
+                spark.position.x = 0.1;
+                group.add(spark);
+                
+                return group;
+            },
+
+            'material': function() {
+                const group = new THREE.Group();
+                const plankGeometry = new THREE.BoxGeometry(0.3, 0.1, 1.5);
+                const plankMaterial = new THREE.MeshLambertMaterial({ color: 0x8B4513 });
+                
+                for (let i = 0; i < 3; i++) {
+                    const plank = new THREE.Mesh(plankGeometry, plankMaterial);
+                    plank.position.set((i - 1) * 0.35, 0.3, 0);
+                    plank.rotation.z = (Math.random() - 0.5) * 0.2;
+                    group.add(plank);
+                }
+                
+                return group;
+            },
+
+            'kite': function() {
+                const group = new THREE.Group();
+                const kiteGeometry = new THREE.ConeGeometry(0.8, 1.2, 4);
+                const kiteMaterial = new THREE.MeshLambertMaterial({ color: 0xFF1493 });
+                const kite = new THREE.Mesh(kiteGeometry, kiteMaterial);
+                kite.rotation.x = Math.PI;
+                kite.position.y = 1.2;
+                group.add(kite);
+                
+                const tailGeometry = new THREE.CylinderGeometry(0.02, 0.02, 1.5, 4);
+                const tailMaterial = new THREE.MeshLambertMaterial({ color: 0xFFFF00 });
+                const tail = new THREE.Mesh(tailGeometry, tailMaterial);
+                tail.position.y = 0.0;
+                group.add(tail);
+                
+                return group;
+            },
+
+            'iceberg': function() {
+                const group = new THREE.Group();
+                const iceBergGeometry = new THREE.ConeGeometry(2, 5, 6);
+                const iceBergMaterial = new THREE.MeshPhongMaterial({
+                    color: 0xB0E0E6,
+                    transparent: true,
+                    opacity: 0.7,
+                    shininess: 100,
+                    specular: 0xFFFFFF
+                });
+                const ice = new THREE.Mesh(iceBergGeometry, iceBergMaterial);
+                ice.position.y = 2.5;
+                group.add(ice);
+                
+                for (let i = 0; i < 3; i++) {
+                    const angle = (i / 3) * Math.PI * 2;
+                    const crystalGeometry = new THREE.ConeGeometry(0.5, 2, 6);
+                    const crystal = new THREE.Mesh(crystalGeometry, iceBergMaterial);
+                    crystal.position.set(Math.cos(angle) * 1.5, 1, Math.sin(angle) * 1.5);
+                    crystal.rotation.z = (Math.random() - 0.5) * 0.3;
+                    group.add(crystal);
+                }
+                
+                return group;
+            },
+
+            'scarab': function() {
+                const group = new THREE.Group();
+                
+                const bodyGeometry = new THREE.SphereGeometry(0.4, 16, 16);
+                bodyGeometry.scale(1.2, 0.6, 1);
+                const bodyMaterial = new THREE.MeshLambertMaterial({ color: 0x4169E1 });
+                const body = new THREE.Mesh(bodyGeometry, bodyMaterial);
+                body.position.y = 0.3;
+                group.add(body);
+                
+                const headGeometry = new THREE.SphereGeometry(0.2, 12, 12);
+                const head = new THREE.Mesh(headGeometry, bodyMaterial);
+                head.position.set(0, 0.3, 0.4);
+                group.add(head);
+                
+                const glowGeometry = new THREE.SphereGeometry(0.6, 16, 16);
+                const glowMaterial = new THREE.MeshBasicMaterial({ color: 0x00FFFF, transparent: true, opacity: 0.3 });
+                const glow = new THREE.Mesh(glowGeometry, glowMaterial);
+                glow.position.y = 0.3;
+                group.add(glow);
+                
+                return group;
+            },
+
+            'treasure': function() {
+                const group = new THREE.Group();
+                const chestMaterial = new THREE.MeshLambertMaterial({ color: 0x8B4513 });
+                
+                const chestBottomGeometry = new THREE.BoxGeometry(1, 0.6, 0.8);
+                const chestBottom = new THREE.Mesh(chestBottomGeometry, chestMaterial);
+                chestBottom.position.y = 0.3;
+                group.add(chestBottom);
+
+                const chestLidGeometry = new THREE.BoxGeometry(1, 0.4, 0.8);
+                const chestLid = new THREE.Mesh(chestLidGeometry, chestMaterial);
+                chestLid.position.y = 0.8;
+                chestLid.position.z = -0.3;
+                chestLid.rotation.x = -Math.PI / 3;
+                group.add(chestLid);
+
+                const goldMaterial = new THREE.MeshLambertMaterial({ color: 0xFFD700, emissive: 0xFFAA00, emissiveIntensity: 0.5 });
+                const goldPileGeometry = new THREE.SphereGeometry(0.3, 8, 8);
+                const goldPile = new THREE.Mesh(goldPileGeometry, goldMaterial);
+                goldPile.position.y = 0.7;
+                group.add(goldPile);
+                
+                return group;
+            },
+
+            'herzman': function() {
+                const group = new THREE.Group();
+                
+                // Base platform (cute pink pedestal)
+                const baseGeometry = new THREE.CylinderGeometry(0.5, 0.7, 0.2, 16);
+                const baseMaterial = new THREE.MeshLambertMaterial({ color: 0xFFB6C1 });
+                const base = new THREE.Mesh(baseGeometry, baseMaterial);
+                base.position.y = 0.1;
+                group.add(base);
+                
+                // Main heart body using 3D shape (extruded heart)
+                const heartShape = new THREE.Shape();
+                heartShape.moveTo(0, 0.4);
+                heartShape.bezierCurveTo(0, 0.5, -0.1, 0.6, -0.3, 0.6);
+                heartShape.bezierCurveTo(-0.5, 0.6, -0.5, 0.3, -0.5, 0.3);
+                heartShape.bezierCurveTo(-0.5, 0.1, -0.3, -0.1, 0, -0.3);
+                heartShape.bezierCurveTo(0.3, -0.1, 0.5, 0.1, 0.5, 0.3);
+                heartShape.bezierCurveTo(0.5, 0.3, 0.5, 0.6, 0.3, 0.6);
+                heartShape.bezierCurveTo(0.1, 0.6, 0, 0.5, 0, 0.4);
+                
+                const extrudeSettings = { depth: 0.4, bevelEnabled: true, bevelSegments: 3, bevelSize: 0.08, bevelThickness: 0.08 };
+                const heartGeometry = new THREE.ExtrudeGeometry(heartShape, extrudeSettings);
+                const heartMaterial = new THREE.MeshLambertMaterial({ 
+                    color: 0xFF1493,
+                    emissive: 0xFF1493,
+                    emissiveIntensity: 0.2
+                });
+                const heartBody = new THREE.Mesh(heartGeometry, heartMaterial);
+                heartBody.position.set(0, 1.0, -0.2);
+                heartBody.scale.set(1.8, 1.8, 1.8);
+                group.add(heartBody);
+                
+                // Eyes (cute round eyes)
+                const eyeGeometry = new THREE.SphereGeometry(0.12, 12, 12);
+                const eyeWhiteMaterial = new THREE.MeshBasicMaterial({ color: 0xFFFFFF });
+                const eyeLeft = new THREE.Mesh(eyeGeometry, eyeWhiteMaterial);
+                eyeLeft.position.set(-0.25, 1.35, 0.65);
+                group.add(eyeLeft);
+                
+                const eyeRight = new THREE.Mesh(eyeGeometry, eyeWhiteMaterial);
+                eyeRight.position.set(0.25, 1.35, 0.65);
+                group.add(eyeRight);
+                
+                // Pupils
+                const pupilGeometry = new THREE.SphereGeometry(0.06, 8, 8);
+                const pupilMaterial = new THREE.MeshBasicMaterial({ color: 0x000000 });
+                const pupilLeft = new THREE.Mesh(pupilGeometry, pupilMaterial);
+                pupilLeft.position.set(-0.25, 1.35, 0.76);
+                group.add(pupilLeft);
+                
+                const pupilRight = new THREE.Mesh(pupilGeometry, pupilMaterial);
+                pupilRight.position.set(0.25, 1.35, 0.76);
+                group.add(pupilRight);
+                
+                // Cute blush cheeks
+                const blushGeometry = new THREE.CircleGeometry(0.1, 12);
+                const blushMaterial = new THREE.MeshBasicMaterial({ 
+                    color: 0xFF6B6B, 
+                    transparent: true, 
+                    opacity: 0.6,
+                    side: THREE.DoubleSide
+                });
+                const blush1 = new THREE.Mesh(blushGeometry, blushMaterial);
+                blush1.position.set(-0.45, 1.15, 0.6);
+                blush1.rotation.y = -0.3;
+                group.add(blush1);
+                
+                const blush2 = new THREE.Mesh(blushGeometry, blushMaterial);
+                blush2.position.set(0.45, 1.15, 0.6);
+                blush2.rotation.y = 0.3;
+                group.add(blush2);
+                
+                // Happy smile
+                const smileGeometry = new THREE.TorusGeometry(0.15, 0.03, 8, 16, Math.PI);
+                const smileMaterial = new THREE.MeshBasicMaterial({ color: 0x8B0000 });
+                const smile = new THREE.Mesh(smileGeometry, smileMaterial);
+                smile.position.set(0, 1.05, 0.7);
+                smile.rotation.x = Math.PI;
+                group.add(smile);
+                
+                return group;
+            },
+
+            'banana': function() {
+                const group = new THREE.Group();
+                
+                // Banana body (curved cylinder)
+                const bananaGeometry = new THREE.CylinderGeometry(0.4, 0.4, 2.0, 8);
+                const bananaMaterial = new THREE.MeshLambertMaterial({ 
+                    color: 0xFFFF00,
+                    emissive: 0xFFFF00,
+                    emissiveIntensity: 0.3
+                });
+                const bananaMesh = new THREE.Mesh(bananaGeometry, bananaMaterial);
+                bananaMesh.rotation.z = Math.PI / 5; // Slight curve
+                bananaMesh.position.y = 1.0;
+                group.add(bananaMesh);
+                
+                // Banana ends (darker brown tips)
+                const endMaterial = new THREE.MeshLambertMaterial({ color: 0x8B7500 });
+                const endGeometry = new THREE.SphereGeometry(0.45, 8, 8);
+                const end1 = new THREE.Mesh(endGeometry, endMaterial);
+                end1.position.set(0.35, 1.85, 0);
+                end1.scale.set(0.7, 1.2, 0.7);
+                group.add(end1);
+                
+                const end2 = new THREE.Mesh(endGeometry, endMaterial);
+                end2.position.set(-0.35, 0.15, 0);
+                end2.scale.set(0.7, 1.2, 0.7);
+                group.add(end2);
+                
+                // Brown stem at top
+                const stemGeometry = new THREE.CylinderGeometry(0.08, 0.12, 0.3, 6);
+                const stemMaterial = new THREE.MeshLambertMaterial({ color: 0x4a3000 });
+                const stem = new THREE.Mesh(stemGeometry, stemMaterial);
+                stem.position.set(0.4, 2.1, 0);
+                stem.rotation.z = -Math.PI / 6;
+                group.add(stem);
+                
+                return group;
+            },
+
+            'portal': function() {
+                const group = new THREE.Group();
+                
+                // Outer ring (cyan)
+                const portalRingGeometry = new THREE.TorusGeometry(3, 0.3, 16, 48);
+                const portalRingMaterial = new THREE.MeshPhongMaterial({
+                    color: 0x00ffff,
+                    emissive: 0x00ffff,
+                    emissiveIntensity: 0.8,
+                    transparent: true,
+                    opacity: 0.9
+                });
+                const portalRing = new THREE.Mesh(portalRingGeometry, portalRingMaterial);
+                portalRing.rotation.x = Math.PI / 2;
+                group.add(portalRing);
+                
+                // Inner ring (magenta)
+                const portalInnerRingGeometry = new THREE.TorusGeometry(2.2, 0.2, 16, 48);
+                const portalInnerRingMaterial = new THREE.MeshPhongMaterial({
+                    color: 0xff00ff,
+                    emissive: 0xff00ff,
+                    emissiveIntensity: 0.6,
+                    transparent: true,
+                    opacity: 0.8
+                });
+                const portalInnerRing = new THREE.Mesh(portalInnerRingGeometry, portalInnerRingMaterial);
+                portalInnerRing.rotation.x = Math.PI / 2;
+                group.add(portalInnerRing);
+                
+                // Portal center (purple swirl)
+                const portalCenterGeometry = new THREE.CircleGeometry(2, 32);
+                const portalCenterMaterial = new THREE.MeshBasicMaterial({ 
+                    color: 0x8800ff, 
+                    transparent: true, 
+                    opacity: 0.6, 
+                    side: THREE.DoubleSide 
+                });
+                const portalCenter = new THREE.Mesh(portalCenterGeometry, portalCenterMaterial);
+                portalCenter.rotation.x = Math.PI / 2;
+                portalCenter.position.y = 0.1;
+                group.add(portalCenter);
+                
+                // Portal base glow
+                const portalGlowGeometry = new THREE.CylinderGeometry(4, 4, 0.2, 32);
+                const portalGlowMaterial = new THREE.MeshBasicMaterial({
+                    color: 0x4400aa,
+                    transparent: true,
+                    opacity: 0.4
+                });
+                const portalGlow = new THREE.Mesh(portalGlowGeometry, portalGlowMaterial);
+                portalGlow.position.y = 0.1;
+                group.add(portalGlow);
+                
+                // Portal pillars
+                const pillarGeometry = new THREE.CylinderGeometry(0.3, 0.4, 5, 8);
+                const pillarMaterial = new THREE.MeshPhongMaterial({
+                    color: 0x6600cc,
+                    emissive: 0x220044,
+                    emissiveIntensity: 0.4
+                });
+                
+                const leftPillar = new THREE.Mesh(pillarGeometry, pillarMaterial);
+                leftPillar.position.set(-3.5, 2.5, 0);
+                group.add(leftPillar);
+                
+                const rightPillar = new THREE.Mesh(pillarGeometry, pillarMaterial);
+                rightPillar.position.set(3.5, 2.5, 0);
+                group.add(rightPillar);
+                
+                // Pillar top orbs
+                const orbGeometry = new THREE.SphereGeometry(0.5, 16, 16);
+                const orbMaterial = new THREE.MeshBasicMaterial({
+                    color: 0x00ffff,
+                    transparent: true,
+                    opacity: 0.9
+                });
+                
+                const leftOrb = new THREE.Mesh(orbGeometry, orbMaterial);
+                leftOrb.position.set(-3.5, 5.3, 0);
+                group.add(leftOrb);
+                
+                const rightOrb = new THREE.Mesh(orbGeometry, orbMaterial);
+                rightOrb.position.set(3.5, 5.3, 0);
+                group.add(rightOrb);
+                
+                // Floating particles
+                for (let i = 0; i < 8; i++) {
+                    const particleGeometry = new THREE.SphereGeometry(0.15, 8, 8);
+                    const particleMaterial = new THREE.MeshBasicMaterial({
+                        color: i % 2 === 0 ? 0x00ffff : 0xff00ff,
+                        transparent: true,
+                        opacity: 0.8
+                    });
+                    const particle = new THREE.Mesh(particleGeometry, particleMaterial);
+                    const angle = (i / 8) * Math.PI * 2;
+                    particle.position.set(Math.cos(angle) * 2.5, 1 + (i % 3) * 0.5, Math.sin(angle) * 2.5);
+                    group.add(particle);
+                }
+                
+                return group;
+            },
+
+            // HAZARDS
+            'trap': function() {
+                const group = new THREE.Group();
+                const trapGeometry = new THREE.PlaneGeometry(2, 2);
+                const trapMaterial = new THREE.MeshLambertMaterial({ color: 0x6a8a6a });
+                const trap = new THREE.Mesh(trapGeometry, trapMaterial);
+                trap.rotation.x = -Math.PI / 2;
+                trap.position.y = 0.02;
+                group.add(trap);
+                
+                for (let i = 0; i < 4; i++) {
+                    const spikeGeometry = new THREE.ConeGeometry(0.1, 0.4, 4);
+                    const spikeMaterial = new THREE.MeshLambertMaterial({ color: 0x444444 });
+                    const spike = new THREE.Mesh(spikeGeometry, spikeMaterial);
+                    spike.position.set((i % 2 - 0.5) * 1.2, 0.2, (Math.floor(i / 2) - 0.5) * 1.2);
+                    group.add(spike);
+                }
+                
+                return group;
+            },
+
+            'whirlpool': function() {
+                const group = new THREE.Group();
+                
+                const outerRingGeometry = new THREE.RingGeometry(1.5, 2.5, 24);
+                const outerRingMaterial = new THREE.MeshBasicMaterial({ color: 0x104080, transparent: true, opacity: 0.7, side: THREE.DoubleSide });
+                const outerRing = new THREE.Mesh(outerRingGeometry, outerRingMaterial);
+                outerRing.rotation.x = -Math.PI / 2;
+                outerRing.position.y = 0.1;
+                group.add(outerRing);
+
+                const midRingGeometry = new THREE.RingGeometry(0.8, 1.5, 24);
+                const midRingMaterial = new THREE.MeshBasicMaterial({ color: 0x1060a0, transparent: true, opacity: 0.8, side: THREE.DoubleSide });
+                const midRing = new THREE.Mesh(midRingGeometry, midRingMaterial);
+                midRing.rotation.x = -Math.PI / 2;
+                midRing.position.y = 0.05;
+                group.add(midRing);
+
+                const innerGeometry = new THREE.CircleGeometry(0.8, 24);
+                const innerMaterial = new THREE.MeshBasicMaterial({ color: 0x000020 });
+                const inner = new THREE.Mesh(innerGeometry, innerMaterial);
+                inner.rotation.x = -Math.PI / 2;
+                inner.position.y = 0.02;
+                group.add(inner);
+                
+                return group;
+            },
+
+            'waterspout': function() {
+                const group = new THREE.Group();
+                
+                const coneHeight = 10;
+                const coneRadius = 2;
+                const coneGeometry = new THREE.ConeGeometry(coneRadius, coneHeight, 16, 6, true);
+                const coneMaterial = new THREE.MeshBasicMaterial({ color: 0x1E90FF, transparent: true, opacity: 0.4, side: THREE.DoubleSide });
+                const outerCone = new THREE.Mesh(coneGeometry, coneMaterial);
+                outerCone.rotation.x = Math.PI;
+                outerCone.position.y = coneHeight / 2;
+                group.add(outerCone);
+
+                const innerConeGeometry = new THREE.ConeGeometry(coneRadius * 0.5, coneHeight * 0.8, 16, 6, true);
+                const innerConeMaterial = new THREE.MeshBasicMaterial({ color: 0x87CEEB, transparent: true, opacity: 0.5, side: THREE.DoubleSide });
+                const innerCone = new THREE.Mesh(innerConeGeometry, innerConeMaterial);
+                innerCone.rotation.x = Math.PI;
+                innerCone.position.y = coneHeight * 0.4;
+                group.add(innerCone);
+                
+                return group;
+            },
+
+            'lava-pool': function() {
+                const group = new THREE.Group();
+                
+                const poolGeometry = new THREE.CircleGeometry(2, 32);
+                const poolMaterial = new THREE.MeshBasicMaterial({ color: 0xff4400, transparent: true, opacity: 0.95 });
+                const pool = new THREE.Mesh(poolGeometry, poolMaterial);
+                pool.rotation.x = -Math.PI / 2;
+                pool.position.y = 0.1;
+                group.add(pool);
+
+                const coreGeometry = new THREE.CircleGeometry(1.2, 32);
+                const coreMaterial = new THREE.MeshBasicMaterial({ color: 0xffaa00, transparent: true, opacity: 0.9 });
+                const core = new THREE.Mesh(coreGeometry, coreMaterial);
+                core.rotation.x = -Math.PI / 2;
+                core.position.y = 0.15;
+                group.add(core);
+
+                const centerGeometry = new THREE.CircleGeometry(0.5, 32);
+                const centerMaterial = new THREE.MeshBasicMaterial({ color: 0xffff00 });
+                const center = new THREE.Mesh(centerGeometry, centerMaterial);
+                center.rotation.x = -Math.PI / 2;
+                center.position.y = 0.2;
+                group.add(center);
+                
+                return group;
+            },
+
+            // ENVIRONMENT
+            'rainbow': function() {
+                const group = new THREE.Group();
+                
+                // Rainbow arcs - matching game: radius 5-(i*0.3), tube 0.3
+                const rainbowColors = [0xFF0000, 0xFF7F00, 0xFFFF00, 0x00FF00, 0x0000FF, 0x4B0082, 0x9400D3];
+                rainbowColors.forEach((color, i) => {
+                    const radius = 5 - (i * 0.3);
+                    const arcGeometry = new THREE.TorusGeometry(radius, 0.3, 8, 32, Math.PI);
+                    const arcMaterial = new THREE.MeshBasicMaterial({ 
+                        color: color,
+                        transparent: true,
+                        opacity: 0.9
+                    });
+                    const arc = new THREE.Mesh(arcGeometry, arcMaterial);
+                    group.add(arc);
+                });
+                
+                // Disco ball group
+                const discoBallGroup = new THREE.Group();
+                const discoBallRadius = 2.5;
+                const tileSize = 0.35;
+                const tileDepth = 0.08;
+                
+                // Dark core sphere behind tiles
+                const coreGeometry = new THREE.SphereGeometry(discoBallRadius - tileDepth, 16, 16);
+                const coreMaterial = new THREE.MeshBasicMaterial({ color: 0x111111 });
+                const core = new THREE.Mesh(coreGeometry, coreMaterial);
+                discoBallGroup.add(core);
+                
+                // Create 3D mirror tiles arranged in a sphere pattern
+                for (let lat = -80; lat <= 80; lat += 15) {
+                    const latRad = lat * Math.PI / 180;
+                    const ringRadius = Math.cos(latRad) * discoBallRadius;
+                    const y = Math.sin(latRad) * discoBallRadius;
+                    const circumference = 2 * Math.PI * ringRadius;
+                    const tilesInRing = Math.max(4, Math.floor(circumference / (tileSize + 0.05)));
+                    
+                    for (let i = 0; i < tilesInRing; i++) {
+                        const lon = (i / tilesInRing) * Math.PI * 2;
+                        const x = Math.cos(lon) * ringRadius;
+                        const z = Math.sin(lon) * ringRadius;
+                        
+                        const tileGeometry = new THREE.BoxGeometry(tileSize, tileSize, tileDepth);
+                        // Alternate tile colors for visual interest
+                        const tileColor = rainbowColors[(lat + 80 + i) % rainbowColors.length];
+                        const tileMaterial = new THREE.MeshBasicMaterial({ color: tileColor });
+                        const tile = new THREE.Mesh(tileGeometry, tileMaterial);
+                        
+                        tile.position.set(x, y, z);
+                        tile.lookAt(x * 2, y * 2, z * 2);
+                        discoBallGroup.add(tile);
+                    }
+                }
+                
+                // Top and bottom cap tiles
+                const capMaterial = new THREE.MeshBasicMaterial({ color: 0xffffff });
+                const topCap = new THREE.Mesh(new THREE.BoxGeometry(tileSize, tileSize, tileDepth), capMaterial);
+                topCap.position.set(0, discoBallRadius, 0);
+                topCap.rotation.x = -Math.PI / 2;
+                discoBallGroup.add(topCap);
+                
+                const bottomCap = new THREE.Mesh(new THREE.BoxGeometry(tileSize, tileSize, tileDepth), capMaterial.clone());
+                bottomCap.position.set(0, -discoBallRadius, 0);
+                bottomCap.rotation.x = Math.PI / 2;
+                discoBallGroup.add(bottomCap);
+                
+                // Hanging rod
+                const rodLength = 3;
+                const rodGeometry = new THREE.CylinderGeometry(0.08, 0.08, rodLength, 8);
+                const rodMaterial = new THREE.MeshBasicMaterial({ color: 0x666666 });
+                const rod = new THREE.Mesh(rodGeometry, rodMaterial);
+                rod.position.y = discoBallRadius + rodLength / 2;
+                discoBallGroup.add(rod);
+                
+                // Hook at top of rod
+                const hookGeometry = new THREE.TorusGeometry(0.15, 0.04, 8, 16);
+                const hookMaterial = new THREE.MeshBasicMaterial({ color: 0x888888 });
+                const hook = new THREE.Mesh(hookGeometry, hookMaterial);
+                hook.position.y = discoBallRadius + rodLength;
+                hook.rotation.x = Math.PI / 2;
+                discoBallGroup.add(hook);
+                
+                // Position disco ball hanging from center top of rainbow (y=5 is top)
+                discoBallGroup.position.set(0, 5 - discoBallRadius - 3, 0);
+                group.add(discoBallGroup);
+                
+                return group;
+            },
+
+            'tree': function() {
+                const group = new THREE.Group();
+                
+                // Cylindrical trunk (darker brown)
+                const trunkGeometry = new THREE.CylinderGeometry(0.3, 0.4, 2, 8);
+                const trunkMaterial = new THREE.MeshLambertMaterial({ color: 0x6B4423 });
+                const trunk = new THREE.Mesh(trunkGeometry, trunkMaterial);
+                trunk.position.y = 1;
+                group.add(trunk);
+                
+                // Spherical foliage (not cone)
+                const foliageGeometry = new THREE.SphereGeometry(1.5, 8, 8);
+                const foliageMaterial = new THREE.MeshLambertMaterial({ color: 0x228B22 });
+                const foliage = new THREE.Mesh(foliageGeometry, foliageMaterial);
+                foliage.position.y = 2.5;
+                group.add(foliage);
+                
+                return group;
+            },
+
+            'cactus': function() {
+                const group = new THREE.Group();
+                const cactusMaterial = new THREE.MeshLambertMaterial({ color: 0x228B22 });
+                
+                const bodyGeometry = new THREE.CylinderGeometry(0.3, 0.4, 2.5, 8);
+                const body = new THREE.Mesh(bodyGeometry, cactusMaterial);
+                body.position.y = 1.25;
+                group.add(body);
+                
+                const armGeometry = new THREE.CylinderGeometry(0.15, 0.2, 1.0, 6);
+                const arm1 = new THREE.Mesh(armGeometry, cactusMaterial);
+                arm1.position.set(0.5, 1.5, 0);
+                arm1.rotation.z = -Math.PI / 4;
+                group.add(arm1);
+                
+                const arm2 = new THREE.Mesh(armGeometry, cactusMaterial);
+                arm2.position.set(-0.4, 1.8, 0);
+                arm2.rotation.z = Math.PI / 4;
+                group.add(arm2);
+                
+                return group;
+            },
+
+            'palm': function() {
+                const group = new THREE.Group();
+                
+                const trunkGeometry = new THREE.CylinderGeometry(0.2, 0.3, 3, 8);
+                const trunkMaterial = new THREE.MeshLambertMaterial({ color: 0x8B7355 });
+                const trunk = new THREE.Mesh(trunkGeometry, trunkMaterial);
+                trunk.position.y = 1.5;
+                trunk.rotation.z = 0.1;
+                group.add(trunk);
+                
+                const leafMaterial = new THREE.MeshLambertMaterial({ color: 0x228B22, side: THREE.DoubleSide });
+                for (let i = 0; i < 6; i++) {
+                    const leafGeometry = new THREE.PlaneGeometry(0.5, 2);
+                    const leaf = new THREE.Mesh(leafGeometry, leafMaterial);
+                    const angle = (i / 6) * Math.PI * 2;
+                    leaf.position.set(Math.cos(angle) * 0.3, 3.2, Math.sin(angle) * 0.3);
+                    leaf.rotation.x = -0.5;
+                    leaf.rotation.y = angle;
+                    group.add(leaf);
+                }
+                
+                return group;
+            },
+
+            'pyramid': function() {
+                const group = new THREE.Group();
+                const pyramidGeometry = new THREE.ConeGeometry(3, 4, 4);
+                const pyramidMaterial = new THREE.MeshLambertMaterial({ color: 0xDEB887 });
+                const pyramid = new THREE.Mesh(pyramidGeometry, pyramidMaterial);
+                pyramid.position.y = 2;
+                pyramid.rotation.y = Math.PI / 4;
+                group.add(pyramid);
+                
+                return group;
+            }
+        };
+
+        // ========== RENDER SETUP ==========
+        const scene = new THREE.Scene();
+        scene.background = null; // Transparent
+
+        const camera = new THREE.PerspectiveCamera(45, 1, 0.1, 100);
+        
+        const renderer = new THREE.WebGLRenderer({ 
+            antialias: true, 
+            alpha: true,
+            preserveDrawingBuffer: true 
+        });
+        renderer.setSize(256, 256);
+        renderer.setClearColor(0x000000, 0);
+        document.body.appendChild(renderer.domElement);
+
+        // Lighting
+        const ambient = new THREE.AmbientLight(0x666666);
+        scene.add(ambient);
+
+        const directional = new THREE.DirectionalLight(0xffffff, 1);
+        directional.position.set(5, 10, 5);
+        scene.add(directional);
+
+        const fill = new THREE.DirectionalLight(0x4488ff, 0.3);
+        fill.position.set(-5, 5, -5);
+        scene.add(fill);
+
+        // Render the requested entity
+        if (entityRenderers[entityId]) {
+            const group = entityRenderers[entityId]();
+            scene.add(group);
+
+            // Auto-center and scale
+            const box = new THREE.Box3().setFromObject(group);
+            const center = box.getCenter(new THREE.Vector3());
+            const size = box.getSize(new THREE.Vector3());
+            const maxDim = Math.max(size.x, size.y, size.z);
+
+            group.position.sub(center);
+            group.position.y += size.y / 2;
+
+            const scale = 3.5 / maxDim;
+            if (maxDim > 3.5) {
+                group.scale.multiplyScalar(scale);
+            }
+
+            camera.position.set(6, 4, 8);
+            camera.lookAt(0, size.y * Math.min(scale, 1) / 2, 0);
+
+            renderer.render(scene, camera);
+        }
+
+        // Signal completion
+        const marker = document.createElement('div');
+        marker.id = 'render-complete';
+        document.body.appendChild(marker);
+    </script>
+</body>
+</html>

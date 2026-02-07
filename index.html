@@ -10,28 +10,29 @@
 </head>
 <body>
     <div id="difficulty-menu">
-        <h1>Fahrrad-Abenteuer</h1>
+        <h1>🚴 Fahrrad-Abenteuer</h1>
+        <a href="wiki/index.html" class="wiki-link">📖 Spiel-Wiki</a>
         <h2>Wähle Schwierigkeit:</h2>
-        <button id="easy-btn" class="difficulty-btn">Leicht</button>
-        <button id="hard-btn" class="difficulty-btn">Schwierig</button>
-        <div id="level-select" style="margin-top: 15px;">
-            <label for="start-level" style="font-size: 18px; margin-right: 10px;">Start-Level:</label>
-            <select id="start-level" style="padding: 8px 15px; font-size: 16px; border-radius: 5px;">
-                <option value="1">Level 1 - Drachenhöhle</option>
-                <option value="2">Level 2 - Eiswüste</option>
-                <option value="3">Level 3 - Wüste</option>
-                <option value="4">Level 4 - Lavahöhlen</option>
-                <option value="5">Level 5 - Ozean</option>
+        <button id="easy-btn" class="difficulty-btn">🌲 Leicht</button>
+        <button id="hard-btn" class="difficulty-btn">🔥 Schwierig</button>
+        <div id="level-select">
+            <label for="start-level">Start-Level:</label>
+            <select id="start-level">
+                <option value="1">🌲 Level 1 - Drachenhöhle</option>
+                <option value="2">❄️ Level 2 - Eiswüste</option>
+                <option value="3">🏜️ Level 3 - Wüste</option>
+                <option value="4">🌋 Level 4 - Lavahöhlen</option>
+                <option value="5">🌊 Level 5 - Ozean</option>
             </select>
         </div>
-        <div id="multiplayer-setup" style="margin-top: 20px; padding: 15px; border: 2px solid #4CAF50; background: #f0f0f0;">
-            <h3>Multiplayer</h3>
+        <div id="multiplayer-setup">
+            <h3>🎮 Multiplayer</h3>
             <div>Dein Raum-Code: <strong id="my-room-code">---</strong></div>
             <div style="margin-top: 10px;">
-                <input id="join-room-code" placeholder="Raum beitreten" size="3" maxlength="3" style="padding: 5px; font-size: 16px;">
-                <button id="join-btn" style="padding: 5px 15px; font-size: 16px;">Beitreten</button>
+                <input id="join-room-code" placeholder="ABC" size="3" maxlength="3">
+                <button id="join-btn">Beitreten</button>
             </div>
-            <div id="multiplayer-status" style="margin-top: 10px; font-weight: bold;"></div>
+            <div id="multiplayer-status" style="margin-top: 10px;"></div>
         </div>
     </div>
     <div id="game-container" style="display: none;">

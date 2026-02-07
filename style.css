@@ -1,15 +1,35 @@
+@import url('https://fonts.googleapis.com/css2?family=Press+Start+2P&display=swap');
+
 * {
     margin: 0;
     padding: 0;
     box-sizing: border-box;
 }
 
+:root {
+    --bg-primary: #1a1a2e;
+    --bg-secondary: #2d2d44;
+    --bg-card: #252540;
+    --bg-dark: #0f0f1a;
+    --text-primary: #f5f5f5;
+    --text-secondary: #b0b0c0;
+    --accent-gold: #FFD700;
+    --accent-silver: #C0C0C0;
+    --accent-bronze: #CD7F32;
+    --accent-danger: #ff4444;
+}
+
 body {
     width: 100vw;
     height: 100vh;
     overflow: hidden;
-    background: linear-gradient(to bottom, #87CEEB, #90EE90);
-    font-family: Arial, sans-serif;
+    background: var(--bg-dark);
+    background-image: 
+        linear-gradient(90deg, rgba(255,215,0,0.03) 1px, transparent 1px),
+        linear-gradient(rgba(192,192,192,0.03) 1px, transparent 1px);
+    background-size: 30px 30px;
+    font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+    color: var(--text-primary);
 }
 
 #difficulty-menu {
@@ -19,37 +39,214 @@ body {
     flex-direction: column;
     justify-content: center;
     align-items: center;
-    gap: 20px;
+    gap: 15px;
+    position: relative;
+}
+
+#difficulty-menu::before {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background: 
+        radial-gradient(ellipse at 30% 20%, rgba(255,215,0,0.08) 0%, transparent 50%),
+        radial-gradient(ellipse at 70% 80%, rgba(192,192,192,0.06) 0%, transparent 50%);
+    pointer-events: none;
 }
 
 #difficulty-menu h1 {
-    font-size: 48px;
-    color: #333;
-    margin-bottom: 20px;
+    font-family: 'Press Start 2P', cursive;
+    font-size: 32px;
+    color: var(--accent-gold);
+    text-shadow: 4px 4px 0 var(--accent-bronze), 6px 6px 0 rgba(0,0,0,0.4);
+    margin-bottom: 5px;
+    letter-spacing: 2px;
+    position: relative;
+    z-index: 1;
 }
 
 #difficulty-menu h2 {
-    font-size: 32px;
-    color: #555;
+    font-family: 'Press Start 2P', cursive;
+    font-size: 14px;
+    color: var(--text-secondary);
+    margin-bottom: 10px;
+    text-transform: uppercase;
+    letter-spacing: 2px;
+    position: relative;
+    z-index: 1;
+}
+
+#difficulty-menu h3 {
+    font-family: 'Press Start 2P', cursive;
+    font-size: 12px;
+    color: var(--accent-gold);
     margin-bottom: 10px;
 }
 
 .difficulty-btn {
-    padding: 20px 60px;
-    font-size: 24px;
+    padding: 18px 50px;
+    font-family: 'Press Start 2P', cursive;
+    font-size: 14px;
     font-weight: bold;
-    background: rgba(255, 255, 255, 0.9);
-    border: 4px solid #333;
-    border-radius: 10px;
+    background: var(--bg-card);
+    border: 4px solid var(--bg-dark);
+    color: var(--text-primary);
     cursor: pointer;
-    transition: all 0.3s;
-    box-shadow: 0 4px 8px rgba(0, 0, 0, 0.3);
+    transition: all 0.15s ease;
+    box-shadow: 6px 6px 0 var(--bg-dark);
+    clip-path: polygon(12px 0, 100% 0, 100% calc(100% - 12px), calc(100% - 12px) 100%, 0 100%, 0 12px);
+    text-transform: uppercase;
+    letter-spacing: 1px;
+    position: relative;
+    z-index: 1;
 }
 
 .difficulty-btn:hover {
-    background: rgba(255, 255, 255, 1);
-    transform: scale(1.05);
-    box-shadow: 0 6px 12px rgba(0, 0, 0, 0.4);
+    background: var(--accent-gold);
+    color: var(--bg-dark);
+    transform: translateY(-4px);
+    box-shadow: 6px 10px 0 var(--accent-bronze);
+}
+
+.difficulty-btn:active {
+    transform: translateY(2px);
+    box-shadow: 2px 2px 0 var(--bg-dark);
+}
+
+#easy-btn:hover {
+    background: var(--accent-silver);
+    color: var(--bg-dark);
+}
+
+#hard-btn:hover {
+    background: var(--accent-danger);
+    color: var(--text-primary);
+}
+
+#level-select {
+    margin-top: 15px;
+    position: relative;
+    z-index: 1;
+}
+
+#level-select label {
+    font-size: 14px;
+    color: var(--text-secondary);
+    margin-right: 10px;
+    text-transform: uppercase;
+    letter-spacing: 1px;
+}
+
+#level-select select {
+    padding: 12px 20px;
+    font-size: 14px;
+    background: var(--bg-card);
+    border: 3px solid var(--bg-dark);
+    color: var(--text-primary);
+    cursor: pointer;
+    clip-path: polygon(8px 0, 100% 0, 100% calc(100% - 8px), calc(100% - 8px) 100%, 0 100%, 0 8px);
+    box-shadow: 4px 4px 0 var(--bg-dark);
+}
+
+#level-select select:focus {
+    outline: none;
+    border-color: var(--accent-gold);
+}
+
+#level-select select option {
+    background: var(--bg-card);
+    color: var(--text-primary);
+    padding: 10px;
+}
+
+#multiplayer-setup {
+    margin-top: 20px;
+    padding: 20px 30px;
+    background: var(--bg-card);
+    border: 4px solid var(--accent-silver);
+    box-shadow: 6px 6px 0 var(--bg-dark);
+    clip-path: polygon(0 0, calc(100% - 15px) 0, 100% 15px, 100% 100%, 15px 100%, 0 calc(100% - 15px));
+    position: relative;
+    z-index: 1;
+}
+
+#multiplayer-setup div {
+    color: var(--text-secondary);
+}
+
+#multiplayer-setup strong {
+    color: var(--accent-gold);
+    font-family: 'Press Start 2P', cursive;
+    font-size: 14px;
+}
+
+#multiplayer-setup input {
+    padding: 10px 15px;
+    font-size: 16px;
+    background: var(--bg-primary);
+    border: 3px solid var(--bg-dark);
+    color: var(--accent-gold);
+    font-family: 'Press Start 2P', cursive;
+    text-transform: uppercase;
+    width: 80px;
+    text-align: center;
+}
+
+#multiplayer-setup input:focus {
+    outline: none;
+    border-color: var(--accent-gold);
+}
+
+#multiplayer-setup input::placeholder {
+    color: var(--text-secondary);
+    font-family: 'Segoe UI', sans-serif;
+    font-size: 12px;
+    text-transform: none;
+}
+
+#join-btn {
+    padding: 10px 20px;
+    font-size: 12px;
+    font-family: 'Press Start 2P', cursive;
+    background: var(--accent-silver);
+    border: 3px solid var(--bg-dark);
+    color: var(--bg-dark);
+    cursor: pointer;
+    transition: all 0.15s ease;
+    box-shadow: 3px 3px 0 var(--bg-dark);
+    text-transform: uppercase;
+}
+
+#join-btn:hover {
+    background: var(--accent-gold);
+    color: var(--bg-dark);
+    transform: translateY(-2px);
+    box-shadow: 3px 5px 0 var(--accent-bronze);
+}
+
+#multiplayer-status {
+    color: var(--accent-gold) !important;
+    font-family: 'Press Start 2P', cursive;
+    font-size: 10px;
+}
+
+.wiki-link {
+    color: var(--accent-gold) !important;
+    text-decoration: none;
+    font-size: 14px;
+    padding: 8px 16px;
+    background: var(--bg-card);
+    border: 2px solid var(--accent-silver);
+    transition: all 0.15s ease;
+    position: relative;
+    z-index: 1;
+}
+
+.wiki-link:hover {
+    background: var(--accent-gold);
+    color: var(--bg-dark) !important;
 }
 
 #game-container {
@@ -69,16 +266,37 @@ body {
     bottom: 20px;
     left: 50%;
     transform: translateX(-50%);
-    padding: 15px;
-    background: rgba(255, 255, 255, 0.9);
-    border-radius: 8px;
-    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.2);
+    padding: 15px 25px;
+    background: var(--bg-card);
+    border: 3px solid var(--bg-dark);
+    box-shadow: 4px 4px 0 var(--bg-dark);
+    clip-path: polygon(10px 0, 100% 0, 100% calc(100% - 10px), calc(100% - 10px) 100%, 0 100%, 0 10px);
     z-index: 10;
 }
 
 #controls p {
-    color: #333;
-    font-size: 16px;
+    color: var(--text-secondary);
+    font-size: 14px;
     font-weight: bold;
     margin: 0;
+    letter-spacing: 0.5px;
+}
+
+@media (max-width: 768px) {
+    #difficulty-menu h1 {
+        font-size: 20px;
+    }
+    
+    #difficulty-menu h2 {
+        font-size: 10px;
+    }
+    
+    .difficulty-btn {
+        padding: 14px 35px;
+        font-size: 10px;
+    }
+    
+    #multiplayer-setup {
+        padding: 15px 20px;
+    }
 }

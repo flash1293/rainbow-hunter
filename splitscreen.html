@@ -48,6 +48,44 @@
         .player-2-label {
             background: rgba(0, 150, 255, 0.8);
         }
+
+        #split-controls {
+            position: fixed;
+            left: 10px;
+            bottom: 10px;
+            z-index: 2000;
+            background: rgba(0, 0, 0, 0.75);
+            color: white;
+            padding: 10px 12px;
+            border-radius: 8px;
+            font-size: 14px;
+            max-width: 440px;
+        }
+        #split-controls .row {
+            display: flex;
+            gap: 8px;
+            align-items: center;
+            flex-wrap: wrap;
+        }
+        #split-controls .muted {
+            opacity: 0.85;
+        }
+        #split-controls button {
+            appearance: none;
+            border: 0;
+            border-radius: 6px;
+            padding: 8px 10px;
+            cursor: pointer;
+            font-weight: 700;
+        }
+        #btn-popout {
+            background: #22c55e;
+            color: #06210f;
+        }
+        #btn-reload {
+            background: #60a5fa;
+            color: #071a2c;
+        }
     </style>
 </head>
 <body>
@@ -61,19 +99,85 @@
             <iframe id="player2" class="player-frame"></iframe>
         </div>
     </div>
+    <div id="split-controls">
+        <div class="row" style="margin-bottom: 6px;">
+            <div><strong>Room:</strong> <span id="room-code">---</span></div>
+        </div>
+        <div class="row" style="margin-bottom: 6px;">
+            <button id="btn-popout" type="button" title="Opens host/client in separate windows (helps when iframes stutter)">
+                Open as 2 windows
+            </button>
+            <button id="btn-reload" type="button" title="Generate a new room and reload iframes">
+                New room
+            </button>
+        </div>
+        <div class="muted">
+            Tip: If iframe splitscreen stutters/freezes during movement, popout windows usually avoids main-thread contention.
+        </div>
+    </div>
     <script>
-        // Generate a unique room code for this splitscreen session
-        const roomCode = Math.floor(100 + Math.random() * 900).toString();
-        
-        // Load player 1 as host with controller index 0
-        const player1Frame = document.getElementById('player1');
-        player1Frame.src = `index.html?splitscreen=host&room=${roomCode}&controller=0`;
-        
-        // Load player 2 as client with controller index 1
-        const player2Frame = document.getElementById('player2');
-        player2Frame.src = `index.html?splitscreen=client&room=${roomCode}&controller=1`;
-        
-        console.log('Splitscreen session started with room code:', roomCode);
+        function generateRoomCode() {
+            return Math.floor(100 + Math.random() * 900).toString();
+        }
+
+        function buildUrl(role, roomCode, controllerIdx) {
+            const url = new URL('index.html', window.location.href);
+            url.searchParams.set('splitscreen', role);
+            url.searchParams.set('room', roomCode);
+            url.searchParams.set('controller', String(controllerIdx));
+            return url.toString();
+        }
+
+        function loadIframes(roomCode) {
+            document.getElementById('room-code').textContent = roomCode;
+
+            const player1Frame = document.getElementById('player1');
+            const player2Frame = document.getElementById('player2');
+
+            player1Frame.src = buildUrl('host', roomCode, 0);
+            player2Frame.src = buildUrl('client', roomCode, 1);
+
+            console.log('Splitscreen session started with room code:', roomCode);
+        }
+
+        function openPopoutWindows(roomCode) {
+            const hostUrl = buildUrl('host', roomCode, 0);
+            const clientUrl = buildUrl('client', roomCode, 1);
+
+            const w = Math.max(480, Math.floor(screen.availWidth / 2));
+            const h = Math.max(640, Math.floor(screen.availHeight));
+
+            const leftX = 0;
+            const rightX = Math.floor(screen.availWidth / 2);
+            const topY = 0;
+
+            const hostWin = window.open(
+                hostUrl,
+                'etr_host',
+                `popup=1,width=${w},height=${h},left=${leftX},top=${topY}`
+            );
+            const clientWin = window.open(
+                clientUrl,
+                'etr_client',
+                `popup=1,width=${w},height=${h},left=${rightX},top=${topY}`
+            );
+
+            if (!hostWin || !clientWin) {
+                alert('Popup blocked. Please allow popups for this site, then click "Open as 2 windows" again.');
+            }
+        }
+
+        let roomCode = generateRoomCode();
+        loadIframes(roomCode);
+
+        document.getElementById('btn-reload').addEventListener('click', () => {
+            roomCode = generateRoomCode();
+            loadIframes(roomCode);
+        });
+
+        document.getElementById('btn-popout').addEventListener('click', () => {
+            openPopoutWindows(roomCode);
+        });
     </script>
 </body>
 </html>

@@ -1,0 +1,17 @@
+{
+  "name": "wiki",
+  "version": "1.0.0",
+  "description": "Game wiki with auto-generated Three.js entity images",
+  "main": "generate-images.js",
+  "scripts": {
+    "generate": "node generate-images.js",
+    "serve": "npx http-server -p 8080"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC",
+  "type": "commonjs",
+  "dependencies": {
+    "puppeteer": "^24.37.2"
+  }
+}
