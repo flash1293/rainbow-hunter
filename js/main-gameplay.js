@@ -129,6 +129,133 @@
         G.explosions.push(...particles);
     }
 
+    // Spawn candy drops from dragon death (candy theme only)
+    // Uses seeded random for multiplayer sync - both host and client generate same positions
+    function spawnDragonCandyDrops(x, y, z) {
+        // Simple seeded random based on dragon position for deterministic generation
+        let seed = Math.floor(Math.abs(x * 1000 + z * 7919 + y * 104729)) % 2147483647;
+        const seededRandom = () => {
+            seed = (seed * 16807) % 2147483647;
+            return (seed - 1) / 2147483646;
+        };
+        
+        const candyCount = 8 + Math.floor(seededRandom() * 5); // 8-12 pieces
+        const candyColors = [0xFF69B4, 0x00FF00, 0xFF4500, 0xFFD700, 0x9400D3, 0x00CED1, 0xFF0000, 0x87CEEB];
+        
+        for (let i = 0; i < candyCount; i++) {
+            const candyGroup = new THREE.Group();
+            
+            // Seeded random candy type
+            const candyType = Math.floor(seededRandom() * 4);
+            const candyColor = candyColors[Math.floor(seededRandom() * candyColors.length)];
+            
+            if (candyType === 0) {
+                // Wrapped candy
+                const bodyGeometry = new THREE.SphereGeometry(0.4, 8, 8);
+                const bodyMaterial = new THREE.MeshPhongMaterial({
+                    color: candyColor,
+                    emissive: candyColor,
+                    emissiveIntensity: 0.2,
+                    shininess: 100
+                });
+                const body = new THREE.Mesh(bodyGeometry, bodyMaterial);
+                candyGroup.add(body);
+                
+                // Wrapper ends
+                const wrapperGeometry = new THREE.ConeGeometry(0.15, 0.4, 8);
+                const wrapperMaterial = new THREE.MeshPhongMaterial({ color: 0xFFFFFF, shininess: 80 });
+                const wrapper1 = new THREE.Mesh(wrapperGeometry, wrapperMaterial);
+                wrapper1.position.set(-0.5, 0, 0);
+                wrapper1.rotation.z = Math.PI / 2;
+                const wrapper2 = new THREE.Mesh(wrapperGeometry, wrapperMaterial);
+                wrapper2.position.set(0.5, 0, 0);
+                wrapper2.rotation.z = -Math.PI / 2;
+                candyGroup.add(wrapper1);
+                candyGroup.add(wrapper2);
+            } else if (candyType === 1) {
+                // Lollipop
+                const candyGeometry = new THREE.SphereGeometry(0.35, 8, 8);
+                const candyMaterial = new THREE.MeshPhongMaterial({
+                    color: candyColor,
+                    emissive: candyColor,
+                    emissiveIntensity: 0.2,
+                    shininess: 100
+                });
+                const candy = new THREE.Mesh(candyGeometry, candyMaterial);
+                candy.position.y = 0.3;
+                candyGroup.add(candy);
+                
+                const stickGeometry = new THREE.CylinderGeometry(0.05, 0.05, 0.6, 8);
+                const stickMaterial = new THREE.MeshPhongMaterial({ color: 0xFFFFFF });
+                const stick = new THREE.Mesh(stickGeometry, stickMaterial);
+                candyGroup.add(stick);
+            } else if (candyType === 2) {
+                // Gumdrop
+                const gumdropGeometry = new THREE.SphereGeometry(0.35, 8, 6, 0, Math.PI * 2, 0, Math.PI / 2);
+                const gumdropMaterial = new THREE.MeshPhongMaterial({
+                    color: candyColor,
+                    emissive: candyColor,
+                    emissiveIntensity: 0.2,
+                    shininess: 80
+                });
+                const gumdrop = new THREE.Mesh(gumdropGeometry, gumdropMaterial);
+                candyGroup.add(gumdrop);
+            } else {
+                // Candy heart
+                const heartShape = new THREE.Shape();
+                heartShape.moveTo(0, 0.2);
+                heartShape.bezierCurveTo(0, 0.35, -0.2, 0.35, -0.2, 0.2);
+                heartShape.bezierCurveTo(-0.2, 0.05, 0, -0.1, 0, -0.25);
+                heartShape.bezierCurveTo(0, -0.1, 0.2, 0.05, 0.2, 0.2);
+                heartShape.bezierCurveTo(0.2, 0.35, 0, 0.35, 0, 0.2);
+                
+                const heartGeometry = new THREE.ExtrudeGeometry(heartShape, { depth: 0.15, bevelEnabled: false });
+                const heartMaterial = new THREE.MeshPhongMaterial({
+                    color: candyColor,
+                    emissive: candyColor,
+                    emissiveIntensity: 0.2,
+                    shininess: 100
+                });
+                const heart = new THREE.Mesh(heartGeometry, heartMaterial);
+                heart.scale.setScalar(1.5);
+                candyGroup.add(heart);
+            }
+            
+            // Glowing aura
+            const auraGeometry = new THREE.RingGeometry(0.5, 0.8, 16);
+            const auraMaterial = new THREE.MeshBasicMaterial({
+                color: candyColor,
+                transparent: true,
+                opacity: 0.5,
+                side: THREE.DoubleSide
+            });
+            const aura = new THREE.Mesh(auraGeometry, auraMaterial);
+            aura.rotation.x = -Math.PI / 2;
+            aura.position.y = 0.1;
+            candyGroup.add(aura);
+            candyGroup.aura = aura;
+            
+            // Scatter around dragon death position (using seeded random)
+            const angle = (i / candyCount) * Math.PI * 2 + seededRandom() * 0.5;
+            const radius = 3 + seededRandom() * 8;
+            const candyX = x + Math.cos(angle) * radius;
+            const candyZ = z + Math.sin(angle) * radius;
+            const terrainHeight = getTerrainHeight(candyX, candyZ);
+            
+            candyGroup.position.set(candyX, terrainHeight + 0.5, candyZ);
+            G.scene.add(candyGroup);
+            
+            G.candyPickups.push({
+                mesh: candyGroup,
+                collected: false,
+                x: candyX,
+                z: candyZ,
+                bobPhase: i * 0.5
+            });
+            G.totalCandy++;
+        }
+    }
+
     // Create lingering smoke cloud
     function createSmokeCloud(x, y, z, intensity = 1.0) {
         const smokeCount = Math.floor(8 * intensity);
@@ -1381,6 +1508,11 @@
                 G.scene.remove(G.scarabPickups[data.index].mesh);
                 G.scarabsCollected++;
                 Audio.playCollectSound();
+            } else if (data.type === 'candy' && G.candyPickups && G.candyPickups[data.index]) {
+                G.candyPickups[data.index].collected = true;
+                G.scene.remove(G.candyPickups[data.index].mesh);
+                G.candyCollected++;
+                Audio.playCollectSound();
             }
         } else if (eventType === 'G.bridgeRepaired') {
             // Other player repaired the bridge
@@ -2040,6 +2172,11 @@
                             
                             // Hide dragon mesh immediately
                             G.dragon.mesh.visible = false;
+                            
+                            // Spawn candy drops in candy theme
+                            if (G.candyTheme) {
+                                spawnDragonCandyDrops(deathX, deathY, deathZ);
+                            }
                         }
                     }
                     bulletHit = true;
@@ -2089,6 +2226,11 @@
                                 
                                 // Hide dragon mesh immediately
                                 extraDragon.mesh.visible = false;
+                                
+                                // Spawn candy drops in candy theme
+                                if (G.candyTheme) {
+                                    spawnDragonCandyDrops(deathX, deathY, deathZ);
+                                }
                             }
                         }
                         bulletHit = true;
@@ -4415,6 +4557,55 @@
             }
         });
         
+        // Collect candy drops (candy theme)
+        if (G.candyTheme && G.candyPickups) {
+            G.candyPickups.forEach((pickup, idx) => {
+                if (!pickup.collected) {
+                    const dist = Math.sqrt(
+                        Math.pow(G.playerGroup.position.x - pickup.x, 2) +
+                        Math.pow(G.playerGroup.position.z - pickup.z, 2)
+                    );
+                    if (dist < 1.5) {
+                        pickup.collected = true;
+                        G.scene.remove(pickup.mesh);
+                        G.candyCollected++;
+                        Audio.playCollectSound();
+                        
+                        // Show collection message
+                        if (G.totalCandy > 0) {
+                            const remaining = G.totalCandy - G.candyCollected;
+                            if (remaining > 0) {
+                                console.log(`Candy collected! ${remaining} more to find.`);
+                            } else {
+                                console.log('All candy collected! The treasure is now accessible!');
+                            }
+                        }
+                        
+                        // Notify other player
+                        if (multiplayerManager && multiplayerManager.isConnected()) {
+                            multiplayerManager.sendGameEvent('itemCollected', { type: 'candy', index: idx });
+                        }
+                    }
+                }
+            });
+            
+            // Animate uncollected candy (bob and rotate)
+            G.candyPickups.forEach((pickup) => {
+                if (!pickup.collected && pickup.mesh) {
+                    pickup.bobPhase += 0.06;
+                    const baseHeight = getTerrainHeight(pickup.x, pickup.z) + 0.5;
+                    pickup.mesh.position.y = baseHeight + Math.sin(pickup.bobPhase) * 0.25;
+                    pickup.mesh.rotation.y += 0.03;
+                    
+                    // Pulse the aura
+                    if (pickup.mesh.aura) {
+                        pickup.mesh.aura.material.opacity = 0.3 + Math.sin(pickup.bobPhase * 2) * 0.2;
+                        pickup.mesh.aura.scale.setScalar(1 + Math.sin(pickup.bobPhase) * 0.1);
+                    }
+                }
+            });
+        }
+        
         // Portal collision - level switching (only if portal exists)
         if (G.portal && G.portalCooldown <= 0) {
             const distToPortal = Math.sqrt(
@@ -4517,6 +4708,10 @@
                 const scarabsRequired = G.totalScarabs > 0;
                 const allScarabsCollected = G.scarabsCollected >= G.totalScarabs;
                 
+                // Check if candy is required and collected (candy theme)
+                const candyRequired = G.candyTheme && G.totalCandy > 0;
+                const allCandyCollected = !candyRequired || (G.candyCollected >= G.totalCandy);
+                
                 if (scarabsRequired && !allScarabsCollected) {
                     // Can't collect treasure yet - need more scarabs
                     // Only show message occasionally to avoid spam
@@ -4524,6 +4719,13 @@
                         G.treasure.lastWarningTime = Date.now();
                         const remaining = G.totalScarabs - G.scarabsCollected;
                         console.log(`Collect ${remaining} more Ancient Scarab${remaining > 1 ? 's' : ''} to unlock the G.treasure!`);
+                    }
+                } else if (candyRequired && !allCandyCollected) {
+                    // Can't collect treasure yet - need more candy
+                    if (!G.treasure.lastWarningTime || Date.now() - G.treasure.lastWarningTime > 2000) {
+                        G.treasure.lastWarningTime = Date.now();
+                        const remaining = G.totalCandy - G.candyCollected;
+                        console.log(`Sammle noch ${remaining} Süßigkeit${remaining > 1 ? 'en' : ''} um den Schatz freizuschalten!`);
                     }
                 } else {
                     // Only host decides win state

@@ -117,6 +117,42 @@
       "levels": [5],
       "health": 30,
       "damage": 2
+    },
+    {
+      "id": "gummy-bear",
+      "name": "Gummibär",
+      "description": "Süßes aber tödliches geleeartiges Bärchen mit bunten, durchscheinenden Körpern. Hüpft im Candy Kingdom umher und stürmt auf Spieler zu.",
+      "tags": ["Candy", "Nahkampf"],
+      "levels": [6],
+      "health": 3,
+      "damage": 1
+    },
+    {
+      "id": "gingerbread-man",
+      "name": "Lebkuchenmann",
+      "description": "Keksiger Wächter mit Zuckerguss-Details und Knopfaugen. Trägt eine Zuckerstange als Waffe und schießt Bonbon-Pfeile.",
+      "tags": ["Candy", "Elite", "Fernkampf"],
+      "levels": [6],
+      "health": 5,
+      "damage": 1
+    },
+    {
+      "id": "marshmallow-monster",
+      "name": "Marshmallow-Monster",
+      "description": "Riesiges flauschiges weißes Wesen mit rosa Wangen und stummligen Armen. Langsam aber mächtig, bewacht wichtige Bereiche des Zuckerlandes.",
+      "tags": ["Candy", "Boss", "Schwer"],
+      "levels": [6],
+      "health": 20,
+      "damage": 2
+    },
+    {
+      "id": "cotton-candy-wizard",
+      "name": "Zuckerwatte-Zauberer",
+      "description": "Flauschiger Magier aus rosa und blauer Zuckerwatte mit wirbeligen Mustern. Trägt einen Lutscher als Zauberstab und wirft süße Magieprojektile.",
+      "tags": ["Candy", "Magie", "Fernkampf"],
+      "levels": [6],
+      "health": 7,
+      "damage": 1
     }
   ],
   "items": [
@@ -242,6 +278,26 @@
       "id": "pyramid",
       "name": "Pyramide",
       "description": "Uraltes sandfarbenes Bauwerk. Wahrzeichen in Wüsten-Leveln."
+    },
+    {
+      "id": "lollipop",
+      "name": "Lutscher",
+      "description": "Riesiger spiralförmiger Lutscher auf weißem Stiel. Dienen als bunte Bäume im Candy Kingdom."
+    },
+    {
+      "id": "candy-cane",
+      "name": "Zuckerstange",
+      "description": "Rot-weiß gestreifte gebogene Zuckerstangen, die wie Bäume aus dem Boden wachsen."
+    },
+    {
+      "id": "chocolate-river",
+      "name": "Schokoladenfluss",
+      "description": "Fließender Strom aus geschmolzener Schokolade. Vorsicht: Kann klebrig sein!"
+    },
+    {
+      "id": "cupcake-hill",
+      "name": "Cupcake-Hügel",
+      "description": "Sanfte Hügel geformt wie riesige Cupcakes mit Zuckerguss-Spitze und bunten Streuseln."
     }
   ]
 }

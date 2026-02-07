@@ -177,6 +177,99 @@ function generateSandTexture(THREE) {
     return texture;
 }
 
+// Generate a candy/sweets texture for the Candy Kingdom level
+function generateCandyTexture(THREE) {
+    const canvas = document.createElement('canvas');
+    canvas.width = 512;
+    canvas.height = 512;
+    const ctx = canvas.getContext('2d');
+    
+    // Base pink frosting color
+    ctx.fillStyle = '#FFB6C1';
+    ctx.fillRect(0, 0, 512, 512);
+    
+    // Add candy sprinkles
+    const sprinkleColors = ['#FF69B4', '#87CEEB', '#FFD700', '#98FB98', '#DDA0DD', '#FF6347', '#00CED1'];
+    for (let i = 0; i < 500; i++) {
+        const x = Math.random() * 512;
+        const y = Math.random() * 512;
+        const color = sprinkleColors[Math.floor(Math.random() * sprinkleColors.length)];
+        const length = 5 + Math.random() * 10;
+        const angle = Math.random() * Math.PI;
+        
+        ctx.save();
+        ctx.translate(x, y);
+        ctx.rotate(angle);
+        ctx.fillStyle = color;
+        ctx.beginPath();
+        ctx.roundRect(-length/2, -1.5, length, 3, 1.5);
+        ctx.fill();
+        ctx.restore();
+    }
+    
+    // Add frosting swirl patches (lighter pink)
+    for (let i = 0; i < 40; i++) {
+        const x = Math.random() * 512;
+        const y = Math.random() * 512;
+        const radius = 15 + Math.random() * 35;
+        const gradient = ctx.createRadialGradient(x, y, 0, x, y, radius);
+        gradient.addColorStop(0, 'rgba(255, 200, 210, 0.4)');
+        gradient.addColorStop(1, 'rgba(255, 200, 210, 0)');
+        ctx.fillStyle = gradient;
+        ctx.fillRect(x - radius, y - radius, radius * 2, radius * 2);
+    }
+    
+    // Add white icing drizzle lines
+    ctx.strokeStyle = 'rgba(255, 255, 255, 0.6)';
+    ctx.lineWidth = 3;
+    for (let i = 0; i < 30; i++) {
+        const x = Math.random() * 512;
+        const y = Math.random() * 512;
+        ctx.beginPath();
+        ctx.moveTo(x, y);
+        ctx.bezierCurveTo(
+            x + 40, y + (Math.random() - 0.5) * 30,
+            x + 80, y + (Math.random() - 0.5) * 30,
+            x + 120, y + (Math.random() - 0.5) * 40
+        );
+        ctx.stroke();
+    }
+    
+    // Add sugar sparkles
+    for (let i = 0; i < 200; i++) {
+        const x = Math.random() * 512;
+        const y = Math.random() * 512;
+        const size = 1 + Math.random() * 2;
+        ctx.fillStyle = `rgba(255, 255, 255, ${0.3 + Math.random() * 0.5})`;
+        ctx.beginPath();
+        ctx.arc(x, y, size, 0, Math.PI * 2);
+        ctx.fill();
+    }
+    
+    // Add candy hearts scattered around
+    ctx.fillStyle = '#FF1493';
+    for (let i = 0; i < 20; i++) {
+        const x = Math.random() * 512;
+        const y = Math.random() * 512;
+        const size = 4 + Math.random() * 6;
+        
+        ctx.save();
+        ctx.translate(x, y);
+        ctx.beginPath();
+        ctx.moveTo(0, size * 0.3);
+        ctx.bezierCurveTo(-size, -size * 0.3, -size * 0.5, -size, 0, -size * 0.5);
+        ctx.bezierCurveTo(size * 0.5, -size, size, -size * 0.3, 0, size * 0.3);
+        ctx.fill();
+        ctx.restore();
+    }
+    
+    const texture = new THREE.CanvasTexture(canvas);
+    texture.wrapS = THREE.RepeatWrapping;
+    texture.wrapT = THREE.RepeatWrapping;
+    texture.repeat.set(30, 30);
+    return texture;
+}
+
 // Generate a volcanic rock texture for lava caves
 function generateRockTexture(THREE) {
     const canvas = document.createElement('canvas');
@@ -1396,6 +1489,77 @@ function generateDragonScaleTextureWater(THREE) {
     return texture;
 }
 
+// Generate candy dragon scale texture (pink and blue swirls with sprinkles)
+function generateDragonScaleTextureCandy(THREE) {
+    const canvas = document.createElement('canvas');
+    canvas.width = 256;
+    canvas.height = 256;
+    const ctx = canvas.getContext('2d');
+
+    // Base cotton candy pink
+    ctx.fillStyle = '#FF69B4';
+    ctx.fillRect(0, 0, 256, 256);
+
+    // Add swirly scale pattern - candy colored
+    for (let row = 0; row < 32; row++) {
+        for (let col = 0; col < 32; col++) {
+            const offsetX = (row % 2 === 0) ? 4 : 0;
+            const x = col * 8 + offsetX;
+            const y = row * 8;
+            const brightness = 0.8 + Math.random() * 0.3;
+            // Alternating pink and blue scales
+            const isPink = (row + col) % 2 === 0;
+            const r = isPink ? Math.floor(255 * brightness) : Math.floor(135 * brightness);
+            const g = isPink ? Math.floor(105 * brightness) : Math.floor(206 * brightness);
+            const b = isPink ? Math.floor(180 * brightness) : Math.floor(235 * brightness);
+
+            ctx.fillStyle = `rgb(${r}, ${g}, ${b})`;
+            ctx.beginPath();
+            ctx.ellipse(x + 4, y + 4, 3.5, 3, 0, 0, Math.PI * 2);
+            ctx.fill();
+
+            // Add sparkle highlight
+            ctx.fillStyle = 'rgba(255, 255, 255, 0.4)';
+            ctx.beginPath();
+            ctx.ellipse(x + 3, y + 2.5, 1.5, 1, 0, 0, Math.PI * 2);
+            ctx.fill();
+        }
+    }
+
+    // Add colorful sprinkles
+    const sprinkleColors = ['#FF6347', '#FFD700', '#98FB98', '#DDA0DD', '#00CED1', '#FF1493'];
+    for (let i = 0; i < 80; i++) {
+        const sx = Math.random() * 256;
+        const sy = Math.random() * 256;
+        const color = sprinkleColors[Math.floor(Math.random() * sprinkleColors.length)];
+        const angle = Math.random() * Math.PI;
+        ctx.save();
+        ctx.translate(sx, sy);
+        ctx.rotate(angle);
+        ctx.fillStyle = color;
+        ctx.beginPath();
+        ctx.roundRect(-3, -1, 6, 2, 1);
+        ctx.fill();
+        ctx.restore();
+    }
+
+    // Add sugar sparkle glows
+    for (let i = 0; i < 15; i++) {
+        const sx = Math.random() * 256;
+        const sy = Math.random() * 256;
+        const radius = 8 + Math.random() * 12;
+        const gradient = ctx.createRadialGradient(sx, sy, 0, sx, sy, radius);
+        gradient.addColorStop(0, 'rgba(255, 255, 255, 0.5)');
+        gradient.addColorStop(0.5, 'rgba(255, 200, 255, 0.2)');
+        gradient.addColorStop(1, 'rgba(255, 150, 200, 0)');
+        ctx.fillStyle = gradient;
+        ctx.fillRect(sx - radius, sy - radius, radius * 2, radius * 2);
+    }
+
+    const texture = new THREE.CanvasTexture(canvas);
+    return texture;
+}
+
 // Generate dragon belly texture (golden/amber)
 function generateDragonBellyTexture(THREE) {
     const canvas = document.createElement('canvas');
@@ -1877,6 +2041,7 @@ function getTerrainTextures(THREE) {
             grass: generateGrassTexture(THREE, false),
             grassIce: generateGrassTexture(THREE, true),
             sand: generateSandTexture(THREE),
+            candy: generateCandyTexture(THREE),
             rock: generateRockTexture(THREE),
             bark: generateBarkTexture(THREE),
             foliage: generateFoliageTexture(THREE, false),
@@ -1899,6 +2064,7 @@ function getTerrainTextures(THREE) {
             dragonScaleIce: generateDragonScaleTexture(THREE, true),
             dragonScaleLava: generateDragonScaleTextureLava(THREE),
             dragonScaleWater: generateDragonScaleTextureWater(THREE),
+            dragonScaleCandy: generateDragonScaleTextureCandy(THREE),
             dragonBelly: generateDragonBellyTexture(THREE),
             fireball: generateFireballTexture(THREE, false),
             fireballIce: generateFireballTexture(THREE, true),
@@ -1915,6 +2081,7 @@ function getTerrainTextures(THREE) {
             dragonEyeIce: generateGlowingEyeTexture(THREE, 0x00BFFF),
             dragonEyeLava: generateGlowingEyeTexture(THREE, 0xFFFF00),
             dragonEyeWater: generateGlowingEyeTexture(THREE, 0x00FF88),
+            dragonEyeCandy: generateGlowingEyeTexture(THREE, 0xFF69B4),
             giantEyeLava: generateGlowingEyeTexture(THREE, 0xFF4400),
             wizardRobe: generateWizardRobeTexture(THREE, false),
             wizardRobeIce: generateWizardRobeTexture(THREE, true),
@@ -1960,7 +2127,7 @@ function getTerrainHeight(x, z) {
 }
 
 // Create visual hill meshes
-function createHills(scene, THREE, hillPositions, hillColor, iceTheme, desertTheme, lavaTheme, waterTheme) {
+function createHills(scene, THREE, hillPositions, hillColor, iceTheme, desertTheme, lavaTheme, waterTheme, candyTheme) {
     const textures = getTerrainTextures(THREE);
     const hills = hillPositions || HILLS;
     const color = hillColor || 0x88cc88;
@@ -1971,6 +2138,8 @@ function createHills(scene, THREE, hillPositions, hillColor, iceTheme, desertThe
         textureToUse = textures.rock || textures.grass;
     } else if (desertTheme) {
         textureToUse = textures.sand;
+    } else if (candyTheme) {
+        textureToUse = textures.candy; // Candy frosting hills
     } else if (iceTheme) {
         textureToUse = textures.grassIce;
     } else {
@@ -1978,45 +2147,109 @@ function createHills(scene, THREE, hillPositions, hillColor, iceTheme, desertThe
     }
     hills.forEach(hill => {
         const hillGeometry = new THREE.ConeGeometry(hill.radius, hill.height, 32);
-        const hillMaterial = new THREE.MeshLambertMaterial({ 
-            map: textureToUse,
-            color: color
-        });
+        let hillMaterial;
+        if (candyTheme) {
+            // Cupcake-style hills with frosting
+            hillMaterial = new THREE.MeshPhongMaterial({ 
+                map: textureToUse,
+                color: color,
+                shininess: 50
+            });
+        } else {
+            hillMaterial = new THREE.MeshLambertMaterial({ 
+                map: textureToUse,
+                color: color
+            });
+        }
         const hillMesh = new THREE.Mesh(hillGeometry, hillMaterial);
         hillMesh.position.set(hill.x, hill.height / 2, hill.z);
         hillMesh.castShadow = true;
         hillMesh.receiveShadow = true;
         scene.add(hillMesh);
+        
+        // Add sprinkles on candy hills
+        if (candyTheme) {
+            const sprinkleColors = [0xFF6347, 0xFFD700, 0x98FB98, 0xDDA0DD, 0x00CED1, 0xFF1493];
+            for (let i = 0; i < 15; i++) {
+                const sprinkleGeometry = new THREE.CylinderGeometry(0.1, 0.1, 0.4, 6);
+                const sprinkleColor = sprinkleColors[Math.floor(Math.random() * sprinkleColors.length)];
+                const sprinkleMaterial = new THREE.MeshPhongMaterial({ color: sprinkleColor, shininess: 80 });
+                const sprinkle = new THREE.Mesh(sprinkleGeometry, sprinkleMaterial);
+                const angle = Math.random() * Math.PI * 2;
+                const dist = Math.random() * hill.radius * 0.7;
+                const heightOnHill = hill.height * 0.3 + Math.random() * hill.height * 0.5;
+                sprinkle.position.set(
+                    hill.x + Math.cos(angle) * dist,
+                    heightOnHill,
+                    hill.z + Math.sin(angle) * dist
+                );
+                sprinkle.rotation.set(Math.random() * 0.5, Math.random() * Math.PI, Math.random() * 0.5);
+                scene.add(sprinkle);
+            }
+        }
     });
 }
 
 // Create mountains (world boundaries)
-function createMountains(scene, THREE, mountainPositions) {
+function createMountains(scene, THREE, mountainPositions, candyTheme) {
     const textures = getTerrainTextures(THREE);
     mountainPositions.forEach(mtn => {
         const mountainGeometry = new THREE.ConeGeometry(mtn.width/2, mtn.height, 6);
-        const mountainMaterial = new THREE.MeshLambertMaterial({ 
-            map: textures.mountain,
-            color: 0xaaaaaa
-        });
+        let mountainMaterial;
+        
+        if (candyTheme) {
+            // Rock candy / crystal mountains
+            const crystalColors = [0xFF69B4, 0x87CEEB, 0xDDA0DD, 0x98FB98];
+            const crystalColor = crystalColors[Math.floor(Math.random() * crystalColors.length)];
+            mountainMaterial = new THREE.MeshPhongMaterial({ 
+                color: crystalColor,
+                shininess: 100,
+                transparent: true,
+                opacity: 0.85
+            });
+        } else {
+            mountainMaterial = new THREE.MeshLambertMaterial({ 
+                map: textures.mountain,
+                color: 0xaaaaaa
+            });
+        }
         const mountain = new THREE.Mesh(mountainGeometry, mountainMaterial);
         mountain.position.set(mtn.x, mtn.height/2, mtn.z);
         scene.add(mountain);
         
-        // Snow cap on top
-        const snowGeometry = new THREE.ConeGeometry(mtn.width/4, mtn.height/3, 6);
-        const snowMaterial = new THREE.MeshLambertMaterial({ 
-            map: textures.snow,
-            color: 0xffffff
-        });
-        const snow = new THREE.Mesh(snowGeometry, snowMaterial);
-        snow.position.set(mtn.x, mtn.height * 0.75, mtn.z);
-        scene.add(snow);
+        if (candyTheme) {
+            // Frosting top instead of snow
+            const frostingGeometry = new THREE.ConeGeometry(mtn.width/4, mtn.height/3, 6);
+            const frostingMaterial = new THREE.MeshPhongMaterial({ 
+                color: 0xFFFFFF,
+                shininess: 80
+            });
+            const frosting = new THREE.Mesh(frostingGeometry, frostingMaterial);
+            frosting.position.set(mtn.x, mtn.height * 0.75, mtn.z);
+            scene.add(frosting);
+            
+            // Add cherry on top
+            const cherryGeometry = new THREE.SphereGeometry(mtn.width/8, 12, 12);
+            const cherryMaterial = new THREE.MeshPhongMaterial({ color: 0xFF0000, shininess: 100 });
+            const cherry = new THREE.Mesh(cherryGeometry, cherryMaterial);
+            cherry.position.set(mtn.x, mtn.height * 0.95, mtn.z);
+            scene.add(cherry);
+        } else {
+            // Snow cap on top
+            const snowGeometry = new THREE.ConeGeometry(mtn.width/4, mtn.height/3, 6);
+            const snowMaterial = new THREE.MeshLambertMaterial({ 
+                map: textures.snow,
+                color: 0xffffff
+            });
+            const snow = new THREE.Mesh(snowGeometry, snowMaterial);
+            snow.position.set(mtn.x, mtn.height * 0.75, mtn.z);
+            scene.add(snow);
+        }
     });
 }
 
 // Create ground plane
-function createGround(scene, THREE, groundColor, iceTheme, desertTheme, lavaTheme, waterTheme) {
+function createGround(scene, THREE, groundColor, iceTheme, desertTheme, lavaTheme, waterTheme, candyTheme) {
     const textures = getTerrainTextures(THREE);
     const color = groundColor || 0xffffff; // Tint color applied over texture
     let textureToUse;
@@ -2063,6 +2296,8 @@ function createGround(scene, THREE, groundColor, iceTheme, desertTheme, lavaThem
         textureToUse = textures.rock || textures.grass; // Use rock texture for lava caves
     } else if (desertTheme) {
         textureToUse = textures.sand || textures.grass; // Fall back to grass if no sand texture
+    } else if (candyTheme) {
+        textureToUse = textures.candy || textures.grass; // Candy frosting texture
     } else if (iceTheme) {
         textureToUse = textures.grassIce;
     } else {

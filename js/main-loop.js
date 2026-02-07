@@ -214,6 +214,14 @@ function initLoop() {
             nextYPos += 25;
         }
         
+        // Candy display (only if candy theme with candy to collect)
+        if (G.candyTheme && G.totalCandy > 0) {
+            G.hudCtx.fillStyle = G.candyCollected >= G.totalCandy ? '#FF69B4' : '#FFB6C1';
+            G.hudCtx.fillText(`Süßigkeiten: ${G.candyCollected}/${G.totalCandy}`, 10, nextYPos);
+            G.hudCtx.fillStyle = '#000';
+            nextYPos += 25;
+        }
+        
         // Health display
         G.hudCtx.fillText(`Leben: ${G.playerHealth}/${G.maxPlayerHealth}`, 10, nextYPos);
         nextYPos += 25;

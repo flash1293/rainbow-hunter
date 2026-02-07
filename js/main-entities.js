@@ -371,6 +371,83 @@ function initEntities() {
                 prong.rotation.z = 0.2;
                 goblinGrp.add(prong);
             }
+        } else if (G.candyTheme) {
+            // GUMMY BEAR - colorful translucent candy creature
+            const gummyColors = [0xFF6B6B, 0xFFE66D, 0x4ECDC4, 0x95E1D3, 0xF38181, 0xAA96DA];
+            const gummyColor = gummyColors[Math.floor(Math.random() * gummyColors.length)];
+
+            // Gummy bear body - rounded belly
+            const bodyGeometry = new THREE.SphereGeometry(0.5, 16, 16);
+            bodyGeometry.scale(1, 1.2, 0.9);
+            const bodyMaterial = new THREE.MeshPhongMaterial({
+                color: gummyColor,
+                transparent: true,
+                opacity: 0.85,
+                shininess: 100,
+                specular: 0xffffff
+            });
+            const body = new THREE.Mesh(bodyGeometry, bodyMaterial);
+            body.position.y = 0.7;
+            body.castShadow = true;
+            goblinGrp.add(body);
+
+            // Gummy bear head
+            const headGeometry = new THREE.SphereGeometry(0.35, 16, 16);
+            const head = new THREE.Mesh(headGeometry, bodyMaterial);
+            head.position.y = 1.4;
+            head.castShadow = true;
+            goblinGrp.add(head);
+
+            // Round ears
+            const earGeometry = new THREE.SphereGeometry(0.12, 12, 12);
+            const ear1 = new THREE.Mesh(earGeometry, bodyMaterial);
+            ear1.position.set(-0.25, 1.65, 0);
+            goblinGrp.add(ear1);
+
+            const ear2 = new THREE.Mesh(earGeometry, bodyMaterial);
+            ear2.position.set(0.25, 1.65, 0);
+            goblinGrp.add(ear2);
+
+            // Cute eyes
+            const eyeGeometry = new THREE.SphereGeometry(0.06, 12, 12);
+            const eyeMaterial = new THREE.MeshBasicMaterial({ color: 0x000000 });
+            const eye1 = new THREE.Mesh(eyeGeometry, eyeMaterial);
+            eye1.position.set(-0.12, 1.45, 0.3);
+            goblinGrp.add(eye1);
+
+            const eye2 = new THREE.Mesh(eyeGeometry, eyeMaterial);
+            eye2.position.set(0.12, 1.45, 0.3);
+            goblinGrp.add(eye2);
+
+            // Little smile
+            const smileGeometry = new THREE.TorusGeometry(0.08, 0.02, 8, 16, Math.PI);
+            const smileMaterial = new THREE.MeshBasicMaterial({ color: 0x000000 });
+            const smile = new THREE.Mesh(smileGeometry, smileMaterial);
+            smile.position.set(0, 1.32, 0.32);
+            smile.rotation.x = Math.PI;
+            goblinGrp.add(smile);
+
+            // Short arms
+            const armGeometry = new THREE.SphereGeometry(0.15, 12, 12);
+            armGeometry.scale(1, 1.5, 1);
+            const arm1 = new THREE.Mesh(armGeometry, bodyMaterial);
+            arm1.position.set(-0.5, 0.8, 0);
+            goblinGrp.add(arm1);
+
+            const arm2 = new THREE.Mesh(armGeometry, bodyMaterial);
+            arm2.position.set(0.5, 0.8, 0);
+            goblinGrp.add(arm2);
+
+            // Short legs
+            const legGeometry = new THREE.SphereGeometry(0.18, 12, 12);
+            legGeometry.scale(1, 1.3, 1);
+            const leg1 = new THREE.Mesh(legGeometry, bodyMaterial);
+            leg1.position.set(-0.2, 0.15, 0);
+            goblinGrp.add(leg1);
+
+            const leg2 = new THREE.Mesh(legGeometry, bodyMaterial);
+            leg2.position.set(0.2, 0.15, 0);
+            goblinGrp.add(leg2);
         } else {
             const bodyGeometry = new THREE.BoxGeometry(0.6, 0.8, 0.4);
             const bodyMaterial = new THREE.MeshLambertMaterial({ map: textures.goblinArmor });
@@ -639,6 +716,126 @@ function initEntities() {
             const fireGlow = new THREE.PointLight(fireOrange, 0.5, 3);
             fireGlow.position.set(0.5, 2.3, 0.2);
             goblinGrp.add(fireGlow);
+        } else if (G.candyTheme) {
+            // GINGERBREAD MAN - cookie guardian with icing details
+            const cookieColor = 0xB5651D;
+            const icingWhite = 0xFFFFFF;
+            const icingPink = 0xFF69B4;
+
+            // Gingerbread body - flat and cookie-shaped
+            const bodyGeometry = new THREE.CylinderGeometry(0.6, 0.6, 0.3, 16);
+            const bodyMaterial = new THREE.MeshLambertMaterial({ color: cookieColor });
+            const body = new THREE.Mesh(bodyGeometry, bodyMaterial);
+            body.rotation.x = Math.PI / 2;
+            body.position.y = 1.2;
+            body.castShadow = true;
+            goblinGrp.add(body);
+
+            // Gingerbread head
+            const headGeometry = new THREE.CylinderGeometry(0.45, 0.45, 0.25, 16);
+            const head = new THREE.Mesh(headGeometry, bodyMaterial);
+            head.rotation.x = Math.PI / 2;
+            head.position.y = 1.9;
+            head.castShadow = true;
+            goblinGrp.add(head);
+
+            // Icing button details on body
+            const buttonGeometry = new THREE.CylinderGeometry(0.08, 0.08, 0.05, 12);
+            const icingMaterial = new THREE.MeshBasicMaterial({ color: icingWhite });
+            for (let i = 0; i < 3; i++) {
+                const button = new THREE.Mesh(buttonGeometry, icingMaterial);
+                button.rotation.x = Math.PI / 2;
+                button.position.set(0, 1.0 + i * 0.25, 0.18);
+                goblinGrp.add(button);
+            }
+
+            // Icing smile
+            const smileGeometry = new THREE.TorusGeometry(0.15, 0.03, 8, 16, Math.PI);
+            const smileMaterial = new THREE.MeshBasicMaterial({ color: icingPink });
+            const smile = new THREE.Mesh(smileGeometry, smileMaterial);
+            smile.position.set(0, 1.78, 0.15);
+            smile.rotation.x = -0.2;
+            goblinGrp.add(smile);
+
+            // Candy eyes (gumdrop style)
+            const eyeGeometry = new THREE.SphereGeometry(0.08, 12, 12);
+            const eyeMaterial = new THREE.MeshBasicMaterial({ color: 0x000000 });
+            const eye1 = new THREE.Mesh(eyeGeometry, eyeMaterial);
+            eye1.position.set(-0.15, 1.95, 0.2);
+            goblinGrp.add(eye1);
+
+            const eye2 = new THREE.Mesh(eyeGeometry, eyeMaterial);
+            eye2.position.set(0.15, 1.95, 0.2);
+            goblinGrp.add(eye2);
+
+            // Icing eyebrows (angry)
+            const browGeometry = new THREE.BoxGeometry(0.12, 0.03, 0.02);
+            const browMaterial = new THREE.MeshBasicMaterial({ color: icingWhite });
+            const brow1 = new THREE.Mesh(browGeometry, browMaterial);
+            brow1.position.set(-0.15, 2.05, 0.22);
+            brow1.rotation.z = 0.3;
+            goblinGrp.add(brow1);
+
+            const brow2 = new THREE.Mesh(browGeometry, browMaterial);
+            brow2.position.set(0.15, 2.05, 0.22);
+            brow2.rotation.z = -0.3;
+            goblinGrp.add(brow2);
+
+            // Arms - cookie style
+            const armGeometry = new THREE.CylinderGeometry(0.12, 0.15, 0.8, 8);
+            const arm1 = new THREE.Mesh(armGeometry, bodyMaterial);
+            arm1.position.set(-0.65, 1.3, 0);
+            arm1.rotation.z = 0.8;
+            arm1.castShadow = true;
+            goblinGrp.add(arm1);
+
+            const arm2 = new THREE.Mesh(armGeometry, bodyMaterial);
+            arm2.position.set(0.65, 1.3, 0);
+            arm2.rotation.z = -0.8;
+            arm2.castShadow = true;
+            goblinGrp.add(arm2);
+
+            // Icing cuffs on arms
+            const cuffGeometry = new THREE.TorusGeometry(0.15, 0.03, 8, 16);
+            const cuff1 = new THREE.Mesh(cuffGeometry, icingMaterial);
+            cuff1.position.set(-0.85, 1.0, 0);
+            cuff1.rotation.y = Math.PI / 2;
+            cuff1.rotation.x = 0.8;
+            goblinGrp.add(cuff1);
+
+            const cuff2 = new THREE.Mesh(cuffGeometry, icingMaterial);
+            cuff2.position.set(0.85, 1.0, 0);
+            cuff2.rotation.y = Math.PI / 2;
+            cuff2.rotation.x = -0.8;
+            goblinGrp.add(cuff2);
+
+            // Legs - cookie style
+            const legGeometry = new THREE.CylinderGeometry(0.15, 0.18, 0.9, 8);
+            const leg1 = new THREE.Mesh(legGeometry, bodyMaterial);
+            leg1.position.set(-0.25, 0.45, 0);
+            leg1.castShadow = true;
+            goblinGrp.add(leg1);
+
+            const leg2 = new THREE.Mesh(legGeometry, bodyMaterial);
+            leg2.position.set(0.25, 0.45, 0);
+            leg2.castShadow = true;
+            goblinGrp.add(leg2);
+
+            // Candy cane weapon
+            const caneGeometry = new THREE.CylinderGeometry(0.05, 0.05, 1.5, 8);
+            const caneMaterial = new THREE.MeshLambertMaterial({ color: 0xFF0000 });
+            const cane = new THREE.Mesh(caneGeometry, caneMaterial);
+            cane.position.set(0.9, 1.4, 0.1);
+            cane.rotation.z = -0.3;
+            goblinGrp.add(cane);
+
+            // Candy cane hook
+            const hookGeometry = new THREE.TorusGeometry(0.15, 0.05, 8, 16, Math.PI);
+            const hook = new THREE.Mesh(hookGeometry, caneMaterial);
+            hook.position.set(0.75, 2.1, 0.1);
+            hook.rotation.x = Math.PI / 2;
+            hook.rotation.z = -0.3;
+            goblinGrp.add(hook);
         } else {
             const bodyGeometry = new THREE.BoxGeometry(0.8, 1.0, 0.5);
             const bodyMaterial = new THREE.MeshLambertMaterial({ map: textures.goblinArmor });
@@ -714,114 +911,231 @@ function initEntities() {
         const textures = getTerrainTextures(THREE);
         const giantGrp = new THREE.Group();
         
-        // Use theme-appropriate textures
-        const giantSkinTexture = G.lavaTheme ? textures.giantSkinLava : textures.giantSkin;
-        const giantArmorTexture = G.lavaTheme ? textures.giantArmorLava : textures.giantArmor;
-        const giantEyeTexture = G.lavaTheme ? textures.giantEyeLava : textures.giantEye;
-        
-        // Massive cylindrical body
-        const bodyGeometry = new THREE.CylinderGeometry(1.5, 1.8, 5.0, 12);
-        const bodyMaterial = new THREE.MeshLambertMaterial({ map: giantSkinTexture });
-        const body = new THREE.Mesh(bodyGeometry, bodyMaterial);
-        body.position.y = 3.5;
-        body.castShadow = true;
-        giantGrp.add(body);
-        
-        // Add armor plates on body
-        const plateGeometry = new THREE.BoxGeometry(2.0, 0.4, 2.2);
-        const plateMaterial = new THREE.MeshLambertMaterial({ map: giantArmorTexture });
-        for (let i = 0; i < 4; i++) {
-            const plate = new THREE.Mesh(plateGeometry, plateMaterial);
-            plate.position.y = 2.0 + (i * 1.2);
-            plate.castShadow = true;
-            giantGrp.add(plate);
+        if (G.candyTheme) {
+            // MARSHMALLOW MONSTER - giant fluffy white creature
+            const marshmallowWhite = 0xFFF8F0;
+            const marshmallowPink = 0xFFB6C1;
+
+            // Marshmallow body - cylindrical and fluffy
+            const bodyGeometry = new THREE.CylinderGeometry(1.8, 2.0, 4.5, 16);
+            const bodyMaterial = new THREE.MeshPhongMaterial({
+                color: marshmallowWhite,
+                shininess: 30,
+                specular: 0xffffff
+            });
+            const body = new THREE.Mesh(bodyGeometry, bodyMaterial);
+            body.position.y = 3.0;
+            body.castShadow = true;
+            giantGrp.add(body);
+
+            // Fluffy texture bumps on body
+            for (let i = 0; i < 12; i++) {
+                const bumpGeometry = new THREE.SphereGeometry(0.4 + Math.random() * 0.3, 12, 12);
+                const bump = new THREE.Mesh(bumpGeometry, bodyMaterial);
+                const angle = (i / 12) * Math.PI * 2;
+                const height = 1.5 + Math.random() * 3;
+                bump.position.set(Math.cos(angle) * 1.9, height, Math.sin(angle) * 1.9);
+                giantGrp.add(bump);
+            }
+
+            // Round marshmallow head
+            const headGeometry = new THREE.SphereGeometry(1.4, 16, 16);
+            const head = new THREE.Mesh(headGeometry, bodyMaterial);
+            head.position.y = 6.0;
+            head.castShadow = true;
+            giantGrp.add(head);
+
+            // Cute angry eyes
+            const eyeGeometry = new THREE.SphereGeometry(0.35, 16, 16);
+            const eyeBlackMaterial = new THREE.MeshBasicMaterial({ color: 0x000000 });
+            const e1 = new THREE.Mesh(eyeGeometry, eyeBlackMaterial);
+            e1.position.set(-0.5, 6.2, 1.1);
+            giantGrp.add(e1);
+
+            const e2 = new THREE.Mesh(eyeGeometry, eyeBlackMaterial);
+            e2.position.set(0.5, 6.2, 1.1);
+            giantGrp.add(e2);
+
+            // Angry eyebrows
+            const browGeometry = new THREE.BoxGeometry(0.5, 0.12, 0.1);
+            const browMaterial = new THREE.MeshBasicMaterial({ color: 0x333333 });
+            const brow1 = new THREE.Mesh(browGeometry, browMaterial);
+            brow1.position.set(-0.5, 6.6, 1.2);
+            brow1.rotation.z = 0.3;
+            giantGrp.add(brow1);
+
+            const brow2 = new THREE.Mesh(browGeometry, browMaterial);
+            brow2.position.set(0.5, 6.6, 1.2);
+            brow2.rotation.z = -0.3;
+            giantGrp.add(brow2);
+
+            // Pink blush cheeks
+            const blushGeometry = new THREE.CircleGeometry(0.25, 16);
+            const blushMaterial = new THREE.MeshBasicMaterial({
+                color: marshmallowPink,
+                transparent: true,
+                opacity: 0.6
+            });
+            const blush1 = new THREE.Mesh(blushGeometry, blushMaterial);
+            blush1.position.set(-0.9, 5.8, 1.15);
+            giantGrp.add(blush1);
+
+            const blush2 = new THREE.Mesh(blushGeometry, blushMaterial);
+            blush2.position.set(0.9, 5.8, 1.15);
+            giantGrp.add(blush2);
+
+            // Stubby marshmallow arms
+            const armGeometry = new THREE.CylinderGeometry(0.5, 0.7, 2.5, 12);
+            const leftArm = new THREE.Mesh(armGeometry, bodyMaterial);
+            leftArm.position.set(-2.3, 3.5, 0);
+            leftArm.rotation.z = 0.5;
+            leftArm.castShadow = true;
+            giantGrp.add(leftArm);
+            giantGrp.leftArm = leftArm;
+
+            const rightArm = new THREE.Mesh(armGeometry, bodyMaterial);
+            rightArm.position.set(2.3, 3.5, 0);
+            rightArm.rotation.z = -0.5;
+            rightArm.castShadow = true;
+            giantGrp.add(rightArm);
+            giantGrp.rightArm = rightArm;
+
+            // Round marshmallow fists
+            const fistGeometry = new THREE.SphereGeometry(0.6, 12, 12);
+            const leftFist = new THREE.Mesh(fistGeometry, bodyMaterial);
+            leftFist.position.set(-3.0, 2.0, 0);
+            leftFist.castShadow = true;
+            giantGrp.add(leftFist);
+            giantGrp.leftFist = leftFist;
+
+            const rightFist = new THREE.Mesh(fistGeometry, bodyMaterial);
+            rightFist.position.set(3.0, 2.0, 0);
+            rightFist.castShadow = true;
+            giantGrp.add(rightFist);
+            giantGrp.rightFist = rightFist;
+
+            // Stubby legs
+            const legGeometry = new THREE.CylinderGeometry(0.8, 1.0, 2.0, 12);
+            const leftLeg = new THREE.Mesh(legGeometry, bodyMaterial);
+            leftLeg.position.set(-1.0, 0.8, 0);
+            leftLeg.castShadow = true;
+            giantGrp.add(leftLeg);
+
+            const rightLeg = new THREE.Mesh(legGeometry, bodyMaterial);
+            rightLeg.position.set(1.0, 0.8, 0);
+            rightLeg.castShadow = true;
+            giantGrp.add(rightLeg);
+
+        } else {
+            // Use theme-appropriate textures
+            const giantSkinTexture = G.lavaTheme ? textures.giantSkinLava : textures.giantSkin;
+            const giantArmorTexture = G.lavaTheme ? textures.giantArmorLava : textures.giantArmor;
+            const giantEyeTexture = G.lavaTheme ? textures.giantEyeLava : textures.giantEye;
+            
+            // Massive cylindrical body
+            const bodyGeometry = new THREE.CylinderGeometry(1.5, 1.8, 5.0, 12);
+            const bodyMaterial = new THREE.MeshLambertMaterial({ map: giantSkinTexture });
+            const body = new THREE.Mesh(bodyGeometry, bodyMaterial);
+            body.position.y = 3.5;
+            body.castShadow = true;
+            giantGrp.add(body);
+            
+            // Add armor plates on body
+            const plateGeometry = new THREE.BoxGeometry(2.0, 0.4, 2.2);
+            const plateMaterial = new THREE.MeshLambertMaterial({ map: giantArmorTexture });
+            for (let i = 0; i < 4; i++) {
+                const plate = new THREE.Mesh(plateGeometry, plateMaterial);
+                plate.position.y = 2.0 + (i * 1.2);
+                plate.castShadow = true;
+                giantGrp.add(plate);
+            }
+            
+            // Large head with horns
+            const headGeometry = new THREE.BoxGeometry(1.8, 1.5, 1.6);
+            const headMaterial = new THREE.MeshLambertMaterial({ map: textures.giantSkin });
+            const head = new THREE.Mesh(headGeometry, headMaterial);
+            head.position.y = 6.5;
+            head.castShadow = true;
+            giantGrp.add(head);
+            
+            // Horns
+            const hornGeometry = new THREE.ConeGeometry(0.3, 1.2, 6);
+            const hornMaterial = new THREE.MeshLambertMaterial({ map: textures.giantArmor });
+            
+            const leftHorn = new THREE.Mesh(hornGeometry, hornMaterial);
+            leftHorn.position.set(-0.9, 7.5, 0);
+            leftHorn.rotation.z = -0.3;
+            leftHorn.castShadow = true;
+            giantGrp.add(leftHorn);
+            
+            const rightHorn = new THREE.Mesh(hornGeometry, hornMaterial);
+            rightHorn.position.set(0.9, 7.5, 0);
+            rightHorn.rotation.z = 0.3;
+            rightHorn.castShadow = true;
+            giantGrp.add(rightHorn);
+            
+            // Glowing eyes with texture
+            const eyeGeometry = new THREE.SphereGeometry(0.4, 16, 16);
+            const eyeMaterial = new THREE.MeshBasicMaterial({ 
+                map: giantEyeTexture,
+                transparent: true,
+                blending: THREE.AdditiveBlending,
+                depthWrite: false
+            });
+            const e1 = new THREE.Mesh(eyeGeometry, eyeMaterial);
+            e1.position.set(-0.5, 6.5, 0.9);
+            giantGrp.add(e1);
+            
+            const e2 = new THREE.Mesh(eyeGeometry, eyeMaterial);
+            e2.position.set(0.5, 6.5, 0.9);
+            giantGrp.add(e2);
+            
+            // Massive club-like arms
+            const armGeometry = new THREE.CylinderGeometry(0.4, 0.8, 4.0, 8);
+            const armMaterial = new THREE.MeshLambertMaterial({ map: giantSkinTexture });
+            
+            const leftArm = new THREE.Mesh(armGeometry, armMaterial);
+            leftArm.position.set(-2.2, 4.0, 0);
+            leftArm.rotation.z = 0.3;
+            leftArm.castShadow = true;
+            giantGrp.add(leftArm);
+            giantGrp.leftArm = leftArm; // Store for animation
+            
+            const rightArm = new THREE.Mesh(armGeometry, armMaterial);
+            rightArm.position.set(2.2, 4.0, 0);
+            rightArm.rotation.z = -0.3;
+            rightArm.castShadow = true;
+            giantGrp.add(rightArm);
+            giantGrp.rightArm = rightArm; // Store for animation
+            
+            // Giant fists
+            const fistGeometry = new THREE.BoxGeometry(0.8, 0.8, 0.8);
+            const fistMaterial = new THREE.MeshLambertMaterial({ map: giantSkinTexture });
+            
+            const leftFist = new THREE.Mesh(fistGeometry, fistMaterial);
+            leftFist.position.set(-2.8, 1.8, 0);
+            leftFist.castShadow = true;
+            giantGrp.add(leftFist);
+            giantGrp.leftFist = leftFist; // Store for animation
+            
+            const rightFist = new THREE.Mesh(fistGeometry, fistMaterial);
+            rightFist.position.set(2.8, 1.8, 0);
+            rightFist.castShadow = true;
+            giantGrp.add(rightFist);
+            giantGrp.rightFist = rightFist; // Store for animation
+            
+            // Thick legs
+            const legGeometry = new THREE.CylinderGeometry(0.7, 0.9, 3.5, 8);
+            const leftLeg = new THREE.Mesh(legGeometry, armMaterial);
+            leftLeg.position.set(-0.9, 1.2, 0);
+            leftLeg.castShadow = true;
+            giantGrp.add(leftLeg);
+            
+            const rightLeg = new THREE.Mesh(legGeometry, armMaterial);
+            rightLeg.position.set(0.9, 1.2, 0);
+            rightLeg.castShadow = true;
+            giantGrp.add(rightLeg);
         }
-        
-        // Large head with horns
-        const headGeometry = new THREE.BoxGeometry(1.8, 1.5, 1.6);
-        const headMaterial = new THREE.MeshLambertMaterial({ map: textures.giantSkin });
-        const head = new THREE.Mesh(headGeometry, headMaterial);
-        head.position.y = 6.5;
-        head.castShadow = true;
-        giantGrp.add(head);
-        
-        // Horns
-        const hornGeometry = new THREE.ConeGeometry(0.3, 1.2, 6);
-        const hornMaterial = new THREE.MeshLambertMaterial({ map: textures.giantArmor });
-        
-        const leftHorn = new THREE.Mesh(hornGeometry, hornMaterial);
-        leftHorn.position.set(-0.9, 7.5, 0);
-        leftHorn.rotation.z = -0.3;
-        leftHorn.castShadow = true;
-        giantGrp.add(leftHorn);
-        
-        const rightHorn = new THREE.Mesh(hornGeometry, hornMaterial);
-        rightHorn.position.set(0.9, 7.5, 0);
-        rightHorn.rotation.z = 0.3;
-        rightHorn.castShadow = true;
-        giantGrp.add(rightHorn);
-        
-        // Glowing eyes with texture
-        const eyeGeometry = new THREE.SphereGeometry(0.4, 16, 16);
-        const eyeMaterial = new THREE.MeshBasicMaterial({ 
-            map: giantEyeTexture,
-            transparent: true,
-            blending: THREE.AdditiveBlending,
-            depthWrite: false
-        });
-        const e1 = new THREE.Mesh(eyeGeometry, eyeMaterial);
-        e1.position.set(-0.5, 6.5, 0.9);
-        giantGrp.add(e1);
-        
-        const e2 = new THREE.Mesh(eyeGeometry, eyeMaterial);
-        e2.position.set(0.5, 6.5, 0.9);
-        giantGrp.add(e2);
-        
-        // Massive club-like arms
-        const armGeometry = new THREE.CylinderGeometry(0.4, 0.8, 4.0, 8);
-        const armMaterial = new THREE.MeshLambertMaterial({ map: giantSkinTexture });
-        
-        const leftArm = new THREE.Mesh(armGeometry, armMaterial);
-        leftArm.position.set(-2.2, 4.0, 0);
-        leftArm.rotation.z = 0.3;
-        leftArm.castShadow = true;
-        giantGrp.add(leftArm);
-        giantGrp.leftArm = leftArm; // Store for animation
-        
-        const rightArm = new THREE.Mesh(armGeometry, armMaterial);
-        rightArm.position.set(2.2, 4.0, 0);
-        rightArm.rotation.z = -0.3;
-        rightArm.castShadow = true;
-        giantGrp.add(rightArm);
-        giantGrp.rightArm = rightArm; // Store for animation
-        
-        // Giant fists
-        const fistGeometry = new THREE.BoxGeometry(0.8, 0.8, 0.8);
-        const fistMaterial = new THREE.MeshLambertMaterial({ map: giantSkinTexture });
-        
-        const leftFist = new THREE.Mesh(fistGeometry, fistMaterial);
-        leftFist.position.set(-2.8, 1.8, 0);
-        leftFist.castShadow = true;
-        giantGrp.add(leftFist);
-        giantGrp.leftFist = leftFist; // Store for animation
-        
-        const rightFist = new THREE.Mesh(fistGeometry, fistMaterial);
-        rightFist.position.set(2.8, 1.8, 0);
-        rightFist.castShadow = true;
-        giantGrp.add(rightFist);
-        giantGrp.rightFist = rightFist; // Store for animation
-        
-        // Thick legs
-        const legGeometry = new THREE.CylinderGeometry(0.7, 0.9, 3.5, 8);
-        const leftLeg = new THREE.Mesh(legGeometry, armMaterial);
-        leftLeg.position.set(-0.9, 1.2, 0);
-        leftLeg.castShadow = true;
-        giantGrp.add(leftLeg);
-        
-        const rightLeg = new THREE.Mesh(legGeometry, armMaterial);
-        rightLeg.position.set(0.9, 1.2, 0);
-        rightLeg.castShadow = true;
-        giantGrp.add(rightLeg);
         
         giantGrp.position.set(x, getTerrainHeight(x, z), z);
         G.scene.add(giantGrp);
@@ -852,113 +1166,249 @@ function initEntities() {
         const textures = getTerrainTextures(THREE);
         const wizardGrp = new THREE.Group();
         
-        // Use ice theme robe texture if in ice level
-        const robeTexture = G.iceTheme ? textures.wizardRobeIce : textures.wizardRobe;
-        
-        // Tall robed body (bigger than guardians)
-        const bodyGeometry = new THREE.CylinderGeometry(0.6, 1.0, 2.5, 12);
-        const bodyMaterial = new THREE.MeshLambertMaterial({ 
-            map: robeTexture,
-            color: G.iceTheme ? 0x6688aa : 0x8866aa  // Tint to enhance texture
-        });
-        const body = new THREE.Mesh(bodyGeometry, bodyMaterial);
-        body.position.y = 1.5;
-        body.castShadow = true;
-        wizardGrp.add(body);
-        
-        // Robe details - glowing trim
-        const trimGeometry = new THREE.TorusGeometry(0.75, 0.1, 8, 16);
-        const trimMaterial = new THREE.MeshBasicMaterial({ 
-            color: G.iceTheme ? 0x00FFFF : 0xFF00FF,
-            transparent: true,
-            opacity: 0.8
-        });
-        const bottomTrim = new THREE.Mesh(trimGeometry, trimMaterial);
-        bottomTrim.rotation.x = Math.PI / 2;
-        bottomTrim.position.y = 0.3;
-        wizardGrp.add(bottomTrim);
-        
-        // Head (larger than guardian)
-        const headGeometry = new THREE.SphereGeometry(0.6, 16, 16);
-        const headMaterial = new THREE.MeshLambertMaterial({ map: textures.goblinSkin });
-        const head = new THREE.Mesh(headGeometry, headMaterial);
-        head.position.y = 3.0;
-        head.castShadow = true;
-        wizardGrp.add(head);
-        
-        // Wizard hat with texture
-        const hatGeometry = new THREE.ConeGeometry(0.7, 1.5, 8);
-        const hatMaterial = new THREE.MeshLambertMaterial({ 
-            map: robeTexture,
-            color: G.iceTheme ? 0x5577aa : 0x7755aa
-        });
-        const hat = new THREE.Mesh(hatGeometry, hatMaterial);
-        hat.position.y = 4.0;
-        hat.castShadow = true;
-        wizardGrp.add(hat);
-        
-        // Hat brim with glow
-        const brimGeometry = new THREE.TorusGeometry(0.75, 0.15, 8, 16);
-        const brimMaterial = new THREE.MeshLambertMaterial({ 
-            map: robeTexture,
-            color: G.iceTheme ? 0x4466aa : 0x6644aa
-        });
-        const brim = new THREE.Mesh(brimGeometry, brimMaterial);
-        brim.rotation.x = Math.PI / 2;
-        brim.position.y = 3.4;
-        wizardGrp.add(brim);
-        
-        // Glowing purple/cyan eyes
-        const eyeGeometry = new THREE.SphereGeometry(0.12, 16, 16);
-        const eyeMaterial = new THREE.MeshBasicMaterial({ 
-            color: G.iceTheme ? 0x00FFFF : 0xFF00FF,
-            transparent: true,
-            blending: THREE.AdditiveBlending
-        });
-        const e1 = new THREE.Mesh(eyeGeometry, eyeMaterial);
-        e1.position.set(-0.22, 3.0, 0.52);
-        wizardGrp.add(e1);
-        
-        const e2 = new THREE.Mesh(eyeGeometry, eyeMaterial);
-        e2.position.set(0.22, 3.0, 0.52);
-        wizardGrp.add(e2);
-        
-        // Pointy ears
-        const earGeometry = new THREE.ConeGeometry(0.2, 0.6, 4);
-        const earMaterial = new THREE.MeshLambertMaterial({ map: textures.goblinSkin });
-        const er1 = new THREE.Mesh(earGeometry, earMaterial);
-        er1.rotation.z = Math.PI / 2;
-        er1.position.set(-0.7, 3.0, 0);
-        er1.castShadow = true;
-        wizardGrp.add(er1);
-        
-        const er2 = new THREE.Mesh(earGeometry, earMaterial);
-        er2.rotation.z = -Math.PI / 2;
-        er2.position.set(0.7, 3.0, 0);
-        er2.castShadow = true;
-        wizardGrp.add(er2);
-        
-        // Magic staff
-        const staffGeometry = new THREE.CylinderGeometry(0.06, 0.08, 3.0, 8);
-        const staffMaterial = new THREE.MeshLambertMaterial({ color: 0x8B4513 });
-        const staff = new THREE.Mesh(staffGeometry, staffMaterial);
-        staff.position.set(0.8, 1.5, 0.3);
-        staff.rotation.z = -0.2;
-        staff.castShadow = true;
-        wizardGrp.add(staff);
-        
-        // Glowing orb on staff
-        const orbGeometry = new THREE.SphereGeometry(0.25, 12, 12);
-        const orbMaterial = new THREE.MeshBasicMaterial({ 
-            color: G.iceTheme ? 0x00FFFF : 0xFF4500,
-            transparent: true,
-            opacity: 0.8,
-            blending: THREE.AdditiveBlending
-        });
-        const orb = new THREE.Mesh(orbGeometry, orbMaterial);
-        orb.position.set(0.9, 3.2, 0.3);
-        wizardGrp.add(orb);
-        wizardGrp.staffOrb = orb; // Store for animation
+        if (G.candyTheme) {
+            // COTTON CANDY WIZARD - fluffy pink and blue magical creature
+            const cottonPink = 0xFF69B4;
+            const cottonBlue = 0x87CEEB;
+            const sparkleWhite = 0xFFFFFF;
+
+            // Fluffy cotton candy body (swirled)
+            const bodyGeometry = new THREE.CylinderGeometry(0.5, 0.9, 2.2, 16);
+            const bodyMaterial = new THREE.MeshPhongMaterial({
+                color: cottonPink,
+                transparent: true,
+                opacity: 0.9,
+                shininess: 50
+            });
+            const body = new THREE.Mesh(bodyGeometry, bodyMaterial);
+            body.position.y = 1.4;
+            body.castShadow = true;
+            wizardGrp.add(body);
+
+            // Cotton candy fluff pieces
+            for (let i = 0; i < 10; i++) {
+                const fluffGeometry = new THREE.SphereGeometry(0.2 + Math.random() * 0.2, 12, 12);
+                const fluffColor = i % 2 === 0 ? cottonPink : cottonBlue;
+                const fluffMaterial = new THREE.MeshPhongMaterial({
+                    color: fluffColor,
+                    transparent: true,
+                    opacity: 0.8
+                });
+                const fluff = new THREE.Mesh(fluffGeometry, fluffMaterial);
+                const angle = (i / 10) * Math.PI * 2;
+                const height = 0.8 + Math.random() * 1.5;
+                fluff.position.set(Math.cos(angle) * 0.7, height, Math.sin(angle) * 0.7);
+                wizardGrp.add(fluff);
+            }
+
+            // Round fluffy head
+            const headGeometry = new THREE.SphereGeometry(0.55, 16, 16);
+            const headMaterial = new THREE.MeshPhongMaterial({
+                color: cottonBlue,
+                transparent: true,
+                opacity: 0.9
+            });
+            const head = new THREE.Mesh(headGeometry, headMaterial);
+            head.position.y = 2.8;
+            head.castShadow = true;
+            wizardGrp.add(head);
+
+            // Swirled wizard hat (ice cream cone style)
+            const hatGeometry = new THREE.ConeGeometry(0.6, 1.3, 16);
+            const hatMaterial = new THREE.MeshPhongMaterial({
+                color: cottonPink,
+                transparent: true,
+                opacity: 0.9
+            });
+            const hat = new THREE.Mesh(hatGeometry, hatMaterial);
+            hat.position.y = 3.8;
+            hat.castShadow = true;
+            wizardGrp.add(hat);
+
+            // Swirl decoration on hat
+            const swirlGeometry = new THREE.TorusGeometry(0.35, 0.08, 8, 16, Math.PI * 3);
+            const swirlMaterial = new THREE.MeshPhongMaterial({ color: cottonBlue });
+            const swirl = new THREE.Mesh(swirlGeometry, swirlMaterial);
+            swirl.position.y = 3.5;
+            swirl.rotation.x = Math.PI / 2;
+            wizardGrp.add(swirl);
+
+            // Sparkly eyes
+            const eyeGeometry = new THREE.SphereGeometry(0.1, 12, 12);
+            const eyeMaterial = new THREE.MeshBasicMaterial({
+                color: sparkleWhite,
+                transparent: true,
+                blending: THREE.AdditiveBlending
+            });
+            const e1 = new THREE.Mesh(eyeGeometry, eyeMaterial);
+            e1.position.set(-0.2, 2.85, 0.45);
+            wizardGrp.add(e1);
+
+            const e2 = new THREE.Mesh(eyeGeometry, eyeMaterial);
+            e2.position.set(0.2, 2.85, 0.45);
+            wizardGrp.add(e2);
+
+            // Pupil dots
+            const pupilGeometry = new THREE.SphereGeometry(0.05, 8, 8);
+            const pupilMaterial = new THREE.MeshBasicMaterial({ color: 0x000000 });
+            const p1 = new THREE.Mesh(pupilGeometry, pupilMaterial);
+            p1.position.set(-0.2, 2.85, 0.52);
+            wizardGrp.add(p1);
+
+            const p2 = new THREE.Mesh(pupilGeometry, pupilMaterial);
+            p2.position.set(0.2, 2.85, 0.52);
+            wizardGrp.add(p2);
+
+            // Cute blush
+            const blushGeometry = new THREE.CircleGeometry(0.12, 12);
+            const blushMaterial = new THREE.MeshBasicMaterial({
+                color: 0xFF1493,
+                transparent: true,
+                opacity: 0.5
+            });
+            const blush1 = new THREE.Mesh(blushGeometry, blushMaterial);
+            blush1.position.set(-0.35, 2.7, 0.48);
+            wizardGrp.add(blush1);
+
+            const blush2 = new THREE.Mesh(blushGeometry, blushMaterial);
+            blush2.position.set(0.35, 2.7, 0.48);
+            wizardGrp.add(blush2);
+
+            // Lollipop magic wand
+            const stickGeometry = new THREE.CylinderGeometry(0.04, 0.04, 2.5, 8);
+            const stickMaterial = new THREE.MeshLambertMaterial({ color: 0xFFFFFF });
+            const stick = new THREE.Mesh(stickGeometry, stickMaterial);
+            stick.position.set(0.7, 1.5, 0.3);
+            stick.rotation.z = -0.2;
+            wizardGrp.add(stick);
+
+            // Lollipop swirl top
+            const lolliGeometry = new THREE.SphereGeometry(0.3, 16, 16);
+            const lolliMaterial = new THREE.MeshPhongMaterial({
+                color: 0xFF00FF,
+                shininess: 80
+            });
+            const lolli = new THREE.Mesh(lolliGeometry, lolliMaterial);
+            lolli.position.set(0.8, 3.0, 0.3);
+            wizardGrp.add(lolli);
+            wizardGrp.staffOrb = lolli;
+
+            // Swirl pattern on lollipop
+            const lolliSwirlGeometry = new THREE.TorusGeometry(0.2, 0.05, 8, 16, Math.PI * 2);
+            const lolliSwirlMaterial = new THREE.MeshPhongMaterial({ color: sparkleWhite });
+            const lolliSwirl = new THREE.Mesh(lolliSwirlGeometry, lolliSwirlMaterial);
+            lolliSwirl.position.set(0.8, 3.0, 0.35);
+            wizardGrp.add(lolliSwirl);
+
+        } else {
+            // Use ice theme robe texture if in ice level
+            const robeTexture = G.iceTheme ? textures.wizardRobeIce : textures.wizardRobe;
+            
+            // Tall robed body (bigger than guardians)
+            const bodyGeometry = new THREE.CylinderGeometry(0.6, 1.0, 2.5, 12);
+            const bodyMaterial = new THREE.MeshLambertMaterial({ 
+                map: robeTexture,
+                color: G.iceTheme ? 0x6688aa : 0x8866aa  // Tint to enhance texture
+            });
+            const body = new THREE.Mesh(bodyGeometry, bodyMaterial);
+            body.position.y = 1.5;
+            body.castShadow = true;
+            wizardGrp.add(body);
+            
+            // Robe details - glowing trim
+            const trimGeometry = new THREE.TorusGeometry(0.75, 0.1, 8, 16);
+            const trimMaterial = new THREE.MeshBasicMaterial({ 
+                color: G.iceTheme ? 0x00FFFF : 0xFF00FF,
+                transparent: true,
+                opacity: 0.8
+            });
+            const bottomTrim = new THREE.Mesh(trimGeometry, trimMaterial);
+            bottomTrim.rotation.x = Math.PI / 2;
+            bottomTrim.position.y = 0.3;
+            wizardGrp.add(bottomTrim);
+            
+            // Head (larger than guardian)
+            const headGeometry = new THREE.SphereGeometry(0.6, 16, 16);
+            const headMaterial = new THREE.MeshLambertMaterial({ map: textures.goblinSkin });
+            const head = new THREE.Mesh(headGeometry, headMaterial);
+            head.position.y = 3.0;
+            head.castShadow = true;
+            wizardGrp.add(head);
+            
+            // Wizard hat with texture
+            const hatGeometry = new THREE.ConeGeometry(0.7, 1.5, 8);
+            const hatMaterial = new THREE.MeshLambertMaterial({ 
+                map: robeTexture,
+                color: G.iceTheme ? 0x5577aa : 0x7755aa
+            });
+            const hat = new THREE.Mesh(hatGeometry, hatMaterial);
+            hat.position.y = 4.0;
+            hat.castShadow = true;
+            wizardGrp.add(hat);
+            
+            // Hat brim with glow
+            const brimGeometry = new THREE.TorusGeometry(0.75, 0.15, 8, 16);
+            const brimMaterial = new THREE.MeshLambertMaterial({ 
+                map: robeTexture,
+                color: G.iceTheme ? 0x4466aa : 0x6644aa
+            });
+            const brim = new THREE.Mesh(brimGeometry, brimMaterial);
+            brim.rotation.x = Math.PI / 2;
+            brim.position.y = 3.4;
+            wizardGrp.add(brim);
+            
+            // Glowing purple/cyan eyes
+            const eyeGeometry = new THREE.SphereGeometry(0.12, 16, 16);
+            const eyeMaterial = new THREE.MeshBasicMaterial({ 
+                color: G.iceTheme ? 0x00FFFF : 0xFF00FF,
+                transparent: true,
+                blending: THREE.AdditiveBlending
+            });
+            const e1 = new THREE.Mesh(eyeGeometry, eyeMaterial);
+            e1.position.set(-0.22, 3.0, 0.52);
+            wizardGrp.add(e1);
+            
+            const e2 = new THREE.Mesh(eyeGeometry, eyeMaterial);
+            e2.position.set(0.22, 3.0, 0.52);
+            wizardGrp.add(e2);
+            
+            // Pointy ears
+            const earGeometry = new THREE.ConeGeometry(0.2, 0.6, 4);
+            const earMaterial = new THREE.MeshLambertMaterial({ map: textures.goblinSkin });
+            const er1 = new THREE.Mesh(earGeometry, earMaterial);
+            er1.rotation.z = Math.PI / 2;
+            er1.position.set(-0.7, 3.0, 0);
+            er1.castShadow = true;
+            wizardGrp.add(er1);
+            
+            const er2 = new THREE.Mesh(earGeometry, earMaterial);
+            er2.rotation.z = -Math.PI / 2;
+            er2.position.set(0.7, 3.0, 0);
+            er2.castShadow = true;
+            wizardGrp.add(er2);
+            
+            // Magic staff
+            const staffGeometry = new THREE.CylinderGeometry(0.06, 0.08, 3.0, 8);
+            const staffMaterial = new THREE.MeshLambertMaterial({ color: 0x8B4513 });
+            const staff = new THREE.Mesh(staffGeometry, staffMaterial);
+            staff.position.set(0.8, 1.5, 0.3);
+            staff.rotation.z = -0.2;
+            staff.castShadow = true;
+            wizardGrp.add(staff);
+            
+            // Glowing orb on staff
+            const orbGeometry = new THREE.SphereGeometry(0.25, 12, 12);
+            const orbMaterial = new THREE.MeshBasicMaterial({ 
+                color: G.iceTheme ? 0x00FFFF : 0xFF4500,
+                transparent: true,
+                opacity: 0.8,
+                blending: THREE.AdditiveBlending
+            });
+            const orb = new THREE.Mesh(orbGeometry, orbMaterial);
+            orb.position.set(0.9, 3.2, 0.3);
+            wizardGrp.add(orb);
+            wizardGrp.staffOrb = orb; // Store for animation
+        }
         
         wizardGrp.position.set(x, getTerrainHeight(x, z), z);
         G.scene.add(wizardGrp);
@@ -2325,6 +2775,9 @@ function initEntities() {
         } else if (G.waterTheme) {
             dragonScaleTexture = textures.dragonScaleWater;
             dragonEyeTexture = textures.dragonEyeWater;
+        } else if (G.candyTheme) {
+            dragonScaleTexture = textures.dragonScaleCandy;
+            dragonEyeTexture = textures.dragonEyeCandy;
         } else {
             dragonScaleTexture = textures.dragonScale;
             dragonEyeTexture = textures.dragonEye;

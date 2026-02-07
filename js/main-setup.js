@@ -814,6 +814,7 @@ function initSetup() {
                 ammoPickups: G.ammoPickups.map(a => a.collected),
                 healthPickups: G.healthPickups.map(h => h.collected),
                 scarabs: G.scarabPickups.map(s => s.collected),
+                candy: G.candyPickups ? G.candyPickups.map(c => c.collected) : [],
                 kiteCollected: G.worldKiteCollected,
                 icePowerCollected: G.icePowerCollected
             },
@@ -821,6 +822,8 @@ function initSetup() {
                 bridgeRepaired: G.bridgeRepaired,
                 materialsCollected: G.materialsCollected,
                 scarabsCollected: G.scarabsCollected,
+                candyCollected: G.candyCollected || 0,
+                totalCandy: G.totalCandy || 0,
                 gameWon: gameWon,
                 gameDead: gameDead,
                 currentLevel: currentLevel
@@ -1077,6 +1080,11 @@ function initSetup() {
                     
                     // Hide dragon mesh immediately
                     G.dragon.mesh.visible = false;
+                    
+                    // Spawn candy drops in candy theme (client side)
+                    if (G.candyTheme && typeof spawnDragonCandyDrops === 'function') {
+                        spawnDragonCandyDrops(deathX, deathY, deathZ);
+                    }
                 }
             }
         }
@@ -1130,6 +1138,11 @@ function initSetup() {
                     
                     // Hide dragon mesh immediately
                     extraDragon.mesh.visible = false;
+                    
+                    // Spawn candy drops in candy theme (client side)
+                    if (G.candyTheme && typeof spawnDragonCandyDrops === 'function') {
+                        spawnDragonCandyDrops(deathX, deathY, deathZ);
+                    }
                 }
             });
         }
@@ -1417,11 +1430,31 @@ function initSetup() {
                     }
                 });
             }
+            
+            // Update candy collection state
+            if (data.items.candy && G.candyPickups) {
+                data.items.candy.forEach((collected, i) => {
+                    if (G.candyPickups[i] && collected && !G.candyPickups[i].collected) {
+                        G.candyPickups[i].collected = true;
+                        G.scene.remove(G.candyPickups[i].mesh);
+                    }
+                });
+            }
         }
         
         // Update scarab count from game state
         if (data.gameState && data.gameState.scarabsCollected !== undefined) {
             G.scarabsCollected = data.gameState.scarabsCollected;
+        }
+        
+        // Update candy count from game state
+        if (data.gameState) {
+            if (data.gameState.candyCollected !== undefined) {
+                G.candyCollected = data.gameState.candyCollected;
+            }
+            if (data.gameState.totalCandy !== undefined) {
+                G.totalCandy = data.gameState.totalCandy;
+            }
         }
     }
 
@@ -1814,6 +1847,77 @@ function initSetup() {
                 treeGroup.add(coconut);
             }
             
+        } else if (treeType === 'lollipop') {
+            // Giant lollipop
+            const stickGeometry = new THREE.CylinderGeometry(0.15, 0.15, 3.5, 8);
+            const stickMaterial = new THREE.MeshLambertMaterial({ color: 0xFFFFFF });
+            const stick = new THREE.Mesh(stickGeometry, stickMaterial);
+            stick.position.y = 1.75;
+            stick.castShadow = true;
+            treeGroup.add(stick);
+            
+            // Swirly candy top
+            const candyColors = [0xFF69B4, 0x87CEEB, 0xFFD700, 0x98FB98, 0xFF6347, 0xDDA0DD];
+            const candyColor = candyColors[Math.floor(Math.random() * candyColors.length)];
+            const candyGeometry = new THREE.SphereGeometry(1.2, 16, 16);
+            const candyMaterial = new THREE.MeshPhongMaterial({ 
+                color: candyColor,
+                shininess: 80
+            });
+            const candy = new THREE.Mesh(candyGeometry, candyMaterial);
+            candy.position.y = 4.0;
+            candy.castShadow = true;
+            treeGroup.add(candy);
+            
+            // Add swirl pattern
+            const swirlGeometry = new THREE.TorusGeometry(0.8, 0.15, 8, 32, Math.PI * 4);
+            const swirlMaterial = new THREE.MeshPhongMaterial({ color: 0xFFFFFF, shininess: 80 });
+            const swirl = new THREE.Mesh(swirlGeometry, swirlMaterial);
+            swirl.position.y = 4.0;
+            swirl.rotation.x = Math.PI / 2;
+            treeGroup.add(swirl);
+            
+        } else if (treeType === 'candycane') {
+            // Candy cane tree
+            const caneRadius = 0.2;
+            const caneHeight = 4;
+            
+            // Main candy cane body (white with red stripes effect via material)
+            const caneGeometry = new THREE.CylinderGeometry(caneRadius, caneRadius, caneHeight, 12);
+            const caneMaterial = new THREE.MeshPhongMaterial({ color: 0xFFFFFF, shininess: 60 });
+            const cane = new THREE.Mesh(caneGeometry, caneMaterial);
+            cane.position.y = caneHeight / 2;
+            cane.castShadow = true;
+            treeGroup.add(cane);
+            
+            // Red stripes wrapped around
+            for (let i = 0; i < 8; i++) {
+                const stripeGeometry = new THREE.TorusGeometry(caneRadius + 0.02, 0.08, 8, 16);
+                const stripeMaterial = new THREE.MeshPhongMaterial({ color: 0xFF0000, shininess: 60 });
+                const stripe = new THREE.Mesh(stripeGeometry, stripeMaterial);
+                stripe.position.y = 0.3 + i * 0.5;
+                stripe.rotation.x = Math.PI / 2;
+                stripe.rotation.z = i * 0.3;
+                treeGroup.add(stripe);
+            }
+            
+            // Curved top (hook)
+            const hookGeometry = new THREE.TorusGeometry(0.5, caneRadius, 12, 16, Math.PI);
+            const hookMaterial = new THREE.MeshPhongMaterial({ color: 0xFFFFFF, shininess: 60 });
+            const hook = new THREE.Mesh(hookGeometry, hookMaterial);
+            hook.position.set(0.5, caneHeight, 0);
+            hook.rotation.z = Math.PI / 2;
+            hook.castShadow = true;
+            treeGroup.add(hook);
+            
+            // Red stripe on hook
+            const hookStripeGeometry = new THREE.TorusGeometry(0.5, caneRadius * 0.6, 8, 16, Math.PI * 0.5);
+            const hookStripeMaterial = new THREE.MeshPhongMaterial({ color: 0xFF0000, shininess: 60 });
+            const hookStripe = new THREE.Mesh(hookStripeGeometry, hookStripeMaterial);
+            hookStripe.position.set(0.5, caneHeight, 0);
+            hookStripe.rotation.z = Math.PI / 2;
+            treeGroup.add(hookStripe);
+            
         } else {
             // Regular tree
             const trunkGeometry = new THREE.CylinderGeometry(0.3, 0.4, 2, 8);
@@ -1853,8 +1957,21 @@ function initSetup() {
 
     G.rockPositions.forEach(pos => {
         const rockGeometry = new THREE.DodecahedronGeometry(0.6, 0);
-        const rockColor = G.desertTheme ? 0xa08060 : 0x808080; // Sandstone color for desert
-        const rockMaterial = new THREE.MeshLambertMaterial({ color: rockColor });
+        // Theme-appropriate rock colors
+        let rockColor;
+        if (G.candyTheme) {
+            // Candy rocks - colorful like hard candy
+            const candyRockColors = [0xFF69B4, 0x87CEEB, 0xFFD700, 0x98FB98, 0xFF6347, 0xDDA0DD];
+            rockColor = candyRockColors[Math.floor(Math.random() * candyRockColors.length)];
+        } else if (G.desertTheme) {
+            rockColor = 0xa08060; // Sandstone
+        } else {
+            rockColor = 0x808080; // Gray
+        }
+        const rockMaterial = new THREE.MeshPhongMaterial({ 
+            color: rockColor,
+            shininess: G.candyTheme ? 80 : 10
+        });
         const rock = new THREE.Mesh(rockGeometry, rockMaterial);
         const terrainHeight = getTerrainHeight(pos.x, pos.z);
         rock.position.set(pos.x, terrainHeight + 0.6, pos.z);
@@ -1992,6 +2109,11 @@ function initSetup() {
     G.scarabsCollected = 0;
     G.totalScarabs = 0;
 
+    // Candy pickup tracking (for candy theme dragon drops)
+    G.candyPickups = [];
+    G.candyCollected = 0;
+    G.totalCandy = 0;
+
     // Canyon walls - create impassable rock walls for chokepoints
     G.canyonWallPositions = G.levelConfig.canyonWalls || [];
     G.canyonWallPositions.forEach(wall => {
@@ -2002,45 +2124,75 @@ function initSetup() {
         const wallDepth = wall.depth || 8;
         const wallHeight = wall.height || 12;
         
-        // Generate a procedural rock texture for canyon walls
+        // Generate a procedural texture for canyon walls
         const rockCanvas = document.createElement('canvas');
         rockCanvas.width = 128;
         rockCanvas.height = 128;
         const rockCtx = rockCanvas.getContext('2d');
         
-        // Base sandy rock color
-        rockCtx.fillStyle = '#a08060';
-        rockCtx.fillRect(0, 0, 128, 128);
-        
-        // Add layered striations (like real canyon walls)
-        for (let y = 0; y < 128; y += 4) {
-            const shade = 0.85 + Math.random() * 0.3;
-            const r = Math.floor(160 * shade);
-            const g = Math.floor(128 * shade);
-            const b = Math.floor(96 * shade);
-            rockCtx.fillStyle = `rgb(${r},${g},${b})`;
-            rockCtx.fillRect(0, y, 128, 2 + Math.random() * 3);
-        }
-        
-        // Add cracks and texture
-        rockCtx.strokeStyle = 'rgba(80, 60, 40, 0.4)';
-        rockCtx.lineWidth = 1;
-        for (let i = 0; i < 15; i++) {
-            rockCtx.beginPath();
-            rockCtx.moveTo(Math.random() * 128, Math.random() * 128);
-            rockCtx.lineTo(Math.random() * 128, Math.random() * 128);
-            rockCtx.stroke();
-        }
-        
-        // Add some darker spots
-        for (let i = 0; i < 30; i++) {
-            const x = Math.random() * 128;
-            const y = Math.random() * 128;
-            const size = 2 + Math.random() * 6;
-            rockCtx.fillStyle = `rgba(80, 60, 40, ${0.2 + Math.random() * 0.3})`;
-            rockCtx.beginPath();
-            rockCtx.arc(x, y, size, 0, Math.PI * 2);
-            rockCtx.fill();
+        if (G.candyTheme) {
+            // Candy theme - striped candy cane / wafer cookie wall
+            const candyColors = ['#FF69B4', '#FFB6C1', '#FF1493', '#FFFFFF', '#87CEEB', '#DDA0DD'];
+            const stripeHeight = 12;
+            for (let y = 0; y < 128; y += stripeHeight) {
+                const colorIndex = Math.floor(y / stripeHeight) % candyColors.length;
+                rockCtx.fillStyle = candyColors[colorIndex];
+                rockCtx.fillRect(0, y, 128, stripeHeight);
+            }
+            
+            // Add wafer texture pattern
+            rockCtx.strokeStyle = 'rgba(255, 200, 200, 0.5)';
+            rockCtx.lineWidth = 1;
+            for (let i = 0; i < 16; i++) {
+                rockCtx.beginPath();
+                rockCtx.moveTo(i * 8, 0);
+                rockCtx.lineTo(i * 8, 128);
+                rockCtx.stroke();
+            }
+            
+            // Add sprinkles
+            for (let i = 0; i < 40; i++) {
+                const sprinkleColors = ['#FF0000', '#00FF00', '#0000FF', '#FFFF00', '#FF00FF', '#00FFFF'];
+                rockCtx.fillStyle = sprinkleColors[Math.floor(Math.random() * sprinkleColors.length)];
+                const x = Math.random() * 128;
+                const y = Math.random() * 128;
+                rockCtx.fillRect(x, y, 3, 1);
+            }
+        } else {
+            // Base sandy rock color
+            rockCtx.fillStyle = '#a08060';
+            rockCtx.fillRect(0, 0, 128, 128);
+            
+            // Add layered striations (like real canyon walls)
+            for (let y = 0; y < 128; y += 4) {
+                const shade = 0.85 + Math.random() * 0.3;
+                const r = Math.floor(160 * shade);
+                const g = Math.floor(128 * shade);
+                const b = Math.floor(96 * shade);
+                rockCtx.fillStyle = `rgb(${r},${g},${b})`;
+                rockCtx.fillRect(0, y, 128, 2 + Math.random() * 3);
+            }
+            
+            // Add cracks and texture
+            rockCtx.strokeStyle = 'rgba(80, 60, 40, 0.4)';
+            rockCtx.lineWidth = 1;
+            for (let i = 0; i < 15; i++) {
+                rockCtx.beginPath();
+                rockCtx.moveTo(Math.random() * 128, Math.random() * 128);
+                rockCtx.lineTo(Math.random() * 128, Math.random() * 128);
+                rockCtx.stroke();
+            }
+            
+            // Add some darker spots
+            for (let i = 0; i < 30; i++) {
+                const x = Math.random() * 128;
+                const y = Math.random() * 128;
+                const size = 2 + Math.random() * 6;
+                rockCtx.fillStyle = `rgba(80, 60, 40, ${0.2 + Math.random() * 0.3})`;
+                rockCtx.beginPath();
+                rockCtx.arc(x, y, size, 0, Math.PI * 2);
+                rockCtx.fill();
+            }
         }
         
         const rockTexture = new THREE.CanvasTexture(rockCanvas);
@@ -2055,14 +2207,14 @@ function initSetup() {
             const segHeight = wallHeight * (0.6 + Math.random() * 0.5);
             const segDepth = wallDepth * (0.5 + Math.random() * 0.5);
             
-            // Use irregular dodecahedron for more rugged look
+            // Use irregular dodecahedron for more rugged look (or smooth spheres for candy)
             const segGeometry = s % 3 === 0 
-                ? new THREE.DodecahedronGeometry(segWidth * 0.8, 0)
+                ? (G.candyTheme ? new THREE.SphereGeometry(segWidth * 0.8, 8, 8) : new THREE.DodecahedronGeometry(segWidth * 0.8, 0))
                 : new THREE.BoxGeometry(segWidth, segHeight, segDepth);
             
             const segMaterial = new THREE.MeshLambertMaterial({ 
                 map: rockTexture,
-                color: 0xc0a080  // Consistent sandy color
+                color: G.candyTheme ? 0xFFB6C1 : 0xc0a080  // Pink for candy, sandy for regular
             });
             const segment = new THREE.Mesh(segGeometry, segMaterial);
             
@@ -2077,44 +2229,112 @@ function initSetup() {
             wallGroup.add(segment);
         }
         
-        // Add jagged rocks on top for rugged silhouette
-        for (let t = 0; t < wallWidth / 5; t++) {
-            const topRockGeometry = new THREE.ConeGeometry(1 + Math.random() * 1.5, 2 + Math.random() * 3, 5);
-            const topRockMaterial = new THREE.MeshLambertMaterial({ 
-                map: rockTexture,
-                color: 0xb09070
-            });
-            const topRock = new THREE.Mesh(topRockGeometry, topRockMaterial);
-            topRock.position.set(
-                (t - wallWidth / 10) * 5 + (Math.random() - 0.5) * 3,
-                wallHeight * (0.8 + Math.random() * 0.3),
-                (Math.random() - 0.5) * 3
-            );
-            topRock.rotation.set(
-                (Math.random() - 0.5) * 0.3,
-                Math.random() * Math.PI,
-                (Math.random() - 0.5) * 0.3
-            );
-            topRock.castShadow = true;
-            wallGroup.add(topRock);
-        }
-        
-        // Add fallen rocks at the base
-        for (let r = 0; r < wallWidth / 4; r++) {
-            const rockGeometry = new THREE.DodecahedronGeometry(0.8 + Math.random() * 1.2, 0);
-            const rockMaterial = new THREE.MeshLambertMaterial({ 
-                map: rockTexture,
-                color: 0xa08060
-            });
-            const rock = new THREE.Mesh(rockGeometry, rockMaterial);
-            rock.position.set(
-                (r - wallWidth / 8) * 4 + (Math.random() - 0.5) * 3,
-                0.4 + Math.random() * 0.4,
-                wallDepth / 2 + Math.random() * 2  // In front of wall
-            );
-            rock.rotation.set(Math.random(), Math.random(), Math.random());
-            rock.castShadow = true;
-            wallGroup.add(rock);
+        if (G.candyTheme) {
+            // Add candy decorations on top (lollipops, gumdrops, candy canes)
+            for (let t = 0; t < wallWidth / 5; t++) {
+                const decorType = Math.floor(Math.random() * 3);
+                let topDecor;
+                
+                if (decorType === 0) {
+                    // Gumdrop
+                    const gumdropGeometry = new THREE.SphereGeometry(1 + Math.random() * 0.8, 8, 6, 0, Math.PI * 2, 0, Math.PI / 2);
+                    const gumdropColors = [0xFF69B4, 0x00FF00, 0xFF4500, 0xFFD700, 0x9400D3, 0x00CED1];
+                    const gumdropMaterial = new THREE.MeshLambertMaterial({ 
+                        color: gumdropColors[Math.floor(Math.random() * gumdropColors.length)]
+                    });
+                    topDecor = new THREE.Mesh(gumdropGeometry, gumdropMaterial);
+                } else if (decorType === 1) {
+                    // Mini lollipop
+                    const lollipopGroup = new THREE.Group();
+                    const candyGeometry = new THREE.SphereGeometry(0.8, 8, 8);
+                    const candyMaterial = new THREE.MeshLambertMaterial({ color: Math.random() > 0.5 ? 0xFF69B4 : 0x00FF00 });
+                    const candy = new THREE.Mesh(candyGeometry, candyMaterial);
+                    candy.position.y = 1.5;
+                    const stickGeometry = new THREE.CylinderGeometry(0.1, 0.1, 1.5, 8);
+                    const stickMaterial = new THREE.MeshLambertMaterial({ color: 0xFFFFFF });
+                    const stick = new THREE.Mesh(stickGeometry, stickMaterial);
+                    stick.position.y = 0.75;
+                    lollipopGroup.add(stick);
+                    lollipopGroup.add(candy);
+                    topDecor = lollipopGroup;
+                } else {
+                    // Frosting swirl
+                    const frostingGeometry = new THREE.ConeGeometry(0.8 + Math.random() * 0.5, 1.5 + Math.random() * 1, 8);
+                    const frostingMaterial = new THREE.MeshLambertMaterial({ color: 0xFFFFFF });
+                    topDecor = new THREE.Mesh(frostingGeometry, frostingMaterial);
+                }
+                
+                topDecor.position.set(
+                    (t - wallWidth / 10) * 5 + (Math.random() - 0.5) * 3,
+                    wallHeight * (0.8 + Math.random() * 0.3),
+                    (Math.random() - 0.5) * 3
+                );
+                topDecor.rotation.set(
+                    (Math.random() - 0.5) * 0.3,
+                    Math.random() * Math.PI,
+                    (Math.random() - 0.5) * 0.3
+                );
+                topDecor.castShadow = true;
+                wallGroup.add(topDecor);
+            }
+            
+            // Add candy pieces at the base (gummy bears, candy buttons)
+            for (let r = 0; r < wallWidth / 4; r++) {
+                const candyGeometry = new THREE.SphereGeometry(0.5 + Math.random() * 0.6, 6, 6);
+                const candyColors = [0xFF69B4, 0x00FF00, 0xFF4500, 0xFFD700, 0x9400D3, 0x00CED1, 0xFF0000];
+                const candyMaterial = new THREE.MeshLambertMaterial({ 
+                    color: candyColors[Math.floor(Math.random() * candyColors.length)]
+                });
+                const candyPiece = new THREE.Mesh(candyGeometry, candyMaterial);
+                candyPiece.position.set(
+                    (r - wallWidth / 8) * 4 + (Math.random() - 0.5) * 3,
+                    0.3 + Math.random() * 0.3,
+                    wallDepth / 2 + Math.random() * 2
+                );
+                candyPiece.rotation.set(Math.random(), Math.random(), Math.random());
+                candyPiece.castShadow = true;
+                wallGroup.add(candyPiece);
+            }
+        } else {
+            // Add jagged rocks on top for rugged silhouette
+            for (let t = 0; t < wallWidth / 5; t++) {
+                const topRockGeometry = new THREE.ConeGeometry(1 + Math.random() * 1.5, 2 + Math.random() * 3, 5);
+                const topRockMaterial = new THREE.MeshLambertMaterial({ 
+                    map: rockTexture,
+                    color: 0xb09070
+                });
+                const topRock = new THREE.Mesh(topRockGeometry, topRockMaterial);
+                topRock.position.set(
+                    (t - wallWidth / 10) * 5 + (Math.random() - 0.5) * 3,
+                    wallHeight * (0.8 + Math.random() * 0.3),
+                    (Math.random() - 0.5) * 3
+                );
+                topRock.rotation.set(
+                    (Math.random() - 0.5) * 0.3,
+                    Math.random() * Math.PI,
+                    (Math.random() - 0.5) * 0.3
+                );
+                topRock.castShadow = true;
+                wallGroup.add(topRock);
+            }
+            
+            // Add fallen rocks at the base
+            for (let r = 0; r < wallWidth / 4; r++) {
+                const rockGeometry = new THREE.DodecahedronGeometry(0.8 + Math.random() * 1.2, 0);
+                const rockMaterial = new THREE.MeshLambertMaterial({ 
+                    map: rockTexture,
+                    color: 0xa08060
+                });
+                const rock = new THREE.Mesh(rockGeometry, rockMaterial);
+                rock.position.set(
+                    (r - wallWidth / 8) * 4 + (Math.random() - 0.5) * 3,
+                    0.4 + Math.random() * 0.4,
+                    wallDepth / 2 + Math.random() * 2  // In front of wall
+                );
+                rock.rotation.set(Math.random(), Math.random(), Math.random());
+                rock.castShadow = true;
+                wallGroup.add(rock);
+            }
         }
         
         const terrainHeight = getTerrainHeight(wall.x, wall.z);
