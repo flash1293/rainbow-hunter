@@ -7,12 +7,13 @@
 **Key Features:**
 - 3D terrain navigation with bicycle physics
 - Multiplayer (host-client architecture with splitscreen support)
-- 5 thematic levels (Dragon Cave, Frozen Wastes, Desert, Lava Caves, Ocean)
-- Enemy AI with different behaviors (goblins, guardians, wizards, mummies, dragon)
+- 7 thematic levels (Dragon's Lair, Frozen Wastes, Scorching Sands, Lava Caves, Deep Waters, Candy Kingdom, Haunted Graveyard)
+- Enemy AI with different behaviors (goblins, guardians, wizards, mummies, skeletons, dragons, reaper)
 - Resource collection and bridge repair mechanics
 - Procedurally generated textures and audio
+- **Registry-based architecture** for easy addition of new levels, themes, and entities
 
-**Recent Modularization**: The monolithic 44,144-line `main.js` file has been split into logical modules (`main-setup.js`, `main-entities.js`, `main-gameplay.js`, `main-loop.js`) totaling 15,742 lines, improving maintainability and code organization.
+**Recent Modularization**: The monolithic 44,144-line `main.js` file has been split into logical modules (`main-setup.js`, `main-entities.js`, `main-gameplay.js`, `main-loop.js`) totaling 15,742 lines, improving maintainability and code organization. Additionally, level configurations (2,700+ lines) have been extracted from `config.js` into individual level files with a registry system.
 
 ## Project Structure
 
