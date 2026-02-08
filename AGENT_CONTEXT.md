@@ -250,19 +250,24 @@ Levels are defined in individual files under `js/levels/` and self-register with
 ## Adding New Features
 
 ### 1. Adding a New Enemy Type
-**Step 1 - Define in `config.js`:**
+**Step 1 - Define in level configuration (`js/levels/level-N-name.js`):**
 ```javascript
-// Add to level configuration
-LEVELS[1].newEnemies = [
-    { x: 10, z: 20, patrolLeft: 5, patrolRight: 15, speed: 0.01 }
-];
+LEVEL_REGISTRY.register(N, {
+    // ... other config ...
+    newEnemies: [
+        { x: 10, z: 20, patrolLeft: 5, patrolRight: 15, speed: 0.01 }
+    ]
+});
+```
 
+**Step 2 - Add constants to `config.js`:**
+```javascript
 // Add enemy-specific constants
 GAME_CONFIG.NEW_ENEMY_RANGE = 25;
 GAME_CONFIG.NEW_ENEMY_FIRE_INTERVAL = 3000;
 ```
 
-**Step 2 - Create enemy in `main-entities.js`:**
+**Step 3 - Create enemy in `main-entities.js`:**
 - Add creation function (model existing `createGoblin` or `createGuardianGoblin`)
 - Add to enemy arrays: `enemies.push(newEnemy)`
 - Implement AI in `main-gameplay.js` (model existing `updateGoblins` function)
