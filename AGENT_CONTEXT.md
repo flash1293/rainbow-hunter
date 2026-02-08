@@ -75,7 +75,25 @@ The project uses **traditional script loading** (no ES6 modules) with a clean mo
 
 - All JavaScript files are loaded via `<script>` tags in `index.html` in dependency order:
   ```html
+  <!-- Registries must load first -->
+  <script src="js/registries/level-registry.js"></script>
+  <script src="js/registries/theme-registry.js"></script>
+  <script src="js/registries/entity-registry.js"></script>
+  
+  <!-- Game configuration (constants only) -->
   <script src="js/config.js"></script>
+  
+  <!-- Level definitions (self-register with LEVEL_REGISTRY) -->
+  <script src="js/levels/level-1-dragon.js"></script>
+  <script src="js/levels/level-2-frozen.js"></script>
+  <!-- ... levels 3-7 ... -->
+  
+  <!-- Theme definitions -->
+  <script src="js/themes/theme-forest.js"></script>
+  <script src="js/themes/theme-ice.js"></script>
+  <!-- ... themes ... -->
+  
+  <!-- Core game systems -->
   <script src="js/terrain.js"></script>
   <script src="js/audio.js"></script>
   <script src="js/multiplayer.js"></script>
@@ -88,6 +106,32 @@ The project uses **traditional script loading** (no ES6 modules) with a clean mo
 - Functions and variables are available globally after loading
 - No ES6 imports/exports are used in the active codebase
 This allows the game to run directly in browsers with `file:///` URLs
+
+### Registry Pattern for Scalability
+The game uses a **registry pattern** for managing levels, themes, and entities:
+
+**LEVEL_REGISTRY** (`js/registries/level-registry.js`):
+- `register(levelNum, config)` - Register a new level
+- `get(levelNum)` - Get level configuration
+- `exists(levelNum)` - Check if level exists
+- `getAllLevels()` - Get all registered levels
+- Creates `LEVELS` proxy for backward compatibility
+
+**THEME_REGISTRY** (`js/registries/theme-registry.js`):
+- `register(name, config)` - Register a theme
+- `get(name)` - Get theme with inheritance via `extends`
+- `getThemeForLevel(levelNum)` - Get theme for a specific level
+
+**ENTITY_REGISTRY** (`js/registries/entity-registry.js`):
+- `register(type, factory)` - Register entity factory
+- `create(type, config, themeOverrides)` - Create entity instance
+- `spawnEntities(type, positions, scene)` - Spawn multiple entities
+
+**Adding a New Level:**
+1. Create `js/levels/level-N-name.js`
+2. Call `LEVEL_REGISTRY.register(N, { ...config })`
+3. Optionally create a theme in `js/themes/`
+4. Add `<script>` tag to `index.html`
 
 **Recent Modularization**: The monolithic `main.js` (44,144 lines) has been successfully split into logical modules:
 
@@ -124,12 +168,24 @@ let persistentInventory = {      // Carries across levels
 ## Key Concepts
 
 ### 1. Level System
-Levels are defined in `config.js` under `LEVELS` object (1-5). Each level has:
+Levels are defined in individual files under `js/levels/` and self-register with `LEVEL_REGISTRY`. Each level has:
 - `playerStart`: Initial position
+- `theme`: Theme identifier (forest, ice, desert, lava, water, candy, graveyard)
 - Terrain configuration (hills, mountains, trees)
-- Theme flags (`iceTheme`, `desertTheme`, `lavaTheme`, `waterTheme`)
-- Enemy configurations (goblins, guardians, wizards, etc.)
+- Theme flags for backward compatibility (`iceTheme`, `desertTheme`, `lavaTheme`, `waterTheme`, `candyTheme`, `graveyardTheme`)
+- Enemy configurations (goblins, guardians, wizards, mummies, skeletons, etc.)
 - Special features (river, bridge, treasure, portal)
+
+**Current Levels (7):**
+| Level | Name | Theme | Boss |
+|-------|------|-------|------|
+| 1 | Dragon's Lair | Forest | Dragon |
+| 2 | Frozen Wastes | Ice | 3 Ice Dragons |
+| 3 | Scorching Sands | Desert | Mummies |
+| 4 | Lava Caves | Lava | Lava Monsters |
+| 5 | Deep Waters | Water | Sea Dragon |
+| 6 | Candy Kingdom | Candy | Candy Dragon |
+| 7 | Haunted Graveyard | Graveyard | The Reaper |
 
 **Level Progression:**
 1. Complete objectives (collect materials, repair bridge)
