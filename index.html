@@ -46,7 +46,34 @@
             <p>Steuerung: Pfeiltasten/WASD zum Bewegen | Maus zum Zielen | LEERTASTE zum Schießen</p>
         </div>
     </div>
+    
+    <!-- Registries (must load first to define registry objects) -->
+    <script src="js/registries/level-registry.js"></script>
+    <script src="js/registries/theme-registry.js"></script>
+    <script src="js/registries/entity-registry.js"></script>
+    
+    <!-- Game Configuration (global constants) -->
     <script src="js/config.js"></script>
+    
+    <!-- Level Definitions (each self-registers with LEVEL_REGISTRY) -->
+    <script src="js/levels/level-1-dragon.js"></script>
+    <script src="js/levels/level-2-frozen.js"></script>
+    <script src="js/levels/level-3-desert.js"></script>
+    <script src="js/levels/level-4-lava.js"></script>
+    <script src="js/levels/level-5-water.js"></script>
+    <script src="js/levels/level-6-candy.js"></script>
+    <script src="js/levels/level-7-graveyard.js"></script>
+    
+    <!-- Theme Definitions (visual configurations) -->
+    <script src="js/themes/theme-forest.js"></script>
+    <script src="js/themes/theme-ice.js"></script>
+    <script src="js/themes/theme-desert.js"></script>
+    <script src="js/themes/theme-lava.js"></script>
+    <script src="js/themes/theme-water.js"></script>
+    <script src="js/themes/theme-candy.js"></script>
+    <script src="js/themes/theme-graveyard.js"></script>
+    
+    <!-- Core Game Systems -->
     <script src="js/terrain.js"></script>
     <script src="js/audio.js"></script>
     <script src="js/multiplayer.js"></script>

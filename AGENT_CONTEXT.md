@@ -39,13 +39,34 @@ js/
 ├── main-entities.js        # Enemies, collectibles, and special objects (2,723 lines)
 ├── main-gameplay.js        # Combat, updates, and collision systems (3,931 lines)
 ├── main-loop.js            # Game reset, HUD, and main game loop (913 lines)
-├── config.js               # Game constants, level configurations (1,927 lines)
+├── config.js               # Game constants only (~105 lines, LEVELS removed)
 ├── terrain.js              # Terrain generation and procedural textures (2,213 lines)
 ├── audio.js                # Audio system with sound effects and music (846 lines)
-└── multiplayer.js          # PeerJS-based multiplayer synchronization (270 lines)
+├── multiplayer.js          # PeerJS-based multiplayer synchronization (270 lines)
+├── registries/             # Registry pattern for extensibility
+│   ├── level-registry.js   # LEVEL_REGISTRY - manages level configurations
+│   ├── theme-registry.js   # THEME_REGISTRY - manages visual themes
+│   └── entity-registry.js  # ENTITY_REGISTRY - manages entity factories
+├── levels/                 # Individual level configurations
+│   ├── level-1-dragon.js   # Dragon's Lair (forest theme)
+│   ├── level-2-frozen.js   # Frozen Wastes (ice theme)
+│   ├── level-3-desert.js   # Scorching Sands (desert theme)
+│   ├── level-4-lava.js     # Lava Caves (lava theme)
+│   ├── level-5-water.js    # Deep Waters (water theme)
+│   ├── level-6-candy.js    # Candy Kingdom (candy theme)
+│   └── level-7-graveyard.js # Haunted Graveyard (graveyard theme)
+├── themes/                 # Visual theme configurations
+│   ├── theme-forest.js     # Base forest theme
+│   ├── theme-ice.js        # Ice/snow theme
+│   ├── theme-desert.js     # Desert/sand theme
+│   ├── theme-lava.js       # Volcanic/lava theme
+│   ├── theme-water.js      # Ocean/water theme
+│   ├── theme-candy.js      # Fantasy candy theme
+│   └── theme-graveyard.js  # Spooky graveyard theme
+└── entities/               # (Reserved for entity factories)
 ```
 
-**Total Codebase: 15,742 lines** (down from 44,144 lines in monolithic version)
+**Total Codebase: ~15,742 lines** (down from 44,144 lines in monolithic version)
 
 ## Architecture Overview
 
