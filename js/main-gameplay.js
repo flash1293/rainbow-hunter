@@ -304,7 +304,8 @@
                 z: candyZ,
                 bobPhase: i * 0.5
             });
-            G.totalCandy++;
+            // Note: G.totalCandy is pre-calculated at level start for candy theme
+            // Don't increment here to keep consistent HUD display
         }
     }
 
@@ -531,8 +532,8 @@
         }, 16);
     }
     
-    // Ice power activation
-    function activateIcePower() {
+    // Ice power activation - posOverride allows using P2's position for native splitscreen
+    function activateIcePower(posOverride = null) {
         if (gameWon || gameDead || !G.hasIcePower) return;
         
         const now = Date.now();
@@ -545,7 +546,7 @@
         Audio.playIcePowerSound();
         
         const freezeRadius = 20;
-        const playerPos = G.playerGroup.position;
+        const playerPos = posOverride || G.playerGroup.position;
         
         // Create visual effect - expanding blue circle
         const circleGeometry = new THREE.RingGeometry(0.1, freezeRadius, 32);
@@ -2646,8 +2647,11 @@
     function activateIcePowerForPlayer(playerNum) {
         if (playerNum === 1) {
             activateIcePower();
+        } else if (playerNum === 2 && isNativeSplitscreen && G.player2Group) {
+            // Player 2 shares ice power cooldown, but uses P2's position
+            activateIcePower(G.player2Group.position);
         } else {
-            // Player 2 shares ice power activation with player 1's cooldown
+            // Fallback to player 1's position
             activateIcePower();
         }
     }
@@ -3294,7 +3298,10 @@
             targetY: terrainH,
             riseSpeed: 0.04,
             spawnTime: Date.now(),
-            isOvenSpawned: true
+            isOvenSpawned: true,
+            // Guardian properties for shooting arrows
+            isGuardian: true,
+            lastFireTime: Date.now() - Math.random() * 4000
         };
     }
     
@@ -4443,6 +4450,7 @@
             let targetPlayer = G.playerGroup;
             let targetDist = distToPlayer;
             
+            // Check network multiplayer player
             if (multiplayerManager && multiplayerManager.isConnected() && otherPlayerMesh.visible) {
                 const distToOther = Math.sqrt(
                     (otherPlayerMesh.position.x - d.mesh.position.x) ** 2 +
@@ -4451,6 +4459,18 @@
                 if (distToOther < targetDist) {
                     targetPlayer = otherPlayerMesh;
                     targetDist = distToOther;
+                }
+            }
+            
+            // Check native splitscreen player 2
+            if (isNativeSplitscreen && G.player2Group && G.player2Group.visible) {
+                const distToP2 = Math.sqrt(
+                    (G.player2Group.position.x - d.mesh.position.x) ** 2 +
+                    (G.player2Group.position.z - d.mesh.position.z) ** 2
+                );
+                if (distToP2 < targetDist) {
+                    targetPlayer = G.player2Group;
+                    targetDist = distToP2;
                 }
             }
             
@@ -4499,6 +4519,33 @@
                     if (now - d.lastOtherPlayerDamageTime > G.damageCooldown) {
                         multiplayerManager.sendGameEvent('playerDamage', {});
                         d.lastOtherPlayerDamageTime = now;
+                    }
+                }
+            }
+            
+            // Check collision damage with native splitscreen player 2
+            if (isNativeSplitscreen && G.player2Group && !godMode) {
+                const distToP2 = Math.sqrt(
+                    (G.player2Group.position.x - d.mesh.position.x) ** 2 +
+                    (G.player2Group.position.z - d.mesh.position.z) ** 2
+                );
+                
+                if (distToP2 < collisionRadius) {
+                    if (!d.lastP2DamageTime) d.lastP2DamageTime = 0;
+                    
+                    if (now - d.lastP2DamageTime > G.damageCooldown) {
+                        G.player2Health--;
+                        d.lastP2DamageTime = now;
+                        G.damageFlashTime2 = now;
+                        Audio.playStuckSound();
+                        
+                        if (G.player2Health <= 0) {
+                            if (!gameDead) {
+                                gameDead = true;
+                                Audio.stopBackgroundMusic();
+                                Audio.playDeathSound();
+                            }
+                        }
                     }
                 }
             }
@@ -4578,6 +4625,14 @@
                 // Dragons patrol back and forth
                 d.mesh.position.x += d.speed * d.direction;
                 
+                // Update Y position based on terrain (when not flying)
+                if (!d.isFlying) {
+                    const terrainY = getTerrainHeight(d.mesh.position.x, d.mesh.position.z);
+                    const targetY = terrainY + 3 * (d.scale || 1);
+                    // Smooth transition to avoid jarring movement
+                    d.mesh.position.y += (targetY - d.mesh.position.y) * 0.1;
+                }
+                
                 if (d.mesh.position.x <= d.patrolLeft) {
                     d.direction = 1;
                 } else if (d.mesh.position.x >= d.patrolRight) {
@@ -4590,6 +4645,7 @@
                 let fireTargetPlayer = G.playerGroup;
                 let fireTargetDist = distToPlayer;
                 
+                // Check network multiplayer player
                 if (multiplayerManager && multiplayerManager.isConnected() && otherPlayerMesh.visible) {
                     const distToOther = Math.sqrt(
                         (otherPlayerMesh.position.x - d.mesh.position.x) ** 2 +
@@ -4598,6 +4654,18 @@
                     if (distToOther < fireTargetDist) {
                         fireTargetPlayer = otherPlayerMesh;
                         fireTargetDist = distToOther;
+                    }
+                }
+                
+                // Check native splitscreen player 2
+                if (isNativeSplitscreen && G.player2Group && G.player2Group.visible) {
+                    const distToP2 = Math.sqrt(
+                        (G.player2Group.position.x - d.mesh.position.x) ** 2 +
+                        (G.player2Group.position.z - d.mesh.position.z) ** 2
+                    );
+                    if (distToP2 < fireTargetDist) {
+                        fireTargetPlayer = G.player2Group;
+                        fireTargetDist = distToP2;
                     }
                 }
                 

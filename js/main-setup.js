@@ -2410,6 +2410,13 @@ function initSetup() {
     G.candyPickups = [];
     G.candyCollected = 0;
     G.totalCandy = 0;
+    
+    // Calculate expected total candy for candy theme levels (from dragon kills)
+    if (G.candyTheme) {
+        const dragonCount = 1 + (G.levelConfig.extraDragons ? G.levelConfig.extraDragons.length : 0);
+        // Each dragon drops ~10 candies (8-12 range), use 10 as expected average
+        G.totalCandy = dragonCount * 10;
+    }
 
     // Canyon walls - create impassable rock walls for chokepoints
     G.canyonWallPositions = G.levelConfig.canyonWalls || [];

@@ -93,6 +93,53 @@ function initLoop() {
             }
         });
         
+        // Reset main dragon
+        if (G.dragon) {
+            G.dragon.alive = true;
+            G.dragon.mesh.visible = true;
+            G.dragon.health = G.dragon.maxHealth;
+            G.dragon.frozen = false;
+            G.dragon.frozenUntil = 0;
+            G.dragon.lastFireTime = Date.now();
+            G.dragon.isFlying = false;
+            G.dragon.direction = 1;
+            if (G.levelConfig.dragon) {
+                const dragonX = G.levelConfig.dragon.x;
+                const dragonZ = G.levelConfig.dragon.z;
+                const dragonY = G.levelConfig.dragon.y !== undefined ? G.levelConfig.dragon.y : getTerrainHeight(dragonX, dragonZ) + 3 * (G.dragon.scale || 1);
+                G.dragon.mesh.position.set(dragonX, dragonY, dragonZ);
+                G.dragon.patrolLeft = dragonX - 30;
+                G.dragon.patrolRight = dragonX + 30;
+                G.dragon.patrolFront = dragonZ - 20;
+                G.dragon.patrolBack = dragonZ + 20;
+            }
+        }
+        
+        // Reset extra dragons
+        if (G.extraDragons && G.extraDragons.length > 0 && G.levelConfig.extraDragons) {
+            G.extraDragons.forEach((dragon, index) => {
+                dragon.alive = true;
+                dragon.mesh.visible = true;
+                dragon.health = dragon.maxHealth;
+                dragon.frozen = false;
+                dragon.frozenUntil = 0;
+                dragon.lastFireTime = Date.now();
+                dragon.isFlying = false;
+                dragon.direction = 1;
+                if (G.levelConfig.extraDragons[index]) {
+                    const config = G.levelConfig.extraDragons[index];
+                    const dragonX = config.x;
+                    const dragonZ = config.z;
+                    const dragonY = config.y !== undefined ? config.y : getTerrainHeight(dragonX, dragonZ) + 3 * (dragon.scale || 1);
+                    dragon.mesh.position.set(dragonX, dragonY, dragonZ);
+                    dragon.patrolLeft = dragonX - 30;
+                    dragon.patrolRight = dragonX + 30;
+                    dragon.patrolFront = dragonZ - 20;
+                    dragon.patrolBack = dragonZ + 20;
+                }
+            });
+        }
+        
         G.bullets.forEach(b => G.scene.remove(b.mesh));
         G.bullets.length = 0;
         
@@ -181,6 +228,44 @@ function initLoop() {
             pickup.collected = false;
             pickup.mesh.visible = true;
         });
+        
+        // Reset candy pickups (candy theme)
+        if (G.candyPickups) {
+            G.candyPickups.forEach(candy => G.scene.remove(candy.mesh));
+            G.candyPickups.length = 0;
+        }
+        G.candyCollected = 0;
+        // Re-calculate total candy for candy theme based on dragons
+        if (G.candyTheme) {
+            const dragonCount = 1 + (G.levelConfig.extraDragons ? G.levelConfig.extraDragons.length : 0);
+            G.totalCandy = dragonCount * 10;
+        } else {
+            G.totalCandy = 0;
+        }
+        
+        // Reset oven spawn state (candy theme gingerbread ovens)
+        if (G.ovenSpawnState) {
+            G.ovenSpawnState.spawnedCount = 0;
+            G.ovenSpawnState.risingGingerbreads = [];
+            G.ovenSpawnState.spawnInterval = 12000;
+        }
+        
+        // Reset oven last spawn times
+        if (G.ovens) {
+            G.ovens.forEach(oven => {
+                oven.lastSpawnTime = Date.now();
+            });
+        }
+        
+        // Remove oven-spawned goblins (keep only original goblins)
+        if (G.goblins) {
+            for (let i = G.goblins.length - 1; i >= 0; i--) {
+                if (G.goblins[i].isOvenSpawned) {
+                    G.scene.remove(G.goblins[i].mesh);
+                    G.goblins.splice(i, 1);
+                }
+            }
+        }
     }
 
     // HUD
@@ -246,7 +331,7 @@ function initLoop() {
         
         // Candy display (only if candy theme with candy to collect)
         if (G.candyTheme && G.totalCandy > 0) {
-            G.hudCtx.fillStyle = G.candyCollected >= G.totalCandy ? '#FF69B4' : '#FFB6C1';
+            G.hudCtx.fillStyle = G.candyCollected >= G.totalCandy ? '#8B008B' : '#660066';
             G.hudCtx.fillText(`Süßigkeiten: ${G.candyCollected}/${G.totalCandy}`, 10, nextYPos);
             G.hudCtx.fillStyle = '#000';
             nextYPos += 25;
@@ -668,7 +753,7 @@ function initLoop() {
         
         // Candy display (only if candy theme with candy to collect)
         if (G.candyTheme && G.totalCandy > 0) {
-            G.hudCtx.fillStyle = G.candyCollected >= G.totalCandy ? '#FF69B4' : '#FFB6C1';
+            G.hudCtx.fillStyle = G.candyCollected >= G.totalCandy ? '#8B008B' : '#660066';
             G.hudCtx.fillText(`Süßigkeiten: ${G.candyCollected}/${G.totalCandy}`, G.hudCanvas.width / 2, bottomY);
             G.hudCtx.fillStyle = '#000';
             bottomY += 18;
