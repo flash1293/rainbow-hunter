@@ -103,3 +103,12 @@ const GAME_CONFIG = {
 // The LEVELS constant is created by level-registry.js as a proxy to LEVEL_REGISTRY
 // for backward compatibility with existing code.
 // =============================================================================
+
+// =============================================================================
+// LEGACY FALLBACK GLOBALS
+// =============================================================================
+// These are fallback values for global variables that were previously in config.js.
+// They should not be used directly - always prefer level-specific values.
+
+const HILLS = [];  // Empty fallback - actual hills come from level config
+const MOUNTAINS = [];  // Empty fallback - actual mountains come from level config

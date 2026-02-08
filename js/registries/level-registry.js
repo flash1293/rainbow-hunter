@@ -79,3 +79,12 @@ const LEVELS = new Proxy({}, {
         return undefined;
     }
 });
+
+/**
+ * Get level configuration by ID (global helper for backward compatibility)
+ * @param {number} level - Level number
+ * @returns {object} Level configuration
+ */
+function getLevelConfig(level) {
+    return LEVEL_REGISTRY.get(level) || LEVELS[level];
+}
