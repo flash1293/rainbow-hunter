@@ -1531,20 +1531,43 @@ function initEntities() {
             edge1.rotation.z = Math.PI / 2 - 0.3;
             giantGrp.add(edge1);
 
-            // Blood stains on blade
-            const bloodGeometry = new THREE.PlaneGeometry(0.5, 0.8);
+            // Blood stains on blade - more prominent and dripping
             const bloodMaterial = new THREE.MeshBasicMaterial({
-                color: bloodRed,
+                color: 0x8B0000, // Darker, more visible blood red
                 transparent: true,
-                opacity: 0.7,
+                opacity: 0.9,
                 side: THREE.DoubleSide
             });
-            for (let i = 0; i < 3; i++) {
+            
+            // Main blood splatter on blade
+            for (let i = 0; i < 5; i++) {
+                const bloodGeometry = new THREE.PlaneGeometry(0.4 + Math.random() * 0.3, 0.6 + Math.random() * 0.4);
                 const blood = new THREE.Mesh(bloodGeometry, bloodMaterial);
-                blood.position.set(3.5 + i * 0.4, 5.0 + i * 0.3, 0.52);
-                blood.rotation.z = Math.random() * 0.5;
+                blood.position.set(3.3 + i * 0.35, 4.8 + i * 0.25, 0.53 + (i % 2) * 0.02);
+                blood.rotation.z = Math.random() * 0.6 - 0.3;
                 giantGrp.add(blood);
             }
+            
+            // Blood drips running down the blade
+            const dripMaterial = new THREE.MeshBasicMaterial({
+                color: 0x660000,
+                transparent: true,
+                opacity: 0.85
+            });
+            for (let i = 0; i < 4; i++) {
+                const dripGeometry = new THREE.CylinderGeometry(0.04, 0.08, 0.8 + Math.random() * 0.5, 6);
+                const drip = new THREE.Mesh(dripGeometry, dripMaterial);
+                drip.position.set(3.0 + i * 0.5, 4.2 + Math.random() * 0.3, 0.52);
+                drip.rotation.z = -0.3 + Math.random() * 0.2;
+                giantGrp.add(drip);
+            }
+            
+            // Fresh blood drop at blade tip
+            const dropGeometry = new THREE.SphereGeometry(0.12, 8, 8);
+            const dropMaterial = new THREE.MeshBasicMaterial({ color: 0x8B0000 });
+            const bloodDrop = new THREE.Mesh(dropGeometry, dropMaterial);
+            bloodDrop.position.set(4.8, 4.5, 0.5);
+            giantGrp.add(bloodDrop);
 
             // Thick legs
             const legGeometry = new THREE.CylinderGeometry(0.6, 0.8, 2.5, 8);
@@ -2988,21 +3011,18 @@ function initEntities() {
     if (G.levelConfig.iceBerg) {
         // Main ice berg structure - tall crystalline shape
         // Use obsidian theme for lava level, ice theme for others
+        // Using MeshLambertMaterial for better performance (no expensive specular calculations)
         const iceBergGeometry = new THREE.ConeGeometry(8, 20, 6);
-        const iceBergMaterial = G.lavaTheme ? new THREE.MeshPhongMaterial({
-            color: 0x2a1a3a,  // Dark purple obsidian
+        const iceBergMaterial = G.lavaTheme ? new THREE.MeshLambertMaterial({
+            color: 0x3a2a4a,  // Dark purple obsidian
             transparent: true,
             opacity: 0.85,
-            shininess: 150,
-            specular: 0x6644aa,
             emissive: 0x110022,
             emissiveIntensity: 0.3
-        }) : new THREE.MeshPhongMaterial({
+        }) : new THREE.MeshLambertMaterial({
             color: 0xB0E0E6,
             transparent: true,
-            opacity: 0.7,
-            shininess: 100,
-            specular: 0xFFFFFF
+            opacity: 0.75
         });
     const iceBergMesh = new THREE.Mesh(iceBergGeometry, iceBergMaterial);
     iceBergMesh.position.y = 10;
@@ -3057,13 +3077,12 @@ function initEntities() {
     G.bananaIceBergGroup = new THREE.Group();
     
     // Main banana ice berg structure - tall crystalline shape (yellow tinted)
+    // Using MeshLambertMaterial for better performance
     G.bananaIceBergGeometry = new THREE.ConeGeometry(8, 20, 6);
-    G.bananaIceBergMaterial = new THREE.MeshPhongMaterial({
+    G.bananaIceBergMaterial = new THREE.MeshLambertMaterial({
         color: 0xFFFF99, // Yellow tint
         transparent: true,
-        opacity: 0.7,
-        shininess: 100,
-        specular: 0xFFFFFF
+        opacity: 0.75
     });
     G.bananaIceBergMesh = new THREE.Mesh(G.bananaIceBergGeometry, G.bananaIceBergMaterial);
     G.bananaIceBergMesh.position.y = 10;
@@ -3448,6 +3467,76 @@ function initEntities() {
                 z: pool.z,
                 radius: pool.radius,
                 phase: Math.random() * Math.PI * 2
+            });
+        });
+    }
+
+    // Nebelschwaden (fog wisps) for graveyard level - atmospheric floating fog sprites
+    G.fogWisps = [];
+    if (G.graveyardTheme) {
+        // Create MANY fog wisps scattered densely across the graveyard
+        const wispPositions = [
+            // Near spawn area - dense fog
+            { x: -20, z: 190 }, { x: 30, z: 175 }, { x: -40, z: 160 },
+            { x: 50, z: 145 }, { x: -15, z: 130 }, { x: 25, z: 115 },
+            { x: 0, z: 195 }, { x: -60, z: 180 }, { x: 60, z: 165 },
+            { x: 10, z: 185 }, { x: -30, z: 170 }, { x: 45, z: 155 },
+            { x: -55, z: 140 }, { x: 70, z: 125 }, { x: -5, z: 142 },
+            // Mid graveyard - very dense
+            { x: -45, z: 100 }, { x: 35, z: 85 }, { x: -10, z: 70 },
+            { x: 55, z: 55 }, { x: -35, z: 40 }, { x: 20, z: 25 },
+            { x: -50, z: 10 }, { x: 40, z: -5 }, { x: -25, z: -20 },
+            { x: 0, z: 105 }, { x: -70, z: 90 }, { x: 70, z: 75 },
+            { x: 15, z: 95 }, { x: -60, z: 80 }, { x: 65, z: 65 },
+            { x: -20, z: 50 }, { x: 50, z: 35 }, { x: -65, z: 20 },
+            { x: 30, z: 5 }, { x: -40, z: -10 }, { x: 60, z: -25 },
+            { x: 5, z: 60 }, { x: -55, z: 45 }, { x: 55, z: 30 },
+            { x: -15, z: 15 }, { x: 45, z: 0 }, { x: -30, z: -15 },
+            // Near crypt - ominous thick fog
+            { x: 30, z: -35 }, { x: -40, z: -50 }, { x: 15, z: -65 },
+            { x: -30, z: -80 }, { x: 45, z: -95 }, { x: -20, z: -110 },
+            { x: 35, z: -125 }, { x: -45, z: -140 }, { x: 10, z: -155 },
+            { x: -35, z: -170 }, { x: 25, z: -185 }, { x: 0, z: -40 },
+            { x: -60, z: -55 }, { x: 60, z: -70 }, { x: -5, z: -85 },
+            { x: 50, z: -100 }, { x: -55, z: -115 }, { x: 20, z: -130 },
+            { x: -25, z: -145 }, { x: 55, z: -160 }, { x: -15, z: -175 },
+            { x: 40, z: -190 }, { x: -50, z: -180 }, { x: 5, z: -195 },
+            // Extra wisps along edges
+            { x: -80, z: 150 }, { x: 80, z: 140 }, { x: -85, z: 100 },
+            { x: 85, z: 90 }, { x: -80, z: 50 }, { x: 80, z: 40 },
+            { x: -85, z: 0 }, { x: 85, z: -10 }, { x: -80, z: -50 },
+            { x: 80, z: -60 }, { x: -85, z: -100 }, { x: 85, z: -110 },
+            { x: -80, z: -150 }, { x: 80, z: -160 }, { x: -75, z: -190 },
+            // Central path fog
+            { x: 0, z: 150 }, { x: 0, z: 120 }, { x: 0, z: 90 },
+            { x: 0, z: 60 }, { x: 0, z: 30 }, { x: 0, z: 0 },
+            { x: 0, z: -30 }, { x: 0, z: -60 }, { x: 0, z: -90 },
+            { x: 0, z: -120 }, { x: 0, z: -150 }, { x: 0, z: -180 }
+        ];
+        
+        wispPositions.forEach((pos, idx) => {
+            // Clone the pre-cached material for each wisp
+            const wispMaterial = G.fogWispBaseMaterial.clone();
+            wispMaterial.opacity = 0.6 + Math.random() * 0.25;
+            const wisp = new THREE.Sprite(wispMaterial);
+            
+            const baseY = getTerrainHeight(pos.x, pos.z) + 1.0 + Math.random() * 3;
+            const scale = 8 + Math.random() * 12; // 8-20 units wide (much bigger!)
+            wisp.scale.set(scale, scale * 0.8, 1); // Thicker fog wisps
+            wisp.position.set(pos.x, baseY, pos.z);
+            
+            G.scene.add(wisp);
+            G.fogWisps.push({
+                sprite: wisp,
+                baseX: pos.x,
+                baseY: baseY,
+                baseZ: pos.z,
+                driftSpeed: 0.2 + Math.random() * 0.4,
+                driftRange: 4 + Math.random() * 5,
+                phase: Math.random() * Math.PI * 2,
+                verticalPhase: Math.random() * Math.PI * 2,
+                fadePhase: Math.random() * Math.PI * 2,
+                scale: scale
             });
         });
     }

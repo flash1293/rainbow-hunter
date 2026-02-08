@@ -502,6 +502,101 @@ function initLoop() {
         }
     }
     
+    // Helper function to draw player marker in splitscreen mode
+    function drawSplitscreenPlayerMarker(camera, targetGroup, viewportX, viewportWidth, playerLabel, markerColor) {
+        // Project other player's 3D position to 2D screen coordinates
+        const targetPos = targetGroup.position.clone();
+        targetPos.y += 2; // Slightly above head
+        targetPos.project(camera);
+        
+        // Convert from normalized device coordinates (-1 to 1) to viewport pixels
+        const screenX = viewportX + (targetPos.x * 0.5 + 0.5) * viewportWidth;
+        const screenY = (-targetPos.y * 0.5 + 0.5) * G.hudCanvas.height;
+        
+        // Check if behind camera (z > 1 means behind)
+        const isBehindCamera = targetPos.z > 1;
+        
+        // Check if on screen (with margin, within this viewport)
+        const margin = 50;
+        const isOnScreen = !isBehindCamera && 
+                           screenX >= viewportX + margin && screenX <= viewportX + viewportWidth - margin &&
+                           screenY >= margin && screenY <= G.hudCanvas.height - margin;
+        
+        if (isOnScreen) {
+            // Draw marker above player when visible
+            G.hudCtx.fillStyle = markerColor;
+            G.hudCtx.beginPath();
+            G.hudCtx.moveTo(screenX, screenY - 25);
+            G.hudCtx.lineTo(screenX - 10, screenY - 40);
+            G.hudCtx.lineTo(screenX + 10, screenY - 40);
+            G.hudCtx.closePath();
+            G.hudCtx.fill();
+            
+            // Draw label
+            G.hudCtx.font = 'bold 14px Arial';
+            G.hudCtx.textAlign = 'center';
+            G.hudCtx.fillStyle = '#FFF';
+            G.hudCtx.strokeStyle = '#000';
+            G.hudCtx.lineWidth = 3;
+            G.hudCtx.strokeText(playerLabel, screenX, screenY - 45);
+            G.hudCtx.fillText(playerLabel, screenX, screenY - 45);
+            G.hudCtx.textAlign = 'left';
+        } else {
+            // Draw arrow at edge of viewport pointing to other player
+            let edgeX = screenX;
+            let edgeY = screenY;
+            
+            // If behind camera, flip the direction
+            if (isBehindCamera) {
+                edgeX = viewportX + viewportWidth - (screenX - viewportX);
+                edgeY = G.hudCanvas.height - screenY;
+            }
+            
+            // Clamp to viewport edges with margin
+            edgeX = Math.max(viewportX + margin, Math.min(viewportX + viewportWidth - margin, edgeX));
+            edgeY = Math.max(margin, Math.min(G.hudCanvas.height - margin, edgeY));
+            
+            // Calculate direction from viewport center to clamped position for arrow rotation
+            const centerX = viewportX + viewportWidth / 2;
+            const centerY = G.hudCanvas.height / 2;
+            const dirX = isBehindCamera ? (viewportX + viewportWidth - screenX) - centerX : screenX - centerX;
+            const dirY = isBehindCamera ? (G.hudCanvas.height - screenY) - centerY : screenY - centerY;
+            const angle = Math.atan2(dirY, dirX);
+            
+            // Draw arrow indicator at edge
+            G.hudCtx.save();
+            G.hudCtx.translate(edgeX, edgeY);
+            G.hudCtx.rotate(angle);
+            
+            // Arrow shape pointing right (will be rotated)
+            G.hudCtx.fillStyle = markerColor;
+            G.hudCtx.strokeStyle = '#000';
+            G.hudCtx.lineWidth = 2;
+            G.hudCtx.beginPath();
+            G.hudCtx.moveTo(18, 0);         // Tip
+            G.hudCtx.lineTo(-8, -10);       // Top back
+            G.hudCtx.lineTo(-4, 0);         // Notch
+            G.hudCtx.lineTo(-8, 10);        // Bottom back
+            G.hudCtx.closePath();
+            G.hudCtx.fill();
+            G.hudCtx.stroke();
+            
+            G.hudCtx.restore();
+            
+            // Draw label near arrow
+            G.hudCtx.font = 'bold 11px Arial';
+            G.hudCtx.textAlign = 'center';
+            G.hudCtx.fillStyle = '#FFF';
+            G.hudCtx.strokeStyle = '#000';
+            G.hudCtx.lineWidth = 3;
+            const labelOffsetX = Math.cos(angle + Math.PI) * 30;
+            const labelOffsetY = Math.sin(angle + Math.PI) * 30;
+            G.hudCtx.strokeText(playerLabel, edgeX + labelOffsetX, edgeY + labelOffsetY);
+            G.hudCtx.fillText(playerLabel, edgeX + labelOffsetX, edgeY + labelOffsetY);
+            G.hudCtx.textAlign = 'left';
+        }
+    }
+    
     // Splitscreen HUD - draws HUD for both players side by side
     function drawSplitscreenHUD() {
         G.hudCtx.clearRect(0, 0, G.hudCanvas.width, G.hudCanvas.height);
@@ -535,6 +630,16 @@ function initLoop() {
         G.hudCtx.fillText('Spieler 2', halfWidth + halfWidth / 2, 25);
         
         G.hudCtx.textAlign = 'left';
+        
+        // Player 2 marker on Player 1's screen (left side)
+        if (G.player2Group) {
+            drawSplitscreenPlayerMarker(G.camera, G.player2Group, 0, halfWidth, 'Spieler 2', '#4488FF');
+        }
+        
+        // Player 1 marker on Player 2's screen (right side)
+        if (G.camera2 && G.playerGroup) {
+            drawSplitscreenPlayerMarker(G.camera2, G.playerGroup, halfWidth, halfWidth, 'Spieler 1', '#FF6B9D');
+        }
         
         // Draw HUD for Player 1 (left side)
         drawPlayerHUD(0, 0, halfWidth, G.player, G.playerHealth, G.ammo, G.bananaInventory, G.bombInventory, G.herzmanInventory, 1);
@@ -902,6 +1007,30 @@ function initLoop() {
                 if (mistMesh && mistMesh.material) {
                     mistMesh.material.opacity = 0.3 + Math.sin(pool.phase) * 0.15;
                 }
+            });
+        }
+
+        // Animate fog wisps (Nebelschwaden) - drifting spooky fog sprites
+        if (G.fogWisps && G.fogWisps.length > 0) {
+            const wispTime = Date.now() * 0.001;
+            G.fogWisps.forEach(wisp => {
+                // Slow horizontal drift
+                wisp.phase += 0.005 * wisp.driftSpeed;
+                wisp.verticalPhase += 0.008;
+                wisp.fadePhase += 0.006;
+                
+                // Drift position
+                wisp.sprite.position.x = wisp.baseX + Math.sin(wisp.phase) * wisp.driftRange;
+                wisp.sprite.position.z = wisp.baseZ + Math.cos(wisp.phase * 0.7) * wisp.driftRange * 0.5;
+                wisp.sprite.position.y = wisp.baseY + Math.sin(wisp.verticalPhase) * 0.5;
+                
+                // Fade in/out effect
+                const fadeValue = 0.55 + Math.sin(wisp.fadePhase) * 0.15;
+                wisp.sprite.material.opacity = fadeValue;
+                
+                // Slight scale pulsing
+                const scalePulse = 1 + Math.sin(wisp.fadePhase * 0.5) * 0.1;
+                wisp.sprite.scale.set(wisp.scale * scalePulse, wisp.scale * 0.8 * scalePulse, 1);
             });
         }
 

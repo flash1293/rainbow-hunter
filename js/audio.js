@@ -6,8 +6,8 @@ const Audio = (function() {
     function shouldPlayAudio() {
         const urlParams = new URLSearchParams(window.location.search);
         const isSplitscreen = urlParams.get('splitscreen');
-        // Only play audio if not in splitscreen mode, or if we're the host
-        return !isSplitscreen || isSplitscreen === 'host';
+        // Only play audio if not in splitscreen mode, or if we're the host, or native splitscreen (local)
+        return !isSplitscreen || isSplitscreen === 'host' || isSplitscreen === 'native';
     }
 
     // Background music state

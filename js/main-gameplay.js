@@ -1969,7 +1969,7 @@
             
             switchLevel(data.level);
         } else if (eventType === 'zombieSpawned') {
-            // Host spawned a zombie, client needs to create it
+            // Host spawned a zombie, client needs to create it (with warning light)
             if (!G.graveyardTheme) return;
             
             // Initialize spawn state if not present
@@ -1979,16 +1979,52 @@
                     spawnInterval: 8000,
                     maxSpawnedZombies: 15,
                     spawnedCount: 0,
-                    risingZombies: []
+                    risingZombies: [],
+                    pendingSpawns: []
                 };
             }
             
-            const zombie = createSpawnedZombie(data.x, data.z);
-            zombie.spawnId = data.spawnId;
-            zombie.speed = data.speed;
-            zombie.targetY = data.targetY;
-            G.goblins.push(zombie);
-            G.zombieSpawnState.risingZombies.push(zombie);
+            const terrainHeight = getTerrainHeight(data.x, data.z);
+            
+            // Create pulsating red warning light (same as host) - bright and high
+            const warningLight = new THREE.PointLight(0xff0000, 4.0, 20);
+            warningLight.position.set(data.x, terrainHeight + 4, data.z);
+            G.scene.add(warningLight);
+            
+            // Create glowing ground circle effect - larger and brighter
+            const glowGeometry = new THREE.CircleGeometry(2.0, 32);
+            const glowMaterial = new THREE.MeshBasicMaterial({
+                color: 0xff0000,
+                transparent: true,
+                opacity: 0.7,
+                side: THREE.DoubleSide
+            });
+            const glowMesh = new THREE.Mesh(glowGeometry, glowMaterial);
+            glowMesh.position.set(data.x, terrainHeight + 0.05, data.z);
+            glowMesh.rotation.x = -Math.PI / 2;
+            G.scene.add(glowMesh);
+            
+            // Create vertical beam for visibility
+            const beamGeometry = new THREE.CylinderGeometry(0.3, 0.8, 6, 8);
+            const beamMaterial = new THREE.MeshBasicMaterial({
+                color: 0xff0000,
+                transparent: true,
+                opacity: 0.4
+            });
+            const beamMesh = new THREE.Mesh(beamGeometry, beamMaterial);
+            beamMesh.position.set(data.x, terrainHeight + 3, data.z);
+            G.scene.add(beamMesh);
+            
+            G.zombieSpawnState.pendingSpawns.push({
+                x: data.x,
+                z: data.z,
+                spawnId: data.spawnId,
+                light: warningLight,
+                glow: glowMesh,
+                beam: beamMesh,
+                startTime: Date.now(),
+                warningDuration: data.warningDuration || 1200
+            });
             G.zombieSpawnState.spawnedCount++;
             
         } else if (eventType === 'gingerbreadSpawned') {
@@ -3031,12 +3067,51 @@
                 spawnInterval: 8000, // 8 seconds between spawns
                 maxSpawnedZombies: 15, // Max additional zombies
                 spawnedCount: 0,
-                risingZombies: [] // Zombies currently rising from ground
+                risingZombies: [], // Zombies currently rising from ground
+                pendingSpawns: [] // Warning lights before spawns
             };
         }
         
         const state = G.zombieSpawnState;
         const now = Date.now();
+        
+        // Update pending spawn warning lights (pulsating red glow)
+        for (let i = state.pendingSpawns.length - 1; i >= 0; i--) {
+            const pending = state.pendingSpawns[i];
+            const elapsed = now - pending.startTime;
+            
+            // Pulsate the light - faster and more intense
+            const pulse = Math.sin(elapsed * 0.02) * 0.5 + 0.5; // 0-1 pulsation (faster)
+            pending.light.intensity = 3.0 + pulse * 3.0; // 3.0 to 6.0 intensity
+            pending.glow.scale.setScalar(1.5 + pulse * 0.8); // Pulsate glow size larger
+            pending.glow.material.opacity = 0.5 + pulse * 0.4;
+            if (pending.beam) {
+                pending.beam.scale.y = 0.8 + pulse * 0.4;
+                pending.beam.material.opacity = 0.3 + pulse * 0.3;
+            }
+            
+            // After warning period, spawn the zombie
+            if (elapsed >= pending.warningDuration) {
+                // Remove warning light and effects
+                G.scene.remove(pending.light);
+                G.scene.remove(pending.glow);
+                pending.glow.geometry.dispose();
+                pending.glow.material.dispose();
+                if (pending.beam) {
+                    G.scene.remove(pending.beam);
+                    pending.beam.geometry.dispose();
+                    pending.beam.material.dispose();
+                }
+                
+                // Actually spawn the zombie
+                const zombie = createSpawnedZombie(pending.x, pending.z);
+                zombie.spawnId = pending.spawnId;
+                G.goblins.push(zombie);
+                state.risingZombies.push(zombie);
+                
+                state.pendingSpawns.splice(i, 1);
+            }
+        }
         
         // Update rising zombies
         for (let i = state.risingZombies.length - 1; i >= 0; i--) {
@@ -3077,22 +3152,60 @@
         spawnX = Math.max(bounds.minX + 10, Math.min(bounds.maxX - 10, spawnX));
         spawnZ = Math.max(bounds.minZ + 10, Math.min(bounds.maxZ - 10, spawnZ));
         
-        // Create the rising zombie
-        const zombie = createSpawnedZombie(spawnX, spawnZ);
-        zombie.spawnId = Date.now() + '_' + Math.random(); // Unique ID for sync
-        G.goblins.push(zombie);
-        state.risingZombies.push(zombie);
+        // Create warning light first, then spawn zombie after delay
+        const spawnId = Date.now() + '_' + Math.random();
+        const terrainHeight = getTerrainHeight(spawnX, spawnZ);
+        
+        // Create pulsating red warning light - bright and high for visibility
+        const warningLight = new THREE.PointLight(0xff0000, 4.0, 20);
+        warningLight.position.set(spawnX, terrainHeight + 4, spawnZ);
+        G.scene.add(warningLight);
+        
+        // Create glowing ground circle effect - larger and brighter
+        const glowGeometry = new THREE.CircleGeometry(2.0, 32);
+        const glowMaterial = new THREE.MeshBasicMaterial({
+            color: 0xff0000,
+            transparent: true,
+            opacity: 0.7,
+            side: THREE.DoubleSide
+        });
+        const glowMesh = new THREE.Mesh(glowGeometry, glowMaterial);
+        glowMesh.position.set(spawnX, terrainHeight + 0.05, spawnZ);
+        glowMesh.rotation.x = -Math.PI / 2;
+        G.scene.add(glowMesh);
+        
+        // Create vertical beam for visibility from distance
+        const beamGeometry = new THREE.CylinderGeometry(0.3, 0.8, 6, 8);
+        const beamMaterial = new THREE.MeshBasicMaterial({
+            color: 0xff0000,
+            transparent: true,
+            opacity: 0.4
+        });
+        const beamMesh = new THREE.Mesh(beamGeometry, beamMaterial);
+        beamMesh.position.set(spawnX, terrainHeight + 3, spawnZ);
+        G.scene.add(beamMesh);
+        
+        state.pendingSpawns.push({
+            x: spawnX,
+            z: spawnZ,
+            spawnId: spawnId,
+            light: warningLight,
+            glow: glowMesh,
+            beam: beamMesh,
+            startTime: now,
+            warningDuration: 1200 // 1.2 second warning
+        });
+        
         state.spawnedCount++;
         state.lastSpawnTime = now;
         
-        // Send spawn event to client
+        // Send spawn event to client (with warning delay info)
         if (multiplayerManager && multiplayerManager.isConnected() && multiplayerManager.isHost) {
             multiplayerManager.sendGameEvent('zombieSpawned', {
                 x: spawnX,
                 z: spawnZ,
-                spawnId: zombie.spawnId,
-                speed: zombie.speed,
-                targetY: zombie.targetY
+                spawnId: spawnId,
+                warningDuration: 1200
             });
         }
         

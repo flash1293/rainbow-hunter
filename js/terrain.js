@@ -2083,6 +2083,41 @@ function generateSmokeTexture(THREE) {
     return texture;
 }
 
+// Generate fog wisp texture - spooky purple-gray wisp for graveyard
+function generateFogWispTexture(THREE) {
+    const canvas = document.createElement('canvas');
+    canvas.width = 64;
+    canvas.height = 64;
+    const ctx = canvas.getContext('2d');
+    
+    // Soft radial gradient for fog wisp with purple tint
+    const gradient = ctx.createRadialGradient(32, 32, 0, 32, 32, 32);
+    gradient.addColorStop(0, 'rgba(100, 80, 120, 0.5)');
+    gradient.addColorStop(0.3, 'rgba(80, 70, 100, 0.35)');
+    gradient.addColorStop(0.6, 'rgba(60, 55, 80, 0.15)');
+    gradient.addColorStop(1, 'rgba(50, 45, 70, 0)');
+    ctx.fillStyle = gradient;
+    ctx.fillRect(0, 0, 64, 64);
+    
+    // Add wispy tendrils
+    for (let i = 0; i < 12; i++) {
+        const x = 16 + Math.random() * 32;
+        const y = 16 + Math.random() * 32;
+        const r = 4 + Math.random() * 12;
+        const puffGrad = ctx.createRadialGradient(x, y, 0, x, y, r);
+        puffGrad.addColorStop(0, 'rgba(90, 75, 110, 0.25)');
+        puffGrad.addColorStop(0.5, 'rgba(70, 60, 90, 0.15)');
+        puffGrad.addColorStop(1, 'rgba(50, 45, 70, 0)');
+        ctx.fillStyle = puffGrad;
+        ctx.beginPath();
+        ctx.arc(x, y, r, 0, Math.PI * 2);
+        ctx.fill();
+    }
+    
+    const texture = new THREE.CanvasTexture(canvas);
+    return texture;
+}
+
 // Generate scorch mark texture - dark burned ground
 function generateScorchTexture(THREE) {
     const canvas = document.createElement('canvas');
@@ -2360,6 +2395,7 @@ function getTerrainTextures(THREE) {
             explosion: generateExplosionTexture(THREE, false),
             explosionIce: generateExplosionTexture(THREE, true),
             smoke: generateSmokeTexture(THREE),
+            fogWisp: generateFogWispTexture(THREE),
             scorch: generateScorchTexture(THREE),
             kitePink: generateKiteTexture(THREE, 0xFF1493),
             kiteBlue: generateKiteTexture(THREE, 0x00BFFF),

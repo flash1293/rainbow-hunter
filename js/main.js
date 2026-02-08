@@ -375,7 +375,7 @@ function initGame() {
     }
     
     // Determine camera far plane based on fog (closer = better performance)
-    const cameraFar = G.scene.fog ? 120 : GAME_CONFIG.CAMERA_FAR;
+    const cameraFar = G.scene.fog ? 90 : GAME_CONFIG.CAMERA_FAR;
     
     // Pre-cache explosion and smoke materials to avoid texture loading glitches
     G.explosionTextureCached = G.iceTheme ? G.skyTextures.explosionIce : G.skyTextures.explosion;
@@ -391,6 +391,14 @@ function initGame() {
         transparent: true,
         opacity: 0.6,
         depthWrite: false
+    });
+    // Pre-cache fog wisp material for graveyard level
+    G.fogWispBaseMaterial = new THREE.SpriteMaterial({
+        map: G.skyTextures.fogWisp,
+        transparent: true,
+        opacity: 0.5,
+        depthWrite: false,
+        fog: true
     });
 
     // Calculate aspect ratio - half width for native splitscreen
@@ -453,17 +461,17 @@ function initGame() {
 
     // Lighting
     // Adjust ambient light for themed levels
-    const ambientIntensity = G.graveyardTheme ? 0.4 : 0.6;
-    G.ambientLight = new THREE.AmbientLight(G.graveyardTheme ? 0x7755bb : 0xffffff, ambientIntensity);
+    const ambientIntensity = G.graveyardTheme ? 0.55 : 0.6;
+    G.ambientLight = new THREE.AmbientLight(G.graveyardTheme ? 0x9977dd : 0xffffff, ambientIntensity);
     G.scene.add(G.ambientLight);
 
-    G.directionalLight = new THREE.DirectionalLight(G.graveyardTheme ? 0x8866cc : 0xffffff, G.graveyardTheme ? 0.4 : 0.8);
+    G.directionalLight = new THREE.DirectionalLight(G.graveyardTheme ? 0xaa88ee : 0xffffff, G.graveyardTheme ? 0.6 : 0.8);
     G.directionalLight.position.set(50, 100, 50);
     G.directionalLight.castShadow = true;
     
     // Reduce shadow quality in splitscreen or fog levels for performance
-    const shadowQuality = (isNativeSplitscreen || G.scene.fog) ? 1024 : 2048;
-    const shadowRange = G.scene.fog ? 60 : 100;
+    const shadowQuality = (isNativeSplitscreen || G.scene.fog) ? 512 : 2048;
+    const shadowRange = G.scene.fog ? 45 : 100;
     G.directionalLight.shadow.camera.left = -shadowRange;
     G.directionalLight.shadow.camera.right = shadowRange;
     G.directionalLight.shadow.camera.top = shadowRange;
