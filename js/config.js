@@ -525,9 +525,10 @@ const LEVELS = {
         
         // Unique elements for level 2
         iceTheme: true,
-        skyColor: 0x4a6fa5,  // Darker blue sky
+        skyColor: 0xc8d8e8,  // Match fog color for seamless fade
         groundColor: 0xc8e6f5,  // Icy ground
-        fogDensity: 0.008,
+        fogDensity: 0.02,
+        fogColor: 0xc8d8e8,  // White mist
         
         // No river or materials in level 2
         hasRiver: false,
@@ -854,10 +855,10 @@ const LEVELS = {
         
         // Unique elements for level 3
         desertTheme: true,
-        skyColor: 0xffcc66,  // Warm sunset sky
+        skyColor: 0xd4a574,  // Match fog color for seamless fade
         groundColor: 0xe8c36a,  // Sandy ground
-        fogDensity: 0.005,
-        fogColor: 0xffe4b3,  // Dusty yellow fog
+        fogDensity: 0.02,
+        fogColor: 0xd4a574,  // Sandy dust haze
         
         // No river or materials in desert
         hasRiver: false,
@@ -1203,9 +1204,9 @@ const LEVELS = {
         lavaTheme: true,
         hasCeiling: true,           // Underground - has a ceiling
         ceilingHeight: 25,          // Height of the cave ceiling
-        skyColor: 0x1a0a00,         // Very dark reddish-black (cave darkness)
+        skyColor: 0x331100,         // Match fog color for seamless fade
         groundColor: 0x8a6a50,      // Medium brown - visible but cave-like
-        fogDensity: 0.008,          // Light fog for atmosphere
+        fogDensity: 0.02,           // Dense fog to hide clipping
         fogColor: 0x331100,         // Dark red/orange smoke
         
         // No river or materials
@@ -1580,10 +1581,10 @@ const LEVELS = {
         // Unique elements for level 5
         waterTheme: true,
         hasWaves: true,             // Animated water surface
-        skyColor: 0x87CEEB,         // Sky blue
+        skyColor: 0x4488aa,         // Match fog color for seamless fade
         groundColor: 0x1E90FF,      // Dodger blue water
-        fogDensity: 0.003,          // Light fog for distance
-        fogColor: 0xB0E0E6,         // Powder blue mist
+        fogDensity: 0.02,           // Dense fog to hide clipping
+        fogColor: 0x4488aa,         // Misty blue
         
         // No river or materials
         hasRiver: false,
@@ -1969,8 +1970,8 @@ const LEVELS = {
         candyTheme: true,
         skyColor: 0xFFB6C1,         // Light pink sky
         groundColor: 0xFFE4E1,      // Misty rose ground
-        fogDensity: 0.004,
-        fogColor: 0xFFC0CB,         // Pink cotton candy fog
+        fogDensity: 0.02,           // Dense fog to hide far clipping
+        fogColor: 0xFFB6C1,         // Match sky color for seamless fade
         
         // No river - has chocolate river instead
         hasRiver: false,
@@ -2266,10 +2267,10 @@ const LEVELS = {
         
         // Unique elements for graveyard level
         graveyardTheme: true,
-        skyColor: 0x1a0a1f,          // Dark purple-black sky
+        skyColor: 0x443355,          // Match fog color for seamless fade
         groundColor: 0x8a7a65,       // Visible dead earth brown (lighter)
-        fogDensity: 0.008,           // Moderate spooky fog
-        fogColor: 0x332244,          // Purple-tinted fog
+        fogDensity: 0.02,            // Dense fog to hide clipping
+        fogColor: 0x443355,          // Purple-tinted fog
         
         // No river - has eerie mist pools instead
         hasRiver: false,

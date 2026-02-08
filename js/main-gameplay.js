@@ -1979,7 +1979,6 @@
                     spawnInterval: 8000,
                     maxSpawnedZombies: 15,
                     spawnedCount: 0,
-                    risingZombies: [],
                     pendingSpawns: []
                 };
             }
@@ -3028,15 +3027,15 @@
         }
 
         const terrainHeight = getTerrainHeight(x, z);
-        // Start zombie underground
-        zombieGrp.position.set(x, terrainHeight - 2, z);
+        // Spawn zombie directly at terrain height
+        zombieGrp.position.set(x, terrainHeight, z);
         G.scene.add(zombieGrp);
 
         const patrolRange = 5;
         
         return {
             mesh: zombieGrp,
-            speed: 0.012 + Math.random() * 0.005,
+            speed: 0.02 + Math.random() * 0.01, // Slow shambling zombies (0.02-0.03)
             direction: 1,
             patrolLeft: x - patrolRange,
             patrolRight: x + patrolRange,
@@ -3049,10 +3048,7 @@
             initialZ: z,
             initialPatrolLeft: x - patrolRange,
             initialPatrolRight: x + patrolRange,
-            // Rising animation state
-            isRising: true,
-            targetY: terrainHeight,
-            riseSpeed: 0.03,
+            velocity: { x: 0, z: 0 },
             spawnTime: Date.now()
         };
     }
@@ -3067,7 +3063,6 @@
                 spawnInterval: 8000, // 8 seconds between spawns
                 maxSpawnedZombies: 15, // Max additional zombies
                 spawnedCount: 0,
-                risingZombies: [], // Zombies currently rising from ground
                 pendingSpawns: [] // Warning lights before spawns
             };
         }
@@ -3107,26 +3102,8 @@
                 const zombie = createSpawnedZombie(pending.x, pending.z);
                 zombie.spawnId = pending.spawnId;
                 G.goblins.push(zombie);
-                state.risingZombies.push(zombie);
                 
                 state.pendingSpawns.splice(i, 1);
-            }
-        }
-        
-        // Update rising zombies
-        for (let i = state.risingZombies.length - 1; i >= 0; i--) {
-            const zombie = state.risingZombies[i];
-            if (zombie.isRising) {
-                zombie.mesh.position.y += zombie.riseSpeed;
-                // Add slight wobble as zombie emerges
-                zombie.mesh.rotation.z = Math.sin(now * 0.01) * 0.1;
-                
-                if (zombie.mesh.position.y >= zombie.targetY) {
-                    zombie.mesh.position.y = zombie.targetY;
-                    zombie.mesh.rotation.z = 0;
-                    zombie.isRising = false;
-                    state.risingZombies.splice(i, 1);
-                }
             }
         }
         
@@ -3510,7 +3487,8 @@
                 const directionZ = targetPlayer.position.z - gob.mesh.position.z;
                 const length = Math.sqrt(directionX * directionX + directionZ * directionZ);
                 
-                if (length > 0) {
+                // Only move if not already very close (prevents oscillation and ensures collision)
+                if (length > 0.5) {
                     gob.mesh.position.x += (directionX / length) * gob.speed;
                     gob.mesh.position.z += (directionZ / length) * gob.speed;
                     gob.mesh.rotation.y = Math.atan2(directionX, directionZ);

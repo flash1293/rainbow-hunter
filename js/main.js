@@ -354,28 +354,34 @@ function initGame() {
         G.scene.fog = new THREE.FogExp2(fogColor, G.levelConfig.fogDensity);
         G.scene.background = new THREE.Color(fogColor);
     } else if (G.graveyardTheme) {
-        // Default graveyard fog - spooky purple
-        G.scene.fog = new THREE.FogExp2(0x443355, 0.008);
+        // Default graveyard fog - spooky purple (dense to hide clipping)
+        G.scene.fog = new THREE.FogExp2(0x443355, 0.02);
         G.scene.background = new THREE.Color(0x443355);
     } else if (G.lavaTheme) {
-        // Lava level - smoky red/orange haze
-        G.scene.fog = new THREE.FogExp2(0x331100, 0.005);
+        // Lava level - smoky red/orange haze (dense to hide clipping)
+        G.scene.fog = new THREE.FogExp2(0x331100, 0.02);
+        G.scene.background = new THREE.Color(0x331100);
     } else if (G.desertTheme) {
-        // Desert level - sandy dust haze
-        G.scene.fog = new THREE.FogExp2(0xd4a574, 0.003);
+        // Desert level - sandy dust haze (dense to hide clipping)
+        G.scene.fog = new THREE.FogExp2(0xd4a574, 0.02);
+        G.scene.background = new THREE.Color(0xd4a574);
     } else if (G.iceTheme) {
-        // Ice level - white mist
-        G.scene.fog = new THREE.FogExp2(0xc8d8e8, 0.003);
+        // Ice level - white mist (dense to hide clipping)
+        G.scene.fog = new THREE.FogExp2(0xc8d8e8, 0.02);
+        G.scene.background = new THREE.Color(0xc8d8e8);
     } else if (G.waterTheme) {
-        // Water level - misty blue
-        G.scene.fog = new THREE.FogExp2(0x4488aa, 0.004);
+        // Water level - misty blue (dense to hide clipping)
+        G.scene.fog = new THREE.FogExp2(0x4488aa, 0.02);
+        G.scene.background = new THREE.Color(0x4488aa);
     } else if (G.candyTheme) {
-        // Candy level - cotton candy pink/purple mist
-        G.scene.fog = new THREE.FogExp2(0xffccee, 0.002);
+        // Candy level - cotton candy pink/purple mist (dense enough to hide far clipping)
+        G.scene.fog = new THREE.FogExp2(0xffccee, 0.02);
+        G.scene.background = new THREE.Color(0xffccee);
     }
     
     // Determine camera far plane based on fog (closer = better performance)
-    const cameraFar = G.scene.fog ? 90 : GAME_CONFIG.CAMERA_FAR;
+    // Candy level gets longer view distance
+    const cameraFar = G.candyTheme ? 130 : (G.scene.fog ? 90 : GAME_CONFIG.CAMERA_FAR);
     
     // Pre-cache explosion and smoke materials to avoid texture loading glitches
     G.explosionTextureCached = G.iceTheme ? G.skyTextures.explosionIce : G.skyTextures.explosion;
