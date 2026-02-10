@@ -13,7 +13,7 @@
 - Procedurally generated textures and audio
 - **Registry-based architecture** for easy addition of new levels, themes, and entities
 
-**Recent Modularization**: The monolithic 44,144-line `main.js` file has been split into logical modules (`main-setup.js`, `main-entities.js`, `main-gameplay.js`, `main-loop.js`) totaling 15,742 lines, improving maintainability and code organization. Additionally, level configurations (2,700+ lines) have been extracted from `config.js` into individual level files with a registry system.
+**Recent Modularization**: The monolithic 44,144-line `main.js` file has been split into logical modules (`main-setup.js`, `main-entities.js`, `main-gameplay.js`, `main-loop.js`) totaling ~11,000 lines, improving maintainability and code organization. Additionally, level configurations (2,700+ lines) have been extracted from `config.js` into individual level files with a registry system. **Gameplay systems** have been further modularized into 9 separate files under `js/gameplay/` (effects, items, herzmen, spawns, projectiles, bullets, player, enemies, boss), reducing `main-gameplay.js` from 6,667 to 1,488 lines (78% reduction).
 
 ## Project Structure
 
@@ -37,13 +37,23 @@ eat-the-rainbow/
 js/
 ├── main.js                 # Game orchestration, initialization entry point (481 lines)
 ├── main-setup.js           # Player, environment objects, and input setup (2,437 lines)
-├── main-entities.js        # Enemies, collectibles, and special objects (2,723 lines)
-├── main-gameplay.js        # Combat, updates, and collision systems (3,931 lines)
+├── main-entities.js        # Enemies, collectibles, and special objects (1,800 lines)
+├── main-gameplay.js        # Multiplayer events and collision systems (1,488 lines)
 ├── main-loop.js            # Game reset, HUD, and main game loop (913 lines)
 ├── config.js               # Game constants only (~105 lines, LEVELS removed)
 ├── terrain.js              # Terrain generation and procedural textures (2,213 lines)
 ├── audio.js                # Audio system with sound effects and music (846 lines)
 ├── multiplayer.js          # PeerJS-based multiplayer synchronization (270 lines)
+├── gameplay/               # Extracted gameplay systems (5,259 lines total)
+│   ├── gameplay-effects.js     # Explosions, smoke, scorch marks (~257 lines)
+│   ├── gameplay-items.js       # Banana/bomb/herzman placement (~350 lines)
+│   ├── gameplay-herzmen.js     # Herz-man turret system (~630 lines)
+│   ├── gameplay-spawns.js      # Zombie/oven spawning (~640 lines)
+│   ├── gameplay-projectiles.js # Fireballs, tornados, lava trails (~1,025 lines)
+│   ├── gameplay-bullets.js     # Player bullet system (~307 lines)
+│   ├── gameplay-player.js      # Player movement & powers (~772 lines)
+│   ├── gameplay-enemies.js     # Goblin/bird/pirate AI (~920 lines)
+│   └── gameplay-boss.js        # Dragon/Reaper boss AI (~358 lines)
 ├── registries/             # Registry pattern for extensibility
 │   ├── level-registry.js   # LEVEL_REGISTRY - manages level configurations
 │   ├── theme-registry.js   # THEME_REGISTRY - manages visual themes
@@ -67,7 +77,7 @@ js/
 └── entities/               # (Reserved for entity factories)
 ```
 
-**Total Codebase: ~15,742 lines** (down from 44,144 lines in monolithic version)
+**Total Codebase: ~16,500 lines** across modular files (down from 44,144 lines in monolithic version)
 
 ## Architecture Overview
 
@@ -98,6 +108,19 @@ The project uses **traditional script loading** (no ES6 modules) with a clean mo
   <script src="js/terrain.js"></script>
   <script src="js/audio.js"></script>
   <script src="js/multiplayer.js"></script>
+  
+  <!-- Gameplay modules (load before main-gameplay.js) -->
+  <script src="js/gameplay/gameplay-effects.js"></script>
+  <script src="js/gameplay/gameplay-items.js"></script>
+  <script src="js/gameplay/gameplay-herzmen.js"></script>
+  <script src="js/gameplay/gameplay-spawns.js"></script>
+  <script src="js/gameplay/gameplay-projectiles.js"></script>
+  <script src="js/gameplay/gameplay-bullets.js"></script>
+  <script src="js/gameplay/gameplay-player.js"></script>
+  <script src="js/gameplay/gameplay-enemies.js"></script>
+  <script src="js/gameplay/gameplay-boss.js"></script>
+  
+  <!-- Main game modules -->
   <script src="js/main-setup.js"></script>
   <script src="js/main-entities.js"></script>
   <script src="js/main-gameplay.js"></script>
@@ -140,9 +163,10 @@ The game uses a **registry pattern** for managing levels, themes, and entities:
 |--------|----------------|-------|
 | `main.js` | Game orchestration, initialization entry point | 481 |
 | `main-setup.js` | Player creation, environment objects, input setup | 2,437 |
-| `main-entities.js` | Enemy and special object creation (goblins, dragons, etc.) | 2,723 |
-| `main-gameplay.js` | Combat, updates, collisions, explosions | 3,931 |
+| `main-entities.js` | Enemy and special object creation (goblins, dragons, etc.) | 1,800 |
+| `main-gameplay.js` | Multiplayer events and collision detection | 1,488 |
 | `main-loop.js` | Game loop, HUD, reset functionality | 913 |
+| `gameplay/*` | 9 extracted gameplay modules (effects, items, etc.) | 5,259 |
 
 ### Configuration-Driven Design
 - **`config.js`** contains ALL game constants, level data, enemy positions, etc.
