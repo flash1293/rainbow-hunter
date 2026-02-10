@@ -216,6 +216,60 @@
       "levels": [7],
       "health": 60,
       "damage": 2
+    },
+    {
+      "id": "knight",
+      "name": "Ritter",
+      "description": "Gepanzerter Krieger in rostiger Rüstung mit Schwert und Schild. Patrouilliert die verfallenen Burgruinen und stürmt auf Eindringlinge los.",
+      "tags": ["Ruinen", "Nahkampf", "Panzer"],
+      "levels": [8],
+      "health": 3,
+      "damage": 1
+    },
+    {
+      "id": "spectral-knight",
+      "name": "Geisterritter",
+      "description": "Durchscheinender Geist eines gefallenen Ritters mit ätherischem Leuchten. Schwebt durch die Ruinen und schießt gespenstische Pfeile.",
+      "tags": ["Ruinen", "Fernkampf", "Schwebend"],
+      "levels": [8],
+      "health": 5,
+      "damage": 1
+    },
+    {
+      "id": "giant-spider",
+      "name": "Riesenspinne",
+      "description": "Massive haarige Spinne mit acht bedrohlichen Beinen und giftigen Fangzähnen. Hat sich in den dunklen Ecken der Ruinen eingenistet.",
+      "tags": ["Ruinen", "Boss", "Schwer"],
+      "levels": [8],
+      "health": 20,
+      "damage": 2
+    },
+    {
+      "id": "dark-sorcerer",
+      "name": "Dunkler Magier",
+      "description": "Geheimnisvoller Zauberer in schwarzer Robe mit glühenden Runen. Hüter uralter verbotener Magie, wirft verheerende Feuerbälle.",
+      "tags": ["Ruinen", "Magie", "Fernkampf"],
+      "levels": [8],
+      "health": 7,
+      "damage": 1
+    },
+    {
+      "id": "raven",
+      "name": "Rabe",
+      "description": "Schwarzer Unglücksbote mit scharfen Krallen. Kreist über den Ruinen und wirft explosive Bomben auf unvorsichtige Abenteurer.",
+      "tags": ["Ruinen", "Fliegend", "Bomben"],
+      "levels": [8],
+      "health": 2,
+      "damage": 1
+    },
+    {
+      "id": "stone-dragon",
+      "name": "Steindrache",
+      "description": "Uralter Drache mit steinerner Haut und feurigem Atem. Wacht seit Jahrhunderten über den vergessenen Königsschatz in den Ruinen.",
+      "tags": ["Ruinen", "Boss", "Fliegend", "Feuerball"],
+      "levels": [8],
+      "health": 50,
+      "damage": 2
     }
   ],
   "items": [
@@ -381,6 +435,31 @@
       "id": "mist-pool",
       "name": "Nebelteich",
       "description": "Geheimnisvoller Teich, aus dem unheimlicher Nebel aufsteigt. Was lauert in seinen Tiefen?"
+    },
+    {
+      "id": "broken-column",
+      "name": "Zerbrochene Säule",
+      "description": "Einst prachtvolle Marmorsäule, nun gebrochen und von Efeu umrankt. Zeuge vergangener Größe."
+    },
+    {
+      "id": "stone-arch",
+      "name": "Steinbogen",
+      "description": "Verwitterter Torbogen aus massivem Stein. Die Reliefs darauf sind kaum noch zu erkennen."
+    },
+    {
+      "id": "rubble",
+      "name": "Trümmerhaufen",
+      "description": "Haufen aus zerbrochenen Steinen und Mörtel. Überreste der einst mächtigen Burgmauern."
+    },
+    {
+      "id": "knight-statue",
+      "name": "Ritterstatue",
+      "description": "Steinerne Statue eines Ritters in voller Rüstung. Seine leeren Augen scheinen jeden Besucher zu verfolgen."
+    },
+    {
+      "id": "ancient-fountain",
+      "name": "Alter Brunnen",
+      "description": "Verfallener Springbrunnen im Burghof. Das Wasser ist längst versiegt, doch manchmal hört man noch ein Plätschern..."
     }
   ]
 }

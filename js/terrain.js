@@ -2453,7 +2453,7 @@ function getTerrainHeight(x, z) {
 }
 
 // Create visual hill meshes
-function createHills(scene, THREE, hillPositions, hillColor, iceTheme, desertTheme, lavaTheme, waterTheme, candyTheme, graveyardTheme) {
+function createHills(scene, THREE, hillPositions, hillColor, iceTheme, desertTheme, lavaTheme, waterTheme, candyTheme, graveyardTheme, ruinsTheme) {
     const textures = getTerrainTextures(THREE);
     const hills = hillPositions || HILLS;
     const color = hillColor || 0x88cc88;
@@ -2468,6 +2468,8 @@ function createHills(scene, THREE, hillPositions, hillColor, iceTheme, desertThe
         textureToUse = textures.candy; // Candy frosting hills
     } else if (graveyardTheme) {
         textureToUse = textures.graveyard; // Burial mound texture
+    } else if (ruinsTheme) {
+        textureToUse = textures.rock; // Rubble pile texture
     } else if (iceTheme) {
         textureToUse = textures.grassIce;
     } else {
@@ -2488,6 +2490,12 @@ function createHills(scene, THREE, hillPositions, hillColor, iceTheme, desertThe
             hillMaterial = new THREE.MeshLambertMaterial({ 
                 map: textureToUse,
                 color: 0x2a2a20
+            });
+        } else if (ruinsTheme) {
+            // Rocky rubble piles
+            hillMaterial = new THREE.MeshLambertMaterial({ 
+                map: textureToUse,
+                color: 0x6B5B4F
             });
         } else {
             hillMaterial = new THREE.MeshLambertMaterial({ 
@@ -2566,7 +2574,7 @@ function createHills(scene, THREE, hillPositions, hillColor, iceTheme, desertThe
 }
 
 // Create mountains (world boundaries)
-function createMountains(scene, THREE, mountainPositions, candyTheme, graveyardTheme) {
+function createMountains(scene, THREE, mountainPositions, candyTheme, graveyardTheme, ruinsTheme) {
     const textures = getTerrainTextures(THREE);
     mountainPositions.forEach(mtn => {
         if (graveyardTheme) {
@@ -2658,6 +2666,114 @@ function createMountains(scene, THREE, mountainPositions, candyTheme, graveyardT
                 scene.add(glow);
             }
             
+        } else if (ruinsTheme) {
+            // Detailed warm sandstone castle walls with architectural features
+            const wallHeight = mtn.height;
+            const wallWidth = mtn.width;
+            const wallDepth = 2.5; // Thick castle walls
+            
+            // Main stone wall body
+            const wallGeometry = new THREE.BoxGeometry(wallWidth, wallHeight * 0.8, wallDepth);
+            const wallMaterial = new THREE.MeshLambertMaterial({ 
+                color: 0xC8BEA8, // Light warm sandstone
+                map: textures.rock
+            });
+            const wall = new THREE.Mesh(wallGeometry, wallMaterial);
+            wall.position.set(mtn.x, wallHeight * 0.4, mtn.z);
+            wall.castShadow = true;
+            wall.receiveShadow = true;
+            scene.add(wall);
+            
+            // Stone base (slightly wider, darker)
+            const baseGeometry = new THREE.BoxGeometry(wallWidth + 0.6, wallHeight * 0.12, wallDepth + 0.5);
+            const baseMaterial = new THREE.MeshLambertMaterial({ 
+                color: 0xA09888,
+                map: textures.rock
+            });
+            const base = new THREE.Mesh(baseGeometry, baseMaterial);
+            base.position.set(mtn.x, wallHeight * 0.06, mtn.z);
+            scene.add(base);
+            
+            // Horizontal decorative band
+            const bandGeometry = new THREE.BoxGeometry(wallWidth + 0.3, wallHeight * 0.06, wallDepth + 0.2);
+            const bandMaterial = new THREE.MeshLambertMaterial({ color: 0xD5CAB8 });
+            const band = new THREE.Mesh(bandGeometry, bandMaterial);
+            band.position.set(mtn.x, wallHeight * 0.6, mtn.z);
+            scene.add(band);
+            
+            // Battlements on top
+            const merlonCount = Math.floor(wallWidth / 3);
+            for (let i = 0; i < merlonCount; i++) {
+                if (Math.random() > 0.1) { // Most intact
+                    const merlonHeight = wallHeight * 0.18;
+                    const merlonGeometry = new THREE.BoxGeometry(1.3, merlonHeight, wallDepth);
+                    const merlonMaterial = new THREE.MeshLambertMaterial({ 
+                        color: 0xBFB5A0,
+                        map: textures.rock
+                    });
+                    const merlon = new THREE.Mesh(merlonGeometry, merlonMaterial);
+                    merlon.position.set(
+                        mtn.x - wallWidth/2 + (i + 0.5) * (wallWidth / merlonCount),
+                        wallHeight * 0.8 + merlonHeight/2,
+                        mtn.z
+                    );
+                    merlon.castShadow = true;
+                    scene.add(merlon);
+                    
+                    // Cap on merlon
+                    const capGeometry = new THREE.BoxGeometry(1.5, 0.12, wallDepth + 0.1);
+                    const cap = new THREE.Mesh(capGeometry, bandMaterial);
+                    cap.position.set(merlon.position.x, merlon.position.y + merlonHeight/2 + 0.06, mtn.z);
+                    scene.add(cap);
+                }
+            }
+            
+            // Arrow slits
+            const slitCount = Math.floor(wallWidth / 10);
+            for (let i = 0; i < slitCount; i++) {
+                const slitGeometry = new THREE.BoxGeometry(0.12, wallHeight * 0.2, wallDepth + 0.1);
+                const slitMaterial = new THREE.MeshBasicMaterial({ color: 0x2A2520 });
+                const slit = new THREE.Mesh(slitGeometry, slitMaterial);
+                slit.position.set(
+                    mtn.x - wallWidth/2 + (i + 0.5) * (wallWidth / slitCount),
+                    wallHeight * 0.35,
+                    mtn.z
+                );
+                scene.add(slit);
+            }
+            
+            // Subtle rubble
+            for (let i = 0; i < wallWidth / 15; i++) {
+                const rubbleGeometry = new THREE.DodecahedronGeometry(0.3 + Math.random() * 0.3, 0);
+                const rubbleMaterial = new THREE.MeshLambertMaterial({ color: 0xA09888 });
+                const rubble = new THREE.Mesh(rubbleGeometry, rubbleMaterial);
+                rubble.position.set(
+                    mtn.x - wallWidth/2 + Math.random() * wallWidth,
+                    0.2,
+                    mtn.z + wallDepth/2 + 0.3 + Math.random()
+                );
+                rubble.rotation.set(Math.random() * Math.PI, Math.random() * Math.PI, Math.random() * Math.PI);
+                scene.add(rubble);
+            }
+            
+            // Ivy/moss patches
+            if (Math.random() > 0.4) {
+                const ivyGeometry = new THREE.PlaneGeometry(wallWidth * 0.2, wallHeight * 0.3);
+                const ivyMaterial = new THREE.MeshLambertMaterial({ 
+                    color: 0x5A8F5A,
+                    transparent: true,
+                    opacity: 0.65,
+                    side: THREE.DoubleSide
+                });
+                const ivy = new THREE.Mesh(ivyGeometry, ivyMaterial);
+                ivy.position.set(
+                    mtn.x + (Math.random() - 0.5) * wallWidth * 0.5, 
+                    wallHeight * 0.35, 
+                    mtn.z + wallDepth/2 + 0.05
+                );
+                scene.add(ivy);
+            }
+            
         } else {
             // Regular mountain (cone shape)
             const mountainGeometry = new THREE.ConeGeometry(mtn.width/2, mtn.height, 6);
@@ -2716,7 +2832,7 @@ function createMountains(scene, THREE, mountainPositions, candyTheme, graveyardT
 }
 
 // Create ground plane
-function createGround(scene, THREE, groundColor, iceTheme, desertTheme, lavaTheme, waterTheme, candyTheme, graveyardTheme) {
+function createGround(scene, THREE, groundColor, iceTheme, desertTheme, lavaTheme, waterTheme, candyTheme, graveyardTheme, ruinsTheme) {
     const textures = getTerrainTextures(THREE);
     const color = groundColor || 0xffffff; // Tint color applied over texture
     let textureToUse;
@@ -2767,6 +2883,8 @@ function createGround(scene, THREE, groundColor, iceTheme, desertTheme, lavaThem
         textureToUse = textures.candy || textures.grass; // Candy frosting texture
     } else if (graveyardTheme) {
         textureToUse = textures.graveyard || textures.grass; // Graveyard dead grass/dirt texture
+    } else if (ruinsTheme) {
+        textureToUse = textures.grass; // Green grass ground for ruins // Stone floor texture for ruins
     } else if (iceTheme) {
         textureToUse = textures.grassIce;
     } else {

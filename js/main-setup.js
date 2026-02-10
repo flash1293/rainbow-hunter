@@ -2209,6 +2209,235 @@ function initSetup() {
             // Random rotation for variety
             treeGroup.rotation.y = Math.random() * Math.PI * 2;
             
+        } else if (treeType === 'brokencolumn') {
+            // Broken stone column for ruins
+            const stoneColor = 0x8B8378;
+            const stoneDark = 0x6B635B;
+            const stoneMaterial = new THREE.MeshLambertMaterial({ color: stoneColor });
+            
+            // Column base (wider)
+            const baseGeometry = new THREE.CylinderGeometry(0.7, 0.8, 0.4, 12);
+            const baseMaterial = new THREE.MeshLambertMaterial({ color: stoneDark });
+            const base = new THREE.Mesh(baseGeometry, baseMaterial);
+            base.position.y = 0.2;
+            base.castShadow = true;
+            treeGroup.add(base);
+            
+            // Main column shaft (broken at random height)
+            const columnHeight = 1.5 + Math.random() * 2;
+            const columnGeometry = new THREE.CylinderGeometry(0.5, 0.55, columnHeight, 12);
+            const column = new THREE.Mesh(columnGeometry, stoneMaterial);
+            column.position.y = 0.4 + columnHeight / 2;
+            column.castShadow = true;
+            treeGroup.add(column);
+            
+            // Broken top (jagged)
+            const brokenTopGeometry = new THREE.ConeGeometry(0.5, 0.4, 6);
+            const brokenTop = new THREE.Mesh(brokenTopGeometry, stoneMaterial);
+            brokenTop.position.y = 0.4 + columnHeight + 0.1;
+            brokenTop.rotation.x = Math.PI;
+            brokenTop.rotation.y = Math.random() * Math.PI;
+            treeGroup.add(brokenTop);
+            
+            // Fallen chunk nearby
+            if (Math.random() > 0.4) {
+                const chunkGeometry = new THREE.DodecahedronGeometry(0.3 + Math.random() * 0.3, 0);
+                const chunk = new THREE.Mesh(chunkGeometry, baseMaterial);
+                chunk.position.set(
+                    (Math.random() - 0.5) * 2,
+                    0.2,
+                    (Math.random() - 0.5) * 2
+                );
+                chunk.rotation.set(Math.random(), Math.random(), Math.random());
+                chunk.castShadow = true;
+                treeGroup.add(chunk);
+            }
+            
+            // Ivy climbing column
+            if (Math.random() > 0.5) {
+                const ivyMaterial = new THREE.MeshLambertMaterial({ 
+                    color: 0x3A5F3A,
+                    transparent: true,
+                    opacity: 0.7
+                });
+                const ivyGeometry = new THREE.PlaneGeometry(0.8, columnHeight * 0.5);
+                const ivy = new THREE.Mesh(ivyGeometry, ivyMaterial);
+                ivy.position.set(0.52, columnHeight * 0.4, 0);
+                ivy.rotation.y = Math.PI / 2;
+                treeGroup.add(ivy);
+            }
+            
+        } else if (treeType === 'stonearch') {
+            // Stone archway for ruins
+            const stoneColor = 0x7A7268;
+            const stoneMaterial = new THREE.MeshLambertMaterial({ color: stoneColor });
+            
+            // Left pillar
+            const pillarGeometry = new THREE.BoxGeometry(0.6, 2.5, 0.6);
+            const leftPillar = new THREE.Mesh(pillarGeometry, stoneMaterial);
+            leftPillar.position.set(-1, 1.25, 0);
+            leftPillar.castShadow = true;
+            treeGroup.add(leftPillar);
+            
+            // Right pillar
+            const rightPillar = new THREE.Mesh(pillarGeometry, stoneMaterial);
+            rightPillar.position.set(1, 1.25, 0);
+            rightPillar.castShadow = true;
+            treeGroup.add(rightPillar);
+            
+            // Arch top (if not broken)
+            if (Math.random() > 0.3) {
+                const archGeometry = new THREE.BoxGeometry(2.6, 0.5, 0.6);
+                const arch = new THREE.Mesh(archGeometry, stoneMaterial);
+                arch.position.y = 2.75;
+                arch.rotation.z = (Math.random() - 0.5) * 0.1; // Slight tilt
+                arch.castShadow = true;
+                treeGroup.add(arch);
+            }
+            
+            // Fallen stones at base
+            for (let i = 0; i < 2; i++) {
+                const rubbleGeometry = new THREE.DodecahedronGeometry(0.2 + Math.random() * 0.2, 0);
+                const rubble = new THREE.Mesh(rubbleGeometry, stoneMaterial);
+                rubble.position.set(
+                    (Math.random() - 0.5) * 3,
+                    0.15,
+                    (Math.random() - 0.5) * 1.5
+                );
+                rubble.rotation.set(Math.random(), Math.random(), Math.random());
+                rubble.castShadow = true;
+                treeGroup.add(rubble);
+            }
+            
+            treeGroup.rotation.y = Math.random() * Math.PI * 2;
+            
+        } else if (treeType === 'rubble') {
+            // Pile of rubble/debris for ruins
+            const stoneColors = [0x8B8378, 0x7A7268, 0x6B635B, 0x9A9488];
+            
+            // Create pile of random stone chunks
+            const chunkCount = 5 + Math.floor(Math.random() * 5);
+            for (let i = 0; i < chunkCount; i++) {
+                const size = 0.2 + Math.random() * 0.4;
+                const chunkGeometry = new THREE.DodecahedronGeometry(size, 0);
+                const chunkColor = stoneColors[Math.floor(Math.random() * stoneColors.length)];
+                const chunkMaterial = new THREE.MeshLambertMaterial({ color: chunkColor });
+                const chunk = new THREE.Mesh(chunkGeometry, chunkMaterial);
+                
+                // Stack chunks in a rough pile shape
+                const radius = 0.8 * Math.random();
+                const angle = Math.random() * Math.PI * 2;
+                chunk.position.set(
+                    Math.cos(angle) * radius,
+                    size * 0.5 + Math.random() * 0.3,
+                    Math.sin(angle) * radius
+                );
+                chunk.rotation.set(Math.random() * Math.PI, Math.random() * Math.PI, Math.random() * Math.PI);
+                chunk.castShadow = true;
+                treeGroup.add(chunk);
+            }
+            
+            // Occasional larger slab
+            if (Math.random() > 0.5) {
+                const slabGeometry = new THREE.BoxGeometry(0.8, 0.2, 0.5);
+                const slabMaterial = new THREE.MeshLambertMaterial({ color: 0x7A7268 });
+                const slab = new THREE.Mesh(slabGeometry, slabMaterial);
+                slab.position.set(
+                    (Math.random() - 0.5) * 0.5,
+                    0.1,
+                    (Math.random() - 0.5) * 0.5
+                );
+                slab.rotation.set(
+                    (Math.random() - 0.5) * 0.3,
+                    Math.random() * Math.PI,
+                    (Math.random() - 0.5) * 0.2
+                );
+                slab.castShadow = true;
+                treeGroup.add(slab);
+            }
+            
+        } else if (treeType === 'knightstatue') {
+            // Stone knight statue for ruins
+            const stoneColor = 0x6B6B6B;
+            const stoneDark = 0x4A4A4A;
+            const stoneMaterial = new THREE.MeshLambertMaterial({ color: stoneColor });
+            const darkMaterial = new THREE.MeshLambertMaterial({ color: stoneDark });
+            
+            // Pedestal base
+            const pedestalGeometry = new THREE.BoxGeometry(1.2, 0.4, 1.2);
+            const pedestal = new THREE.Mesh(pedestalGeometry, darkMaterial);
+            pedestal.position.y = 0.2;
+            pedestal.castShadow = true;
+            treeGroup.add(pedestal);
+            
+            // Body (simplified knight shape)
+            const bodyGeometry = new THREE.CylinderGeometry(0.35, 0.45, 1.5, 8);
+            const body = new THREE.Mesh(bodyGeometry, stoneMaterial);
+            body.position.y = 1.15;
+            body.castShadow = true;
+            treeGroup.add(body);
+            
+            // Head (helmet)
+            const headGeometry = new THREE.SphereGeometry(0.3, 8, 8);
+            const head = new THREE.Mesh(headGeometry, stoneMaterial);
+            head.position.y = 2.1;
+            head.scale.y = 1.2;
+            head.castShadow = true;
+            treeGroup.add(head);
+            
+            // Helmet visor/slit
+            const visorGeometry = new THREE.BoxGeometry(0.25, 0.05, 0.35);
+            const visor = new THREE.Mesh(visorGeometry, darkMaterial);
+            visor.position.set(0, 2.1, 0.25);
+            treeGroup.add(visor);
+            
+            // Shield (on side)
+            const shieldGeometry = new THREE.BoxGeometry(0.1, 0.6, 0.4);
+            const shield = new THREE.Mesh(shieldGeometry, stoneMaterial);
+            shield.position.set(-0.45, 1.2, 0);
+            shield.rotation.z = 0.2;
+            shield.castShadow = true;
+            treeGroup.add(shield);
+            
+            // Sword (in front)
+            const swordGeometry = new THREE.BoxGeometry(0.08, 1.2, 0.08);
+            const sword = new THREE.Mesh(swordGeometry, darkMaterial);
+            sword.position.set(0.3, 0.8, 0.2);
+            sword.castShadow = true;
+            treeGroup.add(sword);
+            
+            // Sword guard
+            const guardGeometry = new THREE.BoxGeometry(0.3, 0.08, 0.08);
+            const guard = new THREE.Mesh(guardGeometry, darkMaterial);
+            guard.position.set(0.3, 1.4, 0.2);
+            treeGroup.add(guard);
+            
+            // Weather damage - missing parts
+            if (Math.random() > 0.6) {
+                // Chipped/damaged look - asymmetric
+                body.scale.x = 0.9;
+            }
+            
+            // Moss on base
+            const mossMaterial = new THREE.MeshLambertMaterial({ 
+                color: 0x3A5F3A,
+                transparent: true,
+                opacity: 0.6
+            });
+            for (let i = 0; i < 2; i++) {
+                const mossGeometry = new THREE.SphereGeometry(0.15, 6, 6);
+                const moss = new THREE.Mesh(mossGeometry, mossMaterial);
+                moss.position.set(
+                    (Math.random() - 0.5) * 0.8,
+                    0.35,
+                    (Math.random() - 0.5) * 0.8
+                );
+                moss.scale.y = 0.3;
+                treeGroup.add(moss);
+            }
+            
+            treeGroup.rotation.y = Math.random() * Math.PI * 2;
+            
         } else {
             // Regular tree
             const trunkGeometry = new THREE.CylinderGeometry(0.3, 0.4, 2, 8);
@@ -2504,6 +2733,60 @@ function initSetup() {
                 rockCtx.arc(x, y, 3 + Math.random() * 5, 0, Math.PI * 2);
                 rockCtx.fill();
             }
+        } else if (G.ruinsTheme) {
+            // Ruins theme - warm cream/sandstone block wall texture (lighter, friendly)
+            rockCtx.fillStyle = '#C8BEA8';
+            rockCtx.fillRect(0, 0, 128, 128);
+            
+            // Draw irregular stone block pattern
+            const blockHeight = 16;
+            const blockWidth = 24;
+            for (let row = 0; row < 8; row++) {
+                const offset = (row % 2) * (blockWidth / 2);
+                for (let col = -1; col < 6; col++) {
+                    const x = col * blockWidth + offset + (Math.random() - 0.5) * 4;
+                    const y = row * blockHeight + (Math.random() - 0.5) * 2;
+                    // Randomize stone color (warm cream/sandstone)
+                    const shade = 0.85 + Math.random() * 0.15;
+                    const r = Math.floor(195 * shade);
+                    const g = Math.floor(185 * shade);
+                    const b = Math.floor(165 * shade);
+                    rockCtx.fillStyle = `rgb(${r},${g},${b})`;
+                    rockCtx.fillRect(x + 2, y + 2, blockWidth - 4 + Math.random() * 4, blockHeight - 4);
+                }
+            }
+            
+            // Mortar lines (irregular, aged but visible)
+            rockCtx.strokeStyle = '#7A7268';
+            rockCtx.lineWidth = 2;
+            for (let row = 0; row <= 8; row++) {
+                rockCtx.beginPath();
+                rockCtx.moveTo(0, row * blockHeight + (Math.random() - 0.5) * 3);
+                for (let x = 0; x <= 128; x += 10) {
+                    rockCtx.lineTo(x, row * blockHeight + (Math.random() - 0.5) * 3);
+                }
+                rockCtx.stroke();
+            }
+            
+            // Add subtle weathering (lighter)
+            rockCtx.strokeStyle = 'rgba(100, 90, 80, 0.3)';
+            rockCtx.lineWidth = 1;
+            for (let i = 0; i < 8; i++) {
+                rockCtx.beginPath();
+                rockCtx.moveTo(Math.random() * 128, Math.random() * 128);
+                rockCtx.lineTo(Math.random() * 128, Math.random() * 128);
+                rockCtx.stroke();
+            }
+            
+            // Add moss/ivy patches (friendly green)
+            for (let i = 0; i < 12; i++) {
+                const x = Math.random() * 128;
+                const y = Math.random() * 128;
+                rockCtx.fillStyle = `rgba(80, 130, 70, ${0.15 + Math.random() * 0.2})`;
+                rockCtx.beginPath();
+                rockCtx.arc(x, y, 4 + Math.random() * 8, 0, Math.PI * 2);
+                rockCtx.fill();
+            }
         } else {
             // Base sandy rock color
             rockCtx.fillStyle = '#a08060';
@@ -2600,6 +2883,147 @@ function initSetup() {
             const bottomRail = new THREE.Mesh(railGeometry.clone(), railMaterial);
             bottomRail.position.y = wallHeight * 0.7 + wallHeight * 0.1;
             wallGroup.add(bottomRail);
+        } else if (G.ruinsTheme) {
+            // Ruins - detailed warm sandstone castle walls
+            // Main stone wall body
+            const mainWallGeometry = new THREE.BoxGeometry(wallWidth, wallHeight * 0.75, wallDepth);
+            const mainWallMaterial = new THREE.MeshLambertMaterial({
+                map: rockTexture,
+                color: 0xC8BEA8  // Light warm sandstone
+            });
+            const mainWall = new THREE.Mesh(mainWallGeometry, mainWallMaterial);
+            mainWall.position.y = wallHeight * 0.375;
+            mainWall.castShadow = true;
+            mainWall.receiveShadow = true;
+            wallGroup.add(mainWall);
+            
+            // Stone base/foundation (darker, weathered)
+            const baseGeometry = new THREE.BoxGeometry(wallWidth + 0.4, wallHeight * 0.15, wallDepth + 0.3);
+            const baseMaterial = new THREE.MeshLambertMaterial({
+                map: rockTexture,
+                color: 0x9A9080
+            });
+            const base = new THREE.Mesh(baseGeometry, baseMaterial);
+            base.position.y = wallHeight * 0.075;
+            base.castShadow = true;
+            wallGroup.add(base);
+            
+            // Decorative horizontal band/cornice
+            const bandGeometry = new THREE.BoxGeometry(wallWidth + 0.2, wallHeight * 0.08, wallDepth + 0.15);
+            const bandMaterial = new THREE.MeshLambertMaterial({
+                color: 0xD5CAB8
+            });
+            const band = new THREE.Mesh(bandGeometry, bandMaterial);
+            band.position.y = wallHeight * 0.55;
+            wallGroup.add(band);
+            
+            // Add battlements/crenellations on top (heavily decayed ruins)
+            const merlonCount = Math.floor(wallWidth / 3);
+            for (let m = 0; m < merlonCount; m++) {
+                if (Math.random() > 0.55) { // Only ~45% of merlons remain (ruined look)
+                    const merlonHeight = wallHeight * (0.15 + Math.random() * 0.12);
+                    const merlonWidth = 1.0 + Math.random() * 0.6;
+                    const merlonGeometry = new THREE.BoxGeometry(merlonWidth, merlonHeight, wallDepth);
+                    const merlonMaterial = new THREE.MeshLambertMaterial({
+                        map: rockTexture,
+                        color: 0xBFB5A0
+                    });
+                    const merlon = new THREE.Mesh(merlonGeometry, merlonMaterial);
+                    merlon.position.set(
+                        (m - merlonCount / 2) * 3 + (Math.random() - 0.5) * 1.2,
+                        wallHeight * 0.75 + merlonHeight / 2,
+                        0
+                    );
+                    merlon.rotation.z = (Math.random() - 0.5) * 0.15; // Noticeable tilt from decay
+                    merlon.castShadow = true;
+                    wallGroup.add(merlon);
+                    
+                    // Add small cap on top of each merlon
+                    const capGeometry = new THREE.BoxGeometry(merlonWidth + 0.2, 0.15, wallDepth + 0.1);
+                    const cap = new THREE.Mesh(capGeometry, bandMaterial);
+                    cap.position.set(merlon.position.x, merlon.position.y + merlonHeight / 2 + 0.075, 0);
+                    wallGroup.add(cap);
+                }
+            }
+            
+            // Decorative arrow slits
+            const slitCount = Math.floor(wallWidth / 8);
+            for (let s = 0; s < slitCount; s++) {
+                const slitGeometry = new THREE.BoxGeometry(0.15, wallHeight * 0.25, wallDepth + 0.1);
+                const slitMaterial = new THREE.MeshBasicMaterial({ color: 0x2A2520 });
+                const slit = new THREE.Mesh(slitGeometry, slitMaterial);
+                slit.position.set(
+                    (s - slitCount / 2) * 8 + (Math.random() - 0.5) * 2,
+                    wallHeight * 0.4,
+                    0
+                );
+                wallGroup.add(slit);
+            }
+            
+            // Heavy rubble at base (ruins are crumbling)
+            for (let r = 0; r < wallWidth / 4; r++) {
+                const rubbleGeometry = new THREE.DodecahedronGeometry(0.4 + Math.random() * 0.6, 0);
+                const rubbleMaterial = new THREE.MeshLambertMaterial({
+                    color: 0xA09888
+                });
+                const rubble = new THREE.Mesh(rubbleGeometry, rubbleMaterial);
+                rubble.position.set(
+                    (r - wallWidth / 8) * 4 + (Math.random() - 0.5) * 3,
+                    0.2 + Math.random() * 0.4,
+                    wallDepth / 2 + 0.3 + Math.random() * 2.5
+                );
+                rubble.rotation.set(Math.random(), Math.random(), Math.random());
+                rubble.castShadow = true;
+                wallGroup.add(rubble);
+            }
+            
+            // Additional rubble on the other side too
+            for (let r = 0; r < wallWidth / 6; r++) {
+                const rubbleGeometry = new THREE.DodecahedronGeometry(0.3 + Math.random() * 0.5, 0);
+                const rubbleMaterial = new THREE.MeshLambertMaterial({
+                    color: 0x9A9080
+                });
+                const rubble = new THREE.Mesh(rubbleGeometry, rubbleMaterial);
+                rubble.position.set(
+                    (r - wallWidth / 12) * 6 + (Math.random() - 0.5) * 4,
+                    0.15 + Math.random() * 0.3,
+                    -(wallDepth / 2 + 0.3 + Math.random() * 2)
+                );
+                rubble.rotation.set(Math.random(), Math.random(), Math.random());
+                rubble.castShadow = true;
+                wallGroup.add(rubble);
+            }
+            
+            // Ivy patches on wall (friendly green touch)
+            if (Math.random() > 0.3) {
+                const ivyGeometry = new THREE.PlaneGeometry(wallWidth * 0.15, wallHeight * 0.25);
+                const ivyMaterial = new THREE.MeshLambertMaterial({
+                    color: 0x5A8F5A,
+                    transparent: true,
+                    opacity: 0.65,
+                    side: THREE.DoubleSide
+                });
+                const ivy = new THREE.Mesh(ivyGeometry, ivyMaterial);
+                ivy.position.set(
+                    (Math.random() - 0.5) * wallWidth * 0.6,
+                    wallHeight * 0.35,
+                    wallDepth / 2 + 0.05
+                );
+                wallGroup.add(ivy);
+            }
+            
+            // Add occasional torch bracket (decorative)
+            if (wallWidth > 15 && Math.random() > 0.5) {
+                const bracketGeometry = new THREE.BoxGeometry(0.15, 0.4, 0.3);
+                const bracketMaterial = new THREE.MeshLambertMaterial({ color: 0x3A3025 });
+                const bracket = new THREE.Mesh(bracketGeometry, bracketMaterial);
+                bracket.position.set(
+                    (Math.random() - 0.5) * wallWidth * 0.4,
+                    wallHeight * 0.5,
+                    wallDepth / 2 + 0.15
+                );
+                wallGroup.add(bracket);
+            }
         } else {
             // Original rocky/candy wall segments
             for (let s = 0; s < segmentCount; s++) {
@@ -2696,8 +3120,8 @@ function initSetup() {
                 candyPiece.castShadow = true;
                 wallGroup.add(candyPiece);
             }
-        } else if (!G.graveyardTheme) {
-            // Add jagged rocks on top for rugged silhouette (not for graveyard - it has fence already)
+        } else if (!G.graveyardTheme && !G.ruinsTheme) {
+            // Add jagged rocks on top for rugged silhouette (not for graveyard/ruins - they have their own tops)
             for (let t = 0; t < wallWidth / 5; t++) {
                 const topRockGeometry = new THREE.ConeGeometry(1 + Math.random() * 1.5, 2 + Math.random() * 3, 5);
                 const topRockMaterial = new THREE.MeshLambertMaterial({ 

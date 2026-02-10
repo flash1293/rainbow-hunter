@@ -8,8 +8,8 @@ LEVEL_REGISTRY.register(7, {
     // Player start position - at the graveyard entrance
     playerStart: { x: 0, z: 200 },
     
-    // Portal back to Level 1 (full cycle complete)
-    portal: { x: 0, z: -220, destinationLevel: 1 },
+    // Portal to Level 8 (Ancient Ruins)
+    portal: { x: 0, z: -220, destinationLevel: 8 },
     
     // Unique elements for graveyard level
     graveyardTheme: true,

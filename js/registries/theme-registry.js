@@ -60,7 +60,8 @@ const THEME_REGISTRY = {
             'lava': 'lavaTheme',
             'water': 'waterTheme',
             'candy': 'candyTheme',
-            'graveyard': 'graveyardTheme'
+            'graveyard': 'graveyardTheme',
+            'ruins': 'ruinsTheme'
         };
         return flagMap[themeId] || null;
     },
@@ -95,6 +96,7 @@ function getThemeForLevel(levelConfig) {
     if (levelConfig.waterTheme) return THEME_REGISTRY.get('water');
     if (levelConfig.candyTheme) return THEME_REGISTRY.get('candy');
     if (levelConfig.graveyardTheme) return THEME_REGISTRY.get('graveyard');
+    if (levelConfig.ruinsTheme) return THEME_REGISTRY.get('ruins');
     // Default to forest theme
     return THEME_REGISTRY.get('forest');
 }

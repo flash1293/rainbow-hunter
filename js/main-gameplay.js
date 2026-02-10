@@ -2435,8 +2435,8 @@
             // Check mountains/walls
             if (!collided && G.levelConfig.mountains && G.levelConfig.mountains.length > 0) {
                 for (const mtn of G.levelConfig.mountains) {
-                    if (G.graveyardTheme) {
-                        // Box collision for graveyard walls
+                    if (G.graveyardTheme || G.ruinsTheme) {
+                        // Box collision for graveyard and ruins walls
                         const wallWidth = mtn.width;
                         const wallDepth = Math.min(mtn.width * 0.15, 8);
                         const halfW = wallWidth / 2 + 1.5;
@@ -5821,8 +5821,8 @@
             const canPassMountains = G.waterTheme && G.player.isGliding;
             if (!canPassMountains) {
                 G.levelConfig.mountains.forEach(mtn => {
-                    // For graveyard theme walls, use rectangular (box) collision
-                    if (G.graveyardTheme) {
+                    // For graveyard and ruins theme walls, use rectangular (box) collision
+                    if (G.graveyardTheme || G.ruinsTheme) {
                         const wallWidth = mtn.width;
                         const wallDepth = Math.min(mtn.width * 0.15, 8);
                         const halfW = wallWidth / 2 + 1.5;

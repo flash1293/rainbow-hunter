@@ -567,6 +567,54 @@ async function build() {
                         </ul>
                     </div>
                 </div>
+                
+                <div class="level-card level-6">
+                    <div class="level-header">
+                        <span class="level-number">Level 6</span>
+                        <h3 class="level-title">Das Zuckerland</h3>
+                        <p class="level-subtitle">Candy Kingdom</p>
+                    </div>
+                    <div class="level-content">
+                        <p>Betrete ein süßes Wunderland voller bunter Süßigkeiten und gefährlicher Naschkatzen.</p>
+                        <ul class="feature-list">
+                            <li>Bunte Lutscher und Zuckerstangen</li>
+                            <li>Gummibären und Lebkuchenmänner</li>
+                            <li>Marshmallow-Monster und Zuckerwatte-Zauberer</li>
+                        </ul>
+                    </div>
+                </div>
+                
+                <div class="level-card level-7">
+                    <div class="level-header">
+                        <span class="level-number">Level 7</span>
+                        <h3 class="level-title">Der Friedhof</h3>
+                        <p class="level-subtitle">Spukende Gräber</p>
+                    </div>
+                    <div class="level-content">
+                        <p>Wage dich in die dunkle Nacht, wo die Toten erwachen und der Sensenmann wartet.</p>
+                        <ul class="feature-list">
+                            <li>Zombies und Skelette erheben sich</li>
+                            <li>Geister und Hexen lauern im Nebel</li>
+                            <li>Der Sensenmann als tödlicher Boss</li>
+                        </ul>
+                    </div>
+                </div>
+                
+                <div class="level-card level-8">
+                    <div class="level-header">
+                        <span class="level-number">Level 8</span>
+                        <h3 class="level-title">Die Alten Ruinen</h3>
+                        <p class="level-subtitle">Vergessene Burg</p>
+                    </div>
+                    <div class="level-content">
+                        <p>Erkunde verfallene Burgmauern bei Tageslicht, bewacht von Rittern und uralten Drachen.</p>
+                        <ul class="feature-list">
+                            <li>Zerfallene Mauern und Türme</li>
+                            <li>Ritter, Geisterritter und Riesenspinnen</li>
+                            <li>Steinerne Drachen bewachen den Schatz</li>
+                        </ul>
+                    </div>
+                </div>
             </div>
         </section>
         
@@ -626,7 +674,7 @@ ${environmentHTML}
             <p>Sammle Brückenmaterial, um Brücken über Schluchten und Lava zu bauen. Drücke E in der Nähe einer Lücke, um eine Brücke zu bauen (erfordert Materialien).</p>
             
             <h3>🎯 Ziel</h3>
-            <p>Erreiche den Regenbogen am Ende jedes Levels, um es abzuschließen. Weiche Gegnern aus, sammle Gegenstände und überlebe, um alle 5 Level zu durchqueren.</p>
+            <p>Erreiche den Regenbogen am Ende jedes Levels, um es abzuschließen. Weiche Gegnern aus, sammle Gegenstände und überlebe, um alle 8 Level zu durchqueren.</p>
             
             <h3>🏆 Schwierigkeitsmodi</h3>
             <table>

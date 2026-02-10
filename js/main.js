@@ -332,6 +332,9 @@ function initGame() {
     // Check if this is a graveyard/halloween-themed level
     G.graveyardTheme = G.levelConfig.graveyardTheme || false;
     
+    // Check if this is a ruins-themed level
+    G.ruinsTheme = G.levelConfig.ruinsTheme || false;
+    
     // Three.js setup
     G.container = document.getElementById('gameCanvas');
     G.scene = new THREE.Scene();
@@ -377,6 +380,10 @@ function initGame() {
         // Candy level - cotton candy pink/purple mist (dense enough to hide far clipping)
         G.scene.fog = new THREE.FogExp2(0xffccee, 0.02);
         G.scene.background = new THREE.Color(0xffccee);
+    } else if (G.ruinsTheme) {
+        // Ruins level - light atmospheric haze (daylight)
+        G.scene.fog = new THREE.FogExp2(0xB8C9D9, 0.008);
+        G.scene.background = new THREE.Color(0x6AAFE6);
     }
     
     // Determine camera far plane based on fog (closer = better performance)
@@ -467,11 +474,14 @@ function initGame() {
 
     // Lighting
     // Adjust ambient light for themed levels
-    const ambientIntensity = G.graveyardTheme ? 0.55 : 0.6;
-    G.ambientLight = new THREE.AmbientLight(G.graveyardTheme ? 0x9977dd : 0xffffff, ambientIntensity);
+    const ambientIntensity = G.graveyardTheme ? 0.55 : (G.ruinsTheme ? 0.7 : 0.6);
+    const ambientColor = G.graveyardTheme ? 0x9977dd : (G.ruinsTheme ? 0xfffef0 : 0xffffff);
+    G.ambientLight = new THREE.AmbientLight(ambientColor, ambientIntensity);
     G.scene.add(G.ambientLight);
 
-    G.directionalLight = new THREE.DirectionalLight(G.graveyardTheme ? 0xaa88ee : 0xffffff, G.graveyardTheme ? 0.6 : 0.8);
+    const directionalColor = G.graveyardTheme ? 0xaa88ee : (G.ruinsTheme ? 0xfff8e0 : 0xffffff);
+    const directionalIntensity = G.graveyardTheme ? 0.6 : (G.ruinsTheme ? 0.9 : 0.8);
+    G.directionalLight = new THREE.DirectionalLight(directionalColor, directionalIntensity);
     G.directionalLight.position.set(50, 100, 50);
     G.directionalLight.castShadow = true;
     
@@ -496,12 +506,60 @@ function initGame() {
     G.grassColor = G.levelConfig.grassColor || 0x228B22;
 
     // Create terrain (use level-specific ground color and theme)
-    createGround(G.scene, THREE, G.levelConfig.groundColor, G.iceTheme, G.desertTheme, G.lavaTheme, G.waterTheme, G.candyTheme, G.graveyardTheme);
-    createHills(G.scene, THREE, G.levelConfig.hills, G.hillColor, G.iceTheme, G.desertTheme, G.lavaTheme, G.waterTheme, G.candyTheme, G.graveyardTheme);
+    createGround(G.scene, THREE, G.levelConfig.groundColor, G.iceTheme, G.desertTheme, G.lavaTheme, G.waterTheme, G.candyTheme, G.graveyardTheme, G.ruinsTheme);
+    createHills(G.scene, THREE, G.levelConfig.hills, G.hillColor, G.iceTheme, G.desertTheme, G.lavaTheme, G.waterTheme, G.candyTheme, G.graveyardTheme, G.ruinsTheme);
     
     // Mountains are optional (disabled in desert)
     if (G.levelConfig.hasMountains !== false && G.levelConfig.mountains && G.levelConfig.mountains.length > 0) {
-        createMountains(G.scene, THREE, G.levelConfig.mountains, G.candyTheme, G.graveyardTheme);
+        createMountains(G.scene, THREE, G.levelConfig.mountains, G.candyTheme, G.graveyardTheme, G.ruinsTheme);
+    }
+    
+    // Natural scenic mountains (backdrop around perimeter)
+    if (G.levelConfig.naturalMountains && G.levelConfig.naturalMountains.length > 0) {
+        G.levelConfig.naturalMountains.forEach(mtn => {
+            const height = mtn.height || 30;
+            const radius = mtn.radius || 20;
+            
+            // Main mountain cone
+            const mountainGeometry = new THREE.ConeGeometry(radius, height, 8, 4);
+            const mountainMaterial = new THREE.MeshLambertMaterial({
+                color: G.ruinsTheme ? 0x7A8B6A : 0x6B7B5B  // Green-gray for scenic mountains
+            });
+            const mountain = new THREE.Mesh(mountainGeometry, mountainMaterial);
+            mountain.position.set(mtn.x, height / 2, mtn.z);
+            mountain.castShadow = true;
+            mountain.receiveShadow = true;
+            G.scene.add(mountain);
+            
+            // Snow cap on top (if tall enough)
+            if (height > 25) {
+                const capGeometry = new THREE.ConeGeometry(radius * 0.35, height * 0.25, 8);
+                const capMaterial = new THREE.MeshLambertMaterial({
+                    color: G.ruinsTheme ? 0xE8E4DC : 0xFFFFFF
+                });
+                const cap = new THREE.Mesh(capGeometry, capMaterial);
+                cap.position.set(mtn.x, height * 0.85, mtn.z);
+                G.scene.add(cap);
+            }
+            
+            // Add some trees/greenery at base
+            for (let i = 0; i < 3; i++) {
+                const treeGeometry = new THREE.ConeGeometry(2 + Math.random() * 2, 6 + Math.random() * 4, 6);
+                const treeMaterial = new THREE.MeshLambertMaterial({
+                    color: 0x3A6B2A
+                });
+                const tree = new THREE.Mesh(treeGeometry, treeMaterial);
+                const angle = (i / 3) * Math.PI * 2 + Math.random() * 0.5;
+                const dist = radius * 0.7 + Math.random() * radius * 0.3;
+                tree.position.set(
+                    mtn.x + Math.cos(angle) * dist,
+                    3 + Math.random() * 2,
+                    mtn.z + Math.sin(angle) * dist
+                );
+                tree.castShadow = true;
+                G.scene.add(tree);
+            }
+        });
     }
 
     // Impassable cliffs - towering formations that block everything including gliding

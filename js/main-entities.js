@@ -529,6 +529,130 @@ function initEntities() {
             leg2.position.set(0.15, 0.25, 0);
             leg2.rotation.x = 0.1;
             goblinGrp.add(leg2);
+        } else if (G.ruinsTheme) {
+            // KNIGHT - armored warrior for ruins level
+            const armorColor = 0x6a6a7a;
+            const chainmailColor = 0x4a4a5a;
+            const plumageColor = 0x8B0000;
+
+            // Armored torso
+            const bodyGeometry = new THREE.BoxGeometry(0.65, 0.85, 0.45);
+            const bodyMaterial = new THREE.MeshLambertMaterial({ color: armorColor });
+            const body = new THREE.Mesh(bodyGeometry, bodyMaterial);
+            body.position.y = 0.85;
+            body.castShadow = true;
+            goblinGrp.add(body);
+
+            // Chest plate detail
+            const chestPlateGeometry = new THREE.BoxGeometry(0.5, 0.6, 0.1);
+            const chestPlateMaterial = new THREE.MeshLambertMaterial({ color: 0x5a5a6a });
+            const chestPlate = new THREE.Mesh(chestPlateGeometry, chestPlateMaterial);
+            chestPlate.position.set(0, 0.9, 0.25);
+            goblinGrp.add(chestPlate);
+
+            // Knight helmet
+            const helmetGeometry = new THREE.SphereGeometry(0.38, 16, 16);
+            const helmetMaterial = new THREE.MeshLambertMaterial({ color: armorColor });
+            const helmet = new THREE.Mesh(helmetGeometry, helmetMaterial);
+            helmet.position.y = 1.55;
+            helmet.castShadow = true;
+            goblinGrp.add(helmet);
+
+            // Helmet visor
+            const visorGeometry = new THREE.BoxGeometry(0.3, 0.15, 0.15);
+            const visorMaterial = new THREE.MeshBasicMaterial({ color: 0x1a1a2a });
+            const visor = new THREE.Mesh(visorGeometry, visorMaterial);
+            visor.position.set(0, 1.5, 0.32);
+            goblinGrp.add(visor);
+
+            // Eye slits (glowing)
+            const eyeSlitGeometry = new THREE.BoxGeometry(0.08, 0.04, 0.05);
+            const eyeSlitMaterial = new THREE.MeshBasicMaterial({
+                color: 0x6699FF,
+                transparent: true,
+                opacity: 0.8
+            });
+            const eyeSlit1 = new THREE.Mesh(eyeSlitGeometry, eyeSlitMaterial);
+            eyeSlit1.position.set(-0.08, 1.52, 0.38);
+            goblinGrp.add(eyeSlit1);
+
+            const eyeSlit2 = new THREE.Mesh(eyeSlitGeometry, eyeSlitMaterial);
+            eyeSlit2.position.set(0.08, 1.52, 0.38);
+            goblinGrp.add(eyeSlit2);
+
+            // Helmet plume
+            const plumeGeometry = new THREE.ConeGeometry(0.12, 0.5, 8);
+            const plumeMaterial = new THREE.MeshLambertMaterial({ color: plumageColor });
+            const plume = new THREE.Mesh(plumeGeometry, plumeMaterial);
+            plume.position.set(0, 1.95, -0.1);
+            plume.rotation.x = 0.3;
+            goblinGrp.add(plume);
+
+            // Armored arms
+            const armGeometry = new THREE.CylinderGeometry(0.1, 0.08, 0.55, 8);
+            const armMaterial = new THREE.MeshLambertMaterial({ color: chainmailColor });
+            const arm1 = new THREE.Mesh(armGeometry, armMaterial);
+            arm1.position.set(-0.45, 0.7, 0);
+            arm1.rotation.z = 0.3;
+            goblinGrp.add(arm1);
+
+            const arm2 = new THREE.Mesh(armGeometry, armMaterial);
+            arm2.position.set(0.45, 0.7, 0);
+            arm2.rotation.z = -0.3;
+            goblinGrp.add(arm2);
+
+            // Gauntlets
+            const gauntletGeometry = new THREE.BoxGeometry(0.12, 0.15, 0.12);
+            const gauntletMaterial = new THREE.MeshLambertMaterial({ color: armorColor });
+            const gauntlet1 = new THREE.Mesh(gauntletGeometry, gauntletMaterial);
+            gauntlet1.position.set(-0.55, 0.4, 0);
+            goblinGrp.add(gauntlet1);
+
+            const gauntlet2 = new THREE.Mesh(gauntletGeometry, gauntletMaterial);
+            gauntlet2.position.set(0.55, 0.4, 0);
+            goblinGrp.add(gauntlet2);
+
+            // Shield (left hand)
+            const shieldGeometry = new THREE.BoxGeometry(0.4, 0.5, 0.08);
+            const shieldMaterial = new THREE.MeshLambertMaterial({ color: 0x4a3a2a });
+            const shield = new THREE.Mesh(shieldGeometry, shieldMaterial);
+            shield.position.set(-0.7, 0.6, 0.2);
+            shield.rotation.y = 0.3;
+            goblinGrp.add(shield);
+
+            // Shield emblem
+            const emblemGeometry = new THREE.CircleGeometry(0.1, 8);
+            const emblemMaterial = new THREE.MeshLambertMaterial({ color: 0xFFD700 });
+            const emblem = new THREE.Mesh(emblemGeometry, emblemMaterial);
+            emblem.position.set(-0.68, 0.6, 0.26);
+            emblem.rotation.y = 0.3;
+            goblinGrp.add(emblem);
+
+            // Sword (right hand)
+            const swordHandleGeometry = new THREE.CylinderGeometry(0.03, 0.03, 0.2, 6);
+            const swordHandleMaterial = new THREE.MeshLambertMaterial({ color: 0x3a2a1a });
+            const swordHandle = new THREE.Mesh(swordHandleGeometry, swordHandleMaterial);
+            swordHandle.position.set(0.6, 0.5, 0.15);
+            swordHandle.rotation.z = -0.3;
+            goblinGrp.add(swordHandle);
+
+            const swordBladeGeometry = new THREE.BoxGeometry(0.06, 0.6, 0.02);
+            const swordBladeMaterial = new THREE.MeshLambertMaterial({ color: 0x9a9aaa });
+            const swordBlade = new THREE.Mesh(swordBladeGeometry, swordBladeMaterial);
+            swordBlade.position.set(0.7, 0.9, 0.15);
+            swordBlade.rotation.z = -0.3;
+            goblinGrp.add(swordBlade);
+
+            // Armored legs
+            const legGeometry = new THREE.CylinderGeometry(0.1, 0.12, 0.5, 8);
+            const legMaterial = new THREE.MeshLambertMaterial({ color: chainmailColor });
+            const leg1 = new THREE.Mesh(legGeometry, legMaterial);
+            leg1.position.set(-0.18, 0.25, 0);
+            goblinGrp.add(leg1);
+
+            const leg2 = new THREE.Mesh(legGeometry, legMaterial);
+            leg2.position.set(0.18, 0.25, 0);
+            goblinGrp.add(leg2);
         } else {
             const bodyGeometry = new THREE.BoxGeometry(0.6, 0.8, 0.4);
             const bodyMaterial = new THREE.MeshLambertMaterial({ map: textures.goblinArmor });
@@ -1017,6 +1141,186 @@ function initEntities() {
             goblinGrp.add(ghostLight);
 
             // Floating effect handled by game loop
+            goblinGrp.userData.isGhost = true;
+            goblinGrp.userData.floatOffset = Math.random() * Math.PI * 2;
+        } else if (G.ruinsTheme) {
+            // SPECTRAL KNIGHT - ghostly armored warrior for ruins level
+            const ghostArmor = 0x5a6a8a;
+            const ghostGlow = 0x4488cc;
+            const etherealBlue = 0x6699cc;
+
+            // Spectral armored body
+            const bodyGeometry = new THREE.BoxGeometry(0.8, 1.1, 0.5);
+            const bodyMaterial = new THREE.MeshPhongMaterial({
+                color: ghostArmor,
+                transparent: true,
+                opacity: 0.7,
+                emissive: ghostGlow,
+                emissiveIntensity: 0.2
+            });
+            const body = new THREE.Mesh(bodyGeometry, bodyMaterial);
+            body.position.y = 1.0;
+            goblinGrp.add(body);
+
+            // Chest plate detail
+            const chestGeometry = new THREE.BoxGeometry(0.6, 0.8, 0.15);
+            const chestMaterial = new THREE.MeshPhongMaterial({
+                color: 0x4a5a7a,
+                transparent: true,
+                opacity: 0.8,
+                emissive: ghostGlow,
+                emissiveIntensity: 0.15
+            });
+            const chestPlate = new THREE.Mesh(chestGeometry, chestMaterial);
+            chestPlate.position.set(0, 1.05, 0.28);
+            goblinGrp.add(chestPlate);
+
+            // Ghostly helmet
+            const helmetGeometry = new THREE.SphereGeometry(0.45, 16, 16);
+            const helmetMaterial = new THREE.MeshPhongMaterial({
+                color: ghostArmor,
+                transparent: true,
+                opacity: 0.75,
+                emissive: ghostGlow,
+                emissiveIntensity: 0.2
+            });
+            const helmet = new THREE.Mesh(helmetGeometry, helmetMaterial);
+            helmet.position.y = 1.9;
+            goblinGrp.add(helmet);
+
+            // Helmet visor (dark slit)
+            const visorGeometry = new THREE.BoxGeometry(0.35, 0.12, 0.12);
+            const visorMaterial = new THREE.MeshBasicMaterial({ color: 0x0a0a1a });
+            const visor = new THREE.Mesh(visorGeometry, visorMaterial);
+            visor.position.set(0, 1.85, 0.38);
+            goblinGrp.add(visor);
+
+            // Glowing eyes through visor
+            const eyeGeometry = new THREE.SphereGeometry(0.06, 8, 8);
+            const eyeMaterial = new THREE.MeshBasicMaterial({
+                color: 0x44AAFF,
+                transparent: true,
+                opacity: 1.0
+            });
+            const eye1 = new THREE.Mesh(eyeGeometry, eyeMaterial);
+            eye1.position.set(-0.1, 1.87, 0.42);
+            goblinGrp.add(eye1);
+
+            const eye2 = new THREE.Mesh(eyeGeometry, eyeMaterial);
+            eye2.position.set(0.1, 1.87, 0.42);
+            goblinGrp.add(eye2);
+
+            // Helmet crest/plume (ethereal)
+            const crestGeometry = new THREE.ConeGeometry(0.15, 0.6, 8);
+            const crestMaterial = new THREE.MeshPhongMaterial({
+                color: etherealBlue,
+                transparent: true,
+                opacity: 0.6,
+                emissive: ghostGlow,
+                emissiveIntensity: 0.3
+            });
+            const crest = new THREE.Mesh(crestGeometry, crestMaterial);
+            crest.position.set(0, 2.4, -0.1);
+            crest.rotation.x = 0.3;
+            goblinGrp.add(crest);
+
+            // Ghostly arms
+            const armGeometry = new THREE.CylinderGeometry(0.1, 0.08, 0.7, 8);
+            const armMaterial = new THREE.MeshPhongMaterial({
+                color: ghostArmor,
+                transparent: true,
+                opacity: 0.6,
+                emissive: ghostGlow,
+                emissiveIntensity: 0.15
+            });
+            const arm1 = new THREE.Mesh(armGeometry, armMaterial);
+            arm1.position.set(-0.55, 0.9, 0);
+            arm1.rotation.z = 0.3;
+            goblinGrp.add(arm1);
+
+            const arm2 = new THREE.Mesh(armGeometry, armMaterial);
+            arm2.position.set(0.55, 0.9, 0);
+            arm2.rotation.z = -0.3;
+            goblinGrp.add(arm2);
+
+            // Spectral gauntlets
+            const gauntletGeometry = new THREE.BoxGeometry(0.15, 0.18, 0.15);
+            const gauntlet1 = new THREE.Mesh(gauntletGeometry, bodyMaterial);
+            gauntlet1.position.set(-0.65, 0.5, 0);
+            goblinGrp.add(gauntlet1);
+
+            const gauntlet2 = new THREE.Mesh(gauntletGeometry, bodyMaterial);
+            gauntlet2.position.set(0.65, 0.5, 0);
+            goblinGrp.add(gauntlet2);
+
+            // Ghostly shield (left hand)
+            const shieldGeometry = new THREE.BoxGeometry(0.5, 0.6, 0.08);
+            const shieldMaterial = new THREE.MeshPhongMaterial({
+                color: 0x3a4a6a,
+                transparent: true,
+                opacity: 0.65,
+                emissive: ghostGlow,
+                emissiveIntensity: 0.2
+            });
+            const shield = new THREE.Mesh(shieldGeometry, shieldMaterial);
+            shield.position.set(-0.85, 0.8, 0.25);
+            shield.rotation.y = 0.4;
+            goblinGrp.add(shield);
+
+            // Shield emblem (glowing)
+            const emblemGeometry = new THREE.CircleGeometry(0.12, 8);
+            const emblemMaterial = new THREE.MeshBasicMaterial({
+                color: 0x66AAFF,
+                transparent: true,
+                opacity: 0.8
+            });
+            const emblem = new THREE.Mesh(emblemGeometry, emblemMaterial);
+            emblem.position.set(-0.82, 0.8, 0.32);
+            emblem.rotation.y = 0.4;
+            goblinGrp.add(emblem);
+
+            // Spectral sword (right hand)
+            const swordHandleGeometry = new THREE.CylinderGeometry(0.04, 0.04, 0.25, 6);
+            const swordHandleMaterial = new THREE.MeshLambertMaterial({ color: 0x2a2a3a });
+            const swordHandle = new THREE.Mesh(swordHandleGeometry, swordHandleMaterial);
+            swordHandle.position.set(0.7, 0.6, 0.2);
+            swordHandle.rotation.z = -0.3;
+            goblinGrp.add(swordHandle);
+
+            const swordBladeGeometry = new THREE.BoxGeometry(0.08, 0.8, 0.03);
+            const swordBladeMaterial = new THREE.MeshPhongMaterial({
+                color: etherealBlue,
+                transparent: true,
+                opacity: 0.7,
+                emissive: ghostGlow,
+                emissiveIntensity: 0.4
+            });
+            const swordBlade = new THREE.Mesh(swordBladeGeometry, swordBladeMaterial);
+            swordBlade.position.set(0.8, 1.1, 0.2);
+            swordBlade.rotation.z = -0.3;
+            goblinGrp.add(swordBlade);
+
+            // Ethereal mist at base (fading legs)
+            const mistGeometry = new THREE.ConeGeometry(0.6, 1.0, 8);
+            const mistMaterial = new THREE.MeshPhongMaterial({
+                color: etherealBlue,
+                transparent: true,
+                opacity: 0.3,
+                emissive: ghostGlow,
+                emissiveIntensity: 0.2,
+                side: THREE.DoubleSide
+            });
+            const mist = new THREE.Mesh(mistGeometry, mistMaterial);
+            mist.position.y = 0.2;
+            mist.rotation.x = Math.PI;
+            goblinGrp.add(mist);
+
+            // Ethereal glow light
+            const ghostLight = new THREE.PointLight(0x4488ff, 0.4, 5);
+            ghostLight.position.set(0, 1.5, 0);
+            goblinGrp.add(ghostLight);
+
+            // Floating effect
             goblinGrp.userData.isGhost = true;
             goblinGrp.userData.floatOffset = Math.random() * Math.PI * 2;
         } else {
@@ -1583,6 +1887,185 @@ function initEntities() {
             rightLeg.castShadow = true;
             giantGrp.add(rightLeg);
 
+        } else if (G.ruinsTheme) {
+            // GIANT SPIDER - massive arachnid for ruins level
+            const spiderBlack = 0x1a1a1a;
+            const spiderBrown = 0x3a2a1a;
+            const spiderEyes = 0x880000;
+
+            // Large bulbous abdomen
+            const abdomenGeometry = new THREE.SphereGeometry(2.2, 16, 16);
+            abdomenGeometry.scale(1.3, 1, 1.5);
+            const abdomenMaterial = new THREE.MeshLambertMaterial({ color: spiderBlack });
+            const abdomen = new THREE.Mesh(abdomenGeometry, abdomenMaterial);
+            abdomen.position.set(0, 2.5, -1.5);
+            abdomen.castShadow = true;
+            giantGrp.add(abdomen);
+
+            // Abdomen markings (red hourglass pattern)
+            const markingGeometry = new THREE.CircleGeometry(0.4, 6);
+            const markingMaterial = new THREE.MeshBasicMaterial({ color: 0x8B0000 });
+            const marking1 = new THREE.Mesh(markingGeometry, markingMaterial);
+            marking1.position.set(0, 2.8, -2.8);
+            marking1.rotation.x = -0.3;
+            giantGrp.add(marking1);
+
+            const marking2 = new THREE.Mesh(markingGeometry, markingMaterial);
+            marking2.position.set(0, 2.2, -2.9);
+            marking2.rotation.x = -0.3;
+            giantGrp.add(marking2);
+
+            // Cephalothorax (head-body segment)
+            const cephalothoraxGeometry = new THREE.SphereGeometry(1.4, 16, 16);
+            cephalothoraxGeometry.scale(1.2, 0.9, 1.4);
+            const cephalothoraxMaterial = new THREE.MeshLambertMaterial({ color: spiderBrown });
+            const cephalothorax = new THREE.Mesh(cephalothoraxGeometry, cephalothoraxMaterial);
+            cephalothorax.position.set(0, 2.8, 1.0);
+            cephalothorax.castShadow = true;
+            giantGrp.add(cephalothorax);
+
+            // Multiple eyes (8 eyes in spider pattern)
+            const eyeGeometry = new THREE.SphereGeometry(0.25, 12, 12);
+            const eyeMaterial = new THREE.MeshBasicMaterial({
+                color: spiderEyes,
+                transparent: true,
+                opacity: 0.9
+            });
+            
+            // Main eyes (front, larger)
+            const mainEye1 = new THREE.Mesh(eyeGeometry, eyeMaterial);
+            mainEye1.position.set(-0.4, 3.1, 2.1);
+            giantGrp.add(mainEye1);
+
+            const mainEye2 = new THREE.Mesh(eyeGeometry, eyeMaterial);
+            mainEye2.position.set(0.4, 3.1, 2.1);
+            giantGrp.add(mainEye2);
+
+            // Secondary eyes (smaller, to the sides)
+            const smallEyeGeometry = new THREE.SphereGeometry(0.15, 8, 8);
+            const smallEye1 = new THREE.Mesh(smallEyeGeometry, eyeMaterial);
+            smallEye1.position.set(-0.8, 3.0, 1.9);
+            giantGrp.add(smallEye1);
+
+            const smallEye2 = new THREE.Mesh(smallEyeGeometry, eyeMaterial);
+            smallEye2.position.set(0.8, 3.0, 1.9);
+            giantGrp.add(smallEye2);
+
+            const smallEye3 = new THREE.Mesh(smallEyeGeometry, eyeMaterial);
+            smallEye3.position.set(-0.5, 3.4, 1.8);
+            giantGrp.add(smallEye3);
+
+            const smallEye4 = new THREE.Mesh(smallEyeGeometry, eyeMaterial);
+            smallEye4.position.set(0.5, 3.4, 1.8);
+            giantGrp.add(smallEye4);
+
+            // Even smaller back eyes
+            const tinyEyeGeometry = new THREE.SphereGeometry(0.1, 6, 6);
+            const tinyEye1 = new THREE.Mesh(tinyEyeGeometry, eyeMaterial);
+            tinyEye1.position.set(-0.3, 3.5, 1.5);
+            giantGrp.add(tinyEye1);
+
+            const tinyEye2 = new THREE.Mesh(tinyEyeGeometry, eyeMaterial);
+            tinyEye2.position.set(0.3, 3.5, 1.5);
+            giantGrp.add(tinyEye2);
+
+            // Fangs (chelicerae)
+            const fangGeometry = new THREE.ConeGeometry(0.15, 0.8, 6);
+            const fangMaterial = new THREE.MeshLambertMaterial({ color: 0x2a2a2a });
+            const fang1 = new THREE.Mesh(fangGeometry, fangMaterial);
+            fang1.position.set(-0.25, 2.5, 2.3);
+            fang1.rotation.x = 0.5;
+            fang1.rotation.z = 0.2;
+            giantGrp.add(fang1);
+
+            const fang2 = new THREE.Mesh(fangGeometry, fangMaterial);
+            fang2.position.set(0.25, 2.5, 2.3);
+            fang2.rotation.x = 0.5;
+            fang2.rotation.z = -0.2;
+            giantGrp.add(fang2);
+
+            // Pedipalps (small front appendages)
+            const palpGeometry = new THREE.CylinderGeometry(0.08, 0.12, 0.8, 6);
+            const palpMaterial = new THREE.MeshLambertMaterial({ color: spiderBrown });
+            const palp1 = new THREE.Mesh(palpGeometry, palpMaterial);
+            palp1.position.set(-0.5, 2.6, 2.0);
+            palp1.rotation.x = Math.PI / 4;
+            palp1.rotation.z = 0.3;
+            giantGrp.add(palp1);
+
+            const palp2 = new THREE.Mesh(palpGeometry, palpMaterial);
+            palp2.position.set(0.5, 2.6, 2.0);
+            palp2.rotation.x = Math.PI / 4;
+            palp2.rotation.z = -0.3;
+            giantGrp.add(palp2);
+
+            // 8 Spider legs (4 on each side)
+            const legMaterial = new THREE.MeshLambertMaterial({ color: spiderBlack });
+            const legSegment1Geometry = new THREE.CylinderGeometry(0.15, 0.12, 2.5, 6);
+            const legSegment2Geometry = new THREE.CylinderGeometry(0.12, 0.08, 3.0, 6);
+            const legSegment3Geometry = new THREE.CylinderGeometry(0.08, 0.04, 2.0, 6);
+
+            const legAngles = [0.4, 0.15, -0.1, -0.35];
+            const legOffsets = [0.8, 0.4, 0, -0.4];
+
+            for (let side = -1; side <= 1; side += 2) {
+                for (let i = 0; i < 4; i++) {
+                    // First segment (coxa/femur) - goes up and out
+                    const seg1 = new THREE.Mesh(legSegment1Geometry, legMaterial);
+                    seg1.position.set(side * 1.2, 2.8, legOffsets[i]);
+                    seg1.rotation.z = side * 0.8;
+                    seg1.rotation.y = legAngles[i];
+                    seg1.castShadow = true;
+                    giantGrp.add(seg1);
+
+                    // Second segment (tibia) - bends down
+                    const seg2 = new THREE.Mesh(legSegment2Geometry, legMaterial);
+                    seg2.position.set(side * 2.8, 3.8, legOffsets[i] + legAngles[i] * 2);
+                    seg2.rotation.z = side * -0.6;
+                    seg2.rotation.y = legAngles[i] * 0.5;
+                    seg2.castShadow = true;
+                    giantGrp.add(seg2);
+
+                    // Third segment (tarsus) - touches ground
+                    const seg3 = new THREE.Mesh(legSegment3Geometry, legMaterial);
+                    seg3.position.set(side * 3.5, 1.0, legOffsets[i] + legAngles[i] * 3);
+                    seg3.rotation.z = side * 0.1;
+                    seg3.castShadow = true;
+                    giantGrp.add(seg3);
+                }
+            }
+
+            // Spinnerets (back of abdomen)
+            const spinneretGeometry = new THREE.ConeGeometry(0.15, 0.4, 6);
+            const spinneretMaterial = new THREE.MeshLambertMaterial({ color: 0x2a1a1a });
+            for (let i = 0; i < 3; i++) {
+                const spinneret = new THREE.Mesh(spinneretGeometry, spinneretMaterial);
+                spinneret.position.set((i - 1) * 0.25, 1.8, -3.2);
+                spinneret.rotation.x = -0.5;
+                giantGrp.add(spinneret);
+            }
+
+            // Web strands trailing (decorative)
+            const webMaterial = new THREE.MeshBasicMaterial({
+                color: 0xffffff,
+                transparent: true,
+                opacity: 0.3
+            });
+            for (let i = 0; i < 3; i++) {
+                const webGeometry = new THREE.CylinderGeometry(0.02, 0.02, 2 + Math.random(), 4);
+                const web = new THREE.Mesh(webGeometry, webMaterial);
+                web.position.set((Math.random() - 0.5) * 0.5, 1.5 - i * 0.3, -3.3);
+                web.rotation.x = Math.random() * 0.5;
+                web.rotation.z = Math.random() * 0.5;
+                giantGrp.add(web);
+            }
+
+            // Store dummy arm references for animation compatibility
+            giantGrp.leftArm = abdomen;
+            giantGrp.rightArm = abdomen;
+            giantGrp.leftFist = cephalothorax;
+            giantGrp.rightFist = cephalothorax;
+
         } else {
             // Use theme-appropriate textures
             const giantSkinTexture = G.lavaTheme ? textures.giantSkinLava : textures.giantSkin;
@@ -2007,6 +2490,186 @@ function initEntities() {
             const orbLight = new THREE.PointLight(0x00FF44, 0.5, 4);
             orbLight.position.copy(orb.position);
             wizardGrp.add(orbLight);
+
+        } else if (G.ruinsTheme) {
+            // DARK SORCERER - hooded mage with dark magic for ruins level
+            const robeBlack = 0x1a1a2a;
+            const robeDark = 0x2a2a3a;
+            const magicPurple = 0x6622aa;
+            const magicGlow = 0x8844cc;
+
+            // Dark hooded robe body
+            const bodyGeometry = new THREE.CylinderGeometry(0.55, 1.0, 2.4, 12);
+            const bodyMaterial = new THREE.MeshLambertMaterial({ color: robeBlack });
+            const body = new THREE.Mesh(bodyGeometry, bodyMaterial);
+            body.position.y = 1.4;
+            body.castShadow = true;
+            wizardGrp.add(body);
+
+            // Robe details/folds
+            for (let i = 0; i < 6; i++) {
+                const foldGeometry = new THREE.BoxGeometry(0.15, 2.2, 0.08);
+                const foldMaterial = new THREE.MeshLambertMaterial({ color: robeDark });
+                const fold = new THREE.Mesh(foldGeometry, foldMaterial);
+                const angle = (i / 6) * Math.PI * 2;
+                fold.position.set(Math.cos(angle) * 0.75, 1.2, Math.sin(angle) * 0.75);
+                fold.rotation.y = angle;
+                wizardGrp.add(fold);
+            }
+
+            // Ragged robe bottom
+            for (let i = 0; i < 10; i++) {
+                const ragGeometry = new THREE.ConeGeometry(0.12, 0.5, 4);
+                const ragMaterial = new THREE.MeshLambertMaterial({ color: 0x0a0a15 });
+                const rag = new THREE.Mesh(ragGeometry, ragMaterial);
+                const angle = (i / 10) * Math.PI * 2;
+                rag.position.set(Math.cos(angle) * 0.9, 0.2, Math.sin(angle) * 0.9);
+                rag.rotation.x = Math.PI;
+                wizardGrp.add(rag);
+            }
+
+            // Deep hood
+            const hoodGeometry = new THREE.SphereGeometry(0.45, 16, 16);
+            const hoodMaterial = new THREE.MeshLambertMaterial({ color: robeBlack });
+            const hood = new THREE.Mesh(hoodGeometry, hoodMaterial);
+            hood.position.y = 2.75;
+            hood.scale.z = 1.2;
+            hood.castShadow = true;
+            wizardGrp.add(hood);
+
+            // Hood opening (dark face)
+            const faceGeometry = new THREE.SphereGeometry(0.35, 12, 12);
+            const faceMaterial = new THREE.MeshBasicMaterial({ color: 0x000005 });
+            const face = new THREE.Mesh(faceGeometry, faceMaterial);
+            face.position.set(0, 2.7, 0.25);
+            face.scale.z = 0.7;
+            wizardGrp.add(face);
+
+            // Glowing eyes in the darkness
+            const eyeGeometry = new THREE.SphereGeometry(0.07, 8, 8);
+            const eyeMaterial = new THREE.MeshBasicMaterial({
+                color: magicPurple,
+                transparent: true,
+                opacity: 1.0
+            });
+            const eye1 = new THREE.Mesh(eyeGeometry, eyeMaterial);
+            eye1.position.set(-0.12, 2.73, 0.42);
+            wizardGrp.add(eye1);
+
+            const eye2 = new THREE.Mesh(eyeGeometry, eyeMaterial);
+            eye2.position.set(0.12, 2.73, 0.42);
+            wizardGrp.add(eye2);
+
+            // Eye glow
+            const eyeGlow = new THREE.PointLight(magicPurple, 0.3, 2);
+            eyeGlow.position.set(0, 2.73, 0.45);
+            wizardGrp.add(eyeGlow);
+
+            // Skeletal hands
+            const handMaterial = new THREE.MeshLambertMaterial({ color: 0x8a7a6a });
+            const handGeometry = new THREE.BoxGeometry(0.1, 0.15, 0.08);
+            
+            // Left hand
+            const leftHand = new THREE.Mesh(handGeometry, handMaterial);
+            leftHand.position.set(-0.5, 1.6, 0.4);
+            wizardGrp.add(leftHand);
+
+            // Bony fingers on left hand
+            for (let i = 0; i < 4; i++) {
+                const fingerGeometry = new THREE.CylinderGeometry(0.015, 0.01, 0.12, 4);
+                const finger = new THREE.Mesh(fingerGeometry, handMaterial);
+                finger.position.set(-0.52 + i * 0.025, 1.52, 0.42);
+                finger.rotation.x = 0.3;
+                wizardGrp.add(finger);
+            }
+
+            // Right hand (holding staff)
+            const rightHand = new THREE.Mesh(handGeometry, handMaterial);
+            rightHand.position.set(0.55, 1.8, 0.3);
+            wizardGrp.add(rightHand);
+
+            // Dark magic staff
+            const staffGeometry = new THREE.CylinderGeometry(0.04, 0.05, 2.8, 8);
+            const staffMaterial = new THREE.MeshLambertMaterial({ color: 0x1a0a1a });
+            const staff = new THREE.Mesh(staffGeometry, staffMaterial);
+            staff.position.set(0.6, 1.6, 0.25);
+            staff.rotation.z = -0.1;
+            wizardGrp.add(staff);
+
+            // Staff head - twisted metal
+            const staffHeadGeometry = new THREE.TorusKnotGeometry(0.12, 0.03, 32, 8, 2, 3);
+            const staffHeadMaterial = new THREE.MeshLambertMaterial({ color: 0x2a1a2a });
+            const staffHead = new THREE.Mesh(staffHeadGeometry, staffHeadMaterial);
+            staffHead.position.set(0.55, 3.0, 0.25);
+            staffHead.rotation.x = Math.PI / 2;
+            wizardGrp.add(staffHead);
+
+            // Magic orb in staff head
+            const orbGeometry = new THREE.SphereGeometry(0.15, 16, 16);
+            const orbMaterial = new THREE.MeshBasicMaterial({
+                color: magicGlow,
+                transparent: true,
+                opacity: 0.85
+            });
+            const orb = new THREE.Mesh(orbGeometry, orbMaterial);
+            orb.position.set(0.55, 3.0, 0.25);
+            wizardGrp.add(orb);
+            wizardGrp.staffOrb = orb;
+
+            // Magic orb glow
+            const staffOrbLight = new THREE.PointLight(magicPurple, 0.6, 5);
+            staffOrbLight.position.copy(orb.position);
+            wizardGrp.add(staffOrbLight);
+
+            // Dark energy particles around staff (decorative)
+            const particleMaterial = new THREE.MeshBasicMaterial({
+                color: magicGlow,
+                transparent: true,
+                opacity: 0.5
+            });
+            for (let i = 0; i < 5; i++) {
+                const particleGeometry = new THREE.SphereGeometry(0.03 + Math.random() * 0.02, 6, 6);
+                const particle = new THREE.Mesh(particleGeometry, particleMaterial);
+                const angle = (i / 5) * Math.PI * 2;
+                particle.position.set(
+                    0.55 + Math.cos(angle) * 0.25,
+                    2.8 + Math.sin(angle) * 0.25,
+                    0.25
+                );
+                wizardGrp.add(particle);
+            }
+
+            // Floating spell book (left side)
+            const bookGeometry = new THREE.BoxGeometry(0.25, 0.3, 0.08);
+            const bookMaterial = new THREE.MeshLambertMaterial({ color: 0x3a2a1a });
+            const book = new THREE.Mesh(bookGeometry, bookMaterial);
+            book.position.set(-0.65, 2.0, 0.3);
+            book.rotation.y = 0.3;
+            book.rotation.z = -0.1;
+            wizardGrp.add(book);
+
+            // Book pages
+            const pagesGeometry = new THREE.BoxGeometry(0.2, 0.25, 0.06);
+            const pagesMaterial = new THREE.MeshLambertMaterial({ color: 0xd0c0a0 });
+            const pages = new THREE.Mesh(pagesGeometry, pagesMaterial);
+            pages.position.set(-0.64, 2.0, 0.31);
+            pages.rotation.y = 0.3;
+            pages.rotation.z = -0.1;
+            wizardGrp.add(pages);
+
+            // Glowing runes on book
+            const runeMaterial = new THREE.MeshBasicMaterial({
+                color: magicPurple,
+                transparent: true,
+                opacity: 0.7
+            });
+            const runeGeometry = new THREE.CircleGeometry(0.03, 6);
+            for (let i = 0; i < 3; i++) {
+                const rune = new THREE.Mesh(runeGeometry, runeMaterial);
+                rune.position.set(-0.62, 1.95 + i * 0.08, 0.36);
+                rune.rotation.y = 0.3;
+                wizardGrp.add(rune);
+            }
 
         } else {
             // Use ice theme robe texture if in ice level
