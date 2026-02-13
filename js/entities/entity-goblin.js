@@ -31,6 +31,8 @@
             buildZombie(goblinGrp);
         } else if (G.ruinsTheme) {
             buildKnight(goblinGrp);
+        } else if (G.computerTheme) {
+            buildBug(goblinGrp);
         } else {
             buildStandardGoblin(goblinGrp, textures);
         }
@@ -470,6 +472,117 @@
         const leg2 = new THREE.Mesh(legGeometry, legMaterial);
         leg2.position.set(0.18, 0.25, 0);
         group.add(leg2);
+    }
+    
+    function buildBug(group) {
+        // COMPUTER BUG - literal digital beetle/glitch creature
+        const bugColor = 0xFF0066;      // Magenta glitch color
+        const glowColor = 0x00FFFF;     // Cyan data glow
+        const darkColor = 0x330033;     // Dark shell
+
+        // Bug body - beetle-like shell
+        const bodyGeometry = new THREE.SphereGeometry(0.5, 8, 6);
+        bodyGeometry.scale(1.2, 0.6, 1.0);
+        const bodyMaterial = new THREE.MeshPhongMaterial({
+            color: darkColor,
+            emissive: bugColor,
+            emissiveIntensity: 0.3,
+            shininess: 80,
+            specular: glowColor
+        });
+        const body = new THREE.Mesh(bodyGeometry, bodyMaterial);
+        body.position.y = 0.6;
+        body.castShadow = true;
+        group.add(body);
+
+        // Glitch pattern lines on shell
+        for (let i = 0; i < 4; i++) {
+            const lineGeometry = new THREE.BoxGeometry(0.6, 0.02, 0.04);
+            const lineMaterial = new THREE.MeshBasicMaterial({
+                color: glowColor,
+                transparent: true,
+                opacity: 0.8
+            });
+            const line = new THREE.Mesh(lineGeometry, lineMaterial);
+            line.position.set(0, 0.65 + i * 0.08, 0.3 - i * 0.08);
+            group.add(line);
+        }
+
+        // Bug head - angular digital
+        const headGeometry = new THREE.BoxGeometry(0.35, 0.25, 0.3);
+        const headMaterial = new THREE.MeshPhongMaterial({
+            color: darkColor,
+            emissive: bugColor,
+            emissiveIntensity: 0.4
+        });
+        const head = new THREE.Mesh(headGeometry, headMaterial);
+        head.position.set(0, 0.55, 0.45);
+        head.castShadow = true;
+        group.add(head);
+
+        // Glowing compound eyes
+        const eyeGeometry = new THREE.SphereGeometry(0.08, 8, 8);
+        const eyeMaterial = new THREE.MeshBasicMaterial({
+            color: 0xFF0000,
+            transparent: true,
+            blending: THREE.AdditiveBlending
+        });
+        const eye1 = new THREE.Mesh(eyeGeometry, eyeMaterial);
+        eye1.position.set(-0.12, 0.6, 0.58);
+        group.add(eye1);
+
+        const eye2 = new THREE.Mesh(eyeGeometry, eyeMaterial);
+        eye2.position.set(0.12, 0.6, 0.58);
+        group.add(eye2);
+
+        // Antennae - data probes
+        const antennaGeometry = new THREE.CylinderGeometry(0.015, 0.02, 0.4, 6);
+        const antennaMaterial = new THREE.MeshBasicMaterial({ color: glowColor });
+        
+        const antenna1 = new THREE.Mesh(antennaGeometry, antennaMaterial);
+        antenna1.position.set(-0.1, 0.85, 0.5);
+        antenna1.rotation.x = 0.5;
+        antenna1.rotation.z = -0.3;
+        group.add(antenna1);
+
+        const antenna2 = new THREE.Mesh(antennaGeometry, antennaMaterial);
+        antenna2.position.set(0.1, 0.85, 0.5);
+        antenna2.rotation.x = 0.5;
+        antenna2.rotation.z = 0.3;
+        group.add(antenna2);
+
+        // Six segmented legs
+        const legMaterial = new THREE.MeshLambertMaterial({ color: 0x222222 });
+        for (let side = -1; side <= 1; side += 2) {
+            for (let i = 0; i < 3; i++) {
+                const legGeometry = new THREE.CylinderGeometry(0.02, 0.015, 0.35, 4);
+                const leg = new THREE.Mesh(legGeometry, legMaterial);
+                leg.position.set(side * 0.4, 0.25, 0.15 - i * 0.2);
+                leg.rotation.z = side * 0.8;
+                leg.rotation.x = 0.3;
+                group.add(leg);
+            }
+        }
+
+        // Glitch particle effect (floating pixels)
+        const pixelGeometry = new THREE.BoxGeometry(0.06, 0.06, 0.06);
+        const pixelMaterial = new THREE.MeshBasicMaterial({
+            color: bugColor,
+            transparent: true,
+            opacity: 0.6
+        });
+        for (let i = 0; i < 5; i++) {
+            const pixel = new THREE.Mesh(pixelGeometry, pixelMaterial);
+            pixel.position.set(
+                (Math.random() - 0.5) * 0.8,
+                0.8 + Math.random() * 0.5,
+                (Math.random() - 0.5) * 0.6
+            );
+            pixel.userData.floatOffset = Math.random() * Math.PI * 2;
+            group.add(pixel);
+        }
+
+        group.userData.isBug = true;
     }
     
     function buildStandardGoblin(group, textures) {

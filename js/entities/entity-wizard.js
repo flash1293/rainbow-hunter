@@ -23,6 +23,8 @@
             buildWitch(wizardGrp);
         } else if (G.ruinsTheme) {
             buildDarkSorcerer(wizardGrp);
+        } else if (G.computerTheme) {
+            buildHacker(wizardGrp);
         } else {
             buildStandardWizard(wizardGrp, textures);
         }
@@ -56,6 +58,194 @@
     // ========================================
     // THEME-SPECIFIC BUILDERS
     // ========================================
+    
+    function buildHacker(group) {
+        // HACKER - hooded figure at floating holographic keyboard
+        const hoodieColor = 0x1A1A2A;     // Dark hoodie
+        const screenGlow = 0x00FF00;      // Matrix green
+        const accentColor = 0x00FFFF;     // Cyan accents
+
+        // Body - hooded figure in chair pose
+        const bodyGeometry = new THREE.BoxGeometry(0.7, 1.0, 0.5);
+        const bodyMaterial = new THREE.MeshLambertMaterial({ color: hoodieColor });
+        const body = new THREE.Mesh(bodyGeometry, bodyMaterial);
+        body.position.y = 1.2;
+        body.castShadow = true;
+        group.add(body);
+
+        // Hood
+        const hoodGeometry = new THREE.SphereGeometry(0.45, 12, 12);
+        hoodGeometry.scale(1.0, 1.1, 1.2);
+        const hoodMaterial = new THREE.MeshLambertMaterial({ color: hoodieColor });
+        const hood = new THREE.Mesh(hoodGeometry, hoodMaterial);
+        hood.position.y = 2.0;
+        hood.castShadow = true;
+        group.add(hood);
+
+        // Face shadow (dark void inside hood)
+        const faceGeometry = new THREE.PlaneGeometry(0.5, 0.4);
+        const faceMaterial = new THREE.MeshBasicMaterial({
+            color: 0x000000,
+            transparent: true,
+            opacity: 0.9
+        });
+        const face = new THREE.Mesh(faceGeometry, faceMaterial);
+        face.position.set(0, 2.0, 0.4);
+        group.add(face);
+
+        // Glowing eyes in shadow
+        const eyeGeometry = new THREE.SphereGeometry(0.06, 8, 8);
+        const eyeMaterial = new THREE.MeshBasicMaterial({
+            color: screenGlow,
+            transparent: true,
+            blending: THREE.AdditiveBlending
+        });
+        const eye1 = new THREE.Mesh(eyeGeometry, eyeMaterial);
+        eye1.position.set(-0.12, 2.05, 0.42);
+        group.add(eye1);
+
+        const eye2 = new THREE.Mesh(eyeGeometry, eyeMaterial);
+        eye2.position.set(0.12, 2.05, 0.42);
+        group.add(eye2);
+
+        // Arms reaching toward keyboard
+        const armGeometry = new THREE.CylinderGeometry(0.08, 0.1, 0.8, 8);
+        const armMaterial = new THREE.MeshLambertMaterial({ color: hoodieColor });
+        
+        const leftArm = new THREE.Mesh(armGeometry, armMaterial);
+        leftArm.position.set(-0.5, 1.0, 0.4);
+        leftArm.rotation.z = 0.8;
+        leftArm.rotation.x = -0.3;
+        group.add(leftArm);
+
+        const rightArm = new THREE.Mesh(armGeometry, armMaterial);
+        rightArm.position.set(0.5, 1.0, 0.4);
+        rightArm.rotation.z = -0.8;
+        rightArm.rotation.x = -0.3;
+        group.add(rightArm);
+
+        // Holographic floating keyboard
+        const keyboardGeometry = new THREE.BoxGeometry(1.2, 0.05, 0.4);
+        const keyboardMaterial = new THREE.MeshBasicMaterial({
+            color: accentColor,
+            transparent: true,
+            opacity: 0.4
+        });
+        const keyboard = new THREE.Mesh(keyboardGeometry, keyboardMaterial);
+        keyboard.position.set(0, 0.8, 0.8);
+        group.add(keyboard);
+
+        // Keyboard keys (grid of small squares)
+        for (let row = 0; row < 3; row++) {
+            for (let col = 0; col < 10; col++) {
+                const keyGeometry = new THREE.BoxGeometry(0.08, 0.02, 0.08);
+                const keyMaterial = new THREE.MeshBasicMaterial({
+                    color: Math.random() > 0.8 ? screenGlow : accentColor,
+                    transparent: true,
+                    opacity: 0.6 + Math.random() * 0.4
+                });
+                const key = new THREE.Mesh(keyGeometry, keyMaterial);
+                key.position.set(
+                    -0.45 + col * 0.1,
+                    0.82,
+                    0.65 + row * 0.1
+                );
+                group.add(key);
+            }
+        }
+
+        // Floating holographic screens
+        const screenGeometry = new THREE.PlaneGeometry(0.6, 0.5);
+        const screenMaterial = new THREE.MeshBasicMaterial({
+            color: screenGlow,
+            transparent: true,
+            opacity: 0.3,
+            side: THREE.DoubleSide
+        });
+        
+        // Main screen
+        const mainScreen = new THREE.Mesh(screenGeometry, screenMaterial);
+        mainScreen.position.set(0, 1.8, 1.0);
+        mainScreen.rotation.x = -0.2;
+        group.add(mainScreen);
+
+        // Side screens
+        const leftScreen = new THREE.Mesh(screenGeometry, screenMaterial);
+        leftScreen.position.set(-0.6, 1.7, 0.8);
+        leftScreen.rotation.y = 0.5;
+        leftScreen.rotation.x = -0.1;
+        leftScreen.scale.set(0.7, 0.7, 1);
+        group.add(leftScreen);
+
+        const rightScreen = new THREE.Mesh(screenGeometry, screenMaterial);
+        rightScreen.position.set(0.6, 1.7, 0.8);
+        rightScreen.rotation.y = -0.5;
+        rightScreen.rotation.x = -0.1;
+        rightScreen.scale.set(0.7, 0.7, 1);
+        group.add(rightScreen);
+
+        // Matrix-style code rain on main screen
+        for (let i = 0; i < 8; i++) {
+            const codeGeometry = new THREE.BoxGeometry(0.02, 0.3 + Math.random() * 0.2, 0.01);
+            const codeMaterial = new THREE.MeshBasicMaterial({
+                color: screenGlow,
+                transparent: true,
+                opacity: 0.5 + Math.random() * 0.5
+            });
+            const code = new THREE.Mesh(codeGeometry, codeMaterial);
+            code.position.set(
+                -0.25 + i * 0.07,
+                1.7 + Math.random() * 0.2,
+                0.98
+            );
+            code.userData.codeOffset = Math.random() * Math.PI * 2;
+            group.add(code);
+        }
+
+        // Glowing orb (malware packet) - replaces staff orb
+        const orbGeometry = new THREE.IcosahedronGeometry(0.2, 1);
+        const orbMaterial = new THREE.MeshBasicMaterial({
+            color: 0xFF0066,
+            transparent: true,
+            opacity: 0.8,
+            blending: THREE.AdditiveBlending
+        });
+        const orb = new THREE.Mesh(orbGeometry, orbMaterial);
+        orb.position.set(0.8, 2.2, 0.3);
+        group.add(orb);
+        group.staffOrb = orb;
+
+        // Sitting legs (crossed)
+        const legGeometry = new THREE.CylinderGeometry(0.1, 0.12, 0.8, 8);
+        const legMaterial = new THREE.MeshLambertMaterial({ color: 0x222233 });
+        
+        const leftLeg = new THREE.Mesh(legGeometry, legMaterial);
+        leftLeg.position.set(-0.2, 0.4, 0.2);
+        leftLeg.rotation.z = -0.4;
+        leftLeg.rotation.x = 0.3;
+        group.add(leftLeg);
+
+        const rightLeg = new THREE.Mesh(legGeometry, legMaterial);
+        rightLeg.position.set(0.25, 0.4, 0.3);
+        rightLeg.rotation.z = 0.2;
+        rightLeg.rotation.x = -0.2;
+        group.add(rightLeg);
+
+        // Floating/hover base
+        const hoverGeometry = new THREE.TorusGeometry(0.5, 0.05, 8, 16);
+        const hoverMaterial = new THREE.MeshBasicMaterial({
+            color: accentColor,
+            transparent: true,
+            opacity: 0.4
+        });
+        const hover = new THREE.Mesh(hoverGeometry, hoverMaterial);
+        hover.rotation.x = Math.PI / 2;
+        hover.position.y = 0.1;
+        group.add(hover);
+
+        group.userData.isHacker = true;
+        group.userData.floatOffset = Math.random() * Math.PI * 2;
+    }
     
     function buildCottonCandyWizard(group) {
         // COTTON CANDY WIZARD - fluffy pink and blue magical creature

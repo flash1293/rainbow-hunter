@@ -935,9 +935,31 @@ function initSetup() {
                         G.guardianArrows[i].velocity.set(arrowData.vx, arrowData.vy, arrowData.vz);
                     }
                 } else {
-                    // Create new arrow on client (ink ball for water theme)
+                    // Create new arrow on client (themed by level)
                     let arrowMesh;
-                    if (G.waterTheme) {
+                    if (G.computerTheme) {
+                        // Data packet for Firewall Sentry
+                        const packetGroup = new THREE.Group();
+                        const cubeGeometry = new THREE.BoxGeometry(0.35, 0.35, 0.35);
+                        const cubeMaterial = new THREE.MeshBasicMaterial({ 
+                            color: 0xFF0066,
+                            transparent: true,
+                            opacity: 0.9
+                        });
+                        const cube = new THREE.Mesh(cubeGeometry, cubeMaterial);
+                        packetGroup.add(cube);
+                        const wireGeometry = new THREE.BoxGeometry(0.4, 0.4, 0.4);
+                        const wireMaterial = new THREE.MeshBasicMaterial({ 
+                            color: 0x00FFFF,
+                            wireframe: true,
+                            transparent: true,
+                            opacity: 0.8
+                        });
+                        packetGroup.add(new THREE.Mesh(wireGeometry, wireMaterial));
+                        packetGroup.position.set(arrowData.x, arrowData.y, arrowData.z);
+                        G.scene.add(packetGroup);
+                        arrowMesh = packetGroup;
+                    } else if (G.waterTheme) {
                         // Ink ball for octopus guardians
                         const inkGeometry = new THREE.SphereGeometry(0.3, 12, 12);
                         const inkMaterial = new THREE.MeshLambertMaterial({ color: 0x000000 });
@@ -1892,7 +1914,81 @@ function initSetup() {
         
         const treeType = pos.type || 'tree';
         
-        if (treeType === 'cactus') {
+        if (G.computerTheme) {
+            // Server tower / antenna array
+            const towerColors = [0x00FFFF, 0xFF00FF, 0x00FF00];
+            const accentColor = towerColors[Math.floor(Math.random() * towerColors.length)];
+            
+            // Main tower body - dark metallic
+            const towerGeometry = new THREE.BoxGeometry(0.6, 3.5, 0.6);
+            const towerMaterial = new THREE.MeshPhongMaterial({ 
+                color: 0x0A0A15,
+                emissive: 0x001122,
+                emissiveIntensity: 0.3,
+                shininess: 80
+            });
+            const tower = new THREE.Mesh(towerGeometry, towerMaterial);
+            tower.position.y = 1.75;
+            tower.castShadow = true;
+            treeGroup.add(tower);
+            
+            // LED strips on sides
+            const stripGeometry = new THREE.BoxGeometry(0.08, 3.2, 0.08);
+            const stripMaterial = new THREE.MeshBasicMaterial({ 
+                color: accentColor,
+                transparent: true,
+                opacity: 0.9
+            });
+            const strip1 = new THREE.Mesh(stripGeometry, stripMaterial);
+            strip1.position.set(0.35, 1.75, 0.35);
+            treeGroup.add(strip1);
+            const strip2 = new THREE.Mesh(stripGeometry, stripMaterial);
+            strip2.position.set(-0.35, 1.75, -0.35);
+            treeGroup.add(strip2);
+            
+            // Antenna dish on top
+            const dishGeometry = new THREE.ConeGeometry(0.4, 0.3, 16);
+            const dishMaterial = new THREE.MeshPhongMaterial({ 
+                color: 0x333344,
+                shininess: 60
+            });
+            const dish = new THREE.Mesh(dishGeometry, dishMaterial);
+            dish.position.y = 3.6;
+            dish.rotation.x = Math.PI;
+            treeGroup.add(dish);
+            
+            // Antenna spike
+            const spikeGeometry = new THREE.CylinderGeometry(0.03, 0.03, 0.8, 6);
+            const spikeMaterial = new THREE.MeshBasicMaterial({ color: accentColor });
+            const spike = new THREE.Mesh(spikeGeometry, spikeMaterial);
+            spike.position.y = 4.1;
+            treeGroup.add(spike);
+            
+            // Blinking status lights
+            const lightGeometry = new THREE.SphereGeometry(0.08, 8, 8);
+            for (let i = 0; i < 4; i++) {
+                const lightColor = [0xFF0000, 0x00FF00, 0xFFFF00, 0x00FFFF][i];
+                const lightMaterial = new THREE.MeshBasicMaterial({ 
+                    color: lightColor,
+                    transparent: true,
+                    opacity: 0.9
+                });
+                const light = new THREE.Mesh(lightGeometry, lightMaterial);
+                light.position.set(0.35, 0.5 + i * 0.8, 0);
+                treeGroup.add(light);
+            }
+            
+            // Data cable at base
+            const cableGeometry = new THREE.TorusGeometry(0.5, 0.04, 8, 16);
+            const cableMaterial = new THREE.MeshBasicMaterial({ 
+                color: 0x222233
+            });
+            const cable = new THREE.Mesh(cableGeometry, cableMaterial);
+            cable.position.y = 0.1;
+            cable.rotation.x = Math.PI / 2;
+            treeGroup.add(cable);
+            
+        } else if (treeType === 'cactus') {
             // Desert cactus
             const cactusColor = 0x2d5a27;
             
@@ -2484,29 +2580,83 @@ function initSetup() {
     ];
 
     G.rockPositions.forEach(pos => {
-        const rockGeometry = new THREE.DodecahedronGeometry(0.6, 0);
-        // Theme-appropriate rock colors
-        let rockColor;
-        if (G.candyTheme) {
-            // Candy rocks - colorful like hard candy
-            const candyRockColors = [0xFF69B4, 0x87CEEB, 0xFFD700, 0x98FB98, 0xFF6347, 0xDDA0DD];
-            rockColor = candyRockColors[Math.floor(Math.random() * candyRockColors.length)];
-        } else if (G.desertTheme) {
-            rockColor = 0xa08060; // Sandstone
+        let rockMesh;
+        
+        if (G.computerTheme) {
+            // Data crystal / corrupted data block
+            const crystalGroup = new THREE.Group();
+            const crystalColors = [0x00FFFF, 0xFF00FF, 0x00FF00, 0xFFFF00];
+            const mainColor = crystalColors[Math.floor(Math.random() * crystalColors.length)];
+            
+            // Main crystal - elongated octahedron
+            const crystalGeometry = new THREE.OctahedronGeometry(0.5, 0);
+            const crystalMaterial = new THREE.MeshBasicMaterial({ 
+                color: mainColor,
+                transparent: true,
+                opacity: 0.85
+            });
+            const crystal = new THREE.Mesh(crystalGeometry, crystalMaterial);
+            crystal.scale.y = 1.5;
+            crystal.rotation.y = Math.random() * Math.PI;
+            crystalGroup.add(crystal);
+            
+            // Wireframe shell
+            const wireGeometry = new THREE.OctahedronGeometry(0.55, 0);
+            const wireMaterial = new THREE.MeshBasicMaterial({ 
+                color: 0xFFFFFF,
+                wireframe: true,
+                transparent: true,
+                opacity: 0.5
+            });
+            const wireframe = new THREE.Mesh(wireGeometry, wireMaterial);
+            wireframe.scale.y = 1.5;
+            wireframe.rotation.y = crystal.rotation.y;
+            crystalGroup.add(wireframe);
+            
+            // Smaller orbiting data fragments
+            for (let i = 0; i < 3; i++) {
+                const fragGeometry = new THREE.OctahedronGeometry(0.15, 0);
+                const fragMaterial = new THREE.MeshBasicMaterial({ 
+                    color: crystalColors[(Math.floor(Math.random() * crystalColors.length))],
+                    transparent: true,
+                    opacity: 0.7
+                });
+                const frag = new THREE.Mesh(fragGeometry, fragMaterial);
+                const angle = (i / 3) * Math.PI * 2;
+                frag.position.set(Math.cos(angle) * 0.8, 0.3 + i * 0.3, Math.sin(angle) * 0.8);
+                crystalGroup.add(frag);
+            }
+            
+            const terrainHeight = getTerrainHeight(pos.x, pos.z);
+            crystalGroup.position.set(pos.x, terrainHeight + 0.8, pos.z);
+            G.scene.add(crystalGroup);
+            rockMesh = crystalGroup;
         } else {
-            rockColor = 0x808080; // Gray
+            const rockGeometry = new THREE.DodecahedronGeometry(0.6, 0);
+            // Theme-appropriate rock colors
+            let rockColor;
+            if (G.candyTheme) {
+                // Candy rocks - colorful like hard candy
+                const candyRockColors = [0xFF69B4, 0x87CEEB, 0xFFD700, 0x98FB98, 0xFF6347, 0xDDA0DD];
+                rockColor = candyRockColors[Math.floor(Math.random() * candyRockColors.length)];
+            } else if (G.desertTheme) {
+                rockColor = 0xa08060; // Sandstone
+            } else {
+                rockColor = 0x808080; // Gray
+            }
+            const rockMaterial = new THREE.MeshPhongMaterial({ 
+                color: rockColor,
+                shininess: G.candyTheme ? 80 : 10
+            });
+            const rock = new THREE.Mesh(rockGeometry, rockMaterial);
+            const terrainHeight = getTerrainHeight(pos.x, pos.z);
+            rock.position.set(pos.x, terrainHeight + 0.6, pos.z);
+            rock.castShadow = true;
+            rock.receiveShadow = true;
+            G.scene.add(rock);
+            rockMesh = rock;
         }
-        const rockMaterial = new THREE.MeshPhongMaterial({ 
-            color: rockColor,
-            shininess: G.candyTheme ? 80 : 10
-        });
-        const rock = new THREE.Mesh(rockGeometry, rockMaterial);
-        const terrainHeight = getTerrainHeight(pos.x, pos.z);
-        rock.position.set(pos.x, terrainHeight + 0.6, pos.z);
-        rock.castShadow = true;
-        rock.receiveShadow = true;
-        G.scene.add(rock);
-        G.rocks.push({ mesh: rock, type: 'rock', radius: 0.8 });
+        G.rocks.push({ mesh: rockMesh, type: 'rock', radius: 0.8 });
     });
     
     // Boulders - large rocks for desert level
@@ -3250,9 +3400,9 @@ function initSetup() {
         });
     });
 
-    // Grass bushels (fewer or none in desert, none in water)
+    // Grass bushels (fewer or none in desert, none in water/computer)
     G.grassBushels = [];
-    G.grassCount = G.waterTheme ? 0 : (G.desertTheme ? 50 : 400); // No grass in water, sparse in desert
+    G.grassCount = (G.waterTheme || G.computerTheme) ? 0 : (G.desertTheme ? 50 : 400); // No grass in water/computer, sparse in desert
     for (let i = 0; i < G.grassCount; i++) {
         const x = (Math.random() - 0.5) * 280;
         const z = (Math.random() - 0.5) * 280;

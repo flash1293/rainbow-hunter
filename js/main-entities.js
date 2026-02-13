@@ -1412,6 +1412,11 @@ function initEntities() {
             G.pirateShips.push(createPirateShip(shipConfig));
         });
     }
+    
+    // Initialize computer-themed level systems (firewall gates, lag events, buffer overflow zones)
+    if (G.computerTheme && typeof initComputerSystems === 'function') {
+        initComputerSystems();
+    }
 
     // Export functions needed by other files
     window.animatePortal = animatePortal;

@@ -2453,12 +2453,15 @@ function getTerrainHeight(x, z) {
 }
 
 // Create visual hill meshes
-function createHills(scene, THREE, hillPositions, hillColor, iceTheme, desertTheme, lavaTheme, waterTheme, candyTheme, graveyardTheme, ruinsTheme) {
+function createHills(scene, THREE, hillPositions, hillColor, iceTheme, desertTheme, lavaTheme, waterTheme, candyTheme, graveyardTheme, ruinsTheme, computerTheme) {
     const textures = getTerrainTextures(THREE);
     const hills = hillPositions || HILLS;
     const color = hillColor || 0x88cc88;
     let textureToUse;
-    if (waterTheme) {
+    
+    if (computerTheme) {
+        textureToUse = null; // Procedural material for computer theme
+    } else if (waterTheme) {
         textureToUse = textures.sand || textures.grass; // Sandy islands
     } else if (lavaTheme) {
         textureToUse = textures.rock || textures.grass;
@@ -2476,62 +2479,176 @@ function createHills(scene, THREE, hillPositions, hillColor, iceTheme, desertThe
         textureToUse = textures.grass;
     }
     hills.forEach(hill => {
-        const hillGeometry = new THREE.ConeGeometry(hill.radius, hill.height, 32);
-        let hillMaterial;
-        if (candyTheme) {
-            // Cupcake-style hills with frosting
-            hillMaterial = new THREE.MeshPhongMaterial({ 
-                map: textureToUse,
-                color: color,
-                shininess: 50
+        if (computerTheme) {
+            // Create processor chip / data hub instead of cone hill
+            const chipSize = hill.radius * 1.2;
+            const chipHeight = 1.5;
+            
+            // Main processor chip - flat octagonal/hexagonal shape
+            const chipGeometry = new THREE.CylinderGeometry(chipSize, chipSize * 1.1, chipHeight, 8);
+            const chipMaterial = new THREE.MeshPhongMaterial({ 
+                color: 0x0A0A15,
+                emissive: 0x001133,
+                emissiveIntensity: 0.4,
+                shininess: 100,
+                transparent: true,
+                opacity: 0.95
             });
-        } else if (graveyardTheme) {
-            // Dark burial mounds
-            hillMaterial = new THREE.MeshLambertMaterial({ 
-                map: textureToUse,
-                color: 0x2a2a20
+            const chip = new THREE.Mesh(chipGeometry, chipMaterial);
+            chip.position.set(hill.x, chipHeight / 2, hill.z);
+            chip.castShadow = true;
+            chip.receiveShadow = true;
+            scene.add(chip);
+            
+            // Glowing top surface circuit pattern
+            const surfaceGeometry = new THREE.CylinderGeometry(chipSize * 0.95, chipSize * 0.95, 0.1, 8);
+            const surfaceMaterial = new THREE.MeshBasicMaterial({ 
+                color: 0x002244,
+                transparent: true,
+                opacity: 0.8
             });
-        } else if (ruinsTheme) {
-            // Rocky rubble piles
-            hillMaterial = new THREE.MeshLambertMaterial({ 
-                map: textureToUse,
-                color: 0x6B5B4F
+            const surface = new THREE.Mesh(surfaceGeometry, surfaceMaterial);
+            surface.position.set(hill.x, chipHeight + 0.05, hill.z);
+            scene.add(surface);
+            
+            // CPU core in center - glowing
+            const coreGeometry = new THREE.BoxGeometry(chipSize * 0.4, 0.3, chipSize * 0.4);
+            const coreMaterial = new THREE.MeshBasicMaterial({ 
+                color: 0x00FFFF,
+                transparent: true,
+                opacity: 0.9
             });
-        } else {
-            hillMaterial = new THREE.MeshLambertMaterial({ 
-                map: textureToUse,
-                color: color
-            });
-        }
-        const hillMesh = new THREE.Mesh(hillGeometry, hillMaterial);
-        hillMesh.position.set(hill.x, hill.height / 2, hill.z);
-        hillMesh.castShadow = true;
-        hillMesh.receiveShadow = true;
-        scene.add(hillMesh);
-        
-        // Add sprinkles on candy hills
-        if (candyTheme) {
-            const sprinkleColors = [0xFF6347, 0xFFD700, 0x98FB98, 0xDDA0DD, 0x00CED1, 0xFF1493];
-            for (let i = 0; i < 15; i++) {
-                const sprinkleGeometry = new THREE.CylinderGeometry(0.1, 0.1, 0.4, 6);
-                const sprinkleColor = sprinkleColors[Math.floor(Math.random() * sprinkleColors.length)];
-                const sprinkleMaterial = new THREE.MeshPhongMaterial({ color: sprinkleColor, shininess: 80 });
-                const sprinkle = new THREE.Mesh(sprinkleGeometry, sprinkleMaterial);
-                const angle = Math.random() * Math.PI * 2;
-                const dist = Math.random() * hill.radius * 0.7;
-                const heightOnHill = hill.height * 0.3 + Math.random() * hill.height * 0.5;
-                sprinkle.position.set(
-                    hill.x + Math.cos(angle) * dist,
-                    heightOnHill,
-                    hill.z + Math.sin(angle) * dist
+            const core = new THREE.Mesh(coreGeometry, coreMaterial);
+            core.position.set(hill.x, chipHeight + 0.25, hill.z);
+            scene.add(core);
+            
+            // Circuit traces radiating outward
+            const numTraces = 8;
+            for (let i = 0; i < numTraces; i++) {
+                const angle = (i / numTraces) * Math.PI * 2;
+                const traceLength = chipSize * 0.45;
+                const traceGeometry = new THREE.BoxGeometry(0.15, 0.1, traceLength);
+                const traceColor = i % 2 === 0 ? 0x00FFFF : 0xFF00FF;
+                const traceMaterial = new THREE.MeshBasicMaterial({ 
+                    color: traceColor,
+                    transparent: true,
+                    opacity: 0.8
+                });
+                const trace = new THREE.Mesh(traceGeometry, traceMaterial);
+                const midDist = (chipSize * 0.2) + (traceLength / 2);
+                trace.position.set(
+                    hill.x + Math.cos(angle) * midDist,
+                    chipHeight + 0.15,
+                    hill.z + Math.sin(angle) * midDist
                 );
-                sprinkle.rotation.set(Math.random() * 0.5, Math.random() * Math.PI, Math.random() * 0.5);
-                scene.add(sprinkle);
+                trace.rotation.y = -angle + Math.PI / 2;
+                scene.add(trace);
             }
-        }
-        
-        // Add gravestones on graveyard hills
-        if (graveyardTheme) {
+            
+            // Corner connection pins
+            const numPins = 8;
+            for (let i = 0; i < numPins; i++) {
+                const angle = (i / numPins) * Math.PI * 2 + Math.PI / 8;
+                const pinGeometry = new THREE.BoxGeometry(0.8, 0.6, 0.3);
+                const pinMaterial = new THREE.MeshPhongMaterial({ 
+                    color: 0xCCCC00,
+                    emissive: 0x444400,
+                    emissiveIntensity: 0.3,
+                    shininess: 100
+                });
+                const pin = new THREE.Mesh(pinGeometry, pinMaterial);
+                pin.position.set(
+                    hill.x + Math.cos(angle) * (chipSize + 0.5),
+                    0.3,
+                    hill.z + Math.sin(angle) * (chipSize + 0.5)
+                );
+                pin.rotation.y = -angle;
+                scene.add(pin);
+            }
+            
+            // Holographic data readout floating above
+            const holoHeight = hill.height * 0.3 + 2;
+            const holoGeometry = new THREE.PlaneGeometry(chipSize * 0.6, chipSize * 0.4);
+            const holoMaterial = new THREE.MeshBasicMaterial({ 
+                color: 0x00FF88,
+                transparent: true,
+                opacity: 0.5,
+                side: THREE.DoubleSide
+            });
+            const holo = new THREE.Mesh(holoGeometry, holoMaterial);
+            holo.position.set(hill.x, chipHeight + holoHeight, hill.z);
+            holo.rotation.x = -0.3;
+            scene.add(holo);
+            
+            // Glowing status indicator
+            const statusGeometry = new THREE.SphereGeometry(0.4, 16, 16);
+            const statusColor = Math.random() > 0.3 ? 0x00FF00 : 0xFF0000;
+            const statusMaterial = new THREE.MeshBasicMaterial({ 
+                color: statusColor,
+                transparent: true,
+                opacity: 0.9
+            });
+            const status = new THREE.Mesh(statusGeometry, statusMaterial);
+            status.position.set(hill.x, chipHeight + holoHeight + 1, hill.z);
+            scene.add(status);
+        } else {
+            // Non-computer theme: use cone hills
+            const hillGeometry = new THREE.ConeGeometry(hill.radius, hill.height, 32);
+            let hillMaterial;
+            if (candyTheme) {
+                // Cupcake-style hills with frosting
+                hillMaterial = new THREE.MeshPhongMaterial({ 
+                    map: textureToUse,
+                    color: color,
+                    shininess: 50
+                });
+            } else if (graveyardTheme) {
+                // Dark burial mounds
+                hillMaterial = new THREE.MeshLambertMaterial({ 
+                    map: textureToUse,
+                    color: 0x2a2a20
+                });
+            } else if (ruinsTheme) {
+                // Rocky rubble piles
+                hillMaterial = new THREE.MeshLambertMaterial({ 
+                    map: textureToUse,
+                    color: 0x6B5B4F
+                });
+            } else {
+                hillMaterial = new THREE.MeshLambertMaterial({ 
+                    map: textureToUse,
+                    color: color
+                });
+            }
+            const hillMesh = new THREE.Mesh(hillGeometry, hillMaterial);
+            hillMesh.position.set(hill.x, hill.height / 2, hill.z);
+            hillMesh.castShadow = true;
+            hillMesh.receiveShadow = true;
+            scene.add(hillMesh);
+            
+            // Add sprinkles on candy hills
+            if (candyTheme) {
+                const sprinkleColors = [0xFF6347, 0xFFD700, 0x98FB98, 0xDDA0DD, 0x00CED1, 0xFF1493];
+                for (let i = 0; i < 15; i++) {
+                    const sprinkleGeometry = new THREE.CylinderGeometry(0.1, 0.1, 0.4, 6);
+                    const sprinkleColor = sprinkleColors[Math.floor(Math.random() * sprinkleColors.length)];
+                    const sprinkleMaterial = new THREE.MeshPhongMaterial({ color: sprinkleColor, shininess: 80 });
+                    const sprinkle = new THREE.Mesh(sprinkleGeometry, sprinkleMaterial);
+                    const angle = Math.random() * Math.PI * 2;
+                    const dist = Math.random() * hill.radius * 0.7;
+                    const heightOnHill = hill.height * 0.3 + Math.random() * hill.height * 0.5;
+                    sprinkle.position.set(
+                        hill.x + Math.cos(angle) * dist,
+                        heightOnHill,
+                        hill.z + Math.sin(angle) * dist
+                    );
+                    sprinkle.rotation.set(Math.random() * 0.5, Math.random() * Math.PI, Math.random() * 0.5);
+                    scene.add(sprinkle);
+                }
+            }
+            
+            // Add gravestones on graveyard hills
+            if (graveyardTheme) {
             const numGravestones = 1 + Math.floor(Math.random() * 3);
             for (let i = 0; i < numGravestones; i++) {
                 const gravestoneGroup = new THREE.Group();
@@ -2570,14 +2687,67 @@ function createHills(scene, THREE, hillPositions, hillColor, iceTheme, desertThe
                 scene.add(gravestoneGroup);
             }
         }
+        } // Close the else block for non-computer theme
     });
 }
 
 // Create mountains (world boundaries)
-function createMountains(scene, THREE, mountainPositions, candyTheme, graveyardTheme, ruinsTheme) {
+function createMountains(scene, THREE, mountainPositions, candyTheme, graveyardTheme, ruinsTheme, computerTheme) {
     const textures = getTerrainTextures(THREE);
     mountainPositions.forEach(mtn => {
-        if (graveyardTheme) {
+        if (computerTheme) {
+            // Firewall server racks - tall glowing barriers
+            const wallHeight = mtn.height;
+            const wallWidth = mtn.width;
+            const wallDepth = 2;
+            
+            // Main server rack body - dark metallic
+            const wallGeometry = new THREE.BoxGeometry(wallWidth, wallHeight, wallDepth);
+            const wallMaterial = new THREE.MeshPhongMaterial({ 
+                color: 0x0A0A1A,
+                emissive: 0x001122,
+                emissiveIntensity: 0.3,
+                shininess: 60
+            });
+            const wall = new THREE.Mesh(wallGeometry, wallMaterial);
+            wall.position.set(mtn.x, wallHeight/2, mtn.z);
+            wall.castShadow = true;
+            scene.add(wall);
+            
+            // Add glowing LED strips vertically
+            const numStrips = Math.max(3, Math.floor(wallWidth / 8));
+            for (let i = 0; i < numStrips; i++) {
+                const stripX = mtn.x - wallWidth/2 + (i + 0.5) * (wallWidth / numStrips);
+                const stripColor = [0x00FFFF, 0xFF00FF, 0x00FF00][i % 3];
+                
+                const stripGeometry = new THREE.BoxGeometry(0.3, wallHeight * 0.9, 0.5);
+                const stripMaterial = new THREE.MeshBasicMaterial({ 
+                    color: stripColor,
+                    transparent: true,
+                    opacity: 0.8
+                });
+                const strip = new THREE.Mesh(stripGeometry, stripMaterial);
+                strip.position.set(stripX, wallHeight/2, mtn.z + wallDepth/2 + 0.1);
+                scene.add(strip);
+            }
+            
+            // Add blinking indicator lights along top
+            const numLights = Math.max(5, Math.floor(wallWidth / 4));
+            for (let i = 0; i < numLights; i++) {
+                const lightX = mtn.x - wallWidth/2 + (i + 0.5) * (wallWidth / numLights);
+                const lightGeometry = new THREE.SphereGeometry(0.25, 8, 8);
+                const lightColor = Math.random() > 0.5 ? 0xFF0000 : 0x00FF00;
+                const lightMaterial = new THREE.MeshBasicMaterial({ 
+                    color: lightColor,
+                    transparent: true,
+                    opacity: 0.9
+                });
+                const light = new THREE.Mesh(lightGeometry, lightMaterial);
+                light.position.set(lightX, wallHeight - 0.5, mtn.z + wallDepth/2 + 0.2);
+                scene.add(light);
+            }
+            
+        } else if (graveyardTheme) {
             // Old English brick wall with iron fence
             const wallHeight = mtn.height;
             const wallWidth = mtn.width;
@@ -2831,12 +3001,161 @@ function createMountains(scene, THREE, mountainPositions, candyTheme, graveyardT
     });
 }
 
+// Create computer-themed ground with circuit board pattern and glowing grid lines
+function createComputerGround(scene, THREE) {
+    // Base dark ground
+    const groundGeometry = new THREE.PlaneGeometry(600, 600, 1, 1);
+    const groundMaterial = new THREE.MeshLambertMaterial({ 
+        color: 0x000808,  // Very dark teal-black
+        emissive: 0x001111,
+        emissiveIntensity: 0.3
+    });
+    const ground = new THREE.Mesh(groundGeometry, groundMaterial);
+    ground.rotation.x = -Math.PI / 2;
+    ground.position.y = -0.01;
+    ground.receiveShadow = true;
+    scene.add(ground);
+    
+    // Create glowing grid lines - raised position to be clearly visible
+    const gridSpacing = 8;  // Denser grid
+    const gridExtent = 300;
+    const gridMaterial = new THREE.MeshBasicMaterial({ 
+        color: 0x00FFFF,
+        transparent: true,
+        opacity: 0.8,
+        side: THREE.DoubleSide,
+        depthWrite: false  // Prevents z-fighting
+    });
+    
+    // Create line group for grid
+    const gridGroup = new THREE.Group();
+    gridGroup.renderOrder = 1;  // Render after ground
+    
+    // X-axis lines (running along X)
+    for (let z = -gridExtent; z <= gridExtent; z += gridSpacing) {
+        const lineGeometry = new THREE.PlaneGeometry(gridExtent * 2, 0.2);  // Thicker lines
+        const line = new THREE.Mesh(lineGeometry, gridMaterial.clone());
+        line.rotation.x = -Math.PI / 2;
+        line.position.set(0, 0.15, z);  // Raised higher
+        
+        // Make some lines brighter (major grid lines)
+        if (z % 40 === 0) {
+            line.material.opacity = 1.0;
+            line.material.color.setHex(0x00FFFF);
+            line.scale.y = 3; // Wider major lines
+        }
+        
+        gridGroup.add(line);
+    }
+    
+    // Z-axis lines (running along Z)
+    for (let x = -gridExtent; x <= gridExtent; x += gridSpacing) {
+        const lineGeometry = new THREE.PlaneGeometry(0.2, gridExtent * 2);  // Thicker lines
+        const line = new THREE.Mesh(lineGeometry, gridMaterial.clone());
+        line.rotation.x = -Math.PI / 2;
+        line.position.set(x, 0.15, 0);  // Raised higher
+        
+        // Make some lines brighter (major grid lines)
+        if (x % 40 === 0) {
+            line.material.opacity = 1.0;
+            line.material.color.setHex(0x00FFFF);
+            line.scale.x = 3; // Wider major lines
+        }
+        
+        gridGroup.add(line);
+    }
+    
+    scene.add(gridGroup);
+    
+    // Add some glowing accent circles/nodes at intersections
+    const nodeGeometry = new THREE.CircleGeometry(0.5, 16);
+    const nodeMaterial = new THREE.MeshBasicMaterial({ 
+        color: 0xFF00FF,  // Magenta nodes
+        transparent: true,
+        opacity: 0.8
+    });
+    
+    // Place nodes at major intersections
+    for (let x = -gridExtent; x <= gridExtent; x += 50) {
+        for (let z = -gridExtent; z <= gridExtent; z += 50) {
+            const node = new THREE.Mesh(nodeGeometry, nodeMaterial.clone());
+            node.rotation.x = -Math.PI / 2;
+            node.position.set(x, 0.03, z);
+            scene.add(node);
+        }
+    }
+    
+    // Add larger data hub circles at key points
+    const hubPositions = [
+        { x: 0, z: 100 },
+        { x: -100, z: 0 },
+        { x: 100, z: 0 },
+        { x: 0, z: -100 },
+        { x: 0, z: 0 }
+    ];
+    
+    hubPositions.forEach(pos => {
+        // Outer ring
+        const ringGeometry = new THREE.RingGeometry(3, 4, 32);
+        const ringMaterial = new THREE.MeshBasicMaterial({ 
+            color: 0x00FF00,  // Green data hubs
+            transparent: true,
+            opacity: 0.9,
+            side: THREE.DoubleSide
+        });
+        const ring = new THREE.Mesh(ringGeometry, ringMaterial);
+        ring.rotation.x = -Math.PI / 2;
+        ring.position.set(pos.x, 0.04, pos.z);
+        scene.add(ring);
+        
+        // Inner circle
+        const centerGeometry = new THREE.CircleGeometry(2, 32);
+        const centerMaterial = new THREE.MeshBasicMaterial({ 
+            color: 0x00FF88,
+            transparent: true,
+            opacity: 0.6
+        });
+        const center = new THREE.Mesh(centerGeometry, centerMaterial);
+        center.rotation.x = -Math.PI / 2;
+        center.position.set(pos.x, 0.035, pos.z);
+        scene.add(center);
+    });
+    
+    // Add some random circuit traces
+    for (let i = 0; i < 50; i++) {
+        const traceLength = 10 + Math.random() * 40;
+        const traceGeometry = new THREE.PlaneGeometry(traceLength, 0.3);
+        const traceMaterial = new THREE.MeshBasicMaterial({ 
+            color: Math.random() > 0.5 ? 0x00FFFF : 0xFF00FF,
+            transparent: true,
+            opacity: 0.4 + Math.random() * 0.3
+        });
+        const trace = new THREE.Mesh(traceGeometry, traceMaterial);
+        trace.rotation.x = -Math.PI / 2;
+        trace.rotation.z = Math.random() * Math.PI;
+        trace.position.set(
+            (Math.random() - 0.5) * 500,
+            0.015,
+            (Math.random() - 0.5) * 500
+        );
+        scene.add(trace);
+    }
+    
+    return ground;
+}
+
 // Create ground plane
-function createGround(scene, THREE, groundColor, iceTheme, desertTheme, lavaTheme, waterTheme, candyTheme, graveyardTheme, ruinsTheme) {
+function createGround(scene, THREE, groundColor, iceTheme, desertTheme, lavaTheme, waterTheme, candyTheme, graveyardTheme, ruinsTheme, computerTheme) {
     const textures = getTerrainTextures(THREE);
     const color = groundColor || 0xffffff; // Tint color applied over texture
     let textureToUse;
     let groundMaterial;
+    
+    // Computer theme - circuit board with glowing grid lines
+    if (computerTheme) {
+        createComputerGround(scene, THREE);
+        return;
+    }
     
     if (waterTheme) {
         // Water surface with animated waves - higher resolution for more detail

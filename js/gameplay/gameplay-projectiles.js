@@ -21,38 +21,114 @@
         // Scale fireball based on dragon size
         const fbScale = d.scale || 1;
         
-        // Core sphere
-        G.coreGeometry = new THREE.SphereGeometry(0.6 * fbScale, 12, 12);
-        G.coreMaterial = new THREE.MeshBasicMaterial({ 
-            map: fireballTexture,
-            transparent: true
-        });
-        G.core = new THREE.Mesh(G.coreGeometry, G.coreMaterial);
-        fireballGroup.add(G.core);
-        
-        // Outer glow sprite
-        const glowMaterial = new THREE.SpriteMaterial({
-            map: explosionTexture,
-            transparent: true,
-            blending: THREE.AdditiveBlending,
-            depthWrite: false,
-            opacity: 0.7
-        });
-        const glow = new THREE.Sprite(glowMaterial);
-        glow.scale.set(3 * fbScale, 3 * fbScale, 1);
-        fireballGroup.add(glow);
-        
-        // Inner bright glow
-        const innerGlowMaterial = new THREE.SpriteMaterial({
-            map: explosionTexture,
-            transparent: true,
-            blending: THREE.AdditiveBlending,
-            depthWrite: false,
-            opacity: 0.9
-        });
-        const innerGlow = new THREE.Sprite(innerGlowMaterial);
-        innerGlow.scale.set(1.8 * fbScale, 1.8 * fbScale, 1);
-        fireballGroup.add(innerGlow);
+        if (G.computerTheme) {
+            // Trojan Dragon shoots massive corrupted data bombs
+            // Main virus core - dodecahedron for complex digital appearance
+            const virusGeometry = new THREE.DodecahedronGeometry(0.8 * fbScale, 0);
+            const virusMaterial = new THREE.MeshBasicMaterial({ 
+                color: 0xFF0000,
+                transparent: true,
+                opacity: 0.9
+            });
+            const virus = new THREE.Mesh(virusGeometry, virusMaterial);
+            fireballGroup.add(virus);
+            
+            // Inner rotating cube (malware core)
+            const malwareGeometry = new THREE.BoxGeometry(0.6 * fbScale, 0.6 * fbScale, 0.6 * fbScale);
+            const malwareMaterial = new THREE.MeshBasicMaterial({ 
+                color: 0xFFFF00,
+                transparent: true,
+                opacity: 0.8
+            });
+            const malware = new THREE.Mesh(malwareGeometry, malwareMaterial);
+            fireballGroup.add(malware);
+            
+            // Wireframe shell 1
+            const shell1Geometry = new THREE.IcosahedronGeometry(1.0 * fbScale, 1);
+            const shell1Material = new THREE.MeshBasicMaterial({ 
+                color: 0x00FF00,
+                wireframe: true,
+                transparent: true,
+                opacity: 0.7
+            });
+            const shell1 = new THREE.Mesh(shell1Geometry, shell1Material);
+            fireballGroup.add(shell1);
+            
+            // Wireframe shell 2 (counter-rotating)
+            const shell2Geometry = new THREE.IcosahedronGeometry(1.2 * fbScale, 0);
+            const shell2Material = new THREE.MeshBasicMaterial({ 
+                color: 0x00FFFF,
+                wireframe: true,
+                transparent: true,
+                opacity: 0.6
+            });
+            const shell2 = new THREE.Mesh(shell2Geometry, shell2Material);
+            fireballGroup.add(shell2);
+            
+            // Glowing data rings
+            const ringGeometry = new THREE.TorusGeometry(0.9 * fbScale, 0.08, 8, 24);
+            const ringMaterial1 = new THREE.MeshBasicMaterial({ 
+                color: 0xFF00FF,
+                transparent: true,
+                opacity: 0.8
+            });
+            const ring1 = new THREE.Mesh(ringGeometry, ringMaterial1);
+            ring1.rotation.x = Math.PI / 2;
+            fireballGroup.add(ring1);
+            
+            const ringMaterial2 = new THREE.MeshBasicMaterial({ 
+                color: 0x00FFFF,
+                transparent: true,
+                opacity: 0.8
+            });
+            const ring2 = new THREE.Mesh(ringGeometry, ringMaterial2);
+            ring2.rotation.y = Math.PI / 2;
+            fireballGroup.add(ring2);
+            
+            // Outer threatening glow
+            const glowGeometry = new THREE.SphereGeometry(1.5 * fbScale, 16, 16);
+            const glowMaterial = new THREE.MeshBasicMaterial({ 
+                color: 0xFF0066,
+                transparent: true,
+                opacity: 0.2
+            });
+            const glow = new THREE.Mesh(glowGeometry, glowMaterial);
+            fireballGroup.add(glow);
+        } else {
+            // Original fireball for other themes
+            // Core sphere
+            G.coreGeometry = new THREE.SphereGeometry(0.6 * fbScale, 12, 12);
+            G.coreMaterial = new THREE.MeshBasicMaterial({ 
+                map: fireballTexture,
+                transparent: true
+            });
+            G.core = new THREE.Mesh(G.coreGeometry, G.coreMaterial);
+            fireballGroup.add(G.core);
+            
+            // Outer glow sprite
+            const glowMaterial = new THREE.SpriteMaterial({
+                map: explosionTexture,
+                transparent: true,
+                blending: THREE.AdditiveBlending,
+                depthWrite: false,
+                opacity: 0.7
+            });
+            const glow = new THREE.Sprite(glowMaterial);
+            glow.scale.set(3 * fbScale, 3 * fbScale, 1);
+            fireballGroup.add(glow);
+            
+            // Inner bright glow
+            const innerGlowMaterial = new THREE.SpriteMaterial({
+                map: explosionTexture,
+                transparent: true,
+                blending: THREE.AdditiveBlending,
+                depthWrite: false,
+                opacity: 0.9
+            });
+            const innerGlow = new THREE.Sprite(innerGlowMaterial);
+            innerGlow.scale.set(1.8 * fbScale, 1.8 * fbScale, 1);
+            fireballGroup.add(innerGlow);
+        }
         
         fireballGroup.position.copy(d.mesh.position);
         fireballGroup.position.x += d.direction > 0 ? 14 * fbScale : -14 * fbScale;
@@ -173,41 +249,92 @@
         const fireballGroup = new THREE.Group();
         const fbScale = 0.4;
         
-        // Core sphere - purple/magenta tint for wizard magic
-        G.coreGeometry = new THREE.SphereGeometry(0.6 * fbScale, 12, 12);
-        G.coreMaterial = new THREE.MeshBasicMaterial({ 
-            map: fireballTexture,
-            transparent: true,
-            color: G.iceTheme ? 0x00FFFF : 0xFF00FF // Magenta or cyan tint
-        });
-        G.core = new THREE.Mesh(G.coreGeometry, G.coreMaterial);
-        fireballGroup.add(G.core);
-        
-        // Outer glow sprite
-        const glowMaterial = new THREE.SpriteMaterial({
-            map: explosionTexture,
-            transparent: true,
-            blending: THREE.AdditiveBlending,
-            depthWrite: false,
-            opacity: 0.7,
-            color: G.iceTheme ? 0x00FFFF : 0xFF00FF
-        });
-        const glow = new THREE.Sprite(glowMaterial);
-        glow.scale.set(2 * fbScale, 2 * fbScale, 1);
-        fireballGroup.add(glow);
-        
-        // Inner bright glow
-        const innerGlowMaterial = new THREE.SpriteMaterial({
-            map: explosionTexture,
-            transparent: true,
-            blending: THREE.AdditiveBlending,
-            depthWrite: false,
-            opacity: 0.9,
-            color: G.iceTheme ? 0x88FFFF : 0xFF88FF
-        });
-        const innerGlow = new THREE.Sprite(innerGlowMaterial);
-        innerGlow.scale.set(1.2 * fbScale, 1.2 * fbScale, 1);
-        fireballGroup.add(innerGlow);
+        if (G.computerTheme) {
+            // Computer theme: Malware virus orb / corrupted data sphere
+            // Core virus geometry - icosahedron for digital look
+            const virusCore = new THREE.IcosahedronGeometry(0.5 * fbScale, 1);
+            const virusMaterial = new THREE.MeshBasicMaterial({ 
+                color: 0xFF0000,
+                transparent: true,
+                opacity: 0.9
+            });
+            const virus = new THREE.Mesh(virusCore, virusMaterial);
+            fireballGroup.add(virus);
+            
+            // Wireframe shell
+            const shellGeometry = new THREE.IcosahedronGeometry(0.65 * fbScale, 1);
+            const shellMaterial = new THREE.MeshBasicMaterial({ 
+                color: 0x00FF00,
+                wireframe: true,
+                transparent: true,
+                opacity: 0.8
+            });
+            const shell = new THREE.Mesh(shellGeometry, shellMaterial);
+            fireballGroup.add(shell);
+            
+            // Outer digital glow ring
+            const ringGeometry = new THREE.TorusGeometry(0.4 * fbScale, 0.05, 8, 16);
+            const ringMaterial = new THREE.MeshBasicMaterial({ 
+                color: 0x00FFFF,
+                transparent: true,
+                opacity: 0.7
+            });
+            const ring1 = new THREE.Mesh(ringGeometry, ringMaterial);
+            ring1.rotation.x = Math.PI / 2;
+            fireballGroup.add(ring1);
+            
+            const ring2 = new THREE.Mesh(ringGeometry, ringMaterial.clone());
+            ring2.material.color.setHex(0xFF00FF);
+            ring2.rotation.y = Math.PI / 2;
+            fireballGroup.add(ring2);
+            
+            // Outer glow sphere
+            const glowGeometry = new THREE.SphereGeometry(0.8 * fbScale, 12, 12);
+            const glowMaterial = new THREE.MeshBasicMaterial({ 
+                color: 0xFF0066,
+                transparent: true,
+                opacity: 0.25
+            });
+            const outerGlow = new THREE.Mesh(glowGeometry, glowMaterial);
+            fireballGroup.add(outerGlow);
+        } else {
+            // Original fireball code for other themes
+            // Core sphere - purple/magenta tint for wizard magic
+            G.coreGeometry = new THREE.SphereGeometry(0.6 * fbScale, 12, 12);
+            G.coreMaterial = new THREE.MeshBasicMaterial({ 
+                map: fireballTexture,
+                transparent: true,
+                color: G.iceTheme ? 0x00FFFF : 0xFF00FF // Magenta or cyan tint
+            });
+            G.core = new THREE.Mesh(G.coreGeometry, G.coreMaterial);
+            fireballGroup.add(G.core);
+            
+            // Outer glow sprite
+            const glowMaterial = new THREE.SpriteMaterial({
+                map: explosionTexture,
+                transparent: true,
+                blending: THREE.AdditiveBlending,
+                depthWrite: false,
+                opacity: 0.7,
+                color: G.iceTheme ? 0x00FFFF : 0xFF00FF
+            });
+            const glow = new THREE.Sprite(glowMaterial);
+            glow.scale.set(2 * fbScale, 2 * fbScale, 1);
+            fireballGroup.add(glow);
+            
+            // Inner bright glow
+            const innerGlowMaterial = new THREE.SpriteMaterial({
+                map: explosionTexture,
+                transparent: true,
+                blending: THREE.AdditiveBlending,
+                depthWrite: false,
+                opacity: 0.9,
+                color: G.iceTheme ? 0x88FFFF : 0xFF88FF
+            });
+            const innerGlow = new THREE.Sprite(innerGlowMaterial);
+            innerGlow.scale.set(1.2 * fbScale, 1.2 * fbScale, 1);
+            fireballGroup.add(innerGlow);
+        }
         
         // Position fireball at wizard's staff/orb position
         fireballGroup.position.copy(wizard.mesh.position);

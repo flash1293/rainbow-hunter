@@ -19,6 +19,10 @@
     'use strict';
 
     function updateGoblins() {
+        // Get lag slowdown factor if in computer level
+        const lagFactor = (G.computerTheme && typeof getLagSlowdownFactor === 'function') 
+            ? getLagSlowdownFactor() : 1;
+        
         G.goblins.forEach(gob => {
             if (!gob.alive || gameWon) return;
             
@@ -48,6 +52,9 @@
             const oldX = gob.mesh.position.x;
             const oldZ = gob.mesh.position.z;
             
+            // Apply lag slowdown to enemy speed
+            const effectiveSpeed = gob.speed * lagFactor;
+            
             // Get nearest player target (handles both native splitscreen and network multiplayer)
             const targetInfo = getNearestPlayerTarget(gob.mesh.position.x, gob.mesh.position.z);
             let targetPlayer = targetInfo.target;
@@ -70,12 +77,12 @@
                 
                 // Only move if not already very close (prevents oscillation and ensures collision)
                 if (length > 0.5) {
-                    gob.mesh.position.x += (directionX / length) * gob.speed;
-                    gob.mesh.position.z += (directionZ / length) * gob.speed;
+                    gob.mesh.position.x += (directionX / length) * effectiveSpeed;
+                    gob.mesh.position.z += (directionZ / length) * effectiveSpeed;
                     gob.mesh.rotation.y = Math.atan2(directionX, directionZ);
                 }
             } else {
-                gob.mesh.position.x += gob.speed * gob.direction;
+                gob.mesh.position.x += effectiveSpeed * gob.direction;
                 gob.mesh.rotation.y = gob.direction > 0 ? Math.PI / 2 : -Math.PI / 2;
                 
                 if (gob.mesh.position.x <= gob.patrolLeft) {
@@ -203,7 +210,7 @@
                 }
             }
             
-            // Guardian arrows (ink balls in water theme, mini-ghosts in graveyard)
+            // Guardian arrows (ink balls in water theme, mini-ghosts in graveyard, data packets in computer theme)
             if (gob.isGuardian && distToTarget < 25) {
                 const now = Date.now();
                 const fireInterval = 4000 + Math.random() * 2000;
@@ -211,7 +218,46 @@
                     gob.lastFireTime = now;
                     
                     let arrowMesh;
-                    if (G.waterTheme) {
+                    if (G.computerTheme) {
+                        // Data packet / malware byte projectile for Firewall Sentry
+                        const packetGroup = new THREE.Group();
+                        
+                        // Glowing cube core (data packet)
+                        const cubeGeometry = new THREE.BoxGeometry(0.35, 0.35, 0.35);
+                        const cubeMaterial = new THREE.MeshBasicMaterial({ 
+                            color: 0xFF0066,
+                            transparent: true,
+                            opacity: 0.9
+                        });
+                        const cube = new THREE.Mesh(cubeGeometry, cubeMaterial);
+                        packetGroup.add(cube);
+                        
+                        // Wireframe outline
+                        const wireGeometry = new THREE.BoxGeometry(0.4, 0.4, 0.4);
+                        const wireMaterial = new THREE.MeshBasicMaterial({ 
+                            color: 0x00FFFF,
+                            wireframe: true,
+                            transparent: true,
+                            opacity: 0.8
+                        });
+                        const wireframe = new THREE.Mesh(wireGeometry, wireMaterial);
+                        packetGroup.add(wireframe);
+                        
+                        // Outer glow
+                        const glowGeometry = new THREE.SphereGeometry(0.3, 8, 8);
+                        const glowMaterial = new THREE.MeshBasicMaterial({ 
+                            color: 0xFF00FF,
+                            transparent: true,
+                            opacity: 0.3
+                        });
+                        const glow = new THREE.Mesh(glowGeometry, glowMaterial);
+                        packetGroup.add(glow);
+                        
+                        packetGroup.position.copy(gob.mesh.position);
+                        packetGroup.position.y += 1.5;
+                        G.scene.add(packetGroup);
+                        arrowMesh = packetGroup;
+                    } else if (G.waterTheme) {
                         // Ink ball for octopus guardians
                         const inkGeometry = new THREE.SphereGeometry(0.3, 12, 12);
                         const inkMaterial = new THREE.MeshLambertMaterial({ color: 0x000000 });
@@ -628,11 +674,17 @@
             const dz = Math.cos(bird.angle);
             bird.mesh.rotation.y = Math.atan2(-dx, -dz);
             
-            // Wing flapping animation
+            // Wing flapping animation (or propeller rotation for drone)
             bird.wingFlapPhase += 0.2;
-            const flapAngle = Math.sin(bird.wingFlapPhase) * 0.4;
-            bird.leftWing.rotation.z = flapAngle;
-            bird.rightWing.rotation.z = -flapAngle;
+            if (bird.mesh.isDrone) {
+                // Drone: rotate both arms around Y axis for propeller effect
+                bird.leftWing.rotation.y += 0.3;
+                bird.rightWing.rotation.y += 0.3;
+            } else {
+                const flapAngle = Math.sin(bird.wingFlapPhase) * 0.4;
+                bird.leftWing.rotation.z = flapAngle;
+                bird.rightWing.rotation.z = -flapAngle;
+            }
             
             // Check if players are in ice berg (safe zone) - only if iceBerg exists
             const playerInIceBerg = G.iceBerg ? Math.sqrt(
@@ -666,12 +718,54 @@
             
             if (anyPlayerInRange && now - bird.lastBombTime > 2500) {
                 // Drop bomb
-                const bombGeometry = new THREE.SphereGeometry(0.3, 8, 8);
-                const bombMaterial = new THREE.MeshLambertMaterial({ color: 0x000000 });
-                const bombMesh = new THREE.Mesh(bombGeometry, bombMaterial);
-                bombMesh.position.copy(bird.mesh.position);
-                bombMesh.castShadow = true;
-                G.scene.add(bombMesh);
+                let bombMesh;
+                if (G.computerTheme) {
+                    // Drone drops data mine / EMP device
+                    const bombGroup = new THREE.Group();
+                    
+                    // Core cube
+                    const cubeGeometry = new THREE.BoxGeometry(0.35, 0.35, 0.35);
+                    const cubeMaterial = new THREE.MeshBasicMaterial({ 
+                        color: 0xFF0000,
+                        transparent: true,
+                        opacity: 0.9
+                    });
+                    const cube = new THREE.Mesh(cubeGeometry, cubeMaterial);
+                    bombGroup.add(cube);
+                    
+                    // Wireframe shell
+                    const shellGeometry = new THREE.OctahedronGeometry(0.35, 0);
+                    const shellMaterial = new THREE.MeshBasicMaterial({ 
+                        color: 0x00FFFF,
+                        wireframe: true,
+                        transparent: true,
+                        opacity: 0.8
+                    });
+                    const shell = new THREE.Mesh(shellGeometry, shellMaterial);
+                    bombGroup.add(shell);
+                    
+                    // Blinking warning light
+                    const lightGeometry = new THREE.SphereGeometry(0.1, 8, 8);
+                    const lightMaterial = new THREE.MeshBasicMaterial({ 
+                        color: 0xFFFF00,
+                        transparent: true,
+                        opacity: 0.9
+                    });
+                    const light = new THREE.Mesh(lightGeometry, lightMaterial);
+                    light.position.y = 0.25;
+                    bombGroup.add(light);
+                    
+                    bombGroup.position.copy(bird.mesh.position);
+                    G.scene.add(bombGroup);
+                    bombMesh = bombGroup;
+                } else {
+                    const bombGeometry = new THREE.SphereGeometry(0.3, 8, 8);
+                    const bombMaterial = new THREE.MeshLambertMaterial({ color: 0x000000 });
+                    bombMesh = new THREE.Mesh(bombGeometry, bombMaterial);
+                    bombMesh.position.copy(bird.mesh.position);
+                    bombMesh.castShadow = true;
+                    G.scene.add(bombMesh);
+                }
                 
                 G.bombs.push({
                     mesh: bombMesh,

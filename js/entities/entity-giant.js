@@ -23,6 +23,8 @@
             buildExecutioner(giantGrp);
         } else if (G.ruinsTheme) {
             buildGiantSpider(giantGrp);
+        } else if (G.computerTheme) {
+            buildMainframe(giantGrp);
         } else {
             buildStandardGiant(giantGrp, textures);
         }
@@ -54,6 +56,182 @@
     // ========================================
     // THEME-SPECIFIC BUILDERS
     // ========================================
+    
+    function buildMainframe(group) {
+        // MAINFRAME - massive boxy server unit with blinking LEDs
+        const chassisColor = 0x2A2A3A;   // Dark server chassis
+        const panelColor = 0x1A1A2A;     // Darker panel
+        const ledGreen = 0x00FF00;       // Active LED
+        const ledOrange = 0xFF6600;      // Warning LED
+        const screenColor = 0x003300;    // Terminal screen
+
+        // Main chassis body - tall server rack
+        const chassisGeometry = new THREE.BoxGeometry(3.5, 6.0, 2.5);
+        const chassisMaterial = new THREE.MeshPhongMaterial({
+            color: chassisColor,
+            shininess: 30
+        });
+        const chassis = new THREE.Mesh(chassisGeometry, chassisMaterial);
+        chassis.position.y = 3.5;
+        chassis.castShadow = true;
+        group.add(chassis);
+
+        // Front panel (slightly recessed)
+        const panelGeometry = new THREE.BoxGeometry(3.2, 5.6, 0.1);
+        const panelMaterial = new THREE.MeshPhongMaterial({
+            color: panelColor,
+            shininess: 20
+        });
+        const panel = new THREE.Mesh(panelGeometry, panelMaterial);
+        panel.position.set(0, 3.5, 1.25);
+        group.add(panel);
+
+        // Terminal screen (face)
+        const screenGeometry = new THREE.BoxGeometry(2.0, 1.5, 0.05);
+        const screenMaterial = new THREE.MeshBasicMaterial({
+            color: screenColor
+        });
+        const screen = new THREE.Mesh(screenGeometry, screenMaterial);
+        screen.position.set(0, 5.5, 1.3);
+        group.add(screen);
+
+        // Eyes on screen (terminal cursors)
+        const eyeGeometry = new THREE.BoxGeometry(0.3, 0.4, 0.02);
+        const eyeMaterial = new THREE.MeshBasicMaterial({
+            color: ledGreen,
+            transparent: true,
+            blending: THREE.AdditiveBlending
+        });
+        const eye1 = new THREE.Mesh(eyeGeometry, eyeMaterial);
+        eye1.position.set(-0.5, 5.6, 1.35);
+        group.add(eye1);
+
+        const eye2 = new THREE.Mesh(eyeGeometry, eyeMaterial);
+        eye2.position.set(0.5, 5.6, 1.35);
+        group.add(eye2);
+
+        // Angry "eyebrows" - error indicators
+        const browGeometry = new THREE.BoxGeometry(0.5, 0.08, 0.02);
+        const browMaterial = new THREE.MeshBasicMaterial({ color: 0xFF0000 });
+        const brow1 = new THREE.Mesh(browGeometry, browMaterial);
+        brow1.position.set(-0.5, 5.9, 1.35);
+        brow1.rotation.z = 0.3;
+        group.add(brow1);
+
+        const brow2 = new THREE.Mesh(browGeometry, browMaterial);
+        brow2.position.set(0.5, 5.9, 1.35);
+        brow2.rotation.z = -0.3;
+        group.add(brow2);
+
+        // LED status lights grid
+        const ledGeometry = new THREE.SphereGeometry(0.08, 8, 8);
+        for (let row = 0; row < 4; row++) {
+            for (let col = 0; col < 6; col++) {
+                const ledColor = Math.random() > 0.3 ? ledGreen : ledOrange;
+                const ledMaterial = new THREE.MeshBasicMaterial({
+                    color: ledColor,
+                    transparent: true,
+                    opacity: 0.8 + Math.random() * 0.2
+                });
+                const led = new THREE.Mesh(ledGeometry, ledMaterial);
+                led.position.set(
+                    -1.2 + col * 0.5,
+                    4.0 - row * 0.4,
+                    1.3
+                );
+                led.userData.blinkOffset = Math.random() * Math.PI * 2;
+                group.add(led);
+            }
+        }
+
+        // Drive bays with activity lights
+        for (let i = 0; i < 3; i++) {
+            const bayGeometry = new THREE.BoxGeometry(2.8, 0.4, 0.15);
+            const bayMaterial = new THREE.MeshLambertMaterial({ color: 0x111118 });
+            const bay = new THREE.Mesh(bayGeometry, bayMaterial);
+            bay.position.set(0, 2.0 + i * 0.6, 1.25);
+            group.add(bay);
+
+            // Activity light
+            const activityMaterial = new THREE.MeshBasicMaterial({
+                color: Math.random() > 0.5 ? ledGreen : ledOrange,
+                transparent: true,
+                blending: THREE.AdditiveBlending
+            });
+            const activity = new THREE.Mesh(ledGeometry, activityMaterial);
+            activity.position.set(1.2, 2.0 + i * 0.6, 1.35);
+            group.add(activity);
+        }
+
+        // Ventilation grilles on sides
+        for (let side = -1; side <= 1; side += 2) {
+            for (let i = 0; i < 8; i++) {
+                const grillGeometry = new THREE.BoxGeometry(0.05, 0.3, 2.0);
+                const grillMaterial = new THREE.MeshLambertMaterial({ color: 0x0A0A0A });
+                const grill = new THREE.Mesh(grillGeometry, grillMaterial);
+                grill.position.set(side * 1.8, 1.5 + i * 0.5, 0);
+                group.add(grill);
+            }
+        }
+
+        // Cable "arms" (thick data cables)
+        const cableGeometry = new THREE.CylinderGeometry(0.2, 0.25, 3.0, 8);
+        const cableMaterial = new THREE.MeshLambertMaterial({ color: 0x222222 });
+        
+        const leftCable = new THREE.Mesh(cableGeometry, cableMaterial);
+        leftCable.position.set(-2.0, 3.0, 0);
+        leftCable.rotation.z = 0.4;
+        leftCable.castShadow = true;
+        group.add(leftCable);
+        group.leftArm = leftCable;
+
+        const rightCable = new THREE.Mesh(cableGeometry, cableMaterial);
+        rightCable.position.set(2.0, 3.0, 0);
+        rightCable.rotation.z = -0.4;
+        rightCable.castShadow = true;
+        group.add(rightCable);
+        group.rightArm = rightCable;
+
+        // Cable connectors (fists)
+        const connectorGeometry = new THREE.BoxGeometry(0.6, 0.6, 0.6);
+        const connectorMaterial = new THREE.MeshPhongMaterial({
+            color: 0x333333,
+            emissive: ledOrange,
+            emissiveIntensity: 0.2
+        });
+        
+        const leftConn = new THREE.Mesh(connectorGeometry, connectorMaterial);
+        leftConn.position.set(-3.0, 1.5, 0);
+        group.add(leftConn);
+        group.leftFist = leftConn;
+
+        const rightConn = new THREE.Mesh(connectorGeometry, connectorMaterial);
+        rightConn.position.set(3.0, 1.5, 0);
+        group.add(rightConn);
+        group.rightFist = rightConn;
+
+        // Base with wheels/casters
+        const baseGeometry = new THREE.BoxGeometry(3.8, 0.4, 2.8);
+        const baseMaterial = new THREE.MeshLambertMaterial({ color: 0x1A1A1A });
+        const base = new THREE.Mesh(baseGeometry, baseMaterial);
+        base.position.y = 0.2;
+        group.add(base);
+
+        // Add some floor glow
+        const glowGeometry = new THREE.PlaneGeometry(4, 3);
+        const glowMaterial = new THREE.MeshBasicMaterial({
+            color: ledGreen,
+            transparent: true,
+            opacity: 0.15,
+            side: THREE.DoubleSide
+        });
+        const glow = new THREE.Mesh(glowGeometry, glowMaterial);
+        glow.rotation.x = -Math.PI / 2;
+        glow.position.y = 0.05;
+        group.add(glow);
+
+        group.userData.isMainframe = true;
+    }
     
     function buildMarshmallowMonster(group) {
         // MARSHMALLOW MONSTER - giant fluffy white creature

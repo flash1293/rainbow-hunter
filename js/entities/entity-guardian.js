@@ -27,6 +27,8 @@
             buildGhost(goblinGrp);
         } else if (G.ruinsTheme) {
             buildSpectralKnight(goblinGrp);
+        } else if (G.computerTheme) {
+            buildFirewallSentry(goblinGrp);
         } else {
             buildStandardGuardian(goblinGrp, textures);
         }
@@ -660,6 +662,113 @@
 
         // Floating effect
         group.userData.isGhost = true;
+        group.userData.floatOffset = Math.random() * Math.PI * 2;
+    }
+    
+    function buildFirewallSentry(group) {
+        // FIREWALL SENTRY - hexagonal shield-bearing digital guardian
+        const shieldColor = 0x00FFFF;    // Cyan energy
+        const frameColor = 0x333355;     // Dark chrome frame
+        const coreColor = 0x0088FF;      // Blue core
+
+        // Central processing core (body)
+        const coreGeometry = new THREE.CylinderGeometry(0.5, 0.6, 1.2, 6);
+        const coreMaterial = new THREE.MeshPhongMaterial({
+            color: frameColor,
+            emissive: coreColor,
+            emissiveIntensity: 0.3,
+            shininess: 60
+        });
+        const core = new THREE.Mesh(coreGeometry, coreMaterial);
+        core.position.y = 1.2;
+        core.castShadow = true;
+        group.add(core);
+
+        // Spinning ring around core
+        const ringGeometry = new THREE.TorusGeometry(0.7, 0.05, 8, 6);
+        const ringMaterial = new THREE.MeshBasicMaterial({
+            color: shieldColor,
+            transparent: true,
+            opacity: 0.8
+        });
+        const ring = new THREE.Mesh(ringGeometry, ringMaterial);
+        ring.position.y = 1.2;
+        ring.rotation.x = Math.PI / 2;
+        group.add(ring);
+        group.userData.spinRing = ring;
+
+        // Hexagonal shield projector (head)
+        const headGeometry = new THREE.CylinderGeometry(0.35, 0.4, 0.5, 6);
+        const headMaterial = new THREE.MeshPhongMaterial({
+            color: frameColor,
+            emissive: shieldColor,
+            emissiveIntensity: 0.4
+        });
+        const head = new THREE.Mesh(headGeometry, headMaterial);
+        head.position.y = 2.0;
+        head.castShadow = true;
+        group.add(head);
+
+        // Scanner eye - single central
+        const eyeGeometry = new THREE.SphereGeometry(0.15, 12, 12);
+        const eyeMaterial = new THREE.MeshBasicMaterial({
+            color: 0xFF0000,
+            transparent: true,
+            blending: THREE.AdditiveBlending
+        });
+        const eye = new THREE.Mesh(eyeGeometry, eyeMaterial);
+        eye.position.set(0, 2.0, 0.35);
+        group.add(eye);
+
+        // Energy shield (hexagonal, semi-transparent)
+        const shieldGeometry = new THREE.CylinderGeometry(1.2, 1.2, 0.1, 6);
+        const shieldMaterial = new THREE.MeshBasicMaterial({
+            color: shieldColor,
+            transparent: true,
+            opacity: 0.3,
+            side: THREE.DoubleSide
+        });
+        const shield = new THREE.Mesh(shieldGeometry, shieldMaterial);
+        shield.position.set(0, 1.2, 0.8);
+        shield.rotation.x = Math.PI / 2;
+        group.add(shield);
+        group.userData.shield = shield;
+
+        // Shield grid lines
+        for (let i = 0; i < 6; i++) {
+            const lineGeometry = new THREE.BoxGeometry(0.02, 1.0, 0.02);
+            const lineMaterial = new THREE.MeshBasicMaterial({ color: shieldColor });
+            const line = new THREE.Mesh(lineGeometry, lineMaterial);
+            const angle = (i / 6) * Math.PI * 2;
+            line.position.set(Math.cos(angle) * 0.9, 1.2, 0.8 + Math.sin(angle) * 0.3);
+            group.add(line);
+        }
+
+        // Hovering base (no legs - floats)
+        const baseGeometry = new THREE.ConeGeometry(0.4, 0.6, 6);
+        const baseMaterial = new THREE.MeshPhongMaterial({
+            color: frameColor,
+            emissive: coreColor,
+            emissiveIntensity: 0.2
+        });
+        const base = new THREE.Mesh(baseGeometry, baseMaterial);
+        base.position.y = 0.3;
+        base.rotation.x = Math.PI;
+        group.add(base);
+
+        // Thruster glow
+        const thrusterGeometry = new THREE.SphereGeometry(0.25, 8, 8);
+        const thrusterMaterial = new THREE.MeshBasicMaterial({
+            color: shieldColor,
+            transparent: true,
+            opacity: 0.5,
+            blending: THREE.AdditiveBlending
+        });
+        const thruster = new THREE.Mesh(thrusterGeometry, thrusterMaterial);
+        thruster.position.y = 0.1;
+        group.add(thruster);
+
+        group.userData.isFirewall = true;
         group.userData.floatOffset = Math.random() * Math.PI * 2;
     }
     

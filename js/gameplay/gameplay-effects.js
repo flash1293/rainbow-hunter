@@ -38,32 +38,131 @@
         Audio.playExplosionSound();
         
         const particles = [];
-        const particleCount = 40;
         
-        for (let i = 0; i < particleCount; i++) {
-            const size = 0.5 + Math.random() * 0.8;
-            // Clone pre-cached material to avoid texture loading glitches
-            const spriteMaterial = G.explosionBaseMaterial.clone();
-            const particle = new THREE.Sprite(spriteMaterial);
-            particle.scale.set(size, size, 1);
-            particle.position.set(x, y, z);
+        if (G.computerTheme) {
+            // Digital data fragmentation explosion
+            const particleCount = 50;
+            const colors = [0x00FFFF, 0xFF00FF, 0x00FF00, 0xFFFF00, 0xFF0066];
             
-            const speed = 0.2 + Math.random() * 0.5;
-            const velocity = new THREE.Vector3(
-                (Math.random() - 0.5) * speed,
-                Math.random() * speed * 0.6,
-                (Math.random() - 0.5) * speed
-            );
+            for (let i = 0; i < particleCount; i++) {
+                // Create glowing data cube fragments
+                const size = 0.15 + Math.random() * 0.35;
+                const cubeGeometry = new THREE.BoxGeometry(size, size, size);
+                const color = colors[Math.floor(Math.random() * colors.length)];
+                const cubeMaterial = new THREE.MeshBasicMaterial({ 
+                    color: color,
+                    transparent: true,
+                    opacity: 0.9
+                });
+                const cube = new THREE.Mesh(cubeGeometry, cubeMaterial);
+                cube.position.set(x, y, z);
+                cube.rotation.set(
+                    Math.random() * Math.PI,
+                    Math.random() * Math.PI,
+                    Math.random() * Math.PI
+                );
+                
+                const speed = 0.25 + Math.random() * 0.6;
+                const velocity = new THREE.Vector3(
+                    (Math.random() - 0.5) * speed,
+                    Math.random() * speed * 0.8,
+                    (Math.random() - 0.5) * speed
+                );
+                
+                G.scene.add(cube);
+                particles.push({ 
+                    mesh: cube, 
+                    velocity: velocity, 
+                    life: 40, 
+                    initialScale: size,
+                    spin: new THREE.Vector3(
+                        (Math.random() - 0.5) * 0.3,
+                        (Math.random() - 0.5) * 0.3,
+                        (Math.random() - 0.5) * 0.3
+                    )
+                });
+            }
             
-            G.scene.add(particle);
-            particles.push({ mesh: particle, velocity: velocity, life: 35, initialScale: size });
+            // Add glitch ring burst
+            for (let i = 0; i < 3; i++) {
+                const ringGeometry = new THREE.TorusGeometry(0.5 + i * 0.3, 0.05, 8, 24);
+                const ringMaterial = new THREE.MeshBasicMaterial({ 
+                    color: colors[i % colors.length],
+                    transparent: true,
+                    opacity: 0.8
+                });
+                const ring = new THREE.Mesh(ringGeometry, ringMaterial);
+                ring.position.set(x, y, z);
+                ring.rotation.x = Math.PI / 2;
+                ring.rotation.y = Math.random() * Math.PI;
+                G.scene.add(ring);
+                particles.push({ 
+                    mesh: ring, 
+                    velocity: new THREE.Vector3(0, 0.1, 0), 
+                    life: 25 + i * 5, 
+                    initialScale: 1,
+                    expandRate: 0.15
+                });
+            }
+            
+            // Skip smoke/scorch for computer theme - add glitch flash instead
+            createGlitchFlash(x, y, z);
+        } else {
+            // Original explosion code
+            const particleCount = 40;
+            
+            for (let i = 0; i < particleCount; i++) {
+                const size = 0.5 + Math.random() * 0.8;
+                // Clone pre-cached material to avoid texture loading glitches
+                const spriteMaterial = G.explosionBaseMaterial.clone();
+                const particle = new THREE.Sprite(spriteMaterial);
+                particle.scale.set(size, size, 1);
+                particle.position.set(x, y, z);
+                
+                const speed = 0.2 + Math.random() * 0.5;
+                const velocity = new THREE.Vector3(
+                    (Math.random() - 0.5) * speed,
+                    Math.random() * speed * 0.6,
+                    (Math.random() - 0.5) * speed
+                );
+                
+                G.scene.add(particle);
+                particles.push({ mesh: particle, velocity: velocity, life: 35, initialScale: size });
+            }
+            
+            // Add smoke and scorch
+            createSmokeCloud(x, y + 0.5, z, 0.8);
+            createScorchMark(x, z, 2.5);
         }
         
         G.explosions.push(...particles);
+    }
+    
+    // Glitch flash effect for computer theme
+    function createGlitchFlash(x, y, z) {
+        const flashGeometry = new THREE.SphereGeometry(2, 16, 16);
+        const flashMaterial = new THREE.MeshBasicMaterial({ 
+            color: 0x00FFFF,
+            transparent: true,
+            opacity: 0.6
+        });
+        const flash = new THREE.Mesh(flashGeometry, flashMaterial);
+        flash.position.set(x, y, z);
+        G.scene.add(flash);
         
-        // Add smoke and scorch
-        createSmokeCloud(x, y + 0.5, z, 0.8);
-        createScorchMark(x, z, 2.5);
+        // Quick expand and fade
+        let life = 15;
+        const expandFlash = () => {
+            if (life <= 0) {
+                G.scene.remove(flash);
+                return;
+            }
+            flash.scale.multiplyScalar(1.15);
+            flash.material.opacity *= 0.85;
+            life--;
+            requestAnimationFrame(expandFlash);
+        };
+        expandFlash();
     }
 
     // Big bomb explosion helper
@@ -71,38 +170,110 @@
         Audio.playBombExplosionSound();
         
         const particles = [];
-        const particleCount = 100;
         
-        for (let i = 0; i < particleCount; i++) {
-            const size = 1.0 + Math.random() * 1.5;
+        if (G.computerTheme) {
+            // Massive EMP / data corruption explosion
+            const particleCount = 80;
+            const colors = [0x00FFFF, 0xFF00FF, 0x00FF00, 0xFFFF00, 0xFF0066, 0xFFFFFF];
             
-            // Mix of fire glow and smoke - clone pre-cached materials
-            let useSmokeColor = Math.random() < 0.12;
-            const spriteMaterial = useSmokeColor 
-                ? G.smokeBaseMaterial.clone()
-                : G.explosionBaseMaterial.clone();
-            const particle = new THREE.Sprite(spriteMaterial);
-            particle.scale.set(size, size, 1);
-            particle.position.set(x, y, z);
+            // Data cube fragments
+            for (let i = 0; i < particleCount; i++) {
+                const size = 0.3 + Math.random() * 0.6;
+                const cubeGeometry = new THREE.BoxGeometry(size, size, size);
+                const color = colors[Math.floor(Math.random() * colors.length)];
+                const cubeMaterial = new THREE.MeshBasicMaterial({ 
+                    color: color,
+                    transparent: true,
+                    opacity: 0.9
+                });
+                const cube = new THREE.Mesh(cubeGeometry, cubeMaterial);
+                cube.position.set(x, y, z);
+                cube.rotation.set(
+                    Math.random() * Math.PI,
+                    Math.random() * Math.PI,
+                    Math.random() * Math.PI
+                );
+                
+                const speed = 0.4 + Math.random() * 0.9;
+                const velocity = new THREE.Vector3(
+                    (Math.random() - 0.5) * speed,
+                    Math.random() * speed * 0.9,
+                    (Math.random() - 0.5) * speed
+                );
+                
+                G.scene.add(cube);
+                particles.push({ 
+                    mesh: cube, 
+                    velocity: velocity, 
+                    life: 50, 
+                    initialScale: size,
+                    spin: new THREE.Vector3(
+                        (Math.random() - 0.5) * 0.4,
+                        (Math.random() - 0.5) * 0.4,
+                        (Math.random() - 0.5) * 0.4
+                    )
+                });
+            }
             
-            const speed = 0.3 + Math.random() * 0.8;
-            const velocity = new THREE.Vector3(
-                (Math.random() - 0.5) * speed,
-                Math.random() * speed * 0.8,
-                (Math.random() - 0.5) * speed
-            );
+            // Multiple expanding glitch rings
+            for (let i = 0; i < 5; i++) {
+                const ringGeometry = new THREE.TorusGeometry(0.8 + i * 0.4, 0.08, 8, 32);
+                const ringMaterial = new THREE.MeshBasicMaterial({ 
+                    color: colors[i % colors.length],
+                    transparent: true,
+                    opacity: 0.9
+                });
+                const ring = new THREE.Mesh(ringGeometry, ringMaterial);
+                ring.position.set(x, y, z);
+                ring.rotation.x = Math.PI / 2;
+                ring.rotation.z = Math.random() * Math.PI;
+                G.scene.add(ring);
+                particles.push({ 
+                    mesh: ring, 
+                    velocity: new THREE.Vector3(0, 0.05, 0), 
+                    life: 35 + i * 5, 
+                    initialScale: 1,
+                    expandRate: 0.2
+                });
+            }
             
-            G.scene.add(particle);
-            particles.push({ mesh: particle, velocity: velocity, life: 45, initialScale: size });
+            // Big glitch flash
+            createGlitchFlash(x, y, z);
+            createGlitchFlash(x, y + 1, z);
+        } else {
+            const particleCount = 100;
+            
+            for (let i = 0; i < particleCount; i++) {
+                const size = 1.0 + Math.random() * 1.5;
+                
+                // Mix of fire glow and smoke - clone pre-cached materials
+                let useSmokeColor = Math.random() < 0.12;
+                const spriteMaterial = useSmokeColor 
+                    ? G.smokeBaseMaterial.clone()
+                    : G.explosionBaseMaterial.clone();
+                const particle = new THREE.Sprite(spriteMaterial);
+                particle.scale.set(size, size, 1);
+                particle.position.set(x, y, z);
+                
+                const speed = 0.3 + Math.random() * 0.8;
+                const velocity = new THREE.Vector3(
+                    (Math.random() - 0.5) * speed,
+                    Math.random() * speed * 0.8,
+                    (Math.random() - 0.5) * speed
+                );
+                
+                G.scene.add(particle);
+                particles.push({ mesh: particle, velocity: velocity, life: 45, initialScale: size });
+            }
+            
+            // Add lingering smoke cloud
+            createSmokeCloud(x, y + 1, z, 1.5);
+            
+            // Add scorch mark on ground
+            createScorchMark(x, z, 5);
         }
         
         G.explosions.push(...particles);
-        
-        // Add lingering smoke cloud
-        createSmokeCloud(x, y + 1, z, 1.5);
-        
-        // Add scorch mark on ground
-        createScorchMark(x, z, 5);
     }
 
     // Massive dragon death explosion
@@ -110,26 +281,100 @@
         Audio.playBombExplosionSound();
         
         const particles = [];
-        const particleCount = 180; // Way more particles
         
-        for (let i = 0; i < particleCount; i++) {
-            const size = 1.5 + Math.random() * 2.5; // Much bigger glowing sprites
+        if (G.computerTheme) {
+            // MASSIVE system crash / virus purge explosion
+            const colors = [0x00FFFF, 0xFF00FF, 0x00FF00, 0xFFFF00, 0xFF0066, 0xFFFFFF, 0xFF0000];
             
-            // Clone pre-cached material to avoid texture loading glitches
-            const spriteMaterial = G.explosionBaseMaterial.clone();
-            const particle = new THREE.Sprite(spriteMaterial);
-            particle.scale.set(size, size, 1);
-            particle.position.set(x, y, z);
+            // Tons of data cube fragments
+            for (let i = 0; i < 150; i++) {
+                const size = 0.4 + Math.random() * 1.0;
+                const cubeGeometry = new THREE.BoxGeometry(size, size, size);
+                const color = colors[Math.floor(Math.random() * colors.length)];
+                const cubeMaterial = new THREE.MeshBasicMaterial({ 
+                    color: color,
+                    transparent: true,
+                    opacity: 0.95
+                });
+                const cube = new THREE.Mesh(cubeGeometry, cubeMaterial);
+                cube.position.set(x, y, z);
+                cube.rotation.set(
+                    Math.random() * Math.PI,
+                    Math.random() * Math.PI,
+                    Math.random() * Math.PI
+                );
+                
+                const speed = 0.6 + Math.random() * 1.5;
+                const velocity = new THREE.Vector3(
+                    (Math.random() - 0.5) * speed,
+                    Math.random() * speed,
+                    (Math.random() - 0.5) * speed
+                );
+                
+                G.scene.add(cube);
+                particles.push({ 
+                    mesh: cube, 
+                    velocity: velocity, 
+                    life: 70, 
+                    initialScale: size,
+                    spin: new THREE.Vector3(
+                        (Math.random() - 0.5) * 0.5,
+                        (Math.random() - 0.5) * 0.5,
+                        (Math.random() - 0.5) * 0.5
+                    )
+                });
+            }
             
-            const speed = 0.5 + Math.random() * 1.2; // Much faster
-            const velocity = new THREE.Vector3(
-                (Math.random() - 0.5) * speed,
-                Math.random() * speed,
-                (Math.random() - 0.5) * speed
-            );
+            // Epic expanding ring shockwaves
+            for (let i = 0; i < 8; i++) {
+                const ringGeometry = new THREE.TorusGeometry(1 + i * 0.5, 0.12, 8, 48);
+                const ringMaterial = new THREE.MeshBasicMaterial({ 
+                    color: colors[i % colors.length],
+                    transparent: true,
+                    opacity: 1.0
+                });
+                const ring = new THREE.Mesh(ringGeometry, ringMaterial);
+                ring.position.set(x, y, z);
+                ring.rotation.x = Math.PI / 2 + (Math.random() - 0.5) * 0.3;
+                ring.rotation.z = Math.random() * Math.PI;
+                G.scene.add(ring);
+                particles.push({ 
+                    mesh: ring, 
+                    velocity: new THREE.Vector3(0, 0.08, 0), 
+                    life: 50 + i * 8, 
+                    initialScale: 1,
+                    expandRate: 0.3
+                });
+            }
             
-            G.scene.add(particle);
-            particles.push({ mesh: particle, velocity: velocity, life: 60, initialScale: size }); // Longer life
+            // Multiple big glitch flashes
+            createGlitchFlash(x, y, z);
+            createGlitchFlash(x + 2, y + 1, z);
+            createGlitchFlash(x - 2, y + 1, z);
+            createGlitchFlash(x, y + 3, z + 2);
+            createGlitchFlash(x, y + 3, z - 2);
+        } else {
+            const particleCount = 180; // Way more particles
+            
+            for (let i = 0; i < particleCount; i++) {
+                const size = 1.5 + Math.random() * 2.5; // Much bigger glowing sprites
+                
+                // Clone pre-cached material to avoid texture loading glitches
+                const spriteMaterial = G.explosionBaseMaterial.clone();
+                const particle = new THREE.Sprite(spriteMaterial);
+                particle.scale.set(size, size, 1);
+                particle.position.set(x, y, z);
+                
+                const speed = 0.5 + Math.random() * 1.2; // Much faster
+                const velocity = new THREE.Vector3(
+                    (Math.random() - 0.5) * speed,
+                    Math.random() * speed,
+                    (Math.random() - 0.5) * speed
+                );
+                
+                G.scene.add(particle);
+                particles.push({ mesh: particle, velocity: velocity, life: 60, initialScale: size }); // Longer life
+            }
         }
         
         G.explosions.push(...particles);
@@ -245,15 +490,29 @@
             exp.velocity.y -= 0.02;
             exp.life--;
             
+            // Apply spin for computer theme cube fragments
+            if (exp.spin) {
+                exp.mesh.rotation.x += exp.spin.x;
+                exp.mesh.rotation.y += exp.spin.y;
+                exp.mesh.rotation.z += exp.spin.z;
+            }
+            
+            // Apply expand rate for ring bursts
+            if (exp.expandRate) {
+                exp.mesh.scale.x += exp.expandRate;
+                exp.mesh.scale.y += exp.expandRate;
+                exp.mesh.scale.z += exp.expandRate;
+            }
+            
             // Fade out and shrink for star-like dissipation
             const lifeRatio = exp.life / 60; // Normalize to 0-1
             if (exp.mesh.material) {
                 exp.mesh.material.opacity = Math.max(0, lifeRatio * 1.5);
             }
-            // Shrink as it fades
-            if (exp.initialScale) {
+            // Shrink as it fades (only for non-expanding particles)
+            if (exp.initialScale && !exp.expandRate) {
                 const scale = exp.initialScale * (0.3 + lifeRatio * 0.7);
-                exp.mesh.scale.set(scale, scale, 1);
+                exp.mesh.scale.set(scale, scale, scale);
             }
             
             if (exp.life <= 0) {

@@ -369,14 +369,25 @@
             
             isMoving = G.keys.ArrowUp || G.keys.ArrowDown || G.keys.w || G.keys.s;
             const moveScale = G.player.gamepadMoveScale > 0 ? G.player.gamepadMoveScale : 1;
+            // Apply lag slowdown for computer level
+            const lagFactor = (typeof getLagSlowdownFactor === 'function') ? getLagSlowdownFactor() : 1;
+            const effectiveSpeed = G.player.speed * moveScale * lagFactor;
             if (G.keys.ArrowUp || G.keys.w) {
-                G.playerGroup.position.x += Math.sin(G.player.rotation) * G.player.speed * moveScale;
-                G.playerGroup.position.z += Math.cos(G.player.rotation) * G.player.speed * moveScale;
+                G.playerGroup.position.x += Math.sin(G.player.rotation) * effectiveSpeed;
+                G.playerGroup.position.z += Math.cos(G.player.rotation) * effectiveSpeed;
             }
             if (G.keys.ArrowDown || G.keys.s) {
-                G.playerGroup.position.x -= Math.sin(G.player.rotation) * G.player.speed * moveScale;
-                G.playerGroup.position.z -= Math.cos(G.player.rotation) * G.player.speed * moveScale;
+                G.playerGroup.position.x -= Math.sin(G.player.rotation) * effectiveSpeed;
+                G.playerGroup.position.z -= Math.cos(G.player.rotation) * effectiveSpeed;
             }
+            
+            // Apply data stream push (computer level)
+            if (G.computerTheme && typeof getDataStreamPush === 'function') {
+                const push = getDataStreamPush(G.playerGroup.position.x, G.playerGroup.position.z);
+                G.playerGroup.position.x += push.x;
+                G.playerGroup.position.z += push.z;
+            }
+            
             G.player.gamepadMoveScale = 0;
         }
         
@@ -459,9 +470,14 @@
         const cameraOffsetX = -Math.sin(G.player.rotation) * cameraDistance;
         const cameraOffsetZ = -Math.cos(G.player.rotation) * cameraDistance;
         
-        G.camera.position.x = G.playerGroup.position.x + cameraOffsetX;
-        G.camera.position.y = G.playerGroup.position.y + cameraHeight;
-        G.camera.position.z = G.playerGroup.position.z + cameraOffsetZ;
+        // Apply screen shake for lag effect (computer theme)
+        const shakeX = G.lagShakeOffset ? G.lagShakeOffset.x : 0;
+        const shakeY = G.lagShakeOffset ? G.lagShakeOffset.y : 0;
+        const shakeZ = G.lagShakeOffset ? G.lagShakeOffset.z : 0;
+        
+        G.camera.position.x = G.playerGroup.position.x + cameraOffsetX + shakeX;
+        G.camera.position.y = G.playerGroup.position.y + cameraHeight + shakeY;
+        G.camera.position.z = G.playerGroup.position.z + cameraOffsetZ + shakeZ;
         G.camera.lookAt(G.playerGroup.position.x, G.playerGroup.position.y, G.playerGroup.position.z);
         
         // Native splitscreen: Update camera 2 to follow player 2

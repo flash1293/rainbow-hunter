@@ -11,6 +11,8 @@
         
         // Use theme-appropriate textures
         let dragonScaleTexture, dragonEyeTexture;
+        let useGlitchStyle = false;  // For computer theme special rendering
+        
         if (G.lavaTheme) {
             dragonScaleTexture = textures.dragonScaleLava;
             dragonEyeTexture = textures.dragonEyeLava;
@@ -23,24 +25,73 @@
         } else if (G.candyTheme) {
             dragonScaleTexture = textures.dragonScaleCandy;
             dragonEyeTexture = textures.dragonEyeCandy;
+        } else if (G.computerTheme) {
+            // Trojan Dragon uses special glitch materials instead of textures
+            useGlitchStyle = true;
+            dragonScaleTexture = null;
+            dragonEyeTexture = null;
         } else {
             dragonScaleTexture = textures.dragonScale;
             dragonEyeTexture = textures.dragonEye;
         }
         
+        // Trojan Dragon - corrupted data beast with glitch effects
+        const trojanColor = 0xFF0066;      // Magenta corruption
+        const dataColor = 0x00FFFF;        // Cyan data
+        const darkColor = 0x1A0A1A;        // Dark corrupted
+        
         // Body - long segmented shape
         const bodyGeometry = new THREE.CylinderGeometry(2, 2.5, 10, 12);
-        const bodyMaterial = new THREE.MeshLambertMaterial({ map: dragonScaleTexture });
+        const bodyMaterial = useGlitchStyle 
+            ? new THREE.MeshPhongMaterial({
+                color: darkColor,
+                emissive: trojanColor,
+                emissiveIntensity: 0.3,
+                shininess: 50,
+                transparent: true,
+                opacity: 0.9
+            })
+            : new THREE.MeshLambertMaterial({ map: dragonScaleTexture });
         const body = new THREE.Mesh(bodyGeometry, bodyMaterial);
         body.rotation.z = Math.PI / 2;
         body.position.x = 5;
         body.castShadow = true;
         dragonGroup.add(body);
         
+        // Add glitch effect fragments for Trojan Dragon
+        if (useGlitchStyle) {
+            for (let i = 0; i < 12; i++) {
+                const glitchGeometry = new THREE.BoxGeometry(
+                    0.3 + Math.random() * 0.5,
+                    0.1 + Math.random() * 0.3,
+                    0.3 + Math.random() * 0.5
+                );
+                const glitchMaterial = new THREE.MeshBasicMaterial({
+                    color: Math.random() > 0.5 ? trojanColor : dataColor,
+                    transparent: true,
+                    opacity: 0.6 + Math.random() * 0.4
+                });
+                const glitch = new THREE.Mesh(glitchGeometry, glitchMaterial);
+                glitch.position.set(
+                    Math.random() * 10,
+                    2 + Math.random() * 2,
+                    (Math.random() - 0.5) * 4
+                );
+                glitch.userData.glitchOffset = Math.random() * Math.PI * 2;
+                dragonGroup.add(glitch);
+            }
+        }
+        
         // Body scales
         for (let i = 0; i < 8; i++) {
             const scaleGeometry = new THREE.ConeGeometry(0.6, 1.2, 6);
-            const scaleMaterial = new THREE.MeshLambertMaterial({ map: dragonScaleTexture });
+            const scaleMaterial = useGlitchStyle
+                ? new THREE.MeshPhongMaterial({
+                    color: darkColor,
+                    emissive: i % 2 === 0 ? trojanColor : dataColor,
+                    emissiveIntensity: 0.5
+                })
+                : new THREE.MeshLambertMaterial({ map: dragonScaleTexture });
             const scale = new THREE.Mesh(scaleGeometry, scaleMaterial);
             scale.position.set(i * 1.2, 2.8, 0);
             scale.rotation.z = 0;
@@ -59,7 +110,14 @@
         
         // Head - large diamond shape
         const headGeometry = new THREE.ConeGeometry(2.5, 5, 8);
-        const headMaterial = new THREE.MeshLambertMaterial({ map: dragonScaleTexture });
+        const headMaterial = useGlitchStyle
+            ? new THREE.MeshPhongMaterial({
+                color: darkColor,
+                emissive: trojanColor,
+                emissiveIntensity: 0.4,
+                shininess: 60
+            })
+            : new THREE.MeshLambertMaterial({ map: dragonScaleTexture });
         const head = new THREE.Mesh(headGeometry, headMaterial);
         head.rotation.z = -Math.PI / 2;
         head.position.x = 13;
@@ -86,12 +144,19 @@
         
         // Eyes - glowing with texture and sprite glow
         const eyeGeometry = new THREE.SphereGeometry(0.6, 16, 16);
-        const eyeMaterial = new THREE.MeshBasicMaterial({ 
-            map: dragonEyeTexture,
-            transparent: true,
-            blending: THREE.AdditiveBlending,
-            depthWrite: false
-        });
+        const eyeMaterial = useGlitchStyle
+            ? new THREE.MeshBasicMaterial({ 
+                color: 0xFF0000,
+                transparent: true,
+                blending: THREE.AdditiveBlending,
+                depthWrite: false
+            })
+            : new THREE.MeshBasicMaterial({ 
+                map: dragonEyeTexture,
+                transparent: true,
+                blending: THREE.AdditiveBlending,
+                depthWrite: false
+            });
         const leftEye = new THREE.Mesh(eyeGeometry, eyeMaterial);
         leftEye.position.set(13.5, 2.5, 1.2);
         dragonGroup.add(leftEye);
@@ -102,14 +167,23 @@
         
         // Eye glow sprites - larger and brighter
         const eyeGlowGeometry = new THREE.PlaneGeometry(2.5, 2.5);
-        const eyeGlowMaterial = new THREE.MeshBasicMaterial({
-            map: dragonEyeTexture,
-            transparent: true,
-            opacity: 0.7,
-            side: THREE.DoubleSide,
-            blending: THREE.AdditiveBlending,
-            depthWrite: false
-        });
+        const eyeGlowMaterial = useGlitchStyle
+            ? new THREE.MeshBasicMaterial({
+                color: 0xFF0000,
+                transparent: true,
+                opacity: 0.7,
+                side: THREE.DoubleSide,
+                blending: THREE.AdditiveBlending,
+                depthWrite: false
+            })
+            : new THREE.MeshBasicMaterial({
+                map: dragonEyeTexture,
+                transparent: true,
+                opacity: 0.7,
+                side: THREE.DoubleSide,
+                blending: THREE.AdditiveBlending,
+                depthWrite: false
+            });
         const leftEyeGlow = new THREE.Mesh(eyeGlowGeometry, eyeGlowMaterial);
         leftEyeGlow.position.set(13.8, 2.5, 1.2);
         dragonGroup.add(leftEyeGlow);

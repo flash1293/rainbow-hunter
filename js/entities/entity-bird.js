@@ -87,6 +87,97 @@
 
             birdGroup.leftWing = leftWing;
             birdGroup.rightWing = rightWing;
+        } else if (G.computerTheme) {
+            // SURVEILLANCE DRONE - flying security bot
+            const droneColor = 0x0A0A15;
+            const glowColor = Math.random() > 0.5 ? 0x00FFFF : 0xFF00FF;
+            
+            // Main body - flat hexagonal disk
+            const bodyGeometry = new THREE.CylinderGeometry(0.4, 0.4, 0.15, 6);
+            const bodyMaterial = new THREE.MeshPhongMaterial({ 
+                color: droneColor,
+                emissive: 0x001122,
+                emissiveIntensity: 0.3,
+                shininess: 80
+            });
+            const body = new THREE.Mesh(bodyGeometry, bodyMaterial);
+            body.castShadow = true;
+            birdGroup.add(body);
+            
+            // Central eye/sensor (glowing)
+            const eyeGeometry = new THREE.SphereGeometry(0.15, 12, 12);
+            const eyeMaterial = new THREE.MeshBasicMaterial({ 
+                color: 0xFF0000,
+                transparent: true,
+                opacity: 0.9
+            });
+            const eye = new THREE.Mesh(eyeGeometry, eyeMaterial);
+            eye.position.y = -0.1;
+            birdGroup.add(eye);
+            
+            // Rotating propeller arms (4 arms)
+            const armGeometry = new THREE.BoxGeometry(0.8, 0.03, 0.08);
+            const armMaterial = new THREE.MeshPhongMaterial({ 
+                color: 0x222233,
+                shininess: 60
+            });
+            
+            const arm1 = new THREE.Mesh(armGeometry, armMaterial);
+            arm1.position.y = 0.1;
+            birdGroup.add(arm1);
+            
+            const arm2 = new THREE.Mesh(armGeometry, armMaterial);
+            arm2.position.y = 0.1;
+            arm2.rotation.y = Math.PI / 2;
+            birdGroup.add(arm2);
+            
+            // Propeller discs at arm ends (glowing)
+            const propGeometry = new THREE.CylinderGeometry(0.12, 0.12, 0.02, 12);
+            const propMaterial = new THREE.MeshBasicMaterial({ 
+                color: glowColor,
+                transparent: true,
+                opacity: 0.7
+            });
+            
+            const positions = [[0.4, 0], [-0.4, 0], [0, 0.4], [0, -0.4]];
+            positions.forEach(pos => {
+                const prop = new THREE.Mesh(propGeometry, propMaterial);
+                prop.position.set(pos[0], 0.12, pos[1]);
+                birdGroup.add(prop);
+            });
+            
+            // Blinking status lights
+            const lightGeometry = new THREE.SphereGeometry(0.04, 8, 8);
+            const lightColors = [0x00FF00, 0xFF0000, 0x00FFFF];
+            for (let i = 0; i < 3; i++) {
+                const lightMaterial = new THREE.MeshBasicMaterial({ 
+                    color: lightColors[i],
+                    transparent: true,
+                    opacity: 0.9
+                });
+                const light = new THREE.Mesh(lightGeometry, lightMaterial);
+                const angle = (i / 3) * Math.PI * 2;
+                light.position.set(Math.cos(angle) * 0.25, 0.1, Math.sin(angle) * 0.25);
+                birdGroup.add(light);
+            }
+            
+            // Data stream trail (wireframe cone pointing down)
+            const trailGeometry = new THREE.ConeGeometry(0.15, 0.4, 8);
+            const trailMaterial = new THREE.MeshBasicMaterial({ 
+                color: glowColor,
+                wireframe: true,
+                transparent: true,
+                opacity: 0.5
+            });
+            const trail = new THREE.Mesh(trailGeometry, trailMaterial);
+            trail.position.y = -0.35;
+            trail.rotation.x = Math.PI;
+            birdGroup.add(trail);
+            
+            // Use arms as "wings" for animation
+            birdGroup.leftWing = arm1;
+            birdGroup.rightWing = arm2;
+            birdGroup.isDrone = true;
         } else if (G.candyTheme) {
             // CANDY BUTTERFLY - colorful flying candy
             const butterflyColors = [0xFF69B4, 0x87CEEB, 0xFFD700, 0x98FB98, 0xDDA0DD];

@@ -267,6 +267,15 @@ function initLoop() {
                 }
             }
         }
+        
+        // Reset computer level systems (firewall gates, buffer overflow zones, etc.)
+        if (G.computerTheme && typeof cleanupComputerSystems === 'function') {
+            cleanupComputerSystems();
+            // Re-initialize for the new round
+            if (typeof initComputerSystems === 'function') {
+                initComputerSystems();
+            }
+        }
     }
 
     // HUD
@@ -287,15 +296,33 @@ function initLoop() {
         G.hudCanvas.height = window.innerHeight;
     }, { signal: G.eventSignal });
 
+    // Helper function to draw text with outline (for dark backgrounds)
+    function drawTextWithOutline(ctx, text, x, y, fillColor, outlineColor) {
+        ctx.strokeStyle = outlineColor || '#000';
+        ctx.lineWidth = 3;
+        ctx.strokeText(text, x, y);
+        ctx.fillStyle = fillColor;
+        ctx.fillText(text, x, y);
+    }
+    
     function drawHUD() {
         G.hudCtx.clearRect(0, 0, G.hudCanvas.width, G.hudCanvas.height);
         
+        // Use white text with black outline on dark backgrounds (computer theme)
+        const useOutline = G.computerTheme;
+        const defaultTextColor = useOutline ? '#FFFFFF' : '#000';
+        const outlineColor = '#000';
+        
         // Level indicator (top right)
-        G.hudCtx.fillStyle = '#6600cc';
         G.hudCtx.font = 'bold 24px Arial';
         const levelText = `Level ${currentLevel}`;
         const levelTextWidth = G.hudCtx.measureText(levelText).width;
-        G.hudCtx.fillText(levelText, G.hudCanvas.width - levelTextWidth - 20, 30);
+        if (useOutline) {
+            drawTextWithOutline(G.hudCtx, levelText, G.hudCanvas.width - levelTextWidth - 20, 30, '#00FFFF', outlineColor);
+        } else {
+            G.hudCtx.fillStyle = '#6600cc';
+            G.hudCtx.fillText(levelText, G.hudCanvas.width - levelTextWidth - 20, 30);
+        }
         
         // Portal proximity indicator
         if (G.portal) {
@@ -304,42 +331,68 @@ function initLoop() {
                 Math.pow(G.playerGroup.position.z - G.portal.z, 2)
             );
             if (distToPortal < 8) {
-                G.hudCtx.fillStyle = '#00ffff';
                 G.hudCtx.font = 'bold 28px Arial';
                 const portalText = `Betrete das Portal zu Level ${G.portal.destinationLevel}!`;
                 const portalTextWidth = G.hudCtx.measureText(portalText).width;
-                G.hudCtx.fillText(portalText, (G.hudCanvas.width - portalTextWidth) / 2, G.hudCanvas.height - 60);
+                if (useOutline) {
+                    drawTextWithOutline(G.hudCtx, portalText, (G.hudCanvas.width - portalTextWidth) / 2, G.hudCanvas.height - 60, '#00ffff', outlineColor);
+                } else {
+                    G.hudCtx.fillStyle = '#00ffff';
+                    G.hudCtx.fillText(portalText, (G.hudCanvas.width - portalTextWidth) / 2, G.hudCanvas.height - 60);
+                }
             }
         }
         
-        G.hudCtx.fillStyle = '#000';
         G.hudCtx.font = 'bold 18px Arial';
-        G.hudCtx.fillText(`Schüsse: ${G.ammo}/${G.maxAmmo}`, 10, 25);
+        if (useOutline) {
+            drawTextWithOutline(G.hudCtx, `Schüsse: ${G.ammo}/${G.maxAmmo}`, 10, 25, defaultTextColor, outlineColor);
+        } else {
+            G.hudCtx.fillStyle = '#000';
+            G.hudCtx.fillText(`Schüsse: ${G.ammo}/${G.maxAmmo}`, 10, 25);
+        }
         
         const aliveGoblins = G.goblins.filter(g => g.alive).length;
-        G.hudCtx.fillText(`Kobolde: ${aliveGoblins}`, 10, 50);
-        
-        G.hudCtx.fillText(`Material: ${G.materialsCollected}/${G.materialsNeeded}`, 10, 75);
+        if (useOutline) {
+            drawTextWithOutline(G.hudCtx, `Kobolde: ${aliveGoblins}`, 10, 50, defaultTextColor, outlineColor);
+            drawTextWithOutline(G.hudCtx, `Material: ${G.materialsCollected}/${G.materialsNeeded}`, 10, 75, defaultTextColor, outlineColor);
+        } else {
+            G.hudCtx.fillText(`Kobolde: ${aliveGoblins}`, 10, 50);
+            G.hudCtx.fillText(`Material: ${G.materialsCollected}/${G.materialsNeeded}`, 10, 75);
+        }
         
         // Scarab display (only if level has scarabs)
         let nextYPos = 100;
         if (G.totalScarabs > 0) {
-            G.hudCtx.fillStyle = G.scarabsCollected >= G.totalScarabs ? '#00ff88' : '#00ccaa';
-            G.hudCtx.fillText(`Scarabs: ${G.scarabsCollected}/${G.totalScarabs}`, 10, nextYPos);
-            G.hudCtx.fillStyle = '#000';
+            const scarabColor = G.scarabsCollected >= G.totalScarabs ? '#00ff88' : '#00ccaa';
+            if (useOutline) {
+                drawTextWithOutline(G.hudCtx, `Scarabs: ${G.scarabsCollected}/${G.totalScarabs}`, 10, nextYPos, scarabColor, outlineColor);
+            } else {
+                G.hudCtx.fillStyle = scarabColor;
+                G.hudCtx.fillText(`Scarabs: ${G.scarabsCollected}/${G.totalScarabs}`, 10, nextYPos);
+                G.hudCtx.fillStyle = '#000';
+            }
             nextYPos += 25;
         }
         
         // Candy display (only if candy theme with candy to collect)
         if (G.candyTheme && G.totalCandy > 0) {
-            G.hudCtx.fillStyle = G.candyCollected >= G.totalCandy ? '#8B008B' : '#660066';
-            G.hudCtx.fillText(`Süßigkeiten: ${G.candyCollected}/${G.totalCandy}`, 10, nextYPos);
-            G.hudCtx.fillStyle = '#000';
+            const candyColor = G.candyCollected >= G.totalCandy ? '#8B008B' : '#660066';
+            if (useOutline) {
+                drawTextWithOutline(G.hudCtx, `Süßigkeiten: ${G.candyCollected}/${G.totalCandy}`, 10, nextYPos, candyColor, outlineColor);
+            } else {
+                G.hudCtx.fillStyle = candyColor;
+                G.hudCtx.fillText(`Süßigkeiten: ${G.candyCollected}/${G.totalCandy}`, 10, nextYPos);
+                G.hudCtx.fillStyle = '#000';
+            }
             nextYPos += 25;
         }
         
         // Health display
-        G.hudCtx.fillText(`Leben: ${G.playerHealth}/${G.maxPlayerHealth}`, 10, nextYPos);
+        if (useOutline) {
+            drawTextWithOutline(G.hudCtx, `Leben: ${G.playerHealth}/${G.maxPlayerHealth}`, 10, nextYPos, defaultTextColor, outlineColor);
+        } else {
+            G.hudCtx.fillText(`Leben: ${G.playerHealth}/${G.maxPlayerHealth}`, 10, nextYPos);
+        }
         nextYPos += 25;
         
         // Damage flash effect
@@ -352,17 +405,25 @@ function initLoop() {
         
         // Kite charge bar or collection status
         if (G.player.hasKite) {
-            G.hudCtx.fillText(`Drachen: ${Math.floor(G.player.glideCharge)}%`, 10, nextYPos);
+            if (useOutline) {
+                drawTextWithOutline(G.hudCtx, `Drachen: ${Math.floor(G.player.glideCharge)}%`, 10, nextYPos, defaultTextColor, outlineColor);
+            } else {
+                G.hudCtx.fillText(`Drachen: ${Math.floor(G.player.glideCharge)}%`, 10, nextYPos);
+            }
             G.hudCtx.fillStyle = G.player.glideCharge >= 20 ? '#00FF00' : '#FF0000';
             G.hudCtx.fillRect(10, nextYPos + 5, G.player.glideCharge * 2, 10);
-            G.hudCtx.strokeStyle = '#000';
+            G.hudCtx.strokeStyle = useOutline ? '#FFFFFF' : '#000';
             G.hudCtx.strokeRect(10, nextYPos + 5, 200, 10);
             G.hudCtx.fillStyle = '#000';
             nextYPos += 25;
         } else {
-            G.hudCtx.fillStyle = '#FFD700';
-            G.hudCtx.fillText('Finde den Drachen auf der anderen Seite!', 10, nextYPos);
-            G.hudCtx.fillStyle = '#000';
+            if (useOutline) {
+                drawTextWithOutline(G.hudCtx, 'Finde den Drachen auf der anderen Seite!', 10, nextYPos, '#FFD700', outlineColor);
+            } else {
+                G.hudCtx.fillStyle = '#FFD700';
+                G.hudCtx.fillText('Finde den Drachen auf der anderen Seite!', 10, nextYPos);
+                G.hudCtx.fillStyle = '#000';
+            }
             nextYPos += 25;
         }
         
@@ -370,54 +431,90 @@ function initLoop() {
         if (G.hasIcePower) {
             const cooldownRemaining = Math.max(0, G.icePowerCooldown - (now - G.lastIcePowerTime));
             if (cooldownRemaining > 0) {
-                G.hudCtx.fillStyle = '#666';
-                G.hudCtx.fillText('Eis-Kraft: ' + Math.ceil(cooldownRemaining / 1000) + 's', 10, nextYPos);
+                if (useOutline) {
+                    drawTextWithOutline(G.hudCtx, 'Eis-Kraft: ' + Math.ceil(cooldownRemaining / 1000) + 's', 10, nextYPos, '#999', outlineColor);
+                } else {
+                    G.hudCtx.fillStyle = '#666';
+                    G.hudCtx.fillText('Eis-Kraft: ' + Math.ceil(cooldownRemaining / 1000) + 's', 10, nextYPos);
+                }
             } else {
-                G.hudCtx.fillStyle = '#00BFFF';
-                G.hudCtx.fillText('Eis-Kraft: Drücke E zum Einfrieren!', 10, nextYPos);
+                if (useOutline) {
+                    drawTextWithOutline(G.hudCtx, 'Eis-Kraft: Drücke E zum Einfrieren!', 10, nextYPos, '#00BFFF', outlineColor);
+                } else {
+                    G.hudCtx.fillStyle = '#00BFFF';
+                    G.hudCtx.fillText('Eis-Kraft: Drücke E zum Einfrieren!', 10, nextYPos);
+                }
             }
             G.hudCtx.fillStyle = '#000';
             nextYPos += 25;
         } else if (!G.icePowerCollected) {
-            G.hudCtx.fillStyle = '#87CEEB';
-            G.hudCtx.fillText('Finde den Eisberg für Eis-Kraft!', 10, nextYPos);
-            G.hudCtx.fillStyle = '#000';
+            if (useOutline) {
+                drawTextWithOutline(G.hudCtx, 'Finde den Eisberg für Eis-Kraft!', 10, nextYPos, '#87CEEB', outlineColor);
+            } else {
+                G.hudCtx.fillStyle = '#87CEEB';
+                G.hudCtx.fillText('Finde den Eisberg für Eis-Kraft!', 10, nextYPos);
+                G.hudCtx.fillStyle = '#000';
+            }
             nextYPos += 25;
         }
         
         // Banana power status
         if (G.hasBananaPower) {
-            G.hudCtx.fillStyle = '#FFD700';
-            G.hudCtx.fillText(`🍌 Bananen: ${G.bananaInventory}/${G.maxBananas} (Drücke B)`, 10, nextYPos);
-            G.hudCtx.fillStyle = '#000';
+            if (useOutline) {
+                drawTextWithOutline(G.hudCtx, `🍌 Bananen: ${G.bananaInventory}/${G.maxBananas} (Drücke B)`, 10, nextYPos, '#FFD700', outlineColor);
+            } else {
+                G.hudCtx.fillStyle = '#FFD700';
+                G.hudCtx.fillText(`🍌 Bananen: ${G.bananaInventory}/${G.maxBananas} (Drücke B)`, 10, nextYPos);
+                G.hudCtx.fillStyle = '#000';
+            }
             nextYPos += 25;
         } else if (!G.worldBananaPowerCollected) {
-            G.hudCtx.fillStyle = '#FFFF99';
-            G.hudCtx.fillText('Finde den Bananen-Eisberg!', 10, nextYPos);
-            G.hudCtx.fillStyle = '#000';
+            if (useOutline) {
+                drawTextWithOutline(G.hudCtx, 'Finde den Bananen-Eisberg!', 10, nextYPos, '#FFFF99', outlineColor);
+            } else {
+                G.hudCtx.fillStyle = '#FFFF99';
+                G.hudCtx.fillText('Finde den Bananen-Eisberg!', 10, nextYPos);
+                G.hudCtx.fillStyle = '#000';
+            }
             nextYPos += 25;
         }
         
         // Bomb inventory
-        G.hudCtx.fillStyle = '#FF4500';
-        G.hudCtx.fillText(`💣 Bomben: ${G.bombInventory}/${G.maxBombs} (Drücke X)`, 10, nextYPos);
-        G.hudCtx.fillStyle = '#000';
+        if (useOutline) {
+            drawTextWithOutline(G.hudCtx, `💣 Bomben: ${G.bombInventory}/${G.maxBombs} (Drücke X)`, 10, nextYPos, '#FF4500', outlineColor);
+        } else {
+            G.hudCtx.fillStyle = '#FF4500';
+            G.hudCtx.fillText(`💣 Bomben: ${G.bombInventory}/${G.maxBombs} (Drücke X)`, 10, nextYPos);
+            G.hudCtx.fillStyle = '#000';
+        }
         nextYPos += 25;
         
         // Herz-Man inventory - show inventory count
-        G.hudCtx.fillStyle = '#FF69B4';
         const placedCount = G.placedHerzmen ? G.placedHerzmen.length : 0;
-        G.hudCtx.fillText(`💕 Herz-Man: ${G.herzmanInventory} bereit, ${placedCount} aktiv (H/L1)`, 10, nextYPos);
-        G.hudCtx.fillStyle = '#000';
+        if (useOutline) {
+            drawTextWithOutline(G.hudCtx, `💕 Herz-Man: ${G.herzmanInventory} bereit, ${placedCount} aktiv (H/L1)`, 10, nextYPos, '#FF69B4', outlineColor);
+        } else {
+            G.hudCtx.fillStyle = '#FF69B4';
+            G.hudCtx.fillText(`💕 Herz-Man: ${G.herzmanInventory} bereit, ${placedCount} aktiv (H/L1)`, 10, nextYPos);
+            G.hudCtx.fillStyle = '#000';
+        }
         
         if (!G.bridgeRepaired && G.materialsCollected >= G.materialsNeeded) {
-            G.hudCtx.fillStyle = '#FFD700';
-            G.hudCtx.fillText('Gehe zur Brücke um sie zu reparieren!', 10, 185);
-            G.hudCtx.fillStyle = '#000';
+            if (useOutline) {
+                drawTextWithOutline(G.hudCtx, 'Gehe zur Brücke um sie zu reparieren!', 10, 185, '#FFD700', outlineColor);
+            } else {
+                G.hudCtx.fillStyle = '#FFD700';
+                G.hudCtx.fillText('Gehe zur Brücke um sie zu reparieren!', 10, 185);
+                G.hudCtx.fillStyle = '#000';
+            }
         } else if (G.bridgeRepaired) {
-            G.hudCtx.fillStyle = '#00FF00';
-            G.hudCtx.fillText('Brücke repariert!', 10, 185);
-            G.hudCtx.fillStyle = '#000';
+            if (useOutline) {
+                drawTextWithOutline(G.hudCtx, 'Brücke repariert!', 10, 185, '#00FF00', outlineColor);
+            } else {
+                G.hudCtx.fillStyle = '#00FF00';
+                G.hudCtx.fillText('Brücke repariert!', 10, 185);
+                G.hudCtx.fillStyle = '#000';
+            }
         }
         
         if (gameWon) {
@@ -1433,6 +1530,65 @@ function initLoop() {
                     updateDragon();
                     updateHerzmen();
                     updateHeartBombs();
+                    
+                    // Computer level systems (lag, firewall gates, buffer overflow zones, data streams)
+                    if (G.computerTheme && typeof updateComputerSystems === 'function') {
+                        updateComputerSystems();
+                        
+                        // Check firewall collision damage
+                        if (!godMode && typeof checkFirewallCollision === 'function') {
+                            if (checkFirewallCollision(G.playerGroup.position.x, G.playerGroup.position.z, GAME_CONFIG.PLAYER_RADIUS)) {
+                                G.playerHealth -= 2;
+                                G.damageFlashTime = Date.now();
+                                if (G.playerHealth <= 0 && !gameDead) {
+                                    gameDead = true;
+                                    Audio.stopBackgroundMusic();
+                                    Audio.playDeathSound();
+                                } else if (G.playerHealth > 0) {
+                                    Audio.playStuckSound();
+                                    // Push player back from firewall
+                                    G.playerGroup.position.x -= Math.sin(G.player.rotation) * 2;
+                                    G.playerGroup.position.z -= Math.cos(G.player.rotation) * 2;
+                                }
+                            }
+                        }
+                        
+                        // Check buffer overflow zone damage
+                        if (!godMode && typeof checkBufferOverflowDamage === 'function') {
+                            const bufferDamage = checkBufferOverflowDamage(G.playerGroup.position.x, G.playerGroup.position.z);
+                            if (bufferDamage > 0) {
+                                G.playerHealth -= bufferDamage;
+                                G.damageFlashTime = Date.now();
+                                if (G.playerHealth <= 0 && !gameDead) {
+                                    gameDead = true;
+                                    Audio.stopBackgroundMusic();
+                                    Audio.playDeathSound();
+                                } else if (G.playerHealth > 0) {
+                                    Audio.playStuckSound();
+                                }
+                            }
+                        }
+                        
+                        // Check squeezing wall damage
+                        if (!godMode && typeof checkSqueezingWallDamage === 'function') {
+                            const squeezeResult = checkSqueezingWallDamage(G.playerGroup.position.x, G.playerGroup.position.z);
+                            if (squeezeResult.damage > 0) {
+                                G.playerHealth -= squeezeResult.damage;
+                                G.damageFlashTime = Date.now();
+                                if (G.playerHealth <= 0 && !gameDead) {
+                                    gameDead = true;
+                                    Audio.stopBackgroundMusic();
+                                    Audio.playDeathSound();
+                                } else if (G.playerHealth > 0) {
+                                    Audio.playStuckSound();
+                                }
+                            }
+                            // Apply push from walls
+                            if (squeezeResult.pushX !== 0) {
+                                G.playerGroup.position.x += squeezeResult.pushX;
+                            }
+                        }
+                    }
                 }
                 
                 // Dragon visuals run on both host and client

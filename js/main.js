@@ -335,6 +335,9 @@ function initGame() {
     // Check if this is a ruins-themed level
     G.ruinsTheme = G.levelConfig.ruinsTheme || false;
     
+    // Check if this is a computer-themed level
+    G.computerTheme = G.levelConfig.computerTheme || false;
+    
     // Three.js setup
     G.container = document.getElementById('gameCanvas');
     G.scene = new THREE.Scene();
@@ -355,7 +358,9 @@ function initGame() {
         // Explicit fog config from level
         const fogColor = G.levelConfig.fogColor || G.levelConfig.skyColor || 0x888888;
         G.scene.fog = new THREE.FogExp2(fogColor, G.levelConfig.fogDensity);
-        G.scene.background = new THREE.Color(fogColor);
+        // Use skyColor for background if explicitly set, otherwise fogColor
+        const bgColor = G.levelConfig.skyColor !== undefined ? G.levelConfig.skyColor : fogColor;
+        G.scene.background = new THREE.Color(bgColor);
     } else if (G.graveyardTheme) {
         // Default graveyard fog - spooky purple (dense to hide clipping)
         G.scene.fog = new THREE.FogExp2(0x443355, 0.02);
@@ -384,11 +389,15 @@ function initGame() {
         // Ruins level - light atmospheric haze (daylight)
         G.scene.fog = new THREE.FogExp2(0xB8C9D9, 0.008);
         G.scene.background = new THREE.Color(0x6AAFE6);
+    } else if (G.computerTheme) {
+        // Computer level - pure black void with minimal cyan-tinted fog
+        G.scene.fog = new THREE.FogExp2(0x001111, 0.008);
+        G.scene.background = new THREE.Color(0x000000);
     }
     
     // Determine camera far plane based on fog (closer = better performance)
-    // Candy level gets longer view distance
-    const cameraFar = G.candyTheme ? 130 : (G.scene.fog ? 90 : GAME_CONFIG.CAMERA_FAR);
+    // Candy and computer levels get longer view distance
+    const cameraFar = (G.candyTheme || G.computerTheme) ? 150 : (G.scene.fog ? 90 : GAME_CONFIG.CAMERA_FAR);
     
     // Pre-cache explosion and smoke materials to avoid texture loading glitches
     G.explosionTextureCached = G.iceTheme ? G.skyTextures.explosionIce : G.skyTextures.explosion;
@@ -506,12 +515,12 @@ function initGame() {
     G.grassColor = G.levelConfig.grassColor || 0x228B22;
 
     // Create terrain (use level-specific ground color and theme)
-    createGround(G.scene, THREE, G.levelConfig.groundColor, G.iceTheme, G.desertTheme, G.lavaTheme, G.waterTheme, G.candyTheme, G.graveyardTheme, G.ruinsTheme);
-    createHills(G.scene, THREE, G.levelConfig.hills, G.hillColor, G.iceTheme, G.desertTheme, G.lavaTheme, G.waterTheme, G.candyTheme, G.graveyardTheme, G.ruinsTheme);
+    createGround(G.scene, THREE, G.levelConfig.groundColor, G.iceTheme, G.desertTheme, G.lavaTheme, G.waterTheme, G.candyTheme, G.graveyardTheme, G.ruinsTheme, G.computerTheme);
+    createHills(G.scene, THREE, G.levelConfig.hills, G.hillColor, G.iceTheme, G.desertTheme, G.lavaTheme, G.waterTheme, G.candyTheme, G.graveyardTheme, G.ruinsTheme, G.computerTheme);
     
     // Mountains are optional (disabled in desert)
     if (G.levelConfig.hasMountains !== false && G.levelConfig.mountains && G.levelConfig.mountains.length > 0) {
-        createMountains(G.scene, THREE, G.levelConfig.mountains, G.candyTheme, G.graveyardTheme, G.ruinsTheme);
+        createMountains(G.scene, THREE, G.levelConfig.mountains, G.candyTheme, G.graveyardTheme, G.ruinsTheme, G.computerTheme);
     }
     
     // Natural scenic mountains (backdrop around perimeter)
@@ -520,44 +529,136 @@ function initGame() {
             const height = mtn.height || 30;
             const radius = mtn.radius || 20;
             
-            // Main mountain cone
-            const mountainGeometry = new THREE.ConeGeometry(radius, height, 8, 4);
-            const mountainMaterial = new THREE.MeshLambertMaterial({
-                color: G.ruinsTheme ? 0x7A8B6A : 0x6B7B5B  // Green-gray for scenic mountains
-            });
-            const mountain = new THREE.Mesh(mountainGeometry, mountainMaterial);
-            mountain.position.set(mtn.x, height / 2, mtn.z);
-            mountain.castShadow = true;
-            mountain.receiveShadow = true;
-            G.scene.add(mountain);
-            
-            // Snow cap on top (if tall enough)
-            if (height > 25) {
-                const capGeometry = new THREE.ConeGeometry(radius * 0.35, height * 0.25, 8);
-                const capMaterial = new THREE.MeshLambertMaterial({
-                    color: G.ruinsTheme ? 0xE8E4DC : 0xFFFFFF
+            if (G.computerTheme) {
+                // Create massive server towers / data centers as backdrop
+                const towerWidth = radius * 1.5;
+                const towerDepth = radius * 0.8;
+                const towerHeight = height * 1.2;
+                
+                // Main server tower body
+                const towerGeometry = new THREE.BoxGeometry(towerWidth, towerHeight, towerDepth);
+                const towerMaterial = new THREE.MeshPhongMaterial({
+                    color: 0x050510,
+                    emissive: 0x001122,
+                    emissiveIntensity: 0.4,
+                    shininess: 80
                 });
-                const cap = new THREE.Mesh(capGeometry, capMaterial);
-                cap.position.set(mtn.x, height * 0.85, mtn.z);
-                G.scene.add(cap);
-            }
-            
-            // Add some trees/greenery at base
-            for (let i = 0; i < 3; i++) {
-                const treeGeometry = new THREE.ConeGeometry(2 + Math.random() * 2, 6 + Math.random() * 4, 6);
-                const treeMaterial = new THREE.MeshLambertMaterial({
-                    color: 0x3A6B2A
+                const tower = new THREE.Mesh(towerGeometry, towerMaterial);
+                tower.position.set(mtn.x, towerHeight / 2, mtn.z);
+                tower.castShadow = true;
+                G.scene.add(tower);
+                
+                // Vertical LED strips on front
+                const numStrips = Math.max(4, Math.floor(towerWidth / 5));
+                for (let i = 0; i < numStrips; i++) {
+                    const stripX = mtn.x - towerWidth/2 + (i + 0.5) * (towerWidth / numStrips);
+                    const stripColor = [0x00FFFF, 0xFF00FF, 0x00FF00, 0xFFFF00][i % 4];
+                    
+                    const stripGeometry = new THREE.BoxGeometry(0.4, towerHeight * 0.85, 0.6);
+                    const stripMaterial = new THREE.MeshBasicMaterial({ 
+                        color: stripColor,
+                        transparent: true,
+                        opacity: 0.9
+                    });
+                    const strip = new THREE.Mesh(stripGeometry, stripMaterial);
+                    strip.position.set(stripX, towerHeight/2, mtn.z + towerDepth/2 + 0.2);
+                    G.scene.add(strip);
+                }
+                
+                // Horizontal data bands
+                for (let h = 5; h < towerHeight; h += 8) {
+                    const bandGeometry = new THREE.BoxGeometry(towerWidth * 0.95, 0.5, 0.3);
+                    const bandColor = Math.random() > 0.5 ? 0x00FFFF : 0xFF00FF;
+                    const bandMaterial = new THREE.MeshBasicMaterial({
+                        color: bandColor,
+                        transparent: true,
+                        opacity: 0.6
+                    });
+                    const band = new THREE.Mesh(bandGeometry, bandMaterial);
+                    band.position.set(mtn.x, h, mtn.z + towerDepth/2 + 0.15);
+                    G.scene.add(band);
+                }
+                
+                // Blinking status lights along top
+                const numLights = Math.max(6, Math.floor(towerWidth / 3));
+                for (let i = 0; i < numLights; i++) {
+                    const lightX = mtn.x - towerWidth/2 + (i + 0.5) * (towerWidth / numLights);
+                    const lightGeometry = new THREE.SphereGeometry(0.4, 8, 8);
+                    const lightColor = [0xFF0000, 0x00FF00, 0x0000FF, 0xFFFF00][Math.floor(Math.random() * 4)];
+                    const lightMaterial = new THREE.MeshBasicMaterial({ 
+                        color: lightColor,
+                        transparent: true,
+                        opacity: 0.95
+                    });
+                    const light = new THREE.Mesh(lightGeometry, lightMaterial);
+                    light.position.set(lightX, towerHeight - 0.8, mtn.z + towerDepth/2 + 0.3);
+                    G.scene.add(light);
+                }
+                
+                // Glowing antenna/spire on top
+                const spireGeometry = new THREE.CylinderGeometry(0.2, 0.5, 6, 8);
+                const spireMaterial = new THREE.MeshBasicMaterial({
+                    color: 0x00FFFF,
+                    transparent: true,
+                    opacity: 0.8
                 });
-                const tree = new THREE.Mesh(treeGeometry, treeMaterial);
-                const angle = (i / 3) * Math.PI * 2 + Math.random() * 0.5;
-                const dist = radius * 0.7 + Math.random() * radius * 0.3;
-                tree.position.set(
-                    mtn.x + Math.cos(angle) * dist,
-                    3 + Math.random() * 2,
-                    mtn.z + Math.sin(angle) * dist
-                );
-                tree.castShadow = true;
-                G.scene.add(tree);
+                const spire = new THREE.Mesh(spireGeometry, spireMaterial);
+                spire.position.set(mtn.x, towerHeight + 3, mtn.z);
+                G.scene.add(spire);
+                
+                // Antenna light beacon
+                const beaconGeometry = new THREE.SphereGeometry(0.8, 16, 16);
+                const beaconMaterial = new THREE.MeshBasicMaterial({
+                    color: 0xFF00FF,
+                    transparent: true,
+                    opacity: 0.9
+                });
+                const beacon = new THREE.Mesh(beaconGeometry, beaconMaterial);
+                beacon.position.set(mtn.x, towerHeight + 6.5, mtn.z);
+                G.scene.add(beacon);
+            } else {
+                // Regular mountain cone for other themes
+                const mountainGeometry = new THREE.ConeGeometry(radius, height, 8, 4);
+                let mountainColor = G.ruinsTheme ? 0x7A8B6A : 0x6B7B5B;  // Green-gray default
+                const mountainMaterial = new THREE.MeshLambertMaterial({
+                    color: mountainColor,
+                    emissive: 0x000000,
+                    emissiveIntensity: 0
+                });
+                const mountain = new THREE.Mesh(mountainGeometry, mountainMaterial);
+                mountain.position.set(mtn.x, height / 2, mtn.z);
+                mountain.castShadow = true;
+                mountain.receiveShadow = true;
+                G.scene.add(mountain);
+                
+                // Snow cap on top (if tall enough)
+                if (height > 25) {
+                    const capGeometry = new THREE.ConeGeometry(radius * 0.35, height * 0.25, 8);
+                    const capMaterial = new THREE.MeshLambertMaterial({
+                        color: G.ruinsTheme ? 0xE8E4DC : 0xFFFFFF
+                    });
+                    const cap = new THREE.Mesh(capGeometry, capMaterial);
+                    cap.position.set(mtn.x, height * 0.85, mtn.z);
+                    G.scene.add(cap);
+                }
+                
+                // Add some trees/greenery at base
+                for (let i = 0; i < 3; i++) {
+                    const treeGeometry = new THREE.ConeGeometry(2 + Math.random() * 2, 6 + Math.random() * 4, 6);
+                    const treeMaterial = new THREE.MeshLambertMaterial({
+                        color: 0x3A6B2A
+                    });
+                    const tree = new THREE.Mesh(treeGeometry, treeMaterial);
+                    const angle = (i / 3) * Math.PI * 2 + Math.random() * 0.5;
+                    const dist = radius * 0.7 + Math.random() * radius * 0.3;
+                    tree.position.set(
+                        mtn.x + Math.cos(angle) * dist,
+                        3 + Math.random() * 2,
+                        mtn.z + Math.sin(angle) * dist
+                    );
+                    tree.castShadow = true;
+                    G.scene.add(tree);
+                }
             }
         });
     }
