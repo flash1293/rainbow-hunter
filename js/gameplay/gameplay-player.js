@@ -408,6 +408,32 @@
             }
         }
         
+        // Tornado spin visual effect for Player 2
+        if (G.tornadoSpinActive2 && isNativeSplitscreen && G.player2Group) {
+            const elapsed = Date.now() - G.tornadoSpinStartTime2;
+            const progress = Math.min(elapsed / G.tornadoSpinDuration, 1);
+            
+            if (progress < 1) {
+                // Spin rotation - ease out
+                const spinProgress = 1 - Math.pow(1 - progress, 2);
+                const extraRotation = spinProgress * G.tornadoSpinRotations * Math.PI * 2;
+                G.player2Group.rotation.y = G.player2.rotation + extraRotation;
+                
+                // Lift up and down - parabolic arc
+                const liftProgress = Math.sin(progress * Math.PI);
+                G.player2Group.position.y += liftProgress * G.tornadoSpinLiftHeight;
+                
+                // Slight wobble
+                G.player2Group.rotation.x = Math.sin(elapsed * 0.02) * 0.2 * (1 - progress);
+                G.player2Group.rotation.z = Math.cos(elapsed * 0.025) * 0.15 * (1 - progress);
+            } else {
+                // Effect finished, reset
+                G.tornadoSpinActive2 = false;
+                G.player2Group.rotation.x = 0;
+                G.player2Group.rotation.z = 0;
+            }
+        }
+        
         const isStuck = godMode ? false : checkCollisions(prevPos);
         
         if (isMoving && !isStuck) {

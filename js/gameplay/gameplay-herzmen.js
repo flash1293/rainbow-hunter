@@ -551,8 +551,31 @@
                 if (dist < 5) { // Larger hitbox for dragon
                     hitEnemy = true;
                     G.dragon.health -= GAME_CONFIG.HERZMAN_HEART_DAMAGE;
-                    if (G.dragon.health <= 0) {
+                    if (G.dragon.health <= 0 && G.dragon.alive) {
                         G.dragon.alive = false;
+                        G.dragon.deathTime = Date.now();
+                        Audio.playGoblinDeathSound();
+                        
+                        // Capture position before hiding mesh
+                        const deathX = G.dragon.mesh.position.x;
+                        const deathY = G.dragon.mesh.position.y;
+                        const deathZ = G.dragon.mesh.position.z;
+                        
+                        // Create multiple massive explosions
+                        for (let i = 0; i < 8; i++) {
+                            const offsetX = (Math.random() - 0.5) * 12;
+                            const offsetY = Math.random() * 10;
+                            const offsetZ = (Math.random() - 0.5) * 12;
+                            setTimeout(() => {
+                                createDragonExplosion(
+                                    deathX + offsetX,
+                                    deathY + offsetY + 2,
+                                    deathZ + offsetZ
+                                );
+                            }, i * 150);
+                        }
+                        
+                        // Hide dragon mesh
                         G.dragon.mesh.visible = false;
                     }
                     createHeartExplosion(bomb.mesh.position.x, bomb.mesh.position.y, bomb.mesh.position.z);
@@ -577,8 +600,31 @@
                 if (dist < 4) {
                     hitEnemy = true;
                     dragon.health -= GAME_CONFIG.HERZMAN_HEART_DAMAGE;
-                    if (dragon.health <= 0) {
+                    if (dragon.health <= 0 && dragon.alive) {
                         dragon.alive = false;
+                        dragon.deathTime = Date.now();
+                        Audio.playGoblinDeathSound();
+                        
+                        // Capture position before hiding mesh
+                        const deathX = dragon.mesh.position.x;
+                        const deathY = dragon.mesh.position.y;
+                        const deathZ = dragon.mesh.position.z;
+                        
+                        // Create smaller explosions
+                        for (let i = 0; i < 4; i++) {
+                            const offsetX = (Math.random() - 0.5) * 8;
+                            const offsetY = Math.random() * 6;
+                            const offsetZ = (Math.random() - 0.5) * 8;
+                            setTimeout(() => {
+                                createDragonExplosion(
+                                    deathX + offsetX,
+                                    deathY + offsetY + 1,
+                                    deathZ + offsetZ
+                                );
+                            }, i * 100);
+                        }
+                        
+                        // Hide dragon mesh
                         dragon.mesh.visible = false;
                     }
                     createHeartExplosion(bomb.mesh.position.x, bomb.mesh.position.y, bomb.mesh.position.z);

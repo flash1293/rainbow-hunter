@@ -96,6 +96,8 @@ function initSetup() {
     G.damageFlashTime = 0;
     G.tornadoSpinActive = false;
     G.tornadoSpinStartTime = 0;
+    G.tornadoSpinActive2 = false;
+    G.tornadoSpinStartTime2 = 0;
     G.tornadoSpinDuration = 800; // ms for the spin effect
     G.tornadoSpinRotations = 3; // number of full rotations
     G.tornadoSpinLiftHeight = 2.5; // how high to lift the G.player

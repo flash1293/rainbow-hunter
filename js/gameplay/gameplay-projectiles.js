@@ -683,8 +683,16 @@
                 if (p2Dist < tornado.radius + 0.8) {
                     G.player2Health -= tornado.damage;
                     G.damageFlashTime2 = Date.now();
+                    
+                    // Start tornado spin visual effect for player 2
+                    G.tornadoSpinActive2 = true;
+                    G.tornadoSpinStartTime2 = Date.now();
+                    
                     if (G.player2Health <= 0) {
-                        // Player 2 died
+                        // Player 2 died - both players die together
+                        gameDead = true;
+                        Audio.stopBackgroundMusic();
+                        Audio.playDeathSound();
                     }
                     G.scene.remove(tornado.mesh);
                     G.mummyTornados.splice(i, 1);
@@ -920,7 +928,10 @@
                     G.player2Health -= fireball.damage;
                     G.damageFlashTime2 = Date.now();
                     if (G.player2Health <= 0) {
-                        // Player 2 died
+                        // Player 2 died - both players die together
+                        gameDead = true;
+                        Audio.stopBackgroundMusic();
+                        Audio.playDeathSound();
                     } else {
                         Audio.playStuckSound();
                     }

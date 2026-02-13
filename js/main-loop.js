@@ -23,6 +23,7 @@ function initLoop() {
         
         // Reset tornado spin effect
         G.tornadoSpinActive = false;
+        G.tornadoSpinActive2 = false;
         
         // Reset other player gliding state
         otherPlayerIsGliding = false;
@@ -1373,8 +1374,31 @@ function initLoop() {
                                 );
                                 if (distToDragon < bomb.radius + 10) {
                                     G.dragon.health -= 5;
-                                    if (G.dragon.health <= 0) {
+                                    if (G.dragon.health <= 0 && G.dragon.alive) {
                                         G.dragon.alive = false;
+                                        G.dragon.deathTime = Date.now();
+                                        Audio.playGoblinDeathSound();
+                                        
+                                        // Capture position before hiding mesh
+                                        const deathX = G.dragon.mesh.position.x;
+                                        const deathY = G.dragon.mesh.position.y;
+                                        const deathZ = G.dragon.mesh.position.z;
+                                        
+                                        // Create multiple massive explosions
+                                        for (let i = 0; i < 8; i++) {
+                                            const offsetX = (Math.random() - 0.5) * 12;
+                                            const offsetY = Math.random() * 10;
+                                            const offsetZ = (Math.random() - 0.5) * 12;
+                                            setTimeout(() => {
+                                                createDragonExplosion(
+                                                    deathX + offsetX,
+                                                    deathY + offsetY + 2,
+                                                    deathZ + offsetZ
+                                                );
+                                            }, i * 150);
+                                        }
+                                        
+                                        // Hide dragon mesh
                                         G.dragon.mesh.visible = false;
                                     }
                                 }

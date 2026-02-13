@@ -192,7 +192,10 @@
                         G.damageFlashTime2 = now;
                         
                         if (G.player2Health <= 0) {
-                            // Player 2 died
+                            // Player 2 died - both players die together
+                            gameDead = true;
+                            Audio.stopBackgroundMusic();
+                            Audio.playDeathSound();
                         } else {
                             Audio.playStuckSound();
                         }
@@ -534,7 +537,10 @@
                     G.player2Health--;
                     G.damageFlashTime2 = Date.now();
                     if (G.player2Health <= 0) {
-                        // Player 2 died - TODO: handle player 2 death
+                        // Player 2 died - both players die together
+                        gameDead = true;
+                        Audio.stopBackgroundMusic();
+                        Audio.playDeathSound();
                     } else {
                         Audio.playStuckSound();
                     }

@@ -915,6 +915,16 @@
                         multiplayerManager.sendGameEvent('itemCollected', { type: 'material', index: idx });
                     }
                 }
+                // Check player 2 collection in native splitscreen
+                if (!material.collected && isNativeSplitscreen && G.player2Group) {
+                    const dist2 = G.player2Group.position.distanceTo(material.mesh.position);
+                    if (dist2 < material.radius) {
+                        material.collected = true;
+                        material.mesh.visible = false;
+                        G.materialsCollected++;
+                        Audio.playCollectSound();
+                    }
+                }
             }
         });
         
