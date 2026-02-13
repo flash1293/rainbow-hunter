@@ -1569,23 +1569,16 @@ function initLoop() {
                             }
                         }
                         
-                        // Check squeezing wall damage
-                        if (!godMode && typeof checkSqueezingWallDamage === 'function') {
-                            const squeezeResult = checkSqueezingWallDamage(G.playerGroup.position.x, G.playerGroup.position.z);
-                            if (squeezeResult.damage > 0) {
-                                G.playerHealth -= squeezeResult.damage;
+                        // Check virus strike zone - instant kill
+                        if (!godMode && typeof checkVirusStrikeDamage === 'function') {
+                            if (checkVirusStrikeDamage(G.playerGroup.position.x, G.playerGroup.position.z)) {
+                                G.playerHealth = 0;
                                 G.damageFlashTime = Date.now();
-                                if (G.playerHealth <= 0 && !gameDead) {
+                                if (!gameDead) {
                                     gameDead = true;
                                     Audio.stopBackgroundMusic();
                                     Audio.playDeathSound();
-                                } else if (G.playerHealth > 0) {
-                                    Audio.playStuckSound();
                                 }
-                            }
-                            // Apply push from walls
-                            if (squeezeResult.pushX !== 0) {
-                                G.playerGroup.position.x += squeezeResult.pushX;
                             }
                         }
                     }

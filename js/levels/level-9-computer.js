@@ -117,22 +117,6 @@ LEVEL_REGISTRY.register(9, {
         { x: 45, z: -120, width: 6, length: 40, rotation: -0.5, flowDirection: 1, flowStrength: 0.09 }
     ],
 
-    // =========================================
-    // SQUEEZING WALL ZONES - walls that compress passageways
-    // Format: { x, z, maxWidth, minGap, wallHeight, wallDepth }
-    // =========================================
-    squeezingWallZones: [
-        // Early warning zones - easier
-        { x: 0, z: 140, maxWidth: 35, minGap: 8, wallHeight: 12, wallDepth: 15 },
-        { x: 25, z: 90, maxWidth: 30, minGap: 7, wallHeight: 14, wallDepth: 12 },
-        // Mid level - tighter gaps
-        { x: -30, z: 45, maxWidth: 32, minGap: 6, wallHeight: 15, wallDepth: 14 },
-        { x: 35, z: 0, maxWidth: 34, minGap: 5, wallHeight: 16, wallDepth: 16 },
-        // Deep network - dangerous
-        { x: -25, z: -60, maxWidth: 36, minGap: 4, wallHeight: 18, wallDepth: 15 },
-        { x: 20, z: -100, maxWidth: 38, minGap: 4, wallHeight: 20, wallDepth: 18 }
-    ],
-
     // Data node hills (processor chips)
     hills: [
         // Near spawn - low processing nodes

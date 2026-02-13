@@ -135,9 +135,9 @@
         fireballGroup.position.y += 1;
         G.scene.add(fireballGroup);
         
-        // Calculate direction to target (including Y axis)
+        // Calculate direction to target (aim at player center, y+1)
         const dirX = targetPlayer.position.x - fireballGroup.position.x;
-        const dirY = targetPlayer.position.y - fireballGroup.position.y;
+        const dirY = (targetPlayer.position.y + 1) - fireballGroup.position.y;
         const dirZ = targetPlayer.position.z - fireballGroup.position.z;
         const length = Math.sqrt(dirX * dirX + dirY * dirY + dirZ * dirZ);
         
@@ -147,7 +147,9 @@
             radius: 1.5 * fbScale,
             damage: 1,
             trail: [],
-            lastTrailTime: 0
+            lastTrailTime: 0,
+            isDragonFireball: true,
+            spawnTime: Date.now()
         });
     }
 
@@ -1089,8 +1091,8 @@
                 }
             }
             
-            // Grace period for wizard/witch fireballs - skip terrain collision entirely during grace
-            const graceTime = fireball.isWizardFireball || fireball.isScytheWave ? 800 : 0;
+            // Grace period for wizard/witch/dragon fireballs - skip terrain collision entirely during grace
+            const graceTime = fireball.isWizardFireball || fireball.isScytheWave || fireball.isDragonFireball ? 800 : 0;
             const elapsed = Date.now() - (fireball.spawnTime || 0);
             const inGracePeriod = elapsed < graceTime;
             

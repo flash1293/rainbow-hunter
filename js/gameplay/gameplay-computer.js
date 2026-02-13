@@ -897,6 +897,274 @@
     }
     
     // ========================================
+    // VIRUS STRIKE ZONES
+    // Zones that light up yellow around player, then turn red and kill
+    // ========================================
+    
+    let virusStrikeState = {
+        zones: [],
+        lastStrikeTime: 0,
+        strikeInterval: 8000, // Time between strikes
+        warningDuration: 2500, // Yellow warning phase
+        dangerDuration: 1500, // Red danger phase
+        zoneRadius: 12
+    };
+    
+    function initVirusStrikes() {
+        if (!G.computerTheme) return;
+        
+        virusStrikeState.zones = [];
+        virusStrikeState.lastStrikeTime = Date.now() + 5000; // Initial delay
+    }
+    
+    function scheduleVirusStrike() {
+        if (!G.computerTheme || G.gamePaused) return;
+        
+        const now = Date.now();
+        
+        // Check if it's time for a new strike
+        if (now - virusStrikeState.lastStrikeTime < virusStrikeState.strikeInterval) return;
+        
+        // Create a new strike zone at player's current position
+        const playerX = G.playerGroup.position.x;
+        const playerZ = G.playerGroup.position.z;
+        
+        // Create the zone visual
+        const zoneGroup = new THREE.Group();
+        
+        // Outer ring (warning indicator)
+        const ringGeometry = new THREE.RingGeometry(virusStrikeState.zoneRadius - 0.5, virusStrikeState.zoneRadius, 48);
+        const ringMaterial = new THREE.MeshBasicMaterial({
+            color: 0xFFFF00,
+            transparent: true,
+            opacity: 0.8,
+            side: THREE.DoubleSide
+        });
+        const ring = new THREE.Mesh(ringGeometry, ringMaterial);
+        ring.rotation.x = -Math.PI / 2;
+        ring.position.y = 0.15;
+        zoneGroup.add(ring);
+        
+        // Inner fill (pulsing warning)
+        const fillGeometry = new THREE.CircleGeometry(virusStrikeState.zoneRadius - 0.5, 48);
+        const fillMaterial = new THREE.MeshBasicMaterial({
+            color: 0xFFFF00,
+            transparent: true,
+            opacity: 0.2,
+            side: THREE.DoubleSide
+        });
+        const fill = new THREE.Mesh(fillGeometry, fillMaterial);
+        fill.rotation.x = -Math.PI / 2;
+        fill.position.y = 0.12;
+        zoneGroup.add(fill);
+        
+        // Crosshair lines
+        const createCrosshairLine = (length, rotation) => {
+            const lineGeometry = new THREE.PlaneGeometry(length, 0.3);
+            const lineMaterial = new THREE.MeshBasicMaterial({
+                color: 0xFFFF00,
+                transparent: true,
+                opacity: 0.9
+            });
+            const line = new THREE.Mesh(lineGeometry, lineMaterial);
+            line.rotation.x = -Math.PI / 2;
+            line.rotation.z = rotation;
+            line.position.y = 0.16;
+            return line;
+        };
+        
+        zoneGroup.add(createCrosshairLine(virusStrikeState.zoneRadius * 2, 0));
+        zoneGroup.add(createCrosshairLine(virusStrikeState.zoneRadius * 2, Math.PI / 2));
+        
+        // Animated segments around the edge
+        for (let i = 0; i < 8; i++) {
+            const angle = (i / 8) * Math.PI * 2;
+            const segGeometry = new THREE.BoxGeometry(1.5, 0.3, 0.3);
+            const segMaterial = new THREE.MeshBasicMaterial({
+                color: 0xFFFF00,
+                transparent: true,
+                opacity: 0.9
+            });
+            const seg = new THREE.Mesh(segGeometry, segMaterial);
+            seg.position.x = Math.cos(angle) * (virusStrikeState.zoneRadius + 1);
+            seg.position.z = Math.sin(angle) * (virusStrikeState.zoneRadius + 1);
+            seg.position.y = 0.3;
+            seg.rotation.y = angle + Math.PI / 2;
+            zoneGroup.add(seg);
+        }
+        
+        zoneGroup.position.set(playerX, 0, playerZ);
+        G.scene.add(zoneGroup);
+        
+        // Store zone data
+        virusStrikeState.zones.push({
+            mesh: zoneGroup,
+            ring: ring,
+            fill: fill,
+            x: playerX,
+            z: playerZ,
+            radius: virusStrikeState.zoneRadius,
+            spawnTime: now,
+            phase: 'warning', // 'warning' -> 'danger' -> 'done'
+            ringMaterial: ringMaterial,
+            fillMaterial: fillMaterial
+        });
+        
+        virusStrikeState.lastStrikeTime = now;
+        
+        // Show HUD warning
+        showVirusStrikeWarning();
+    }
+    
+    function updateVirusStrikes() {
+        if (!G.computerTheme) return;
+        
+        // Schedule new strikes
+        scheduleVirusStrike();
+        
+        const now = Date.now();
+        
+        // Update existing zones
+        for (let i = virusStrikeState.zones.length - 1; i >= 0; i--) {
+            const zone = virusStrikeState.zones[i];
+            const elapsed = now - zone.spawnTime;
+            
+            // Phase transitions
+            if (zone.phase === 'warning' && elapsed > virusStrikeState.warningDuration) {
+                // Transition to danger phase
+                zone.phase = 'danger';
+                
+                // Change colors to red
+                zone.ringMaterial.color.setHex(0xFF0000);
+                zone.fillMaterial.color.setHex(0xFF0000);
+                zone.fillMaterial.opacity = 0.4;
+                
+                // Update all children colors
+                zone.mesh.children.forEach(child => {
+                    if (child.material && child !== zone.ring && child !== zone.fill) {
+                        child.material.color.setHex(0xFF0000);
+                    }
+                });
+                
+                // Show danger HUD
+                showVirusDangerWarning();
+            }
+            
+            // Animation based on phase
+            if (zone.phase === 'warning') {
+                // Pulsing warning animation
+                const pulse = Math.sin(elapsed * 0.01) * 0.5 + 0.5;
+                zone.fillMaterial.opacity = 0.15 + pulse * 0.2;
+                zone.ringMaterial.opacity = 0.6 + pulse * 0.4;
+                
+                // Rotate outer segments
+                let segIndex = 0;
+                zone.mesh.children.forEach(child => {
+                    if (child.geometry?.type === 'BoxGeometry') {
+                        child.rotation.y += 0.02;
+                        segIndex++;
+                    }
+                });
+            } else if (zone.phase === 'danger') {
+                // Intense flashing red
+                const flash = Math.sin(elapsed * 0.03) * 0.5 + 0.5;
+                zone.fillMaterial.opacity = 0.3 + flash * 0.4;
+                zone.ringMaterial.opacity = 0.7 + flash * 0.3;
+                
+                // Faster rotation
+                zone.mesh.children.forEach(child => {
+                    if (child.geometry?.type === 'BoxGeometry') {
+                        child.rotation.y += 0.05;
+                    }
+                });
+            }
+            
+            // Remove zone after danger phase ends
+            const totalDuration = virusStrikeState.warningDuration + virusStrikeState.dangerDuration;
+            if (elapsed > totalDuration) {
+                // Fade out and remove
+                G.scene.remove(zone.mesh);
+                virusStrikeState.zones.splice(i, 1);
+                continue;
+            }
+        }
+    }
+    
+    function checkVirusStrikeDamage(playerX, playerZ) {
+        if (!G.computerTheme) return false;
+        
+        for (const zone of virusStrikeState.zones) {
+            if (zone.phase !== 'danger') continue;
+            
+            // Check if player is in the danger zone
+            const dx = playerX - zone.x;
+            const dz = playerZ - zone.z;
+            const dist = Math.sqrt(dx * dx + dz * dz);
+            
+            if (dist < zone.radius) {
+                return true; // Instant kill
+            }
+        }
+        
+        return false;
+    }
+    
+    function showVirusStrikeWarning() {
+        const warningDiv = document.createElement('div');
+        warningDiv.id = 'virus-warning';
+        warningDiv.style.cssText = `
+            position: fixed;
+            top: 30%;
+            left: 50%;
+            transform: translateX(-50%);
+            color: #FFFF00;
+            font-family: 'Courier New', monospace;
+            font-size: 24px;
+            text-shadow: 0 0 15px #FFFF00, 0 0 30px #FF6600;
+            animation: blink 0.3s infinite;
+            z-index: 1000;
+            pointer-events: none;
+            letter-spacing: 3px;
+        `;
+        warningDiv.innerHTML = '⚠ VIRUS ERKANNT ⚠';
+        document.body.appendChild(warningDiv);
+        
+        setTimeout(() => {
+            if (warningDiv.parentNode) {
+                warningDiv.parentNode.removeChild(warningDiv);
+            }
+        }, 2000);
+    }
+    
+    function showVirusDangerWarning() {
+        const dangerDiv = document.createElement('div');
+        dangerDiv.id = 'virus-danger';
+        dangerDiv.style.cssText = `
+            position: fixed;
+            top: 30%;
+            left: 50%;
+            transform: translateX(-50%);
+            color: #FF0000;
+            font-family: 'Courier New', monospace;
+            font-size: 28px;
+            font-weight: bold;
+            text-shadow: 0 0 20px #FF0000, 0 0 40px #FF0000;
+            animation: blink 0.15s infinite;
+            z-index: 1000;
+            pointer-events: none;
+            letter-spacing: 4px;
+        `;
+        dangerDiv.innerHTML = '☠ AUSFÜHRUNG ☠';
+        document.body.appendChild(dangerDiv);
+        
+        setTimeout(() => {
+            if (dangerDiv.parentNode) {
+                dangerDiv.parentNode.removeChild(dangerDiv);
+            }
+        }, 1500);
+    }
+
+    // ========================================
     // SQUEEZING WALL SYSTEM
     // Walls that periodically close in from left/right
     // Player must escape to safe zone before being crushed
@@ -1257,7 +1525,7 @@
         updateFirewallGates();
         updateBufferOverflowZones();
         updateDataStreams();
-        updateSqueezingWalls();
+        updateVirusStrikes();
         updateComputerDecorations();
     }
     
@@ -1268,7 +1536,7 @@
         initFirewallGates();
         initBufferOverflowZones();
         initDataStreams();
-        initSqueezingWalls();
+        initVirusStrikes();
         initComputerDecorations();
     }
     
@@ -1646,6 +1914,16 @@
             computerDecorations = [];
         }
         
+        // Remove virus strike zones
+        if (virusStrikeState.zones) {
+            virusStrikeState.zones.forEach(zone => {
+                if (zone.mesh && zone.mesh.parent) {
+                    zone.mesh.parent.remove(zone.mesh);
+                }
+            });
+            virusStrikeState.zones = [];
+        }
+        
         // Remove squeezing walls
         if (G.squeezingWallZones) {
             G.squeezingWallZones.forEach(zone => {
@@ -1682,7 +1960,7 @@
     window.cleanupComputerSystems = cleanupComputerSystems;
     window.checkFirewallCollision = checkFirewallCollision;
     window.checkBufferOverflowDamage = checkBufferOverflowDamage;
-    window.checkSqueezingWallDamage = checkSqueezingWallDamage;
+    window.checkVirusStrikeDamage = checkVirusStrikeDamage;
     window.getDataStreamPush = getDataStreamPush;
     window.isLagActive = isLagActive;
     window.getLagSlowdownFactor = getLagSlowdownFactor;
