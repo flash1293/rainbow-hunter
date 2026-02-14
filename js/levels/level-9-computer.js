@@ -152,7 +152,18 @@ LEVEL_REGISTRY.register(9, {
         { x: -115, z: 100, width: 20, height: 18 },
         { x: 115, z: 100, width: 20, height: 18 },
         { x: -115, z: -50, width: 20, height: 18 },
-        { x: 115, z: -50, width: 20, height: 18 }
+        { x: 115, z: -50, width: 20, height: 18 },
+        // INTERIOR FIREWALL BARRIERS - block direct path to boss
+        // First barrier - forces player to go around
+        { x: -30, z: 130, width: 60, height: 12 },
+        // Second barrier - opposite side
+        { x: 40, z: 70, width: 70, height: 12 },
+        // Third barrier - central blockade
+        { x: -20, z: 10, width: 65, height: 12 },
+        // Fourth barrier - near mid
+        { x: 30, z: -50, width: 60, height: 12 },
+        // Fifth barrier - approach to boss
+        { x: -25, z: -110, width: 55, height: 12 }
     ],
     
     // Background processor towers (decorative mountains)
@@ -320,7 +331,7 @@ LEVEL_REGISTRY.register(9, {
     lagConfig: {
         interval: 25000,           // Time between lag events (25 seconds)
         duration: 4000,            // How long the lag lasts (4 seconds)
-        warningTime: 3000,         // Warning before lag starts
+        warningTime: 5000,         // Warning before lag starts (5 seconds - longer!)
         slowdownFactor: 0.4,       // Movement speed during lag (40%)
         affectsEnemies: true,      // Enemies also slow down
         opensFirewalls: true       // Firewall gates open during lag

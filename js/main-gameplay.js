@@ -646,7 +646,8 @@
                     // For graveyard, ruins, and computer theme walls, use rectangular (box) collision
                     if (G.graveyardTheme || G.ruinsTheme || G.computerTheme) {
                         const wallWidth = mtn.width;
-                        const wallDepth = Math.min(mtn.width * 0.15, 8);
+                        // Use fixed depth of 2 for computer theme (matches visual), variable for others
+                        const wallDepth = G.computerTheme ? 2 : Math.min(mtn.width * 0.15, 8);
                         const halfW = wallWidth / 2 + 1.5;
                         const halfD = wallDepth / 2 + 1.5;
                         const dx = Math.abs(G.playerGroup.position.x - mtn.x);

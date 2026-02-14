@@ -833,7 +833,8 @@ function initLoop() {
         // Shared state HUD (center bottom area)
         G.hudCtx.font = 'bold 14px Arial';
         G.hudCtx.textAlign = 'center';
-        G.hudCtx.fillStyle = '#000';
+        const sharedTextColor = G.computerTheme ? '#00FFFF' : '#000';
+        G.hudCtx.fillStyle = sharedTextColor;
         
         let bottomY = fullHeight - 85;
         
@@ -845,7 +846,7 @@ function initLoop() {
         if (G.totalScarabs > 0) {
             G.hudCtx.fillStyle = G.scarabsCollected >= G.totalScarabs ? '#00ff88' : '#00ccaa';
             G.hudCtx.fillText(`Scarabs: ${G.scarabsCollected}/${G.totalScarabs}`, G.hudCanvas.width / 2, bottomY);
-            G.hudCtx.fillStyle = '#000';
+            G.hudCtx.fillStyle = sharedTextColor;
             bottomY += 18;
         }
         
@@ -853,7 +854,7 @@ function initLoop() {
         if (G.candyTheme && G.totalCandy > 0) {
             G.hudCtx.fillStyle = G.candyCollected >= G.totalCandy ? '#8B008B' : '#660066';
             G.hudCtx.fillText(`Süßigkeiten: ${G.candyCollected}/${G.totalCandy}`, G.hudCanvas.width / 2, bottomY);
-            G.hudCtx.fillStyle = '#000';
+            G.hudCtx.fillStyle = sharedTextColor;
             bottomY += 18;
         }
         
@@ -936,8 +937,11 @@ function initLoop() {
         
         G.hudCtx.font = 'bold 13px Arial';
         
+        // Use cyan text for computer theme (dark background), black otherwise
+        const textColor = G.computerTheme ? '#00FFFF' : '#000';
+        
         // Health
-        G.hudCtx.fillStyle = '#000';
+        G.hudCtx.fillStyle = textColor;
         G.hudCtx.fillText(`Leben: ${health}/${G.maxPlayerHealth}`, x, y);
         y += lineHeight;
         
@@ -950,16 +954,16 @@ function initLoop() {
             G.hudCtx.fillText(`Drachen: ${Math.floor(player.glideCharge)}%`, x, y);
             G.hudCtx.fillStyle = player.glideCharge >= 20 ? '#00FF00' : '#FF0000';
             G.hudCtx.fillRect(x, y + 3, player.glideCharge * 0.8, 6);
-            G.hudCtx.strokeStyle = '#000';
+            G.hudCtx.strokeStyle = G.computerTheme ? '#00FFFF' : '#000';
             G.hudCtx.strokeRect(x, y + 3, 80, 6);
-            G.hudCtx.fillStyle = '#000';
+            G.hudCtx.fillStyle = textColor;
             y += lineHeight;
         } else {
             G.hudCtx.fillStyle = '#FFD700';
             G.hudCtx.font = 'bold 11px Arial';
             G.hudCtx.fillText('Finde den Drachen!', x, y);
             G.hudCtx.font = 'bold 13px Arial';
-            G.hudCtx.fillStyle = '#000';
+            G.hudCtx.fillStyle = textColor;
             y += lineHeight;
         }
         
@@ -967,13 +971,13 @@ function initLoop() {
         if (G.hasIcePower) {
             const cooldownRemaining = Math.max(0, G.icePowerCooldown - (now - G.lastIcePowerTime));
             if (cooldownRemaining > 0) {
-                G.hudCtx.fillStyle = '#666';
+                G.hudCtx.fillStyle = G.computerTheme ? '#888' : '#666';
                 G.hudCtx.fillText('Eis: ' + Math.ceil(cooldownRemaining / 1000) + 's', x, y);
             } else {
                 G.hudCtx.fillStyle = '#00BFFF';
                 G.hudCtx.fillText('Eis: Bereit (□)', x, y);
             }
-            G.hudCtx.fillStyle = '#000';
+            G.hudCtx.fillStyle = textColor;
             y += lineHeight;
         }
         
@@ -981,21 +985,21 @@ function initLoop() {
         if (G.hasBananaPower) {
             G.hudCtx.fillStyle = '#FFD700';
             G.hudCtx.fillText(`🍌 ${bananas}/${G.maxBananas}`, x, y);
-            G.hudCtx.fillStyle = '#000';
+            G.hudCtx.fillStyle = textColor;
             y += lineHeight;
         }
         
         // Bombs
         G.hudCtx.fillStyle = '#FF4500';
         G.hudCtx.fillText(`💣 ${bombs}/${G.maxBombs}`, x, y);
-        G.hudCtx.fillStyle = '#000';
+        G.hudCtx.fillStyle = textColor;
         y += lineHeight;
         
         // Herzmen with placed count
         const placedCount = G.placedHerzmen ? G.placedHerzmen.length : 0;
         G.hudCtx.fillStyle = '#FF69B4';
         G.hudCtx.fillText(`💕 ${herzmen} (${placedCount} aktiv)`, x, y);
-        G.hudCtx.fillStyle = '#000';
+        G.hudCtx.fillStyle = textColor;
     }
 
     // Start background music

@@ -104,12 +104,12 @@
         lagState.isWarning = false;
         lagState.lagStartTime = Date.now();
         
-        // Apply slowdown to player
-        G.lagSlowdownActive = true;
-        G.lagSlowdownFactor = lagConfig.slowdownFactor;
+        // NO movement slowdown - player can move normally
+        // But screen goes completely black!
+        G.lagBlackoutActive = true;
         
-        // Enable screen shake
-        G.lagScreenShake = true;
+        // No screen shake during blackout
+        G.lagScreenShake = false;
         
         // Play lag activation sound
         if (typeof Audio !== 'undefined' && Audio.playSystemSound) {
@@ -130,11 +130,10 @@
         lagState.isActive = false;
         lagState.lastLagTime = Date.now();
         
-        // Remove slowdown
-        G.lagSlowdownActive = false;
-        G.lagSlowdownFactor = 1;
+        // Remove blackout
+        G.lagBlackoutActive = false;
         
-        // Disable screen shake
+        // Ensure screen shake is off
         G.lagScreenShake = false;
         
         // Reset camera position offset
@@ -155,54 +154,25 @@
     function updateLagVisuals(lagConfig) {
         if (!lagState.visualOverlay) return;
         
-        // Intense screen shake during active lag
-        if (lagState.isActive && G.camera && G.lagScreenShake) {
-            // Much stronger shake intensity
-            const shakeIntensity = 0.4;
-            const shakeX = (Math.random() - 0.5) * shakeIntensity;
-            const shakeY = (Math.random() - 0.5) * shakeIntensity * 0.7;
-            const shakeZ = (Math.random() - 0.5) * shakeIntensity;
-            
-            // Occasional big jolts
-            if (Math.random() > 0.9) {
-                G.lagShakeOffset = { 
-                    x: shakeX * 3, 
-                    y: shakeY * 2, 
-                    z: shakeZ * 3 
-                };
-            } else {
-                G.lagShakeOffset = { x: shakeX, y: shakeY, z: shakeZ };
-            }
-        } else {
-            G.lagShakeOffset = { x: 0, y: 0, z: 0 };
-        }
+        // No screen shake - player needs to navigate blind
+        G.lagShakeOffset = { x: 0, y: 0, z: 0 };
         
         if (lagState.isWarning) {
-            // Intense pulsing warning
+            // Intense pulsing warning - screen going dark
             const warningProgress = (Date.now() - lagState.warningStartTime) / lagConfig.warningTime;
             const pulse = Math.sin(warningProgress * Math.PI * 12) * 0.5 + 0.5;
             lagState.visualOverlay.material.opacity = pulse * 0.35;
             lagState.visualOverlay.material.color.setHex(0x00FFFF);
+            lagState.visualOverlay.material.blending = THREE.AdditiveBlending;
         } else if (lagState.isActive) {
-            // EXTREMELY dramatic glitchy effect during lag
-            const lagProgress = (Date.now() - lagState.lagStartTime) / lagConfig.duration;
-            const glitch = Math.random() * 0.4;
-            lagState.visualOverlay.material.opacity = 0.25 + glitch;
-            // Rapid color flashing between intense colors
-            const colorRoll = Math.random();
-            if (colorRoll > 0.9) {
-                lagState.visualOverlay.material.color.setHex(0xFFFFFF); // White flash!
-            } else if (colorRoll > 0.75) {
-                lagState.visualOverlay.material.color.setHex(0xFF0000); // Red flash
-            } else if (colorRoll > 0.6) {
-                lagState.visualOverlay.material.color.setHex(0xFF00FF); // Pure Magenta
-            } else if (colorRoll > 0.45) {
-                lagState.visualOverlay.material.color.setHex(0x00FF00); // Green flash
-            } else {
-                lagState.visualOverlay.material.color.setHex(0x00FFFF); // Cyan
-            }
+            // COMPLETE BLACKOUT - can't see anything!
+            // Use normal blending with black color for true darkness
+            lagState.visualOverlay.material.blending = THREE.NormalBlending;
+            lagState.visualOverlay.material.color.setHex(0x000000);
+            lagState.visualOverlay.material.opacity = 1.0;
         } else {
             lagState.visualOverlay.material.opacity = 0;
+            lagState.visualOverlay.material.blending = THREE.AdditiveBlending;
         }
     }
     
@@ -211,18 +181,20 @@
         warningDiv.id = 'lag-warning';
         warningDiv.style.cssText = `
             position: fixed;
-            top: 20%;
+            top: 15%;
             left: 50%;
             transform: translateX(-50%);
-            color: #00FFFF;
+            color: #FF0000;
             font-family: 'Courier New', monospace;
-            font-size: 24px;
-            text-shadow: 0 0 10px #00FFFF;
-            animation: blink 0.5s infinite;
+            font-size: 56px;
+            font-weight: bold;
+            text-shadow: 0 0 20px #FF0000, 0 0 40px #FF0000, 0 0 60px #FF0000;
+            animation: blink 0.3s infinite, shake 0.1s infinite;
             z-index: 1000;
             pointer-events: none;
+            letter-spacing: 4px;
         `;
-        warningDiv.textContent = '⚠ SYSTEMVERZÖGERUNG DROHT ⚠';
+        warningDiv.textContent = '⚠ SYSTEMAUSFALL DROHT ⚠';
         document.body.appendChild(warningDiv);
         
         // Add blink animation if not exists
@@ -232,7 +204,12 @@
             style.textContent = `
                 @keyframes blink {
                     0%, 100% { opacity: 1; }
-                    50% { opacity: 0.3; }
+                    50% { opacity: 0.2; }
+                }
+                @keyframes shake {
+                    0%, 100% { transform: translateX(-50%) translateY(0); }
+                    25% { transform: translateX(-48%) translateY(-2px); }
+                    75% { transform: translateX(-52%) translateY(2px); }
                 }
                 @keyframes glitch {
                     0%, 100% { transform: translateX(-50%) skewX(0deg); filter: hue-rotate(0deg); }
@@ -260,29 +237,22 @@
         const warning = document.getElementById('lag-warning');
         if (warning) warning.remove();
         
-        const activeDiv = document.createElement('div');
-        activeDiv.id = 'lag-active';
-        activeDiv.style.cssText = `
+        // Create blackout overlay with glitch effect
+        const blackoutDiv = document.createElement('div');
+        blackoutDiv.id = 'lag-blackout';
+        blackoutDiv.style.cssText = `
             position: fixed;
-            top: 18%;
-            left: 50%;
-            transform: translateX(-50%);
-            color: #FF0066;
-            font-family: 'Courier New', monospace;
-            font-size: 48px;
-            font-weight: bold;
-            text-shadow: 0 0 30px #FF0066, 0 0 60px #FF0066, 0 0 90px #FF0000,
-                         4px 4px 0 #00FFFF, -4px -4px 0 #00FF00, 
-                         4px -4px 0 #FFFF00, -4px 4px 0 #FF00FF;
-            animation: glitch 0.1s infinite, pulse-size 0.3s infinite;
-            z-index: 1000;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: #000;
+            z-index: 9999;
             pointer-events: none;
-            letter-spacing: 8px;
         `;
-        activeDiv.textContent = '█▓ SYSTEMVERZÖGERUNG ▓█';
-        document.body.appendChild(activeDiv);
+        document.body.appendChild(blackoutDiv);
         
-        // Add scanline overlay - more intense
+        // Add scanline effect over blackout
         const scanlineDiv = document.createElement('div');
         scanlineDiv.id = 'lag-scanlines';
         scanlineDiv.style.cssText = `
@@ -292,79 +262,91 @@
             width: 100%;
             height: 100%;
             pointer-events: none;
-            z-index: 999;
+            z-index: 10000;
             background: repeating-linear-gradient(
                 0deg,
-                rgba(0, 0, 0, 0.25),
-                rgba(0, 0, 0, 0.25) 2px,
-                transparent 2px,
-                transparent 4px
+                rgba(255, 255, 255, 0.03),
+                rgba(255, 255, 255, 0.03) 1px,
+                transparent 1px,
+                transparent 3px
             );
-            animation: scanline 0.3s linear infinite;
+            animation: scanline-move 0.1s linear infinite;
         `;
         document.body.appendChild(scanlineDiv);
         
-        // Add chromatic aberration / glitch border effect
-        const borderDiv = document.createElement('div');
-        borderDiv.id = 'lag-border';
-        borderDiv.style.cssText = `
+        // Add occasional static flicker
+        const staticDiv = document.createElement('div');
+        staticDiv.id = 'lag-static';
+        staticDiv.style.cssText = `
             position: fixed;
             top: 0;
             left: 0;
             width: 100%;
             height: 100%;
             pointer-events: none;
-            z-index: 998;
-            box-shadow: inset 0 0 100px rgba(255, 0, 102, 0.5),
-                        inset 0 0 200px rgba(0, 255, 255, 0.3);
-            animation: border-flash 0.2s infinite;
+            z-index: 10001;
+            background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 200 200' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E");
+            opacity: 0.08;
+            animation: static-flicker 0.05s steps(2) infinite;
         `;
-        document.body.appendChild(borderDiv);
+        document.body.appendChild(staticDiv);
         
-        // Add static noise overlay
-        const noiseDiv = document.createElement('div');
-        noiseDiv.id = 'lag-noise';
-        noiseDiv.style.cssText = `
+        // Add SYSTEMAUSFALL text in center
+        const textDiv = document.createElement('div');
+        textDiv.id = 'lag-text';
+        textDiv.style.cssText = `
             position: fixed;
-            top: 0;
-            left: 0;
-            width: 100%;
-            height: 100%;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            color: #FF0000;
+            font-family: 'Courier New', monospace;
+            font-size: 72px;
+            font-weight: bold;
+            text-shadow: 0 0 30px #FF0000, 0 0 60px #FF0000;
+            animation: glitch-text 0.15s infinite;
+            z-index: 10002;
             pointer-events: none;
-            z-index: 997;
-            background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 200 200' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.8' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E");
-            opacity: 0.15;
-            animation: noise-flash 0.1s steps(3) infinite;
+            letter-spacing: 8px;
         `;
-        document.body.appendChild(noiseDiv);
+        textDiv.textContent = 'SYSTEMAUSFALL';
+        document.body.appendChild(textDiv);
         
-        // Add additional glitch styles
-        if (!document.getElementById('lag-extra-styles')) {
+        // Add glitch animation styles
+        if (!document.getElementById('blackout-styles')) {
             const style = document.createElement('style');
-            style.id = 'lag-extra-styles';
+            style.id = 'blackout-styles';
             style.textContent = `
-                @keyframes pulse-size {
-                    0%, 100% { transform: translateX(-50%) scale(1); }
-                    50% { transform: translateX(-50%) scale(1.05); }
+                @keyframes scanline-move {
+                    0% { background-position: 0 0; }
+                    100% { background-position: 0 6px; }
                 }
-                @keyframes border-flash {
+                @keyframes static-flicker {
+                    0% { opacity: 0.05; }
+                    50% { opacity: 0.12; }
+                    100% { opacity: 0.08; }
+                }
+                @keyframes glitch-text {
                     0%, 100% { 
-                        box-shadow: inset 0 0 100px rgba(255, 0, 102, 0.5),
-                                    inset 0 0 200px rgba(0, 255, 255, 0.3);
+                        transform: translate(-50%, -50%) skewX(0deg);
+                        text-shadow: 0 0 30px #FF0000, 0 0 60px #FF0000;
                     }
-                    33% { 
-                        box-shadow: inset 0 0 150px rgba(0, 255, 255, 0.6),
-                                    inset 0 0 100px rgba(255, 0, 102, 0.2);
+                    20% { 
+                        transform: translate(-48%, -50%) skewX(-3deg);
+                        text-shadow: -3px 0 #00FFFF, 3px 0 #FF00FF, 0 0 30px #FF0000;
                     }
-                    66% { 
-                        box-shadow: inset 0 0 80px rgba(0, 255, 0, 0.5),
-                                    inset 0 0 180px rgba(255, 0, 255, 0.4);
+                    40% { 
+                        transform: translate(-52%, -50%) skewX(2deg);
+                        text-shadow: 2px 0 #00FFFF, -2px 0 #FF00FF, 0 0 30px #FF0000;
                     }
-                }
-                @keyframes noise-flash {
-                    0% { opacity: 0.1; }
-                    50% { opacity: 0.2; }
-                    100% { opacity: 0.15; }
+                    60% { 
+                        transform: translate(-50%, -48%) skewX(-1deg);
+                        text-shadow: -1px 0 #00FFFF, 1px 0 #FF00FF, 0 0 30px #FF0000;
+                    }
+                    80% { 
+                        transform: translate(-51%, -52%) skewX(1deg);
+                        text-shadow: 1px 0 #00FFFF, -1px 0 #FF00FF, 0 0 30px #FF0000;
+                    }
                 }
             `;
             document.head.appendChild(style);
@@ -373,15 +355,15 @@
     
     function hideLagHUD() {
         const warning = document.getElementById('lag-warning');
-        const active = document.getElementById('lag-active');
+        const blackout = document.getElementById('lag-blackout');
         const scanlines = document.getElementById('lag-scanlines');
-        const border = document.getElementById('lag-border');
-        const noise = document.getElementById('lag-noise');
+        const static_ = document.getElementById('lag-static');
+        const text = document.getElementById('lag-text');
         if (warning) warning.remove();
-        if (active) active.remove();
+        if (blackout) blackout.remove();
         if (scanlines) scanlines.remove();
-        if (border) border.remove();
-        if (noise) noise.remove();
+        if (static_) static_.remove();
+        if (text) text.remove();
     }
     
     // ========================================
@@ -904,7 +886,7 @@
     let virusStrikeState = {
         zones: [],
         lastStrikeTime: 0,
-        strikeInterval: 8000, // Time between strikes
+        strikeInterval: 15000, // Time between strikes
         warningDuration: 2500, // Yellow warning phase
         dangerDuration: 1500, // Red danger phase
         zoneRadius: 12
@@ -925,9 +907,20 @@
         // Check if it's time for a new strike
         if (now - virusStrikeState.lastStrikeTime < virusStrikeState.strikeInterval) return;
         
-        // Create a new strike zone at player's current position
-        const playerX = G.playerGroup.position.x;
-        const playerZ = G.playerGroup.position.z;
+        // Determine which player to target
+        // In splitscreen, randomly choose between player 1 and player 2
+        let playerX, playerZ;
+        const isNativeSplitscreen = typeof window.isNativeSplitscreen !== 'undefined' && window.isNativeSplitscreen;
+        
+        if (isNativeSplitscreen && G.player2Group && Math.random() < 0.5) {
+            // Target player 2
+            playerX = G.player2Group.position.x;
+            playerZ = G.player2Group.position.z;
+        } else {
+            // Target player 1
+            playerX = G.playerGroup.position.x;
+            playerZ = G.playerGroup.position.z;
+        }
         
         // Create the zone visual
         const zoneGroup = new THREE.Group();

@@ -1097,9 +1097,9 @@
             const inGracePeriod = elapsed < graceTime;
             
             // Check collision with mountains (if level has them) - skip during grace period
-            // Also skip for wizard fireballs and scythe waves - magical projectiles pass through walls
+            // Also skip for wizard fireballs, scythe waves, and dragon fireballs - they pass through walls
             let hitMountain = false;
-            if (!inGracePeriod && !fireball.isWizardFireball && !fireball.isScytheWave && G.levelConfig.mountains && G.levelConfig.mountains.length > 0) {
+            if (!inGracePeriod && !fireball.isWizardFireball && !fireball.isScytheWave && !fireball.isDragonFireball && G.levelConfig.mountains && G.levelConfig.mountains.length > 0) {
                 for (const mtn of G.levelConfig.mountains) {
                     const distToMountain = Math.sqrt(
                         (fireball.mesh.position.x - mtn.x) ** 2 +
@@ -1115,9 +1115,9 @@
             }
             
             // Check collision with canyon walls - skip during grace period
-            // Also skip for wizard fireballs and scythe waves - magical projectiles pass through walls
+            // Also skip for wizard fireballs, scythe waves, and dragon fireballs
             let hitCanyonWall = false;
-            if (!inGracePeriod && !fireball.isWizardFireball && !fireball.isScytheWave) {
+            if (!inGracePeriod && !fireball.isWizardFireball && !fireball.isScytheWave && !fireball.isDragonFireball) {
                 for (const wall of G.canyonWalls) {
                     // Transform fireball position into wall's local space
                     const cos = Math.cos(-wall.rotation);
@@ -1139,9 +1139,9 @@
             }
 
             // Check collision with impassable cliffs - skip during grace period
-            // Also skip for wizard fireballs and scythe waves - magical projectiles pass through obstacles
+            // Also skip for wizard fireballs, scythe waves, and dragon fireballs
             let hitCliff = false;
-            if (!inGracePeriod && !fireball.isWizardFireball && !fireball.isScytheWave) {
+            if (!inGracePeriod && !fireball.isWizardFireball && !fireball.isScytheWave && !fireball.isDragonFireball) {
                 for (const cliff of G.impassableCliffs) {
                     const distToCliff = Math.sqrt(
                         (fireball.mesh.position.x - cliff.x) ** 2 +
