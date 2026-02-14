@@ -33,6 +33,8 @@
             buildKnight(goblinGrp);
         } else if (G.computerTheme) {
             buildBug(goblinGrp);
+        } else if (G.enchantedTheme) {
+            buildPixie(goblinGrp);
         } else {
             buildStandardGoblin(goblinGrp, textures);
         }
@@ -531,6 +533,89 @@
         }
 
         group.userData.isBug = true;
+    }
+    
+    function buildPixie(group) {
+        // PIXIE - tiny fairy creature for enchanted theme
+        const skinColor = 0xFFE4E1;  // Misty rose
+        const wingColor = 0x98FB98;  // Pale green
+        const hairColor = 0xFF69B4;  // Hot pink
+
+        // Tiny body
+        const bodyGeometry = new THREE.CylinderGeometry(0.15, 0.15, 0.3, 8);
+        const bodyMaterial = new THREE.MeshLambertMaterial({ color: skinColor });
+        const body = new THREE.Mesh(bodyGeometry, bodyMaterial);
+        body.position.y = 1.2;
+        body.castShadow = true;
+        group.add(body);
+
+        // Head
+        const headGeometry = new THREE.SphereGeometry(0.18, 12, 12);
+        const head = new THREE.Mesh(headGeometry, bodyMaterial);
+        head.position.y = 1.65;
+        head.castShadow = true;
+        group.add(head);
+
+        // Spiky hair
+        for (let i = 0; i < 6; i++) {
+            const hairGeometry = new THREE.ConeGeometry(0.05, 0.2, 4);
+            const hairMaterial = new THREE.MeshLambertMaterial({ color: hairColor });
+            const hair = new THREE.Mesh(hairGeometry, hairMaterial);
+            const angle = (i / 6) * Math.PI * 2;
+            hair.position.set(Math.cos(angle) * 0.1, 1.85, Math.sin(angle) * 0.1);
+            hair.rotation.z = Math.cos(angle) * 0.4;
+            hair.rotation.x = Math.sin(angle) * 0.4;
+            group.add(hair);
+        }
+
+        // Big eyes
+        const eyeGeometry = new THREE.SphereGeometry(0.05, 8, 8);
+        const eyeMaterial = new THREE.MeshBasicMaterial({ color: 0x9932CC });
+        [-0.07, 0.07].forEach(x => {
+            const eye = new THREE.Mesh(eyeGeometry, eyeMaterial);
+            eye.position.set(x, 1.68, 0.15);
+            group.add(eye);
+        });
+
+        // Delicate wings (4 wings) - store references for animation
+        const wingGeometry = new THREE.PlaneGeometry(0.4, 0.6);
+        const wingMaterial = new THREE.MeshBasicMaterial({ 
+            color: wingColor, 
+            transparent: true, 
+            opacity: 0.5, 
+            side: THREE.DoubleSide 
+        });
+        group.wings = [];
+        [[-0.25, 0.3], [0.25, -0.3], [-0.2, 0.5], [0.2, -0.5]].forEach(([x, rotY], i) => {
+            const wing = new THREE.Mesh(wingGeometry, wingMaterial);
+            wing.position.set(x, 1.3, -0.1);
+            wing.rotation.y = rotY;
+            wing.userData.baseRotY = rotY;
+            wing.userData.isLeftWing = x < 0;
+            wing.scale.set(i < 2 ? 1 : 0.7, i < 2 ? 1 : 0.7, 1);
+            group.add(wing);
+            group.wings.push(wing);
+        });
+
+        // Sparkle particles - store for animation
+        group.sparkles = [];
+        for (let i = 0; i < 6; i++) {
+            const sparkleGeometry = new THREE.SphereGeometry(0.03, 6, 6);
+            const sparkleMaterial = new THREE.MeshBasicMaterial({ color: [0xFFD700, 0xFFFFFF, 0xFF69B4][i % 3] });
+            const sparkle = new THREE.Mesh(sparkleGeometry, sparkleMaterial);
+            sparkle.position.set(
+                (Math.random() - 0.5) * 0.8,
+                1.0 + Math.random() * 0.8,
+                (Math.random() - 0.5) * 0.6
+            );
+            sparkle.userData.baseY = sparkle.position.y;
+            sparkle.userData.floatOffset = Math.random() * Math.PI * 2;
+            group.add(sparkle);
+            group.sparkles.push(sparkle);
+        }
+        
+        // Mark as pixie for animation
+        group.userData.isPixie = true;
     }
     
     function buildStandardGoblin(group, textures) {

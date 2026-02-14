@@ -231,6 +231,128 @@
 
             birdGroup.leftWing = leftWing;
             birdGroup.rightWing = rightWing;
+        } else if (G.enchantedTheme) {
+            // GIANT BUTTERFLY - large ornate butterfly for enchanted theme
+            const bodyColor = 0x8B4513;
+            const wingColors = [0xFF69B4, 0x9370DB, 0x00CED1, 0xFFD700];
+
+            // Fuzzy body
+            const bodyGeometry = new THREE.CylinderGeometry(0.15, 0.18, 0.7, 8);
+            const bodyMaterial = new THREE.MeshLambertMaterial({ color: bodyColor });
+            const body = new THREE.Mesh(bodyGeometry, bodyMaterial);
+            body.rotation.x = Math.PI / 6;
+            body.castShadow = true;
+            birdGroup.add(body);
+
+            // Head
+            const headGeometry = new THREE.SphereGeometry(0.15, 10, 10);
+            const head = new THREE.Mesh(headGeometry, bodyMaterial);
+            head.position.set(0, 0.5, 0.1);
+            birdGroup.add(head);
+
+            // Compound eyes
+            const eyeGeometry = new THREE.SphereGeometry(0.07, 8, 8);
+            const eyeMaterial = new THREE.MeshBasicMaterial({ color: 0x000000 });
+            [-0.08, 0.08].forEach(x => {
+                const eye = new THREE.Mesh(eyeGeometry, eyeMaterial);
+                eye.position.set(x, 0.55, 0.2);
+                birdGroup.add(eye);
+            });
+
+            // Curly antennae
+            const antennaGeometry = new THREE.CylinderGeometry(0.015, 0.015, 0.35, 6);
+            const antennaMaterial = new THREE.MeshLambertMaterial({ color: 0x333333 });
+            [-0.06, 0.06].forEach((x, i) => {
+                const antenna = new THREE.Mesh(antennaGeometry, antennaMaterial);
+                antenna.position.set(x, 0.75, 0.05);
+                antenna.rotation.z = x * 2;
+                birdGroup.add(antenna);
+                
+                // Antenna tip
+                const tipGeometry = new THREE.SphereGeometry(0.04, 6, 6);
+                const tip = new THREE.Mesh(tipGeometry, antennaMaterial);
+                tip.position.set(x * 2.5, 0.9, 0.05);
+                birdGroup.add(tip);
+            });
+
+            // Large ornate wings (upper pair)
+            const wingGeometry = new THREE.CircleGeometry(0.8, 16, 0, Math.PI);
+            const leftWingMaterial = new THREE.MeshBasicMaterial({ 
+                color: 0xFF69B4, 
+                transparent: true, 
+                opacity: 0.7, 
+                side: THREE.DoubleSide 
+            });
+            const rightWingMaterial = new THREE.MeshBasicMaterial({ 
+                color: 0x9370DB, 
+                transparent: true, 
+                opacity: 0.7, 
+                side: THREE.DoubleSide 
+            });
+            
+            const leftWing = new THREE.Mesh(wingGeometry, leftWingMaterial);
+            leftWing.position.set(-0.65, 0, 0);
+            leftWing.rotation.y = 0.8;
+            leftWing.rotation.z = -0.3;
+            birdGroup.add(leftWing);
+            
+            const rightWing = new THREE.Mesh(wingGeometry, rightWingMaterial);
+            rightWing.position.set(0.65, 0, 0);
+            rightWing.rotation.y = -0.8;
+            rightWing.rotation.z = 0.3;
+            rightWing.scale.x = -1;
+            birdGroup.add(rightWing);
+
+            // Lower wings (smaller)
+            const lowerWingGeometry = new THREE.CircleGeometry(0.45, 12);
+            const lowerLeftMaterial = new THREE.MeshBasicMaterial({ 
+                color: 0x00CED1, 
+                transparent: true, 
+                opacity: 0.6, 
+                side: THREE.DoubleSide 
+            });
+            const lowerRightMaterial = new THREE.MeshBasicMaterial({ 
+                color: 0xFFD700, 
+                transparent: true, 
+                opacity: 0.6, 
+                side: THREE.DoubleSide 
+            });
+            
+            const lowerLeftWing = new THREE.Mesh(lowerWingGeometry, lowerLeftMaterial);
+            lowerLeftWing.position.set(-0.45, -0.3, -0.1);
+            lowerLeftWing.rotation.y = 0.6;
+            birdGroup.add(lowerLeftWing);
+            
+            const lowerRightWing = new THREE.Mesh(lowerWingGeometry, lowerRightMaterial);
+            lowerRightWing.position.set(0.45, -0.3, -0.1);
+            lowerRightWing.rotation.y = -0.6;
+            birdGroup.add(lowerRightWing);
+
+            // Wing spots (white dots)
+            const spotGeometry = new THREE.CircleGeometry(0.08, 8);
+            const spotMaterial = new THREE.MeshBasicMaterial({ color: 0xFFFFFF, side: THREE.DoubleSide });
+            [[0.45, 0.3, 0.01], [-0.45, 0.3, 0.01], [0.25, 0, 0.01], [-0.25, 0, 0.01]].forEach(pos => {
+                const spot = new THREE.Mesh(spotGeometry, spotMaterial);
+                spot.position.set(...pos);
+                birdGroup.add(spot);
+            });
+
+            // Pollen trail
+            for (let i = 0; i < 4; i++) {
+                const pollenGeometry = new THREE.SphereGeometry(0.04, 6, 6);
+                const pollenMaterial = new THREE.MeshBasicMaterial({ color: 0xFFFF00, transparent: true, opacity: 0.6 });
+                const pollen = new THREE.Mesh(pollenGeometry, pollenMaterial);
+                pollen.position.set(
+                    (Math.random() - 0.5) * 0.3,
+                    -0.3 - i * 0.12,
+                    -0.15 - i * 0.08
+                );
+                birdGroup.add(pollen);
+            }
+
+            birdGroup.leftWing = leftWing;
+            birdGroup.rightWing = rightWing;
+            birdGroup.isGiantButterfly = true;
         } else {
             // Standard bird
             // Bird body

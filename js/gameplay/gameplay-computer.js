@@ -910,9 +910,8 @@
         // Determine which player to target
         // In splitscreen, randomly choose between player 1 and player 2
         let playerX, playerZ;
-        const isNativeSplitscreen = typeof window.isNativeSplitscreen !== 'undefined' && window.isNativeSplitscreen;
         
-        if (isNativeSplitscreen && G.player2Group && Math.random() < 0.5) {
+        if (typeof isNativeSplitscreen !== 'undefined' && isNativeSplitscreen && G.player2Group && Math.random() < 0.5) {
             // Target player 2
             playerX = G.player2Group.position.x;
             playerZ = G.player2Group.position.z;

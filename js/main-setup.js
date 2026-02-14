@@ -94,6 +94,22 @@ function initSetup() {
     G.lastDamageTime = 0;
     G.damageCooldown = 2500; // ms between damage from G.goblins
     G.damageFlashTime = 0;
+    
+    // Shrink/Grow mechanic for enchanted level
+    G.playerScale = 1.0;           // Current player scale (1.0 = normal)
+    G.playerShrunk = false;        // Is player currently shrunk?
+    G.playerGiant = false;         // Is player currently giant?
+    G.giantEndTime = 0;            // When does giant mode expire?
+    G.shrinkScale = 0.4;           // Scale when shrunk
+    G.giantScale = 1.8;            // Scale when giant
+    G.giantDuration = 8000;        // How long giant mode lasts (ms)
+    
+    // Player 2 shrink/grow (splitscreen)
+    G.player2Scale = 1.0;
+    G.player2Shrunk = false;
+    G.player2Giant = false;
+    G.giant2EndTime = 0;
+    
     G.tornadoSpinActive = false;
     G.tornadoSpinStartTime = 0;
     G.tornadoSpinActive2 = false;
@@ -2571,6 +2587,403 @@ function initSetup() {
         G.trees.push({ mesh: treeGroup, type: treeType, radius: treeRadius });
     });
 
+    // Giant Trees - massive ancient trees for enchanted theme
+    G.giantTrees = [];
+    if (G.levelConfig.giantTrees) {
+        const giantTreeTextures = getTerrainTextures(THREE);
+        G.levelConfig.giantTrees.forEach(treeConfig => {
+            const giantTreeGroup = new THREE.Group();
+            const scale = treeConfig.scale || 1.0;
+            
+            // Tall trunk - dark brown ancient bark (reduced from 12 to 6 for better proportions)
+            const trunkGeometry = new THREE.CylinderGeometry(0.8 * scale, 1.2 * scale, 6 * scale, 12);
+            const trunkMaterial = new THREE.MeshLambertMaterial({ 
+                color: 0x3D2817,  // Dark ancient wood
+                map: giantTreeTextures.bark
+            });
+            const trunk = new THREE.Mesh(trunkGeometry, trunkMaterial);
+            trunk.position.y = 3 * scale;
+            trunk.castShadow = true;
+            giantTreeGroup.add(trunk);
+            
+            // Root bulge at base
+            const rootGeometry = new THREE.SphereGeometry(1.5 * scale, 8, 6);
+            const root = new THREE.Mesh(rootGeometry, trunkMaterial);
+            root.position.y = 0.3 * scale;
+            root.scale.y = 0.4;
+            root.castShadow = true;
+            giantTreeGroup.add(root);
+            
+            // Spreading roots
+            for (let i = 0; i < 4; i++) {
+                const rootArmGeometry = new THREE.CylinderGeometry(0.1 * scale, 0.3 * scale, 1.5 * scale, 6);
+                const rootArm = new THREE.Mesh(rootArmGeometry, trunkMaterial);
+                const angle = (i / 4) * Math.PI * 2;
+                rootArm.position.set(
+                    Math.cos(angle) * 1.2 * scale,
+                    0,
+                    Math.sin(angle) * 1.2 * scale
+                );
+                rootArm.rotation.z = Math.PI / 3;
+                rootArm.rotation.y = -angle;
+                rootArm.castShadow = true;
+                giantTreeGroup.add(rootArm);
+            }
+            
+            // Canopy - layered spheres
+            const foliageMaterial = new THREE.MeshLambertMaterial({ 
+                color: 0x2D5A27,  // Deep forest green
+                map: giantTreeTextures.foliage
+            });
+            
+            // Main canopy
+            const mainCanopyGeometry = new THREE.SphereGeometry(2.5 * scale, 12, 10);
+            const mainCanopy = new THREE.Mesh(mainCanopyGeometry, foliageMaterial);
+            mainCanopy.position.y = 7 * scale;
+            mainCanopy.scale.y = 0.6;
+            mainCanopy.castShadow = true;
+            giantTreeGroup.add(mainCanopy);
+            
+            // Secondary canopy clusters
+            for (let i = 0; i < 5; i++) {
+                const clusterGeometry = new THREE.SphereGeometry(1.2 * scale, 8, 8);
+                const cluster = new THREE.Mesh(clusterGeometry, foliageMaterial);
+                const angle = (i / 5) * Math.PI * 2;
+                cluster.position.set(
+                    Math.cos(angle) * 1.8 * scale,
+                    6 * scale + Math.random() * 1 * scale,
+                    Math.sin(angle) * 1.8 * scale
+                );
+                cluster.castShadow = true;
+                giantTreeGroup.add(cluster);
+            }
+            
+            // Glowing fairy lights in canopy (enchanted effect)
+            const lightMaterial = new THREE.MeshBasicMaterial({ 
+                color: 0xFFFF88,
+                transparent: true,
+                opacity: 0.8
+            });
+            for (let i = 0; i < 6; i++) {
+                const lightGeometry = new THREE.SphereGeometry(0.1 * scale, 6, 6);
+                const light = new THREE.Mesh(lightGeometry, lightMaterial);
+                const angle = Math.random() * Math.PI * 2;
+                const dist = 1 + Math.random() * 1.5;
+                light.position.set(
+                    Math.cos(angle) * dist * scale,
+                    5 * scale + Math.random() * 3 * scale,
+                    Math.sin(angle) * dist * scale
+                );
+                giantTreeGroup.add(light);
+            }
+            
+            // Hanging vines/moss
+            const vineMaterial = new THREE.MeshLambertMaterial({ color: 0x4A7A42 });
+            for (let i = 0; i < 3; i++) {
+                const vineGeometry = new THREE.CylinderGeometry(0.03 * scale, 0.05 * scale, 2 * scale, 4);
+                const vine = new THREE.Mesh(vineGeometry, vineMaterial);
+                const angle = (i / 3) * Math.PI * 2 + Math.random() * 0.5;
+                vine.position.set(
+                    Math.cos(angle) * 1.5 * scale,
+                    5 * scale,
+                    Math.sin(angle) * 1.5 * scale
+                );
+                giantTreeGroup.add(vine);
+            }
+            
+            const terrainHeight = getTerrainHeight(treeConfig.x, treeConfig.z);
+            giantTreeGroup.position.set(treeConfig.x, terrainHeight, treeConfig.z);
+            G.scene.add(giantTreeGroup);
+            
+            // Collision radius - just the trunk width
+            G.giantTrees.push({ 
+                mesh: giantTreeGroup, 
+                radius: 1.0 * scale,
+                x: treeConfig.x,
+                z: treeConfig.z
+            });
+            // Also add to regular trees array for collision detection
+            G.trees.push({ mesh: giantTreeGroup, type: 'giantTree', radius: 1.0 * scale });
+        });
+    }
+
+    // Fairy Rings - magical mushroom circles for enchanted theme
+    G.fairyRings = [];
+    if (G.levelConfig.fairyRings) {
+        G.levelConfig.fairyRings.forEach(ringConfig => {
+            const ringGroup = new THREE.Group();
+            const ringRadius = ringConfig.radius || 6;
+            const mushroomCount = Math.floor(ringRadius * 1.5);
+            
+            // Ring of small red-white mushrooms
+            for (let i = 0; i < mushroomCount; i++) {
+                const angle = (i / mushroomCount) * Math.PI * 2;
+                const x = Math.cos(angle) * ringRadius;
+                const z = Math.sin(angle) * ringRadius;
+                
+                // Mushroom cap - red with white spots
+                const capGeometry = new THREE.SphereGeometry(0.3, 8, 8, 0, Math.PI * 2, 0, Math.PI / 2);
+                const capMaterial = new THREE.MeshLambertMaterial({ color: 0xFF4444 });
+                const cap = new THREE.Mesh(capGeometry, capMaterial);
+                cap.position.set(x, 0.4, z);
+                cap.castShadow = true;
+                ringGroup.add(cap);
+                
+                // Stem
+                const stemGeometry = new THREE.CylinderGeometry(0.08, 0.12, 0.35, 6);
+                const stemMaterial = new THREE.MeshLambertMaterial({ color: 0xFFF8DC });
+                const stem = new THREE.Mesh(stemGeometry, stemMaterial);
+                stem.position.set(x, 0.18, z);
+                stem.castShadow = true;
+                ringGroup.add(stem);
+                
+                // White spots on cap
+                for (let j = 0; j < 3; j++) {
+                    const spotGeometry = new THREE.SphereGeometry(0.06, 6, 6);
+                    const spotMaterial = new THREE.MeshBasicMaterial({ color: 0xFFFFFF });
+                    const spot = new THREE.Mesh(spotGeometry, spotMaterial);
+                    const spotAngle = (j / 3) * Math.PI * 2 + Math.random();
+                    spot.position.set(
+                        x + Math.cos(spotAngle) * 0.15,
+                        0.45,
+                        z + Math.sin(spotAngle) * 0.15
+                    );
+                    ringGroup.add(spot);
+                }
+            }
+            
+            // Glowing green center circle
+            const glowGeometry = new THREE.CircleGeometry(ringRadius * 0.8, 24);
+            const glowMaterial = new THREE.MeshBasicMaterial({ 
+                color: 0x98FB98, 
+                transparent: true, 
+                opacity: 0.25,
+                side: THREE.DoubleSide
+            });
+            const glow = new THREE.Mesh(glowGeometry, glowMaterial);
+            glow.position.y = 0.05;
+            glow.rotation.x = -Math.PI / 2;
+            ringGroup.add(glow);
+            
+            // Floating sparkles in center
+            for (let i = 0; i < 8; i++) {
+                const sparkleGeometry = new THREE.SphereGeometry(0.08, 6, 6);
+                const sparkleColors = [0xFFD700, 0xFFFFFF, 0xFF69B4, 0x98FB98];
+                const sparkleMaterial = new THREE.MeshBasicMaterial({ 
+                    color: sparkleColors[i % sparkleColors.length],
+                    transparent: true,
+                    opacity: 0.8
+                });
+                const sparkle = new THREE.Mesh(sparkleGeometry, sparkleMaterial);
+                const sparkleAngle = Math.random() * Math.PI * 2;
+                const sparkleDist = Math.random() * ringRadius * 0.6;
+                sparkle.position.set(
+                    Math.cos(sparkleAngle) * sparkleDist,
+                    0.5 + Math.random() * 1.5,
+                    Math.sin(sparkleAngle) * sparkleDist
+                );
+                sparkle.userData.phase = Math.random() * Math.PI * 2;
+                ringGroup.add(sparkle);
+            }
+            
+            const terrainHeight = getTerrainHeight(ringConfig.x, ringConfig.z);
+            ringGroup.position.set(ringConfig.x, terrainHeight, ringConfig.z);
+            G.scene.add(ringGroup);
+            
+            G.fairyRings.push({ 
+                mesh: ringGroup, 
+                x: ringConfig.x, 
+                z: ringConfig.z, 
+                radius: ringRadius 
+            });
+        });
+    }
+
+    // Enchanted Mushrooms - large glowing mushrooms
+    G.enchantedMushrooms = [];
+    if (G.levelConfig.enchantedMushrooms) {
+        G.levelConfig.enchantedMushrooms.forEach(mushroomConfig => {
+            const mushroomGroup = new THREE.Group();
+            const scale = mushroomConfig.scale || 1.0;
+            
+            // Large stem
+            const stemGeometry = new THREE.CylinderGeometry(0.4 * scale, 0.6 * scale, 2 * scale, 8);
+            const stemMaterial = new THREE.MeshLambertMaterial({ color: 0xFFF8DC });
+            const stem = new THREE.Mesh(stemGeometry, stemMaterial);
+            stem.position.y = 1 * scale;
+            stem.castShadow = true;
+            mushroomGroup.add(stem);
+            
+            // Big pink dome cap
+            const capGeometry = new THREE.SphereGeometry(1.2 * scale, 12, 12, 0, Math.PI * 2, 0, Math.PI / 2);
+            const capMaterial = new THREE.MeshLambertMaterial({ color: 0xFF1493 });
+            const cap = new THREE.Mesh(capGeometry, capMaterial);
+            cap.position.y = 2 * scale;
+            cap.castShadow = true;
+            mushroomGroup.add(cap);
+            
+            // White spots on cap
+            for (let i = 0; i < 8; i++) {
+                const spotGeometry = new THREE.SphereGeometry(0.15 * scale + Math.random() * 0.1 * scale, 8, 8);
+                const spotMaterial = new THREE.MeshBasicMaterial({ color: 0xFFFFFF });
+                const spot = new THREE.Mesh(spotGeometry, spotMaterial);
+                const angle = (i / 8) * Math.PI * 2;
+                const r = 0.6 * scale + Math.random() * 0.4 * scale;
+                spot.position.set(
+                    Math.cos(angle) * r,
+                    2.2 * scale + Math.random() * 0.3 * scale,
+                    Math.sin(angle) * r
+                );
+                spot.scale.y = 0.3;
+                mushroomGroup.add(spot);
+            }
+            
+            // Turquoise glow underneath cap
+            const glowGeometry = new THREE.CircleGeometry(1.0 * scale, 12);
+            const glowMaterial = new THREE.MeshBasicMaterial({ 
+                color: 0x00FFAA, 
+                transparent: true, 
+                opacity: 0.4,
+                side: THREE.DoubleSide
+            });
+            const glow = new THREE.Mesh(glowGeometry, glowMaterial);
+            glow.position.y = 1.9 * scale;
+            glow.rotation.x = Math.PI / 2;
+            mushroomGroup.add(glow);
+            
+            const terrainHeight = getTerrainHeight(mushroomConfig.x, mushroomConfig.z);
+            mushroomGroup.position.set(mushroomConfig.x, terrainHeight, mushroomConfig.z);
+            G.scene.add(mushroomGroup);
+            
+            G.enchantedMushrooms.push({ 
+                mesh: mushroomGroup, 
+                x: mushroomConfig.x, 
+                z: mushroomConfig.z, 
+                radius: 0.8 * scale 
+            });
+            // Add to trees for collision
+            G.trees.push({ mesh: mushroomGroup, type: 'enchantedMushroom', radius: 0.6 * scale });
+        });
+    }
+
+    // Crystal Flowers - magical rainbow flowers
+    G.crystalFlowers = [];
+    if (G.levelConfig.crystalFlowers) {
+        const petalColors = [0xFF69B4, 0x9370DB, 0x00CED1, 0xFFD700, 0xFF6B6B, 0x98FB98];
+        G.levelConfig.crystalFlowers.forEach(flowerConfig => {
+            const flowerGroup = new THREE.Group();
+            
+            // Green stem
+            const stemGeometry = new THREE.CylinderGeometry(0.06, 0.1, 1.2, 6);
+            const stemMaterial = new THREE.MeshLambertMaterial({ color: 0x228B22 });
+            const stem = new THREE.Mesh(stemGeometry, stemMaterial);
+            stem.position.y = 0.6;
+            stem.castShadow = true;
+            flowerGroup.add(stem);
+            
+            // Crystal petals as elongated octahedrons
+            for (let i = 0; i < 6; i++) {
+                const petalGeometry = new THREE.OctahedronGeometry(0.25, 0);
+                const petalMaterial = new THREE.MeshBasicMaterial({ 
+                    color: petalColors[i],
+                    transparent: true,
+                    opacity: 0.75
+                });
+                const petal = new THREE.Mesh(petalGeometry, petalMaterial);
+                const angle = (i / 6) * Math.PI * 2;
+                petal.position.set(
+                    Math.cos(angle) * 0.3,
+                    1.3,
+                    Math.sin(angle) * 0.3
+                );
+                petal.rotation.z = Math.PI / 4;
+                petal.scale.set(0.5, 1.5, 0.5);
+                flowerGroup.add(petal);
+            }
+            
+            // Center glowing gem
+            const centerGeometry = new THREE.IcosahedronGeometry(0.18, 0);
+            const centerMaterial = new THREE.MeshBasicMaterial({ color: 0xFFFFFF });
+            const center = new THREE.Mesh(centerGeometry, centerMaterial);
+            center.position.y = 1.35;
+            flowerGroup.add(center);
+            
+            // Small leaves
+            const leafGeometry = new THREE.PlaneGeometry(0.25, 0.4);
+            const leafMaterial = new THREE.MeshLambertMaterial({ 
+                color: 0x228B22, 
+                side: THREE.DoubleSide 
+            });
+            [-0.12, 0.12].forEach((x, idx) => {
+                const leaf = new THREE.Mesh(leafGeometry, leafMaterial);
+                leaf.position.set(x, 0.5, 0);
+                leaf.rotation.y = idx === 0 ? 0.5 : -0.5;
+                leaf.rotation.z = idx === 0 ? 0.3 : -0.3;
+                flowerGroup.add(leaf);
+            });
+            
+            const terrainHeight = getTerrainHeight(flowerConfig.x, flowerConfig.z);
+            flowerGroup.position.set(flowerConfig.x, terrainHeight, flowerConfig.z);
+            G.scene.add(flowerGroup);
+            
+            G.crystalFlowers.push({ 
+                mesh: flowerGroup, 
+                x: flowerConfig.x, 
+                z: flowerConfig.z 
+            });
+        });
+    }
+
+    // Rainbow Arcs - small floating rainbows
+    G.rainbowArcs = [];
+    if (G.levelConfig.rainbowArcs) {
+        const rainbowColors = [0xFF0000, 0xFF7F00, 0xFFFF00, 0x00FF00, 0x0000FF, 0x4B0082, 0x9400D3];
+        G.levelConfig.rainbowArcs.forEach(arcConfig => {
+            const arcGroup = new THREE.Group();
+            const height = arcConfig.height || 8;
+            
+            // Rainbow bands
+            rainbowColors.forEach((color, i) => {
+                const arcGeometry = new THREE.TorusGeometry(2.5 - i * 0.15, 0.1, 8, 32, Math.PI);
+                const arcMaterial = new THREE.MeshBasicMaterial({ 
+                    color: color,
+                    transparent: true,
+                    opacity: 0.7
+                });
+                const arc = new THREE.Mesh(arcGeometry, arcMaterial);
+                arc.rotation.x = Math.PI / 2;
+                arcGroup.add(arc);
+            });
+            
+            // Golden/white sparkles along the arc
+            for (let i = 0; i < 5; i++) {
+                const sparkleGeometry = new THREE.SphereGeometry(0.1, 6, 6);
+                const sparkleMaterial = new THREE.MeshBasicMaterial({ 
+                    color: i % 2 === 0 ? 0xFFD700 : 0xFFFFFF 
+                });
+                const sparkle = new THREE.Mesh(sparkleGeometry, sparkleMaterial);
+                const sparkleAngle = (i / 5) * Math.PI;
+                sparkle.position.set(
+                    Math.cos(sparkleAngle) * 2.2,
+                    Math.sin(sparkleAngle) * 2.2,
+                    0
+                );
+                arcGroup.add(sparkle);
+            }
+            
+            const terrainHeight = getTerrainHeight(arcConfig.x, arcConfig.z);
+            arcGroup.position.set(arcConfig.x, terrainHeight + height, arcConfig.z);
+            G.scene.add(arcGroup);
+            
+            G.rainbowArcs.push({ 
+                mesh: arcGroup, 
+                x: arcConfig.x, 
+                z: arcConfig.z,
+                height: height
+            });
+        });
+    }
+
     // Rocks - use level config if available, otherwise use default positions
     G.rocks = [];
     G.rockPositions = G.levelConfig.rockPositions || [
@@ -3713,6 +4126,85 @@ function initSetup() {
         presentGroup.position.set(pos.x, terrainHeight, pos.z);
         G.scene.add(presentGroup);
         G.herzmanPickups.push({ mesh: presentGroup, collected: false, radius: 1.5 });
+    });
+
+    // Size Potions - for enchanted theme shrink/grow mechanic
+    G.sizePotions = [];
+    const sizePotionPositions = G.levelConfig.sizePotionPositions || [];
+
+    sizePotionPositions.forEach(pos => {
+        const potionGroup = new THREE.Group();
+        
+        // Potion bottle body
+        const bottleGeometry = new THREE.CylinderGeometry(0.25, 0.35, 0.7, 12);
+        const bottleMaterial = new THREE.MeshPhongMaterial({ 
+            color: 0xFF69B4, // Hot pink
+            transparent: true,
+            opacity: 0.7,
+            shininess: 100
+        });
+        const bottle = new THREE.Mesh(bottleGeometry, bottleMaterial);
+        bottle.position.y = 0.5;
+        bottle.castShadow = true;
+        potionGroup.add(bottle);
+        
+        // Bottle neck
+        const neckGeometry = new THREE.CylinderGeometry(0.12, 0.18, 0.25, 10);
+        const neck = new THREE.Mesh(neckGeometry, bottleMaterial);
+        neck.position.y = 0.95;
+        potionGroup.add(neck);
+        
+        // Cork stopper
+        const corkGeometry = new THREE.CylinderGeometry(0.1, 0.12, 0.15, 8);
+        const corkMaterial = new THREE.MeshLambertMaterial({ color: 0x8B4513 }); // Brown
+        const cork = new THREE.Mesh(corkGeometry, corkMaterial);
+        cork.position.y = 1.15;
+        potionGroup.add(cork);
+        
+        // Glowing potion liquid inside
+        const liquidGeometry = new THREE.CylinderGeometry(0.2, 0.3, 0.55, 10);
+        const liquidMaterial = new THREE.MeshBasicMaterial({ 
+            color: 0xFF1493, // Deep pink glow
+            transparent: true,
+            opacity: 0.8
+        });
+        const liquid = new THREE.Mesh(liquidGeometry, liquidMaterial);
+        liquid.position.y = 0.45;
+        potionGroup.add(liquid);
+        
+        // Sparkle particles inside
+        for (let i = 0; i < 5; i++) {
+            const sparkleGeometry = new THREE.SphereGeometry(0.03, 6, 6);
+            const sparkleMaterial = new THREE.MeshBasicMaterial({ 
+                color: 0xFFFFFF,
+                transparent: true,
+                opacity: 0.8
+            });
+            const sparkle = new THREE.Mesh(sparkleGeometry, sparkleMaterial);
+            sparkle.position.set(
+                (Math.random() - 0.5) * 0.3,
+                0.3 + Math.random() * 0.3,
+                (Math.random() - 0.5) * 0.3
+            );
+            sparkle.userData.floatOffset = Math.random() * Math.PI * 2;
+            potionGroup.add(sparkle);
+        }
+        
+        // Outer glow effect
+        const glowGeometry = new THREE.SphereGeometry(0.6, 8, 8);
+        const glowMaterial = new THREE.MeshBasicMaterial({ 
+            color: 0xFF69B4, 
+            transparent: true, 
+            opacity: 0.3 
+        });
+        const glow = new THREE.Mesh(glowGeometry, glowMaterial);
+        glow.position.y = 0.6;
+        potionGroup.add(glow);
+        
+        const terrainHeight = getTerrainHeight(pos.x, pos.z);
+        potionGroup.position.set(pos.x, terrainHeight, pos.z);
+        G.scene.add(potionGroup);
+        G.sizePotions.push({ mesh: potionGroup, collected: false, radius: 1.5 });
     });
 
     // Materials for bridge repair - only if level has materials

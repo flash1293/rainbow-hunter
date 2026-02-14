@@ -324,6 +324,60 @@
       "levels": [9],
       "health": 50,
       "damage": 2
+    },
+    {
+      "id": "pixie",
+      "name": "Pixie",
+      "description": "Winziger Feenwesen mit schillernden Flügeln und stacheligem rosa Haar. Flink und schwer zu treffen, schwirrt durch den verzauberten Hain.",
+      "tags": ["Feen", "Nahkampf", "Schnell"],
+      "levels": [10],
+      "health": 3,
+      "damage": 1
+    },
+    {
+      "id": "dark-fairy",
+      "name": "Dunkelfee",
+      "description": "Verdorbene Fee mit purpurnen Flügeln und magenta leuchtenden Augen. Wirft Schrumpfzauber auf Eindringlinge des heiligen Hains.",
+      "tags": ["Feen", "Elite", "Fernkampf", "Schrumpf"],
+      "levels": [10],
+      "health": 5,
+      "damage": 1
+    },
+    {
+      "id": "treant",
+      "name": "Treant",
+      "description": "Uralter Baumwächter mit massivem Rindenkörper, moosigem Blätterdach und sanft leuchtenden grünen Augen. Langsam aber unglaublich widerstandsfähig.",
+      "tags": ["Feen", "Boss", "Schwer"],
+      "levels": [10],
+      "health": 20,
+      "damage": 2
+    },
+    {
+      "id": "enchantress",
+      "name": "Zauberinne",
+      "description": "Elegante Magierin in fließender purpurner Robe mit lavendelfarbenem Haar. Trägt einen Kristallstab und wirft vielfältige Naturzauber.",
+      "tags": ["Feen", "Magie", "Fernkampf"],
+      "levels": [10],
+      "health": 7,
+      "damage": 1
+    },
+    {
+      "id": "giant-butterfly",
+      "name": "Riesenschmetterling",
+      "description": "Prächtiger übergroßer Schmetterling mit regenbogenfarbenen Flügeln. Kreist über dem Hain und lässt Schlafpollen auf Abenteurer herabfallen.",
+      "tags": ["Feen", "Fliegend", "Schlaf"],
+      "levels": [10],
+      "health": 2,
+      "damage": 1
+    },
+    {
+      "id": "corrupted-unicorn",
+      "name": "Verdorbenes Einhorn",
+      "description": "Einst majestätisches Einhorn, nun von dunkler Magie verdorben. Schwarzer Körper mit violetter Mähne, gebrochenes Horn und blutrote Augen. Schwebt über dem Wald und schießt vernichtende Regenbogenstrahlen.",
+      "tags": ["Feen", "Boss", "Fliegend", "Feuerball"],
+      "levels": [10],
+      "health": 60,
+      "damage": 2
     }
   ],
   "items": [
@@ -392,6 +446,12 @@
       "name": "Portal",
       "description": "Leuchtende Teleportationsringe mit Säulen und Kugeln. Transportiert dich zum nächsten Level.",
       "category": "structure"
+    },
+    {
+      "id": "size-potion",
+      "name": "Größentrank",
+      "description": "Magische Flasche mit pink schimmerndem Inhalt. Stellt normale Größe wieder her wenn geschrumpft, oder macht temporär zu einem Riesen!",
+      "category": "special"
     }
   ],
   "hazards": [
@@ -443,6 +503,20 @@
       "description": "Periodischer Ausfall, der den Bildschirm verdunkelt. Bewegung normal, aber Sicht null.",
       "level": 9,
       "counter": "Merke dir deine Umgebung vor dem Ausfall"
+    },
+    {
+      "id": "thorn-patch",
+      "name": "Dornendickicht",
+      "description": "Dichtes Gestrüpp aus scharfen Dornenranken. Verursacht Schaden bei Kontakt.",
+      "level": 10,
+      "counter": "Umgehe das Dickicht oder springe darüber"
+    },
+    {
+      "id": "sleep-spore",
+      "name": "Schlafsporen",
+      "description": "Schwebende Wolke aus lavendelfarbenen Pilzsporen. Verlangsamt Spieler stark bei Kontakt.",
+      "level": 10,
+      "counter": "Halte den Atem an und laufe schnell hindurch"
     }
   ],
   "environment": [
@@ -555,6 +629,31 @@
       "id": "circuit-ground",
       "name": "Schaltkreisboden",
       "description": "Dunkler Boden mit leuchtenden cyan Gitterlinien. Das Fundament des digitalen Reichs."
+    },
+    {
+      "id": "giant-tree",
+      "name": "Riesenbaum",
+      "description": "Uralter massiver Baum mit dickem Stamm und üppiger Krone. Feenlichterfunken in seinen Blättern. Prägt das Erscheinungsbild des verzauberten Hains."
+    },
+    {
+      "id": "fairy-ring",
+      "name": "Feenring",
+      "description": "Mystischer Kreis aus kleinen rot-weißen Pilzen. Im Inneren schimmert magisches grünes Licht und goldene Funken tanzen."
+    },
+    {
+      "id": "enchanted-mushroom",
+      "name": "Zauberpilz",
+      "description": "Übergroßer Pilz mit pink leuchtender Kappe und weißen Punkten. Strahlt sanftes türkises Licht von unten aus."
+    },
+    {
+      "id": "crystal-flower",
+      "name": "Kristallblume",
+      "description": "Magische Blume mit kristallenen Blütenblättern in Regenbogenfarben. Leuchtet sanft im Nebel des Hains."
+    },
+    {
+      "id": "rainbow-arc",
+      "name": "Regenbogenbogen",
+      "description": "Kleiner schimmernder Regenbogen, der über Lichtungen schwebt. Funken golden und weiß entlang seiner Bänder."
     }
   ]
 }

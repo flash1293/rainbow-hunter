@@ -239,6 +239,97 @@
         });
     }
 
+    // Helper function to create rainbow bolt from a unicorn
+    function createRainbowBolt(unicorn, targetPlayer) {
+        const boltGroup = new THREE.Group();
+        const scale = unicorn.scale || 1;
+        
+        // Rainbow colors
+        const rainbowColors = [0xFF0000, 0xFF7F00, 0xFFFF00, 0x00FF00, 0x0000FF, 0x4B0082, 0x9400D3];
+        
+        // Core of the bolt - bright white/purple
+        const coreGeometry = new THREE.SphereGeometry(0.4 * scale, 12, 12);
+        const coreMaterial = new THREE.MeshBasicMaterial({
+            color: 0xFFFFFF,
+            transparent: true,
+            opacity: 0.9
+        });
+        const core = new THREE.Mesh(coreGeometry, coreMaterial);
+        boltGroup.add(core);
+        
+        // Inner glow
+        const innerGlowGeometry = new THREE.SphereGeometry(0.6 * scale, 12, 12);
+        const innerGlowMaterial = new THREE.MeshBasicMaterial({
+            color: 0x9400D3,
+            transparent: true,
+            opacity: 0.5
+        });
+        const innerGlow = new THREE.Mesh(innerGlowGeometry, innerGlowMaterial);
+        boltGroup.add(innerGlow);
+        
+        // Rainbow ring
+        for (let i = 0; i < 7; i++) {
+            const ringGeometry = new THREE.TorusGeometry(0.8 * scale + i * 0.1 * scale, 0.05 * scale, 8, 16);
+            const ringMaterial = new THREE.MeshBasicMaterial({
+                color: rainbowColors[i],
+                transparent: true,
+                opacity: 0.7
+            });
+            const ring = new THREE.Mesh(ringGeometry, ringMaterial);
+            ring.rotation.x = Math.PI / 2;
+            ring.userData.rotateSpeed = 0.05 + i * 0.01;
+            boltGroup.add(ring);
+        }
+        
+        // Trailing sparkles
+        for (let i = 0; i < 8; i++) {
+            const sparkleGeometry = new THREE.SphereGeometry(0.1 * scale, 6, 6);
+            const sparkleMaterial = new THREE.MeshBasicMaterial({
+                color: rainbowColors[i % 7],
+                transparent: true,
+                opacity: 0.8
+            });
+            const sparkle = new THREE.Mesh(sparkleGeometry, sparkleMaterial);
+            sparkle.position.set(
+                (Math.random() - 0.5) * 1.5 * scale,
+                (Math.random() - 0.5) * 1.5 * scale,
+                (Math.random() - 0.5) * 1.5 * scale
+            );
+            boltGroup.add(sparkle);
+        }
+        
+        // Position at unicorn's horn area
+        boltGroup.position.set(
+            unicorn.mesh.position.x,
+            unicorn.mesh.position.y + 5 * scale, // Higher up since unicorn is flying
+            unicorn.mesh.position.z
+        );
+        
+        // Calculate direction to target with slight arc
+        const dirX = targetPlayer.position.x - boltGroup.position.x;
+        const dirY = (targetPlayer.position.y + 1) - boltGroup.position.y;
+        const dirZ = targetPlayer.position.z - boltGroup.position.z;
+        const length = Math.sqrt(dirX * dirX + dirY * dirY + dirZ * dirZ);
+        
+        G.scene.add(boltGroup);
+        
+        // Speed for rainbow bolt - medium speed
+        const speed = 0.25;
+        
+        G.fireballs.push({
+            mesh: boltGroup,
+            velocity: new THREE.Vector3(dirX / length * speed, dirY / length * speed, dirZ / length * speed),
+            radius: 2.5, // Moderate hit area
+            damage: 1,
+            trail: [],
+            lastTrailTime: 0,
+            isRainbowBolt: true,
+            spawnTime: Date.now(),
+            maxLifetime: 6000, // 6 seconds lifetime
+            rainbowPhase: 0
+        });
+    }
+
     // Helper function to create a fireball from a wizard goblin
     function createWizardFireball(wizard, targetPlayer) {
         const fbTextures = getTerrainTextures(THREE);
@@ -1174,6 +1265,7 @@
     // Export functions to global scope
     window.createDragonFireball = createDragonFireball;
     window.createScytheWave = createScytheWave;
+    window.createRainbowBolt = createRainbowBolt;
     window.createWizardFireball = createWizardFireball;
     window.createLavaMonsterFireball = createLavaMonsterFireball;
     window.createLavaTrail = createLavaTrail;

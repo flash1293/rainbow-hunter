@@ -2692,7 +2692,7 @@ function createHills(scene, THREE, hillPositions, hillColor, iceTheme, desertThe
 }
 
 // Create mountains (world boundaries)
-function createMountains(scene, THREE, mountainPositions, candyTheme, graveyardTheme, ruinsTheme, computerTheme) {
+function createMountains(scene, THREE, mountainPositions, candyTheme, graveyardTheme, ruinsTheme, computerTheme, enchantedTheme) {
     const textures = getTerrainTextures(THREE);
     mountainPositions.forEach(mtn => {
         if (computerTheme) {
@@ -2942,6 +2942,78 @@ function createMountains(scene, THREE, mountainPositions, candyTheme, graveyardT
                     mtn.z + wallDepth/2 + 0.05
                 );
                 scene.add(ivy);
+            }
+            
+        } else if (enchantedTheme) {
+            // Dense magical forest wall - impenetrable ancient tree barrier
+            const wallHeight = mtn.height;
+            const wallWidth = mtn.width;
+            const wallDepth = Math.min(mtn.width * 0.15, 8);
+            
+            // Dense foliage wall base
+            const foliageGeometry = new THREE.BoxGeometry(wallWidth, wallHeight * 0.7, wallDepth);
+            const foliageMaterial = new THREE.MeshLambertMaterial({ 
+                color: 0x1A4D1A,  // Very dark forest green
+            });
+            const foliageWall = new THREE.Mesh(foliageGeometry, foliageMaterial);
+            foliageWall.position.set(mtn.x, wallHeight * 0.35, mtn.z);
+            foliageWall.castShadow = true;
+            scene.add(foliageWall);
+            
+            // Add tree trunks visible through foliage
+            const trunkCount = Math.max(3, Math.floor(wallWidth / 8));
+            const trunkMaterial = new THREE.MeshLambertMaterial({ color: 0x3D2817 });
+            for (let i = 0; i < trunkCount; i++) {
+                const trunkX = mtn.x - wallWidth/2 + (i + 0.5) * (wallWidth / trunkCount);
+                const trunkGeometry = new THREE.CylinderGeometry(0.4, 0.6, wallHeight, 8);
+                const trunk = new THREE.Mesh(trunkGeometry, trunkMaterial);
+                trunk.position.set(trunkX, wallHeight/2, mtn.z);
+                trunk.castShadow = true;
+                scene.add(trunk);
+            }
+            
+            // Canopy on top - layered spherical foliage
+            const canopyMaterial = new THREE.MeshLambertMaterial({ color: 0x2D5A27 });
+            for (let i = 0; i < trunkCount; i++) {
+                const canopyX = mtn.x - wallWidth/2 + (i + 0.5) * (wallWidth / trunkCount);
+                const canopyGeometry = new THREE.SphereGeometry(wallDepth * 0.8, 8, 6);
+                const canopy = new THREE.Mesh(canopyGeometry, canopyMaterial);
+                canopy.position.set(canopyX, wallHeight * 0.85, mtn.z);
+                canopy.scale.y = 0.6;
+                canopy.castShadow = true;
+                scene.add(canopy);
+            }
+            
+            // Fairy lights scattered in the foliage
+            const lightMaterial = new THREE.MeshBasicMaterial({ 
+                color: 0xFFFF88,
+                transparent: true,
+                opacity: 0.7
+            });
+            for (let i = 0; i < wallWidth / 5; i++) {
+                const lightGeometry = new THREE.SphereGeometry(0.15, 6, 6);
+                const light = new THREE.Mesh(lightGeometry, lightMaterial);
+                light.position.set(
+                    mtn.x - wallWidth/2 + Math.random() * wallWidth,
+                    wallHeight * 0.3 + Math.random() * wallHeight * 0.5,
+                    mtn.z + (Math.random() - 0.5) * wallDepth * 0.8
+                );
+                scene.add(light);
+            }
+            
+            // Hanging vines on front
+            const vineMaterial = new THREE.MeshLambertMaterial({ color: 0x4A7A42 });
+            for (let i = 0; i < wallWidth / 10; i++) {
+                const vineLength = 2 + Math.random() * 3;
+                const vineGeometry = new THREE.CylinderGeometry(0.04, 0.06, vineLength, 4);
+                const vine = new THREE.Mesh(vineGeometry, vineMaterial);
+                vine.position.set(
+                    mtn.x - wallWidth/2 + Math.random() * wallWidth,
+                    wallHeight * 0.6 - vineLength/2,
+                    mtn.z + wallDepth/2 + 0.1
+                );
+                vine.rotation.z = (Math.random() - 0.5) * 0.3;
+                scene.add(vine);
             }
             
         } else {

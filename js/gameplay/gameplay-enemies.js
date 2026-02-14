@@ -120,7 +120,32 @@
             }
             
             const terrainHeight = getTerrainHeight(gob.mesh.position.x, gob.mesh.position.z);
-            gob.mesh.position.y = terrainHeight + 0.1;
+            
+            // Pixies and Dark Fairies float and bob up and down with wing animation
+            if (gob.mesh.userData && (gob.mesh.userData.isPixie || gob.mesh.userData.isDarkFairy)) {
+                const time = Date.now();
+                // Bobbing up and down
+                const bobAmount = Math.sin(time * 0.005 + gob.mesh.position.x) * 0.3;
+                gob.mesh.position.y = terrainHeight + 0.8 + bobAmount;
+                
+                // Wing flapping animation
+                if (gob.mesh.wings) {
+                    gob.mesh.wings.forEach(wing => {
+                        const flapSpeed = 0.015;
+                        const flapAmount = Math.sin(time * flapSpeed) * 0.6;
+                        wing.rotation.y = wing.userData.baseRotY + (wing.userData.isLeftWing ? flapAmount : -flapAmount);
+                    });
+                }
+                
+                // Sparkle animation (pixies only)
+                if (gob.mesh.sparkles) {
+                    gob.mesh.sparkles.forEach(sparkle => {
+                        sparkle.position.y = sparkle.userData.baseY + Math.sin(time * 0.003 + sparkle.userData.floatOffset) * 0.1;
+                    });
+                }
+            } else {
+                gob.mesh.position.y = terrainHeight + 0.1;
+            }
             
             // Check trap collision
             G.traps.forEach(trap => {
@@ -540,7 +565,26 @@
             
             let hitPlayer = false;
             if (dist < 1.0) {
-                if (!godMode) {
+                // In enchanted theme, arrows shrink the player instead of damaging
+                if (G.enchantedTheme && !G.playerShrunk && !G.playerGiant) {
+                    G.playerShrunk = true;
+                    G.playerScale = G.shrinkScale;
+                    G.playerGroup.scale.set(G.playerScale, G.playerScale, G.playerScale);
+                    // Play a magical shrink sound and deal 1 damage
+                    Audio.playStuckSound();
+                    if (!godMode) {
+                        G.playerHealth--;
+                        G.damageFlashTime = Date.now();
+                        if (G.playerHealth <= 0) {
+                            if (!gameDead) {
+                                gameDead = true;
+                                Audio.stopBackgroundMusic();
+                                Audio.playDeathSound();
+                            }
+                        }
+                    }
+                    hitPlayer = true;
+                } else if (!godMode && !G.enchantedTheme) {
                     G.playerHealth--;
                     G.damageFlashTime = Date.now();
                     if (G.playerHealth <= 0) {
@@ -553,8 +597,11 @@
                         // Play hurt sound or use existing sound
                         Audio.playStuckSound();
                     }
+                    hitPlayer = true;
+                } else if (G.enchantedTheme) {
+                    // Already shrunk or giant, no effect but still hit
+                    hitPlayer = true;
                 }
-                hitPlayer = true;
             }
             
             // Check collision with other player (in multiplayer)
@@ -580,17 +627,37 @@
                 ).length();
                 
                 if (distToP2 < 1.0) {
-                    G.player2Health--;
-                    G.damageFlashTime2 = Date.now();
-                    if (G.player2Health <= 0) {
-                        // Player 2 died - both players die together
-                        gameDead = true;
-                        Audio.stopBackgroundMusic();
-                        Audio.playDeathSound();
-                    } else {
+                    // In enchanted theme, arrows shrink player 2 and deal 1 damage
+                    if (G.enchantedTheme && !G.player2Shrunk && !G.player2Giant) {
+                        G.player2Shrunk = true;
+                        G.player2Scale = G.shrinkScale;
+                        G.player2Group.scale.set(G.player2Scale, G.player2Scale, G.player2Scale);
                         Audio.playStuckSound();
+                        // Deal 1 damage to player 2
+                        G.player2Health--;
+                        G.damageFlashTime2 = Date.now();
+                        if (G.player2Health <= 0) {
+                            gameDead = true;
+                            Audio.stopBackgroundMusic();
+                            Audio.playDeathSound();
+                        }
+                        hitPlayer = true;
+                    } else if (!G.enchantedTheme) {
+                        G.player2Health--;
+                        G.damageFlashTime2 = Date.now();
+                        if (G.player2Health <= 0) {
+                            // Player 2 died - both players die together
+                            gameDead = true;
+                            Audio.stopBackgroundMusic();
+                            Audio.playDeathSound();
+                        } else {
+                            Audio.playStuckSound();
+                        }
+                        hitPlayer = true;
+                    } else {
+                        // Already shrunk or giant in enchanted theme
+                        hitPlayer = true;
                     }
-                    hitPlayer = true;
                 }
             }
             

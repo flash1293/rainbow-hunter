@@ -24,7 +24,7 @@
         
         // Helper function to update visuals for a single dragon
         function updateSingleDragonVisuals(d) {
-            if (!d || !d.alive) return;
+            if (!d || !d.alive || !d.mesh) return;
             
             // Check if freeze effect should end
             if (d.frozen && now >= d.frozenUntil) {
@@ -59,13 +59,45 @@
                 return;
             }
             
+            // Unicorn flying animation
+            if (d.isUnicorn) {
+                // Unicorn hover animation - graceful floating
+                d.hoverPhase = (d.hoverPhase || 0) + 0.02;
+                const hoverOffset = Math.sin(d.hoverPhase) * 1.5;
+                const baseY = d.baseY !== undefined ? d.baseY : 8;
+                d.mesh.position.y = baseY + hoverOffset;
+                
+                // Wing flapping
+                if (d.leftWing) {
+                    d.leftWing.rotation.x = Math.PI / 6 + Math.sin(now * 0.008) * 0.4;
+                }
+                if (d.rightWing) {
+                    d.rightWing.rotation.x = -Math.PI / 6 - Math.sin(now * 0.008) * 0.4;
+                }
+                
+                // Mane and tail animation
+                d.mesh.children.forEach(child => {
+                    if (child.userData && child.userData.maneOffset !== undefined) {
+                        child.rotation.x = Math.sin(now * 0.003 + child.userData.maneOffset) * 0.2;
+                    }
+                    if (child.userData && child.userData.tailOffset !== undefined) {
+                        child.rotation.x = Math.sin(now * 0.004 + child.userData.tailOffset) * 0.3;
+                    }
+                });
+                return;
+            }
+            
             // Wing flap animation (dragons only)
             d.wingFlapPhase += 0.15;
             const flapAngle = Math.sin(d.wingFlapPhase) * 0.5;
-            d.leftWing.rotation.x = flapAngle;
-            d.rightWing.rotation.x = -flapAngle;
-            d.leftWing.rotation.z = 0.3 + flapAngle * 0.3;
-            d.rightWing.rotation.z = -0.3 - flapAngle * 0.3;
+            if (d.leftWing) {
+                d.leftWing.rotation.x = flapAngle;
+                d.leftWing.rotation.z = 0.3 + flapAngle * 0.3;
+            }
+            if (d.rightWing) {
+                d.rightWing.rotation.x = -flapAngle;
+                d.rightWing.rotation.z = -0.3 - flapAngle * 0.3;
+            }
             
             // Tail sway
             if (d.tailSegments) {
@@ -90,7 +122,7 @@
         
         // Helper function to update a single dragon
         function updateSingleDragon(d) {
-            if (!d || !d.alive) return;
+            if (!d || !d.alive || !d.mesh) return;
             
             // Find closest player for targeting
             const distToPlayer = Math.sqrt(
@@ -232,10 +264,10 @@
                 }
             }
             
-            // Patrol movement - Reapers chase player within range, dragons patrol
-            if (d.isReaper) {
-                // Reaper only chases if player is within chase range
-                const chaseRange = d.chaseRange || 40;
+            // Patrol movement - Reapers and Unicorns chase player within range, dragons patrol
+            if (d.isReaper || d.isUnicorn) {
+                // Reaper/Unicorn chases if player is within chase range
+                const chaseRange = d.chaseRange || 50;
                 const distToTarget = Math.sqrt(
                     Math.pow(targetPlayer.position.x - d.mesh.position.x, 2) +
                     Math.pow(targetPlayer.position.z - d.mesh.position.z, 2)
@@ -252,7 +284,8 @@
                     
                     d.mesh.position.x += dirToPlayer.x * chaseSpeed;
                     d.mesh.position.z += dirToPlayer.z * chaseSpeed;
-                    d.mesh.rotation.y = Math.atan2(dirToPlayer.x, dirToPlayer.z);
+                    // Unicorns face -90 degrees (horse body orientation)
+                    d.mesh.rotation.y = Math.atan2(dirToPlayer.x, dirToPlayer.z) + (d.isUnicorn ? -Math.PI / 2 : 0);
                 } else {
                     // Slowly drift back toward home position
                     const homeX = d.homeX || d.mesh.position.x;
@@ -321,12 +354,14 @@
                 }
                 
                 // Only fire if player is in range
-                // Reapers have shorter range (melee scythe), dragons have longer range
+                // Reapers have shorter range (melee scythe), dragons/unicorns have longer range
                 const fireRange = d.isReaper ? 35 : 100;
                 if (fireTargetDist < fireRange) {
-                    // Reapers use scythe wave attack, dragons use fireballs
+                    // Reapers use scythe wave attack, unicorns use rainbow bolts, dragons use fireballs
                     if (d.isReaper) {
                         createScytheWave(d, fireTargetPlayer);
+                    } else if (d.isUnicorn) {
+                        createRainbowBolt(d, fireTargetPlayer);
                     } else {
                         createDragonFireball(d, fireTargetPlayer);
                     }

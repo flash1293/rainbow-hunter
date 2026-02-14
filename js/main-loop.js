@@ -95,7 +95,7 @@ function initLoop() {
         });
         
         // Reset main dragon
-        if (G.dragon) {
+        if (G.dragon && G.dragon.mesh) {
             G.dragon.alive = true;
             G.dragon.mesh.visible = true;
             G.dragon.health = G.dragon.maxHealth;
@@ -104,10 +104,16 @@ function initLoop() {
             G.dragon.lastFireTime = Date.now();
             G.dragon.isFlying = false;
             G.dragon.direction = 1;
+            // Reset unicorn to base height
+            if (G.dragon.isUnicorn && G.dragon.baseY !== undefined) {
+                G.dragon.mesh.position.y = G.dragon.baseY;
+            }
             if (G.levelConfig.dragon) {
                 const dragonX = G.levelConfig.dragon.x;
                 const dragonZ = G.levelConfig.dragon.z;
-                const dragonY = G.levelConfig.dragon.y !== undefined ? G.levelConfig.dragon.y : getTerrainHeight(dragonX, dragonZ) + 3 * (G.dragon.scale || 1);
+                // Unicorns stay at flying height, dragons use terrain height
+                const dragonY = G.dragon.isUnicorn ? (G.dragon.baseY || 8 * (G.dragon.scale || 1)) : 
+                    (G.levelConfig.dragon.y !== undefined ? G.levelConfig.dragon.y : getTerrainHeight(dragonX, dragonZ) + 3 * (G.dragon.scale || 1));
                 G.dragon.mesh.position.set(dragonX, dragonY, dragonZ);
                 G.dragon.patrolLeft = dragonX - 30;
                 G.dragon.patrolRight = dragonX + 30;
@@ -119,19 +125,22 @@ function initLoop() {
         // Reset extra dragons
         if (G.extraDragons && G.extraDragons.length > 0 && G.levelConfig.extraDragons) {
             G.extraDragons.forEach((dragon, index) => {
+                if (!dragon || !dragon.mesh) return;
                 dragon.alive = true;
                 dragon.mesh.visible = true;
                 dragon.health = dragon.maxHealth;
                 dragon.frozen = false;
                 dragon.frozenUntil = 0;
                 dragon.lastFireTime = Date.now();
-                dragon.isFlying = false;
+                dragon.isFlying = dragon.isUnicorn ? true : false; // Unicorns always flying
                 dragon.direction = 1;
                 if (G.levelConfig.extraDragons[index]) {
                     const config = G.levelConfig.extraDragons[index];
                     const dragonX = config.x;
                     const dragonZ = config.z;
-                    const dragonY = config.y !== undefined ? config.y : getTerrainHeight(dragonX, dragonZ) + 3 * (dragon.scale || 1);
+                    // Unicorns stay at flying height, dragons/reapers use terrain height
+                    const dragonY = dragon.isUnicorn ? (dragon.baseY || 8 * (dragon.scale || 1)) :
+                        (config.y !== undefined ? config.y : getTerrainHeight(dragonX, dragonZ) + 3 * (dragon.scale || 1));
                     dragon.mesh.position.set(dragonX, dragonY, dragonZ);
                     dragon.patrolLeft = dragonX - 30;
                     dragon.patrolRight = dragonX + 30;
@@ -275,6 +284,28 @@ function initLoop() {
             if (typeof initComputerSystems === 'function') {
                 initComputerSystems();
             }
+        }
+        
+        // Reset enchanted theme size state (shrink/giant potions)
+        G.playerShrunk = false;
+        G.playerGiant = false;
+        G.playerScale = 1.0;
+        G.player2Shrunk = false;
+        G.player2Giant = false;
+        G.player2Scale = 1.0;
+        G.giantEndTime = 0;
+        G.giant2EndTime = 0;
+        if (G.playerGroup) {
+            G.playerGroup.scale.set(1, 1, 1);
+        }
+        if (G.player2Group) {
+            G.player2Group.scale.set(1, 1, 1);
+        }
+        
+        // Reset size potions
+        if (G.sizePotions) {
+            G.sizePotions.forEach(potion => G.scene.remove(potion.mesh));
+            G.sizePotions.length = 0;
         }
     }
 
@@ -1582,6 +1613,18 @@ function initLoop() {
                                     gameDead = true;
                                     Audio.stopBackgroundMusic();
                                     Audio.playDeathSound();
+                                }
+                            }
+                            // Check player 2 in splitscreen
+                            if (isNativeSplitscreen && G.player2Group && G.player2Health > 0) {
+                                if (checkVirusStrikeDamage(G.player2Group.position.x, G.player2Group.position.z)) {
+                                    G.player2Health = 0;
+                                    G.damageFlashTime2 = Date.now();
+                                    if (!gameDead) {
+                                        gameDead = true;
+                                        Audio.stopBackgroundMusic();
+                                        Audio.playDeathSound();
+                                    }
                                 }
                             }
                         }

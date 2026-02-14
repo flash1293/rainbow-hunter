@@ -25,6 +25,8 @@
             buildDarkSorcerer(wizardGrp);
         } else if (G.computerTheme) {
             buildHacker(wizardGrp);
+        } else if (G.enchantedTheme) {
+            buildEnchantress(wizardGrp);
         } else {
             buildStandardWizard(wizardGrp, textures);
         }
@@ -595,6 +597,95 @@
             rune.rotation.y = 0.3;
             group.add(rune);
         }
+    }
+    
+    function buildEnchantress(group) {
+        // ENCHANTRESS - beautiful fairy sorceress for enchanted theme
+        const robeColor = 0x9370DB;   // Medium purple
+        const skinColor = 0xFFDBFF;   // Light pink
+        const hairColor = 0xE6E6FA;   // Lavender
+        const magicColor = 0x00FFAA;  // Spring green
+
+        // Flowing robe body
+        const robeGeometry = new THREE.ConeGeometry(0.6, 2.0, 8);
+        const robeMaterial = new THREE.MeshLambertMaterial({ color: robeColor });
+        const robe = new THREE.Mesh(robeGeometry, robeMaterial);
+        robe.position.y = 1.0;
+        robe.rotation.x = Math.PI;
+        robe.castShadow = true;
+        group.add(robe);
+
+        // Upper body
+        const torsoGeometry = new THREE.CylinderGeometry(0.2, 0.25, 0.5, 8);
+        const torsoMaterial = new THREE.MeshLambertMaterial({ color: robeColor });
+        const torso = new THREE.Mesh(torsoGeometry, torsoMaterial);
+        torso.position.y = 1.8;
+        torso.castShadow = true;
+        group.add(torso);
+
+        // Head
+        const headGeometry = new THREE.SphereGeometry(0.28, 12, 12);
+        const headMaterial = new THREE.MeshLambertMaterial({ color: skinColor });
+        const head = new THREE.Mesh(headGeometry, headMaterial);
+        head.position.y = 2.4;
+        head.castShadow = true;
+        group.add(head);
+
+        // Flowing hair
+        const hairMaterial = new THREE.MeshLambertMaterial({ color: hairColor });
+        for (let i = 0; i < 6; i++) {
+            const strandGeometry = new THREE.CylinderGeometry(0.04, 0.02, 0.5 + Math.random() * 0.2, 6);
+            const strand = new THREE.Mesh(strandGeometry, hairMaterial);
+            const angle = ((i / 6) * Math.PI) + Math.PI * 0.5;
+            strand.position.set(
+                Math.cos(angle) * 0.2,
+                2.3,
+                Math.sin(angle) * 0.2 - 0.1
+            );
+            strand.rotation.x = 0.3;
+            strand.rotation.z = Math.cos(angle) * 0.3;
+            group.add(strand);
+        }
+
+        // Pretty eyes
+        const eyeGeometry = new THREE.SphereGeometry(0.05, 8, 8);
+        const eyeMaterial = new THREE.MeshBasicMaterial({ color: 0x9932CC });
+        [-0.1, 0.1].forEach(x => {
+            const eye = new THREE.Mesh(eyeGeometry, eyeMaterial);
+            eye.position.set(x, 2.45, 0.23);
+            group.add(eye);
+        });
+
+        // Wizard staff
+        const staffGeometry = new THREE.CylinderGeometry(0.04, 0.05, 2.5, 8);
+        const staffMaterial = new THREE.MeshLambertMaterial({ color: 0x8B4513 });
+        const staff = new THREE.Mesh(staffGeometry, staffMaterial);
+        staff.position.set(0.6, 1.2, 0.2);
+        staff.rotation.z = -0.2;
+        staff.castShadow = true;
+        group.add(staff);
+
+        // Staff crystal top
+        const crystalGeometry = new THREE.OctahedronGeometry(0.15, 0);
+        const crystalMaterial = new THREE.MeshBasicMaterial({ color: magicColor, transparent: true, opacity: 0.8 });
+        const crystal = new THREE.Mesh(crystalGeometry, crystalMaterial);
+        crystal.position.set(0.5, 2.5, 0.15);
+        group.add(crystal);
+
+        // Floating magic particles
+        for (let i = 0; i < 5; i++) {
+            const particleGeometry = new THREE.SphereGeometry(0.04, 6, 6);
+            const particleMaterial = new THREE.MeshBasicMaterial({ color: [magicColor, 0xFF69B4, 0xFFD700][i % 3] });
+            const particle = new THREE.Mesh(particleGeometry, particleMaterial);
+            particle.position.set(
+                0.5 + (Math.random() - 0.5) * 0.5,
+                2.3 + Math.random() * 0.5,
+                0.15 + (Math.random() - 0.5) * 0.3
+            );
+            group.add(particle);
+        }
+        
+        group.userData.isEnchantress = true;
     }
     
     function buildStandardWizard(group, textures) {

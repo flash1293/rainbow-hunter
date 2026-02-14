@@ -1352,16 +1352,18 @@ function initEntities() {
     G.extraDragons = [];
     G.fireballs = [];
     
-    // Spawn boss - Reaper for graveyard (always, both difficulties), Dragon for others on hard
+    // Spawn boss - Reaper for graveyard, Unicorn for enchanted, Dragon for others
     if (G.graveyardTheme || G.levelConfig.useReaper) {
         G.dragon = createReaper();
+    } else if (G.enchantedTheme || G.levelConfig.useUnicorn) {
+        G.dragon = createUnicorn();
     } else if (difficulty === 'hard') {
         G.dragon = createDragon();
     }
     
     if (difficulty === 'hard') {
         
-        // Create extra bosses for levels with multiple dragons/reapers
+        // Create extra bosses for levels with multiple dragons/reapers/unicorns
         if (G.levelConfig.extraDragons) {
             G.levelConfig.extraDragons.forEach(pos => {
                 const bossScale = pos.scale || 0.6;
@@ -1369,6 +1371,9 @@ function initEntities() {
                 if (G.graveyardTheme || pos.useReaper) {
                     const extraReaper = createReaper(pos, bossScale, bossHealth);
                     G.extraDragons.push(extraReaper);
+                } else if (G.enchantedTheme || pos.useUnicorn) {
+                    const extraUnicorn = createUnicorn(pos, bossScale, bossHealth);
+                    G.extraDragons.push(extraUnicorn);
                 } else {
                     const extraDragon = createDragon(pos, bossScale, bossHealth);
                     G.extraDragons.push(extraDragon);

@@ -22,6 +22,12 @@
     function shootBullet() {
         if (gameWon) return;
         
+        // Shrunk players can't shoot
+        if (G.playerShrunk) {
+            Audio.playEmptyGunSound();
+            return;
+        }
+        
         if (G.ammo <= 0 && !godMode) {
             Audio.playEmptyGunSound();
             return;
@@ -29,12 +35,15 @@
         
         Audio.playShootSound();
         
-        const bulletGeometry = new THREE.SphereGeometry(0.2, 8, 8);
-        const bulletColor = G.isHost ? 0xFF69B4 : 0x4169E1; // Pink for girl, Blue for boy
+        // Giant bullets are bigger and more powerful
+        const isGiantBullet = G.playerGiant;
+        const bulletSize = isGiantBullet ? 0.6 : 0.2;
+        const bulletGeometry = new THREE.SphereGeometry(bulletSize, 8, 8);
+        const bulletColor = isGiantBullet ? 0xFF4500 : (G.isHost ? 0xFF69B4 : 0x4169E1); // Orange-red for giant, else Pink/Blue
         const bulletMaterial = new THREE.MeshLambertMaterial({ color: bulletColor });
         const bulletMesh = new THREE.Mesh(bulletGeometry, bulletMaterial);
         bulletMesh.position.copy(G.playerGroup.position);
-        bulletMesh.position.y = 1;
+        bulletMesh.position.y = isGiantBullet ? 2 : 1;
         bulletMesh.castShadow = true;
         G.scene.add(bulletMesh);
         
@@ -47,8 +56,10 @@
         const bullet = {
             mesh: bulletMesh,
             velocity: direction.multiplyScalar(0.5),
-            radius: 0.2,
-            startPos: { x: G.playerGroup.position.x, z: G.playerGroup.position.z }
+            radius: bulletSize,
+            startPos: { x: G.playerGroup.position.x, z: G.playerGroup.position.z },
+            isGiant: isGiantBullet,
+            damage: isGiantBullet ? 3 : 1 // Giant bullets deal 3x damage
         };
         G.bullets.push(bullet);
         if (!godMode) G.ammo--;
@@ -91,18 +102,28 @@
         if (playerNum === 1) {
             shootBullet();
         } else if (playerNum === 2 && isNativeSplitscreen) {
+            // Shrunk player 2 can't shoot
+            if (G.player2Shrunk) {
+                Audio.playEmptyGunSound();
+                return;
+            }
+            
             if (G.player2Ammo <= 0) return;
             
             G.player2Ammo--;
             Audio.playShootSound();
             
-            const bulletGeometry = new THREE.SphereGeometry(0.15, 8, 8);
-            const bulletMaterial = new THREE.MeshLambertMaterial({ color: 0x4488FF });
+            // Giant bullets are bigger and more powerful
+            const isGiantBullet = G.player2Giant;
+            const bulletSize = isGiantBullet ? 0.6 : 0.15;
+            const bulletGeometry = new THREE.SphereGeometry(bulletSize, 8, 8);
+            const bulletColor = isGiantBullet ? 0xFF4500 : 0x4488FF; // Orange-red for giant, else blue
+            const bulletMaterial = new THREE.MeshLambertMaterial({ color: bulletColor });
             const bulletMesh = new THREE.Mesh(bulletGeometry, bulletMaterial);
             
             bulletMesh.position.set(
                 G.player2Group.position.x + Math.sin(G.player2.rotation) * 1.2,
-                G.player2Group.position.y + 1,
+                G.player2Group.position.y + (isGiantBullet ? 2 : 1),
                 G.player2Group.position.z + Math.cos(G.player2.rotation) * 1.2
             );
             
@@ -119,7 +140,9 @@
                 velocity: velocity,
                 startPos: { x: bulletMesh.position.x, z: bulletMesh.position.z },
                 fromPlayer: 2,
-                radius: 0.15
+                radius: bulletSize,
+                isGiant: isGiantBullet,
+                damage: isGiantBullet ? 3 : 1 // Giant bullets deal 3x damage
             });
         }
     }
@@ -154,11 +177,17 @@
                     const dist = bullet.mesh.position.distanceTo(gob.mesh.position);
                     if (dist < gob.radius + bullet.radius) {
                         // Visual feedback on both host and client
-                        createExplosion(gob.mesh.position.x, gob.mesh.position.y + 1, gob.mesh.position.z);
+                        // Giant bullets create bigger explosions
+                        if (bullet.isGiant) {
+                            createDragonExplosion(gob.mesh.position.x, gob.mesh.position.y + 1, gob.mesh.position.z);
+                        } else {
+                            createExplosion(gob.mesh.position.x, gob.mesh.position.y + 1, gob.mesh.position.z);
+                        }
                         
                         // Only host applies actual damage
                         if (!multiplayerManager || !multiplayerManager.isConnected() || multiplayerManager.isHost) {
-                            gob.health--;
+                            const damage = bullet.damage || 1;
+                            gob.health -= damage;
                             gob.isChasing = true;
                             if (gob.health <= 0) {
                                 gob.alive = false;
@@ -184,12 +213,17 @@
                 const dist = bullet.mesh.position.distanceTo(G.dragon.mesh.position);
                 const hitRadius = 8 * (G.dragon.scale || 1);
                 if (dist < hitRadius) {
-                    // Visual feedback
-                    createExplosion(bullet.mesh.position.x, bullet.mesh.position.y, bullet.mesh.position.z);
+                    // Visual feedback - bigger explosion for giant bullets
+                    if (bullet.isGiant) {
+                        createDragonExplosion(bullet.mesh.position.x, bullet.mesh.position.y, bullet.mesh.position.z);
+                    } else {
+                        createExplosion(bullet.mesh.position.x, bullet.mesh.position.y, bullet.mesh.position.z);
+                    }
                     
                     // Only host applies damage
                     if (!multiplayerManager || !multiplayerManager.isConnected() || multiplayerManager.isHost) {
-                        G.dragon.health--;
+                        const damage = bullet.damage || 1;
+                        G.dragon.health -= damage;
                         if (G.dragon.health <= 0 && G.dragon.alive) {
                             G.dragon.alive = false;
                             G.dragon.deathTime = Date.now();
@@ -238,12 +272,17 @@
                     const dist = bullet.mesh.position.distanceTo(extraDragon.mesh.position);
                     const hitRadius = 8 * (extraDragon.scale || 1);
                     if (dist < hitRadius) {
-                        // Visual feedback
-                        createExplosion(bullet.mesh.position.x, bullet.mesh.position.y, bullet.mesh.position.z);
+                        // Visual feedback - bigger explosion for giant bullets
+                        if (bullet.isGiant) {
+                            createDragonExplosion(bullet.mesh.position.x, bullet.mesh.position.y, bullet.mesh.position.z);
+                        } else {
+                            createExplosion(bullet.mesh.position.x, bullet.mesh.position.y, bullet.mesh.position.z);
+                        }
                         
                         // Only host applies damage
                         if (!multiplayerManager || !multiplayerManager.isConnected() || multiplayerManager.isHost) {
-                            extraDragon.health--;
+                            const damage = bullet.damage || 1;
+                            extraDragon.health -= damage;
                             if (extraDragon.health <= 0 && extraDragon.alive) {
                                 extraDragon.alive = false;
                                 extraDragon.deathTime = Date.now();

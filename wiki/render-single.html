@@ -4147,6 +4147,1070 @@
                 }
 
                 return group;
+            },
+
+            // ========== LEVEL 10 MOBS (Enchanted Grove) ==========
+
+            'pixie': function() {
+                const group = new THREE.Group();
+                const skinColor = 0xFFE4E1;  // Misty rose
+                const wingColor = 0x98FB98;  // Pale green
+                const hairColor = 0xFF69B4;  // Hot pink
+
+                // Tiny body (cylinder + spheres for capsule shape)
+                const bodyGeometry = new THREE.CylinderGeometry(0.15, 0.15, 0.3, 8);
+                const bodyMaterial = new THREE.MeshLambertMaterial({ color: skinColor });
+                const body = new THREE.Mesh(bodyGeometry, bodyMaterial);
+                body.position.y = 1.2;
+                group.add(body);
+
+                // Head
+                const headGeometry = new THREE.SphereGeometry(0.18, 12, 12);
+                const head = new THREE.Mesh(headGeometry, bodyMaterial);
+                head.position.y = 1.65;
+                group.add(head);
+
+                // Spiky hair
+                for (let i = 0; i < 6; i++) {
+                    const hairGeometry = new THREE.ConeGeometry(0.05, 0.2, 4);
+                    const hairMaterial = new THREE.MeshLambertMaterial({ color: hairColor });
+                    const hair = new THREE.Mesh(hairGeometry, hairMaterial);
+                    const angle = (i / 6) * Math.PI * 2;
+                    hair.position.set(Math.cos(angle) * 0.1, 1.85, Math.sin(angle) * 0.1);
+                    hair.rotation.z = Math.cos(angle) * 0.4;
+                    hair.rotation.x = Math.sin(angle) * 0.4;
+                    group.add(hair);
+                }
+
+                // Big eyes
+                const eyeGeometry = new THREE.SphereGeometry(0.05, 8, 8);
+                const eyeMaterial = new THREE.MeshBasicMaterial({ color: 0x9932CC });
+                [-0.07, 0.07].forEach(x => {
+                    const eye = new THREE.Mesh(eyeGeometry, eyeMaterial);
+                    eye.position.set(x, 1.68, 0.15);
+                    group.add(eye);
+                });
+
+                // Delicate wings (4 wings)
+                const wingGeometry = new THREE.PlaneGeometry(0.4, 0.6);
+                const wingMaterial = new THREE.MeshBasicMaterial({ 
+                    color: wingColor, 
+                    transparent: true, 
+                    opacity: 0.5, 
+                    side: THREE.DoubleSide 
+                });
+                [[-0.25, 0.3], [0.25, -0.3], [-0.2, 0.5], [0.2, -0.5]].forEach(([x, rotY], i) => {
+                    const wing = new THREE.Mesh(wingGeometry, wingMaterial);
+                    wing.position.set(x, 1.3, -0.1);
+                    wing.rotation.y = rotY;
+                    wing.scale.set(i < 2 ? 1 : 0.7, i < 2 ? 1 : 0.7, 1);
+                    group.add(wing);
+                });
+
+                // Sparkle particles
+                for (let i = 0; i < 8; i++) {
+                    const sparkleGeometry = new THREE.SphereGeometry(0.03, 6, 6);
+                    const sparkleMaterial = new THREE.MeshBasicMaterial({ color: [0xFFD700, 0xFFFFFF, 0xFF69B4][i % 3] });
+                    const sparkle = new THREE.Mesh(sparkleGeometry, sparkleMaterial);
+                    sparkle.position.set(
+                        (Math.random() - 0.5) * 0.8,
+                        1.0 + Math.random() * 0.8,
+                        (Math.random() - 0.5) * 0.6
+                    );
+                    group.add(sparkle);
+                }
+
+                return group;
+            },
+
+            'dark-fairy': function() {
+                const group = new THREE.Group();
+                const skinColor = 0x8B7D9B;   // Purple-grey skin
+                const wingColor = 0x4B0082;   // Indigo wings
+                const glowColor = 0xFF00FF;   // Magenta glow
+
+                // Elegant body (cylinder shape)
+                const bodyGeometry = new THREE.CylinderGeometry(0.2, 0.3, 0.8, 8);
+                const bodyMaterial = new THREE.MeshLambertMaterial({ color: skinColor });
+                const body = new THREE.Mesh(bodyGeometry, bodyMaterial);
+                body.position.y = 1.0;
+                group.add(body);
+
+                // Dress/robe bottom
+                const dressGeometry = new THREE.ConeGeometry(0.4, 0.8, 8);
+                const dressMaterial = new THREE.MeshLambertMaterial({ color: 0x2E0854 });
+                const dress = new THREE.Mesh(dressGeometry, dressMaterial);
+                dress.position.y = 0.6;
+                dress.rotation.x = Math.PI;
+                group.add(dress);
+
+                // Head
+                const headGeometry = new THREE.SphereGeometry(0.25, 12, 12);
+                const head = new THREE.Mesh(headGeometry, bodyMaterial);
+                head.position.y = 1.6;
+                group.add(head);
+
+                // Glowing eyes
+                const eyeGeometry = new THREE.SphereGeometry(0.06, 8, 8);
+                const eyeMaterial = new THREE.MeshBasicMaterial({ color: glowColor });
+                [-0.1, 0.1].forEach(x => {
+                    const eye = new THREE.Mesh(eyeGeometry, eyeMaterial);
+                    eye.position.set(x, 1.65, 0.2);
+                    group.add(eye);
+                });
+
+                // Dark crown/tiara
+                for (let i = 0; i < 5; i++) {
+                    const spikeGeometry = new THREE.ConeGeometry(0.03, 0.15 + (i === 2 ? 0.1 : 0), 4);
+                    const spikeMaterial = new THREE.MeshLambertMaterial({ color: 0x1A1A2E });
+                    const spike = new THREE.Mesh(spikeGeometry, spikeMaterial);
+                    const angle = ((i - 2) / 5) * Math.PI * 0.6;
+                    spike.position.set(Math.sin(angle) * 0.2, 1.85, Math.cos(angle) * 0.1);
+                    group.add(spike);
+                }
+
+                // Large dark wings
+                const wingShape = new THREE.Shape();
+                wingShape.moveTo(0, 0);
+                wingShape.quadraticCurveTo(0.6, 0.3, 0.8, 0.8);
+                wingShape.quadraticCurveTo(0.5, 0.6, 0.3, 0.9);
+                wingShape.quadraticCurveTo(0, 0.5, 0, 0);
+                
+                const wingGeometry = new THREE.ShapeGeometry(wingShape);
+                const wingMaterial = new THREE.MeshBasicMaterial({ 
+                    color: wingColor, 
+                    transparent: true, 
+                    opacity: 0.7, 
+                    side: THREE.DoubleSide 
+                });
+                
+                const leftWing = new THREE.Mesh(wingGeometry, wingMaterial);
+                leftWing.position.set(-0.1, 1.0, -0.1);
+                leftWing.rotation.y = -0.5;
+                group.add(leftWing);
+                
+                const rightWing = new THREE.Mesh(wingGeometry, wingMaterial);
+                rightWing.position.set(0.1, 1.0, -0.1);
+                rightWing.rotation.y = 0.5;
+                rightWing.scale.x = -1;
+                group.add(rightWing);
+
+                // Magic orb in hand
+                const orbGeometry = new THREE.SphereGeometry(0.12, 12, 12);
+                const orbMaterial = new THREE.MeshBasicMaterial({ color: glowColor, transparent: true, opacity: 0.8 });
+                const orb = new THREE.Mesh(orbGeometry, orbMaterial);
+                orb.position.set(0.4, 1.0, 0.3);
+                group.add(orb);
+
+                return group;
+            },
+
+            'treant': function() {
+                const group = new THREE.Group();
+                const barkColor = 0x4A3728;
+                const mossColor = 0x3A5F0B;
+                const eyeColor = 0x90EE90;
+
+                // Thick trunk body
+                const bodyGeometry = new THREE.CylinderGeometry(0.8, 1.0, 2.5, 8);
+                const bodyMaterial = new THREE.MeshLambertMaterial({ color: barkColor });
+                const body = new THREE.Mesh(bodyGeometry, bodyMaterial);
+                body.position.y = 1.5;
+                group.add(body);
+
+                // Bark texture ridges
+                for (let i = 0; i < 8; i++) {
+                    const ridgeGeometry = new THREE.BoxGeometry(0.15, 2.0, 0.1);
+                    const ridge = new THREE.Mesh(ridgeGeometry, bodyMaterial);
+                    const angle = (i / 8) * Math.PI * 2;
+                    ridge.position.set(Math.cos(angle) * 0.85, 1.5, Math.sin(angle) * 0.85);
+                    ridge.rotation.y = -angle;
+                    group.add(ridge);
+                }
+
+                // Head (wider top of trunk)
+                const headGeometry = new THREE.CylinderGeometry(0.9, 0.8, 0.8, 8);
+                const head = new THREE.Mesh(headGeometry, bodyMaterial);
+                head.position.y = 3.1;
+                group.add(head);
+
+                // Glowing eyes (in bark grooves)
+                const eyeGeometry = new THREE.SphereGeometry(0.12, 8, 8);
+                const eyeMaterial = new THREE.MeshBasicMaterial({ color: eyeColor });
+                [-0.35, 0.35].forEach(x => {
+                    const eye = new THREE.Mesh(eyeGeometry, eyeMaterial);
+                    eye.position.set(x, 3.1, 0.75);
+                    group.add(eye);
+                });
+
+                // Branch arms
+                const armGeometry = new THREE.CylinderGeometry(0.15, 0.25, 1.5, 6);
+                const leftArm = new THREE.Mesh(armGeometry, bodyMaterial);
+                leftArm.position.set(-1.2, 2.5, 0);
+                leftArm.rotation.z = 0.8;
+                group.add(leftArm);
+
+                const rightArm = new THREE.Mesh(armGeometry, bodyMaterial);
+                rightArm.position.set(1.2, 2.5, 0);
+                rightArm.rotation.z = -0.8;
+                group.add(rightArm);
+
+                // Leaf crown
+                const leafMaterial = new THREE.MeshLambertMaterial({ color: mossColor });
+                for (let i = 0; i < 10; i++) {
+                    const leafGeometry = new THREE.SphereGeometry(0.2 + Math.random() * 0.15, 6, 6);
+                    const leaf = new THREE.Mesh(leafGeometry, leafMaterial);
+                    const angle = (i / 10) * Math.PI * 2;
+                    leaf.position.set(
+                        Math.cos(angle) * (0.6 + Math.random() * 0.3),
+                        3.5 + Math.random() * 0.3,
+                        Math.sin(angle) * (0.6 + Math.random() * 0.3)
+                    );
+                    group.add(leaf);
+                }
+
+                // Moss patches on body
+                for (let i = 0; i < 5; i++) {
+                    const mossGeometry = new THREE.SphereGeometry(0.15, 6, 6);
+                    const moss = new THREE.Mesh(mossGeometry, leafMaterial);
+                    const angle = Math.random() * Math.PI * 2;
+                    moss.position.set(
+                        Math.cos(angle) * 0.9,
+                        1.0 + Math.random() * 1.5,
+                        Math.sin(angle) * 0.9
+                    );
+                    moss.scale.y = 0.5;
+                    group.add(moss);
+                }
+
+                // Root feet
+                for (let i = 0; i < 4; i++) {
+                    const rootGeometry = new THREE.CylinderGeometry(0.1, 0.2, 0.6, 6);
+                    const root = new THREE.Mesh(rootGeometry, bodyMaterial);
+                    const angle = (i / 4) * Math.PI * 2 + 0.4;
+                    root.position.set(Math.cos(angle) * 0.7, 0.2, Math.sin(angle) * 0.7);
+                    root.rotation.z = Math.cos(angle) * 0.4;
+                    root.rotation.x = Math.sin(angle) * 0.4;
+                    group.add(root);
+                }
+
+                return group;
+            },
+
+            'enchantress': function() {
+                const group = new THREE.Group();
+                const robeColor = 0x9370DB;   // Medium purple
+                const skinColor = 0xFFDBFF;   // Light pink
+                const hairColor = 0xE6E6FA;   // Lavender
+                const magicColor = 0x00FFAA;  // Spring green
+
+                // Flowing robe body
+                const robeGeometry = new THREE.ConeGeometry(0.6, 2.0, 8);
+                const robeMaterial = new THREE.MeshLambertMaterial({ color: robeColor });
+                const robe = new THREE.Mesh(robeGeometry, robeMaterial);
+                robe.position.y = 1.0;
+                robe.rotation.x = Math.PI;
+                group.add(robe);
+
+                // Upper body (cylinder shape)
+                const torsoGeometry = new THREE.CylinderGeometry(0.2, 0.25, 0.5, 8);
+                const torsoMaterial = new THREE.MeshLambertMaterial({ color: robeColor });
+                const torso = new THREE.Mesh(torsoGeometry, torsoMaterial);
+                torso.position.y = 1.8;
+                group.add(torso);
+
+                // Head
+                const headGeometry = new THREE.SphereGeometry(0.28, 12, 12);
+                const headMaterial = new THREE.MeshLambertMaterial({ color: skinColor });
+                const head = new THREE.Mesh(headGeometry, headMaterial);
+                head.position.y = 2.4;
+                group.add(head);
+
+                // Flowing hair
+                const hairMaterial = new THREE.MeshLambertMaterial({ color: hairColor });
+                for (let i = 0; i < 8; i++) {
+                    const strandGeometry = new THREE.CylinderGeometry(0.04, 0.02, 0.6 + Math.random() * 0.3, 6);
+                    const strand = new THREE.Mesh(strandGeometry, hairMaterial);
+                    const angle = ((i / 8) * Math.PI) + Math.PI * 0.5;
+                    strand.position.set(
+                        Math.cos(angle) * 0.2,
+                        2.3,
+                        Math.sin(angle) * 0.2 - 0.1
+                    );
+                    strand.rotation.x = 0.3;
+                    strand.rotation.z = Math.cos(angle) * 0.3;
+                    group.add(strand);
+                }
+
+                // Pretty eyes
+                const eyeGeometry = new THREE.SphereGeometry(0.05, 8, 8);
+                const eyeMaterial = new THREE.MeshBasicMaterial({ color: 0x9932CC });
+                [-0.1, 0.1].forEach(x => {
+                    const eye = new THREE.Mesh(eyeGeometry, eyeMaterial);
+                    eye.position.set(x, 2.45, 0.23);
+                    group.add(eye);
+                });
+
+                // Wizard staff
+                const staffGeometry = new THREE.CylinderGeometry(0.04, 0.05, 2.5, 8);
+                const staffMaterial = new THREE.MeshLambertMaterial({ color: 0x8B4513 });
+                const staff = new THREE.Mesh(staffGeometry, staffMaterial);
+                staff.position.set(0.6, 1.2, 0.2);
+                staff.rotation.z = -0.2;
+                group.add(staff);
+
+                // Staff crystal top
+                const crystalGeometry = new THREE.OctahedronGeometry(0.15, 0);
+                const crystalMaterial = new THREE.MeshBasicMaterial({ color: magicColor, transparent: true, opacity: 0.8 });
+                const crystal = new THREE.Mesh(crystalGeometry, crystalMaterial);
+                crystal.position.set(0.5, 2.5, 0.15);
+                group.add(crystal);
+
+                // Floating magic particles
+                for (let i = 0; i < 6; i++) {
+                    const particleGeometry = new THREE.SphereGeometry(0.04, 6, 6);
+                    const particleMaterial = new THREE.MeshBasicMaterial({ color: [magicColor, 0xFF69B4, 0xFFD700][i % 3] });
+                    const particle = new THREE.Mesh(particleGeometry, particleMaterial);
+                    particle.position.set(
+                        0.5 + (Math.random() - 0.5) * 0.5,
+                        2.3 + Math.random() * 0.5,
+                        0.15 + (Math.random() - 0.5) * 0.3
+                    );
+                    group.add(particle);
+                }
+
+                return group;
+            },
+
+            'giant-butterfly': function() {
+                const group = new THREE.Group();
+                const bodyColor = 0x8B4513;
+                const wingColors = [0xFF69B4, 0x9370DB, 0x00CED1, 0xFFD700];
+
+                // Fuzzy body (cylinder shape)
+                const bodyGeometry = new THREE.CylinderGeometry(0.18, 0.22, 0.9, 8);
+                const bodyMaterial = new THREE.MeshLambertMaterial({ color: bodyColor });
+                const body = new THREE.Mesh(bodyGeometry, bodyMaterial);
+                body.position.y = 1.5;
+                body.rotation.x = Math.PI / 6;
+                group.add(body);
+
+                // Head
+                const headGeometry = new THREE.SphereGeometry(0.2, 12, 12);
+                const head = new THREE.Mesh(headGeometry, bodyMaterial);
+                head.position.set(0, 2.1, 0.15);
+                group.add(head);
+
+                // Compound eyes
+                const eyeGeometry = new THREE.SphereGeometry(0.1, 8, 8);
+                const eyeMaterial = new THREE.MeshBasicMaterial({ color: 0x000000 });
+                [-0.12, 0.12].forEach(x => {
+                    const eye = new THREE.Mesh(eyeGeometry, eyeMaterial);
+                    eye.position.set(x, 2.15, 0.3);
+                    group.add(eye);
+                });
+
+                // Curly antennae
+                const antennaGeometry = new THREE.CylinderGeometry(0.02, 0.02, 0.5, 6);
+                const antennaMaterial = new THREE.MeshLambertMaterial({ color: 0x333333 });
+                [-0.1, 0.1].forEach((x, i) => {
+                    const antenna = new THREE.Mesh(antennaGeometry, antennaMaterial);
+                    antenna.position.set(x, 2.4, 0.1);
+                    antenna.rotation.z = x * 2;
+                    group.add(antenna);
+                    
+                    // Antenna tip
+                    const tipGeometry = new THREE.SphereGeometry(0.05, 6, 6);
+                    const tip = new THREE.Mesh(tipGeometry, antennaMaterial);
+                    tip.position.set(x * 2.5, 2.6, 0.1);
+                    group.add(tip);
+                });
+
+                // Large ornate wings
+                const wingShape = new THREE.Shape();
+                wingShape.moveTo(0, 0);
+                wingShape.quadraticCurveTo(1.2, 0.8, 1.0, 1.5);
+                wingShape.quadraticCurveTo(0.5, 1.8, 0, 1.3);
+                wingShape.quadraticCurveTo(-0.3, 0.6, 0, 0);
+
+                const wingGeometry = new THREE.ShapeGeometry(wingShape);
+                
+                // Create 4 wings with different colors
+                [[-0.15, 0.8, 0xFF69B4], [0.15, -0.8, 0x9370DB]].forEach(([x, rotY, color]) => {
+                    const wingMaterial = new THREE.MeshBasicMaterial({ 
+                        color: color, 
+                        transparent: true, 
+                        opacity: 0.7, 
+                        side: THREE.DoubleSide 
+                    });
+                    const wing = new THREE.Mesh(wingGeometry, wingMaterial);
+                    wing.position.set(x, 1.3, -0.1);
+                    wing.rotation.y = rotY;
+                    group.add(wing);
+                });
+
+                // Lower wings (smaller)
+                const lowerWingShape = new THREE.Shape();
+                lowerWingShape.ellipse(0, 0, 0.6, 0.4, 0, Math.PI * 2);
+                const lowerWingGeometry = new THREE.ShapeGeometry(lowerWingShape);
+                
+                [[-0.2, 0.6, 0x00CED1], [0.2, -0.6, 0xFFD700]].forEach(([x, rotY, color]) => {
+                    const wingMaterial = new THREE.MeshBasicMaterial({ 
+                        color: color, 
+                        transparent: true, 
+                        opacity: 0.6, 
+                        side: THREE.DoubleSide 
+                    });
+                    const wing = new THREE.Mesh(lowerWingGeometry, wingMaterial);
+                    wing.position.set(x, 1.0, -0.15);
+                    wing.rotation.y = rotY;
+                    group.add(wing);
+                });
+
+                // Wing patterns (spots)
+                const spotGeometry = new THREE.CircleGeometry(0.1, 8);
+                const spotMaterial = new THREE.MeshBasicMaterial({ color: 0xFFFFFF, side: THREE.DoubleSide });
+                [[0.5, 1.8, -0.05], [-0.5, 1.8, -0.05], [0.3, 1.3, -0.05], [-0.3, 1.3, -0.05]].forEach(pos => {
+                    const spot = new THREE.Mesh(spotGeometry, spotMaterial);
+                    spot.position.set(...pos);
+                    group.add(spot);
+                });
+
+                // Pollen dust trail
+                for (let i = 0; i < 5; i++) {
+                    const pollenGeometry = new THREE.SphereGeometry(0.05, 6, 6);
+                    const pollenMaterial = new THREE.MeshBasicMaterial({ color: 0xFFFF00, transparent: true, opacity: 0.6 });
+                    const pollen = new THREE.Mesh(pollenGeometry, pollenMaterial);
+                    pollen.position.set(
+                        (Math.random() - 0.5) * 0.4,
+                        0.8 - i * 0.15,
+                        -0.2 - i * 0.1
+                    );
+                    group.add(pollen);
+                }
+
+                return group;
+            },
+
+            'corrupted-unicorn': function() {
+                const group = new THREE.Group();
+                const bodyColor = 0x1A1A2E;      // Dark purple-black
+                const maneColor = 0x9400D3;     // Dark violet
+                const hornColor = 0x4B0082;     // Indigo
+                const glowColor = 0xFF00FF;     // Magenta
+                const eyeColor = 0xFF0000;      // Red
+
+                // Horse body (flying pose)
+                const bodyGeometry = new THREE.CylinderGeometry(0.8, 1.0, 3.5, 8);
+                const bodyMaterial = new THREE.MeshLambertMaterial({ color: bodyColor });
+                const body = new THREE.Mesh(bodyGeometry, bodyMaterial);
+                body.rotation.z = Math.PI / 2;
+                body.position.set(0, 2.0, 0);
+                group.add(body);
+
+                // Neck
+                const neckGeometry = new THREE.CylinderGeometry(0.5, 0.7, 1.5, 8);
+                const neck = new THREE.Mesh(neckGeometry, bodyMaterial);
+                neck.position.set(1.8, 2.8, 0);
+                neck.rotation.z = -0.8;
+                group.add(neck);
+
+                // Head
+                const headGeometry = new THREE.CylinderGeometry(0.3, 0.5, 1.2, 8);
+                const head = new THREE.Mesh(headGeometry, bodyMaterial);
+                head.position.set(2.5, 3.5, 0);
+                head.rotation.z = -1.2;
+                group.add(head);
+
+                // Snout
+                const snoutGeometry = new THREE.CylinderGeometry(0.2, 0.3, 0.6, 8);
+                const snout = new THREE.Mesh(snoutGeometry, bodyMaterial);
+                snout.position.set(3.0, 3.7, 0);
+                snout.rotation.z = -1.4;
+                group.add(snout);
+
+                // Corrupted horn (twisted)
+                const hornGeometry = new THREE.ConeGeometry(0.15, 1.2, 8);
+                const hornMaterial = new THREE.MeshLambertMaterial({ color: hornColor });
+                const horn = new THREE.Mesh(hornGeometry, hornMaterial);
+                horn.position.set(2.3, 4.2, 0);
+                horn.rotation.z = -0.3;
+                group.add(horn);
+
+                // Horn glow
+                const hornGlowGeometry = new THREE.SphereGeometry(0.2, 8, 8);
+                const hornGlowMaterial = new THREE.MeshBasicMaterial({ color: glowColor, transparent: true, opacity: 0.6 });
+                const hornGlow = new THREE.Mesh(hornGlowGeometry, hornGlowMaterial);
+                hornGlow.position.set(2.2, 4.7, 0);
+                group.add(hornGlow);
+
+                // Glowing red eyes
+                const eyeGeometry = new THREE.SphereGeometry(0.1, 8, 8);
+                const eyeMaterial = new THREE.MeshBasicMaterial({ color: eyeColor });
+                const eye1 = new THREE.Mesh(eyeGeometry, eyeMaterial);
+                eye1.position.set(2.7, 3.7, 0.35);
+                group.add(eye1);
+                const eye2 = new THREE.Mesh(eyeGeometry, eyeMaterial);
+                eye2.position.set(2.7, 3.7, -0.35);
+                group.add(eye2);
+
+                // Flowing dark mane
+                const maneMaterial = new THREE.MeshLambertMaterial({ color: maneColor });
+                for (let i = 0; i < 12; i++) {
+                    const strandGeometry = new THREE.CylinderGeometry(0.05, 0.02, 0.8 + Math.random() * 0.5, 6);
+                    const strand = new THREE.Mesh(strandGeometry, maneMaterial);
+                    strand.position.set(
+                        1.5 + i * 0.1,
+                        2.8 + Math.sin(i * 0.5) * 0.2,
+                        (Math.random() - 0.5) * 0.3
+                    );
+                    strand.rotation.z = 1.5 + Math.random() * 0.5;
+                    strand.rotation.x = (Math.random() - 0.5) * 0.3;
+                    group.add(strand);
+                }
+
+                // Dark feathered wings (spread for flight)
+                const wingShape = new THREE.Shape();
+                wingShape.moveTo(0, 0);
+                wingShape.lineTo(2.5, 0.5);
+                wingShape.lineTo(3.0, 0);
+                wingShape.lineTo(2.8, -0.3);
+                wingShape.lineTo(2.0, -0.5);
+                wingShape.lineTo(1.2, -0.3);
+                wingShape.lineTo(0, 0);
+
+                const wingGeometry = new THREE.ShapeGeometry(wingShape);
+                const wingMaterial = new THREE.MeshLambertMaterial({ color: 0x2E0854, side: THREE.DoubleSide });
+
+                const leftWing = new THREE.Mesh(wingGeometry, wingMaterial);
+                leftWing.position.set(0, 2.5, 0.8);
+                leftWing.rotation.x = -0.3;
+                leftWing.rotation.y = -0.5;
+                group.add(leftWing);
+
+                const rightWing = new THREE.Mesh(wingGeometry, wingMaterial);
+                rightWing.position.set(0, 2.5, -0.8);
+                rightWing.rotation.x = 0.3;
+                rightWing.rotation.y = 0.5;
+                rightWing.scale.z = -1;
+                group.add(rightWing);
+
+                // Legs (tucked for flying)
+                const legGeometry = new THREE.CylinderGeometry(0.12, 0.1, 1.0, 6);
+                [[0.8, 1.2, 0.4], [0.8, 1.2, -0.4], [-0.8, 1.2, 0.4], [-0.8, 1.2, -0.4]].forEach(pos => {
+                    const leg = new THREE.Mesh(legGeometry, bodyMaterial);
+                    leg.position.set(...pos);
+                    leg.rotation.x = pos[2] > 0 ? 0.5 : -0.5;
+                    leg.rotation.z = pos[0] > 0 ? -0.3 : 0.3;
+                    group.add(leg);
+                });
+
+                // Flowing tail
+                for (let i = 0; i < 8; i++) {
+                    const tailGeometry = new THREE.CylinderGeometry(0.04, 0.02, 1.0 + Math.random() * 0.5, 6);
+                    const tail = new THREE.Mesh(tailGeometry, maneMaterial);
+                    tail.position.set(-2.0, 1.8 - i * 0.05, (Math.random() - 0.5) * 0.4);
+                    tail.rotation.z = 1.8 + Math.random() * 0.4;
+                    group.add(tail);
+                }
+
+                // Dark aura particles
+                for (let i = 0; i < 10; i++) {
+                    const auraGeometry = new THREE.SphereGeometry(0.08 + Math.random() * 0.05, 6, 6);
+                    const auraMaterial = new THREE.MeshBasicMaterial({ 
+                        color: [glowColor, 0x4B0082, 0x9400D3][i % 3], 
+                        transparent: true, 
+                        opacity: 0.5 
+                    });
+                    const aura = new THREE.Mesh(auraGeometry, auraMaterial);
+                    aura.position.set(
+                        (Math.random() - 0.5) * 4,
+                        1.5 + Math.random() * 2,
+                        (Math.random() - 0.5) * 2
+                    );
+                    group.add(aura);
+                }
+
+                return group;
+            },
+
+            // ========== LEVEL 10 ENVIRONMENT ==========
+
+            'giant-tree': function() {
+                const group = new THREE.Group();
+                const trunkColor = 0x4A3728;
+                const leafColor = 0x228B22;
+                const glowColor = 0x98FB98;
+
+                // Massive trunk
+                const trunkGeometry = new THREE.CylinderGeometry(1.2, 1.8, 5.0, 12);
+                const trunkMaterial = new THREE.MeshLambertMaterial({ color: trunkColor });
+                const trunk = new THREE.Mesh(trunkGeometry, trunkMaterial);
+                trunk.position.y = 2.5;
+                group.add(trunk);
+
+                // Bark detail
+                for (let i = 0; i < 10; i++) {
+                    const barkGeometry = new THREE.BoxGeometry(0.2, 1.5 + Math.random(), 0.1);
+                    const bark = new THREE.Mesh(barkGeometry, trunkMaterial);
+                    const angle = (i / 10) * Math.PI * 2;
+                    bark.position.set(Math.cos(angle) * 1.3, 2 + Math.random() * 2, Math.sin(angle) * 1.3);
+                    bark.rotation.y = -angle;
+                    group.add(bark);
+                }
+
+                // Large root system
+                for (let i = 0; i < 6; i++) {
+                    const rootGeometry = new THREE.CylinderGeometry(0.2, 0.4, 2.0, 6);
+                    const root = new THREE.Mesh(rootGeometry, trunkMaterial);
+                    const angle = (i / 6) * Math.PI * 2;
+                    root.position.set(Math.cos(angle) * 1.5, 0.5, Math.sin(angle) * 1.5);
+                    root.rotation.z = Math.cos(angle) * 0.6;
+                    root.rotation.x = Math.sin(angle) * 0.6;
+                    group.add(root);
+                }
+
+                // Lush canopy
+                const leafMaterial = new THREE.MeshLambertMaterial({ color: leafColor });
+                for (let i = 0; i < 20; i++) {
+                    const leafGeometry = new THREE.SphereGeometry(0.8 + Math.random() * 0.6, 8, 8);
+                    const leaf = new THREE.Mesh(leafGeometry, leafMaterial);
+                    const angle = Math.random() * Math.PI * 2;
+                    const radius = Math.random() * 2.5;
+                    leaf.position.set(
+                        Math.cos(angle) * radius,
+                        5.0 + Math.random() * 2,
+                        Math.sin(angle) * radius
+                    );
+                    group.add(leaf);
+                }
+
+                // Glowing fairy lights in canopy
+                for (let i = 0; i < 8; i++) {
+                    const lightGeometry = new THREE.SphereGeometry(0.08, 6, 6);
+                    const lightMaterial = new THREE.MeshBasicMaterial({ 
+                        color: [0xFFD700, glowColor, 0xFF69B4][i % 3] 
+                    });
+                    const light = new THREE.Mesh(lightGeometry, lightMaterial);
+                    const angle = Math.random() * Math.PI * 2;
+                    light.position.set(
+                        Math.cos(angle) * (1 + Math.random()),
+                        4.5 + Math.random() * 2,
+                        Math.sin(angle) * (1 + Math.random())
+                    );
+                    group.add(light);
+                }
+
+                return group;
+            },
+
+            'fairy-ring': function() {
+                const group = new THREE.Group();
+                const mushroomColor = 0xFF6B6B;
+                const spotColor = 0xFFFFFF;
+
+                // Ring of small mushrooms
+                for (let i = 0; i < 12; i++) {
+                    const angle = (i / 12) * Math.PI * 2;
+                    const radius = 1.5;
+
+                    // Mushroom cap
+                    const capGeometry = new THREE.SphereGeometry(0.15, 8, 8, 0, Math.PI * 2, 0, Math.PI / 2);
+                    const capMaterial = new THREE.MeshLambertMaterial({ color: mushroomColor });
+                    const cap = new THREE.Mesh(capGeometry, capMaterial);
+                    cap.position.set(Math.cos(angle) * radius, 0.25, Math.sin(angle) * radius);
+                    cap.rotation.x = Math.PI;
+                    group.add(cap);
+
+                    // Stem
+                    const stemGeometry = new THREE.CylinderGeometry(0.04, 0.06, 0.2, 6);
+                    const stemMaterial = new THREE.MeshLambertMaterial({ color: 0xFFF8DC });
+                    const stem = new THREE.Mesh(stemGeometry, stemMaterial);
+                    stem.position.set(Math.cos(angle) * radius, 0.1, Math.sin(angle) * radius);
+                    group.add(stem);
+
+                    // White spots
+                    for (let j = 0; j < 3; j++) {
+                        const spotGeometry = new THREE.SphereGeometry(0.03, 6, 6);
+                        const spotMaterial = new THREE.MeshBasicMaterial({ color: spotColor });
+                        const spot = new THREE.Mesh(spotGeometry, spotMaterial);
+                        const spotAngle = (j / 3) * Math.PI * 2;
+                        spot.position.set(
+                            Math.cos(angle) * radius + Math.cos(spotAngle) * 0.08,
+                            0.28,
+                            Math.sin(angle) * radius + Math.sin(spotAngle) * 0.08
+                        );
+                        group.add(spot);
+                    }
+                }
+
+                // Glowing center
+                const glowGeometry = new THREE.CircleGeometry(1.0, 16);
+                const glowMaterial = new THREE.MeshBasicMaterial({ 
+                    color: 0x98FB98, 
+                    transparent: true, 
+                    opacity: 0.3 
+                });
+                const glow = new THREE.Mesh(glowGeometry, glowMaterial);
+                glow.position.y = 0.02;
+                glow.rotation.x = -Math.PI / 2;
+                group.add(glow);
+
+                // Sparkles floating in center
+                for (let i = 0; i < 6; i++) {
+                    const sparkleGeometry = new THREE.SphereGeometry(0.04, 6, 6);
+                    const sparkleMaterial = new THREE.MeshBasicMaterial({ 
+                        color: [0xFFD700, 0xFFFFFF, 0xFF69B4][i % 3] 
+                    });
+                    const sparkle = new THREE.Mesh(sparkleGeometry, sparkleMaterial);
+                    const angle = Math.random() * Math.PI * 2;
+                    sparkle.position.set(
+                        Math.cos(angle) * Math.random() * 0.8,
+                        0.3 + Math.random() * 0.5,
+                        Math.sin(angle) * Math.random() * 0.8
+                    );
+                    group.add(sparkle);
+                }
+
+                return group;
+            },
+
+            'enchanted-mushroom': function() {
+                const group = new THREE.Group();
+                const capColor = 0xFF1493;    // Deep pink
+                const stemColor = 0xFFF8DC;   // Cornsilk
+                const glowColor = 0x00FFAA;
+
+                // Large stem
+                const stemGeometry = new THREE.CylinderGeometry(0.3, 0.5, 1.5, 8);
+                const stemMaterial = new THREE.MeshLambertMaterial({ color: stemColor });
+                const stem = new THREE.Mesh(stemGeometry, stemMaterial);
+                stem.position.y = 0.75;
+                group.add(stem);
+
+                // Big dome cap
+                const capGeometry = new THREE.SphereGeometry(1.0, 12, 12, 0, Math.PI * 2, 0, Math.PI / 2);
+                const capMaterial = new THREE.MeshLambertMaterial({ color: capColor });
+                const cap = new THREE.Mesh(capGeometry, capMaterial);
+                cap.position.y = 1.5;
+                cap.rotation.x = Math.PI;
+                group.add(cap);
+
+                // White spots on cap
+                for (let i = 0; i < 8; i++) {
+                    const spotGeometry = new THREE.SphereGeometry(0.12 + Math.random() * 0.08, 8, 8);
+                    const spotMaterial = new THREE.MeshBasicMaterial({ color: 0xFFFFFF });
+                    const spot = new THREE.Mesh(spotGeometry, spotMaterial);
+                    const angle = (i / 8) * Math.PI * 2;
+                    const r = 0.5 + Math.random() * 0.3;
+                    spot.position.set(
+                        Math.cos(angle) * r,
+                        1.7 + Math.random() * 0.2,
+                        Math.sin(angle) * r
+                    );
+                    spot.scale.y = 0.3;
+                    group.add(spot);
+                }
+
+                // Glow underneath cap
+                const glowGeometry = new THREE.CircleGeometry(0.8, 12);
+                const glowMaterial = new THREE.MeshBasicMaterial({ 
+                    color: glowColor, 
+                    transparent: true, 
+                    opacity: 0.4,
+                    side: THREE.DoubleSide
+                });
+                const glow = new THREE.Mesh(glowGeometry, glowMaterial);
+                glow.position.y = 1.4;
+                glow.rotation.x = Math.PI / 2;
+                group.add(glow);
+
+                return group;
+            },
+
+            'crystal-flower': function() {
+                const group = new THREE.Group();
+                const stemColor = 0x228B22;
+                const petalColors = [0xFF69B4, 0x9370DB, 0x00CED1, 0xFFD700];
+
+                // Stem
+                const stemGeometry = new THREE.CylinderGeometry(0.05, 0.08, 1.0, 6);
+                const stemMaterial = new THREE.MeshLambertMaterial({ color: stemColor });
+                const stem = new THREE.Mesh(stemGeometry, stemMaterial);
+                stem.position.y = 0.5;
+                group.add(stem);
+
+                // Crystal petals (octahedron shapes)
+                for (let i = 0; i < 6; i++) {
+                    const petalGeometry = new THREE.OctahedronGeometry(0.2, 0);
+                    const petalMaterial = new THREE.MeshBasicMaterial({ 
+                        color: petalColors[i % petalColors.length],
+                        transparent: true,
+                        opacity: 0.7
+                    });
+                    const petal = new THREE.Mesh(petalGeometry, petalMaterial);
+                    const angle = (i / 6) * Math.PI * 2;
+                    petal.position.set(
+                        Math.cos(angle) * 0.25,
+                        1.1,
+                        Math.sin(angle) * 0.25
+                    );
+                    petal.rotation.z = Math.PI / 4;
+                    petal.scale.set(0.5, 1.5, 0.5);
+                    group.add(petal);
+                }
+
+                // Center gem
+                const centerGeometry = new THREE.IcosahedronGeometry(0.15, 0);
+                const centerMaterial = new THREE.MeshBasicMaterial({ color: 0xFFFFFF });
+                const center = new THREE.Mesh(centerGeometry, centerMaterial);
+                center.position.y = 1.15;
+                group.add(center);
+
+                // Leaves
+                const leafGeometry = new THREE.PlaneGeometry(0.3, 0.5);
+                const leafMaterial = new THREE.MeshLambertMaterial({ 
+                    color: stemColor, 
+                    side: THREE.DoubleSide 
+                });
+                [-0.15, 0.15].forEach((x, i) => {
+                    const leaf = new THREE.Mesh(leafGeometry, leafMaterial);
+                    leaf.position.set(x, 0.4, 0);
+                    leaf.rotation.y = i === 0 ? 0.5 : -0.5;
+                    leaf.rotation.z = i === 0 ? 0.3 : -0.3;
+                    group.add(leaf);
+                });
+
+                return group;
+            },
+
+            'rainbow-arc': function() {
+                const group = new THREE.Group();
+                const colors = [0xFF0000, 0xFF7F00, 0xFFFF00, 0x00FF00, 0x0000FF, 0x4B0082, 0x9400D3];
+
+                // Rainbow bands
+                colors.forEach((color, i) => {
+                    const arcGeometry = new THREE.TorusGeometry(2.0 - i * 0.12, 0.08, 8, 32, Math.PI);
+                    const arcMaterial = new THREE.MeshBasicMaterial({ 
+                        color: color,
+                        transparent: true,
+                        opacity: 0.7
+                    });
+                    const arc = new THREE.Mesh(arcGeometry, arcMaterial);
+                    arc.position.y = 0;
+                    arc.rotation.x = Math.PI / 2;
+                    arc.rotation.z = Math.PI / 2;
+                    group.add(arc);
+                });
+
+                // Sparkles along rainbow
+                for (let i = 0; i < 12; i++) {
+                    const sparkleGeometry = new THREE.SphereGeometry(0.06, 6, 6);
+                    const sparkleMaterial = new THREE.MeshBasicMaterial({ 
+                        color: [0xFFFFFF, 0xFFD700][i % 2] 
+                    });
+                    const sparkle = new THREE.Mesh(sparkleGeometry, sparkleMaterial);
+                    const angle = (i / 12) * Math.PI;
+                    sparkle.position.set(
+                        0,
+                        Math.sin(angle) * 1.8,
+                        Math.cos(angle) * 1.8
+                    );
+                    group.add(sparkle);
+                }
+
+                return group;
+            },
+
+            // ========== LEVEL 10 HAZARDS ==========
+
+            'thorn-patch': function() {
+                const group = new THREE.Group();
+                const vineColor = 0x228B22;
+                const thornColor = 0x4A2810;
+
+                // Base vines
+                const vineMaterial = new THREE.MeshLambertMaterial({ color: vineColor });
+                for (let i = 0; i < 8; i++) {
+                    const vineGeometry = new THREE.CylinderGeometry(0.05, 0.08, 1.5 + Math.random(), 6);
+                    const vine = new THREE.Mesh(vineGeometry, vineMaterial);
+                    vine.position.set(
+                        (Math.random() - 0.5) * 2,
+                        0.5,
+                        (Math.random() - 0.5) * 2
+                    );
+                    vine.rotation.z = (Math.random() - 0.5) * 0.8;
+                    vine.rotation.x = (Math.random() - 0.5) * 0.8;
+                    group.add(vine);
+                }
+
+                // Thorns
+                const thornMaterial = new THREE.MeshLambertMaterial({ color: thornColor });
+                for (let i = 0; i < 20; i++) {
+                    const thornGeometry = new THREE.ConeGeometry(0.03, 0.15, 4);
+                    const thorn = new THREE.Mesh(thornGeometry, thornMaterial);
+                    thorn.position.set(
+                        (Math.random() - 0.5) * 2.5,
+                        Math.random() * 1.2,
+                        (Math.random() - 0.5) * 2.5
+                    );
+                    thorn.rotation.z = Math.random() * Math.PI;
+                    thorn.rotation.x = Math.random() * Math.PI;
+                    group.add(thorn);
+                }
+
+                // Warning glow
+                const glowGeometry = new THREE.CircleGeometry(1.3, 12);
+                const glowMaterial = new THREE.MeshBasicMaterial({ 
+                    color: 0xFF4444, 
+                    transparent: true, 
+                    opacity: 0.2 
+                });
+                const glow = new THREE.Mesh(glowGeometry, glowMaterial);
+                glow.position.y = 0.02;
+                glow.rotation.x = -Math.PI / 2;
+                group.add(glow);
+
+                return group;
+            },
+
+            'sleep-spore': function() {
+                const group = new THREE.Group();
+                const cloudColor = 0xE6E6FA;   // Lavender
+                const sporeColor = 0xDDA0DD;   // Plum
+
+                // Spore cloud base
+                for (let i = 0; i < 6; i++) {
+                    const cloudGeometry = new THREE.SphereGeometry(0.4 + Math.random() * 0.3, 8, 8);
+                    const cloudMaterial = new THREE.MeshBasicMaterial({ 
+                        color: cloudColor, 
+                        transparent: true, 
+                        opacity: 0.4 
+                    });
+                    const cloud = new THREE.Mesh(cloudGeometry, cloudMaterial);
+                    cloud.position.set(
+                        (Math.random() - 0.5) * 1.5,
+                        0.5 + Math.random() * 0.5,
+                        (Math.random() - 0.5) * 1.5
+                    );
+                    group.add(cloud);
+                }
+
+                // Floating spore particles
+                for (let i = 0; i < 15; i++) {
+                    const sporeGeometry = new THREE.SphereGeometry(0.05 + Math.random() * 0.03, 6, 6);
+                    const sporeMaterial = new THREE.MeshBasicMaterial({ 
+                        color: sporeColor,
+                        transparent: true,
+                        opacity: 0.7
+                    });
+                    const spore = new THREE.Mesh(sporeGeometry, sporeMaterial);
+                    spore.position.set(
+                        (Math.random() - 0.5) * 2,
+                        0.3 + Math.random() * 1.2,
+                        (Math.random() - 0.5) * 2
+                    );
+                    group.add(spore);
+                }
+
+                // Zzz symbols
+                const zMaterial = new THREE.MeshBasicMaterial({ color: 0x9370DB });
+                [0.8, 1.1, 1.4].forEach((y, i) => {
+                    const zGeometry = new THREE.BoxGeometry(0.15 - i * 0.03, 0.04, 0.04);
+                    const z = new THREE.Mesh(zGeometry, zMaterial);
+                    z.position.set(0.5 + i * 0.15, y, 0);
+                    group.add(z);
+                });
+
+                return group;
+            },
+
+            // ========== LEVEL 10 ITEMS ==========
+
+            'size-potion': function() {
+                const group = new THREE.Group();
+                const bottleColor = 0xADD8E6;  // Light blue glass
+                const liquidColor = 0xFF69B4;  // Hot pink
+                const corkColor = 0x8B4513;
+
+                // Bottle body
+                const bottleGeometry = new THREE.CylinderGeometry(0.25, 0.35, 0.8, 12);
+                const bottleMaterial = new THREE.MeshPhongMaterial({ 
+                    color: bottleColor,
+                    transparent: true,
+                    opacity: 0.6,
+                    shininess: 100
+                });
+                const bottle = new THREE.Mesh(bottleGeometry, bottleMaterial);
+                bottle.position.y = 0.5;
+                group.add(bottle);
+
+                // Bottle neck
+                const neckGeometry = new THREE.CylinderGeometry(0.12, 0.2, 0.3, 12);
+                const neck = new THREE.Mesh(neckGeometry, bottleMaterial);
+                neck.position.y = 1.0;
+                group.add(neck);
+
+                // Cork
+                const corkGeometry = new THREE.CylinderGeometry(0.1, 0.12, 0.15, 8);
+                const corkMaterial = new THREE.MeshLambertMaterial({ color: corkColor });
+                const cork = new THREE.Mesh(corkGeometry, corkMaterial);
+                cork.position.y = 1.2;
+                group.add(cork);
+
+                // Liquid inside
+                const liquidGeometry = new THREE.CylinderGeometry(0.2, 0.3, 0.6, 12);
+                const liquidMaterial = new THREE.MeshBasicMaterial({ 
+                    color: liquidColor,
+                    transparent: true,
+                    opacity: 0.7
+                });
+                const liquid = new THREE.Mesh(liquidGeometry, liquidMaterial);
+                liquid.position.y = 0.45;
+                group.add(liquid);
+
+                // Bubbles in liquid
+                for (let i = 0; i < 5; i++) {
+                    const bubbleGeometry = new THREE.SphereGeometry(0.04, 6, 6);
+                    const bubbleMaterial = new THREE.MeshBasicMaterial({ 
+                        color: 0xFFFFFF,
+                        transparent: true,
+                        opacity: 0.6
+                    });
+                    const bubble = new THREE.Mesh(bubbleGeometry, bubbleMaterial);
+                    bubble.position.set(
+                        (Math.random() - 0.5) * 0.3,
+                        0.3 + Math.random() * 0.4,
+                        (Math.random() - 0.5) * 0.3
+                    );
+                    group.add(bubble);
+                }
+
+                // Magical glow
+                const glowGeometry = new THREE.SphereGeometry(0.5, 12, 12);
+                const glowMaterial = new THREE.MeshBasicMaterial({ 
+                    color: liquidColor,
+                    transparent: true,
+                    opacity: 0.2
+                });
+                const glow = new THREE.Mesh(glowGeometry, glowMaterial);
+                glow.position.y = 0.6;
+                group.add(glow);
+
+                // Size arrows (up and down)
+                const arrowMaterial = new THREE.MeshBasicMaterial({ color: 0xFFD700 });
+                // Up arrow
+                const upArrowGeometry = new THREE.ConeGeometry(0.1, 0.2, 4);
+                const upArrow = new THREE.Mesh(upArrowGeometry, arrowMaterial);
+                upArrow.position.set(0.5, 0.9, 0);
+                group.add(upArrow);
+                // Down arrow
+                const downArrow = new THREE.Mesh(upArrowGeometry, arrowMaterial);
+                downArrow.position.set(0.5, 0.5, 0);
+                downArrow.rotation.z = Math.PI;
+                group.add(downArrow);
+
+                return group;
             }
         };
 

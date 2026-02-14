@@ -25,6 +25,8 @@
             buildGiantSpider(giantGrp);
         } else if (G.computerTheme) {
             buildMainframe(giantGrp);
+        } else if (G.enchantedTheme) {
+            buildTreant(giantGrp);
         } else {
             buildStandardGiant(giantGrp, textures);
         }
@@ -699,6 +701,120 @@
         web.position.set(0, 0.8 * scale, -3.0 * scale);
         web.rotation.x = Math.PI / 2 - 0.2;
         group.add(web);
+    }
+    
+    function buildTreant(group) {
+        // TREANT - living tree guardian for enchanted theme
+        // Scale factor for bigger treants
+        const s = 1.8;
+        const barkColor = 0x4A3728;
+        const mossColor = 0x3A5F0B;
+        const eyeColor = 0x90EE90;
+
+        // Thick trunk body
+        const bodyGeometry = new THREE.CylinderGeometry(0.8 * s, 1.0 * s, 2.5 * s, 8);
+        const bodyMaterial = new THREE.MeshLambertMaterial({ color: barkColor });
+        const body = new THREE.Mesh(bodyGeometry, bodyMaterial);
+        body.position.y = 1.5 * s;
+        body.castShadow = true;
+        group.add(body);
+
+        // Bark texture ridges
+        for (let i = 0; i < 6; i++) {
+            const ridgeGeometry = new THREE.BoxGeometry(0.12 * s, 2.0 * s, 0.08 * s);
+            const ridge = new THREE.Mesh(ridgeGeometry, bodyMaterial);
+            const angle = (i / 6) * Math.PI * 2;
+            ridge.position.set(Math.cos(angle) * 0.85 * s, 1.5 * s, Math.sin(angle) * 0.85 * s);
+            ridge.rotation.y = -angle;
+            group.add(ridge);
+        }
+
+        // Head (wider top of trunk)
+        const headGeometry = new THREE.CylinderGeometry(0.9 * s, 0.8 * s, 0.8 * s, 8);
+        const head = new THREE.Mesh(headGeometry, bodyMaterial);
+        head.position.y = 3.1 * s;
+        head.castShadow = true;
+        group.add(head);
+
+        // Glowing eyes
+        const eyeGeometry = new THREE.SphereGeometry(0.15 * s, 8, 8);
+        const eyeMaterial = new THREE.MeshBasicMaterial({ color: eyeColor });
+        [-0.4, 0.4].forEach(x => {
+            const eye = new THREE.Mesh(eyeGeometry, eyeMaterial);
+            eye.position.set(x * s, 3.1 * s, 0.75 * s);
+            group.add(eye);
+        });
+
+        // Branch arms with knotted ends (fists attached)
+        const armGeometry = new THREE.CylinderGeometry(0.2 * s, 0.35 * s, 1.8 * s, 6);
+        const leftArm = new THREE.Mesh(armGeometry, bodyMaterial);
+        leftArm.position.set(-1.4 * s, 2.5 * s, 0);
+        leftArm.rotation.z = 0.8;
+        leftArm.castShadow = true;
+        group.add(leftArm);
+
+        const rightArm = new THREE.Mesh(armGeometry, bodyMaterial);
+        rightArm.position.set(1.4 * s, 2.5 * s, 0);
+        rightArm.rotation.z = -0.8;
+        rightArm.castShadow = true;
+        group.add(rightArm);
+
+        // Knotted branch ends (visual fists at end of arms)
+        const fistGeometry = new THREE.SphereGeometry(0.35 * s, 6, 6);
+        const leftFist = new THREE.Mesh(fistGeometry, bodyMaterial);
+        // Position at end of rotated arm
+        leftFist.position.set(-1.4 * s - Math.sin(0.8) * 0.9 * s, 2.5 * s - Math.cos(0.8) * 0.9 * s, 0);
+        leftFist.castShadow = true;
+        group.add(leftFist);
+
+        const rightFist = new THREE.Mesh(fistGeometry, bodyMaterial);
+        rightFist.position.set(1.4 * s + Math.sin(0.8) * 0.9 * s, 2.5 * s - Math.cos(0.8) * 0.9 * s, 0);
+        rightFist.castShadow = true;
+        group.add(rightFist);
+        
+        // Treant doesn't use standard arm animation (no leftArm/rightArm/leftFist/rightFist refs)
+
+        // Leaf crown
+        const leafMaterial = new THREE.MeshLambertMaterial({ color: mossColor });
+        for (let i = 0; i < 8; i++) {
+            const leafGeometry = new THREE.SphereGeometry((0.25 + Math.random() * 0.15) * s, 6, 6);
+            const leaf = new THREE.Mesh(leafGeometry, leafMaterial);
+            const angle = (i / 8) * Math.PI * 2;
+            leaf.position.set(
+                Math.cos(angle) * (0.7 + Math.random() * 0.3) * s,
+                (3.5 + Math.random() * 0.3) * s,
+                Math.sin(angle) * (0.7 + Math.random() * 0.3) * s
+            );
+            group.add(leaf);
+        }
+
+        // Moss patches on body
+        for (let i = 0; i < 4; i++) {
+            const mossGeometry = new THREE.SphereGeometry(0.15 * s, 6, 6);
+            const moss = new THREE.Mesh(mossGeometry, leafMaterial);
+            const angle = Math.random() * Math.PI * 2;
+            moss.position.set(
+                Math.cos(angle) * 1.0 * s,
+                (1.0 + Math.random() * 1.5) * s,
+                Math.sin(angle) * 1.0 * s
+            );
+            moss.scale.y = 0.5;
+            group.add(moss);
+        }
+
+        // Root feet
+        for (let i = 0; i < 3; i++) {
+            const rootGeometry = new THREE.CylinderGeometry(0.15 * s, 0.3 * s, 0.8 * s, 6);
+            const root = new THREE.Mesh(rootGeometry, bodyMaterial);
+            const angle = (i / 3) * Math.PI * 2 + 0.4;
+            root.position.set(Math.cos(angle) * 0.9 * s, 0.3 * s, Math.sin(angle) * 0.9 * s);
+            root.rotation.z = Math.cos(angle) * 0.4;
+            root.rotation.x = Math.sin(angle) * 0.4;
+            root.castShadow = true;
+            group.add(root);
+        }
+        
+        group.userData.isTreant = true;
     }
     
     function buildStandardGiant(group, textures) {

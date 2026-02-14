@@ -9,7 +9,7 @@ LEVEL_REGISTRY.register(9, {
     playerStart: { x: 0, z: 180 },
     
     // Portal loops back to Level 1 (game complete!)
-    portal: { x: 0, z: -220, destinationLevel: 1 },
+    portal: { x: 0, z: -220, destinationLevel: 10 },
     
     // Unique elements for computer level
     computerTheme: true,

@@ -643,8 +643,8 @@
             const canPassMountains = G.waterTheme && G.player.isGliding;
             if (!canPassMountains) {
                 G.levelConfig.mountains.forEach(mtn => {
-                    // For graveyard, ruins, and computer theme walls, use rectangular (box) collision
-                    if (G.graveyardTheme || G.ruinsTheme || G.computerTheme) {
+                    // For graveyard, ruins, computer, and enchanted theme walls, use rectangular (box) collision
+                    if (G.graveyardTheme || G.ruinsTheme || G.computerTheme || G.enchantedTheme) {
                         const wallWidth = mtn.width;
                         // Use fixed depth of 2 for computer theme (matches visual), variable for others
                         const wallDepth = G.computerTheme ? 2 : Math.min(mtn.width * 0.15, 8);
@@ -824,7 +824,7 @@
             }
             
             // Update giant attack animation
-            if (gob.isGiant && gob.isAttacking && !gob.frozen) {
+            if (gob.isGiant && gob.isAttacking && !gob.frozen && gob.mesh.leftArm && gob.mesh.rightArm) {
                 gob.attackAnimationProgress += 0.12;
                 
                 // Extra camera shake during attack
@@ -984,6 +984,76 @@
                 }
             }
         });
+        
+        // Collect size potions (enchanted theme)
+        if (G.sizePotions) {
+            G.sizePotions.forEach((pickup, idx) => {
+                if (!pickup.collected) {
+                    const dist = G.playerGroup.position.distanceTo(pickup.mesh.position);
+                    if (dist < pickup.radius) {
+                        pickup.collected = true;
+                        pickup.mesh.visible = false;
+                        Audio.playCollectSound();
+                        
+                        // Size potion effect
+                        if (G.playerShrunk) {
+                            // Restore to normal size
+                            G.playerShrunk = false;
+                            G.playerScale = 1.0;
+                            G.playerGroup.scale.set(1.0, 1.0, 1.0);
+                        } else if (!G.playerGiant) {
+                            // Become giant temporarily
+                            G.playerGiant = true;
+                            G.playerScale = G.giantScale;
+                            G.giantEndTime = Date.now() + G.giantDuration;
+                            G.playerGroup.scale.set(G.giantScale, G.giantScale, G.giantScale);
+                        }
+                        
+                        // Notify other player in multiplayer
+                        if (multiplayerManager && multiplayerManager.isConnected()) {
+                            multiplayerManager.sendGameEvent('itemCollected', { type: 'sizePotion', index: idx });
+                        }
+                    }
+                    // Check player 2 collection in native splitscreen
+                    if (!pickup.collected && isNativeSplitscreen && G.player2Group) {
+                        const dist2 = G.player2Group.position.distanceTo(pickup.mesh.position);
+                        if (dist2 < pickup.radius) {
+                            pickup.collected = true;
+                            pickup.mesh.visible = false;
+                            Audio.playCollectSound();
+                            
+                            // Size potion effect for player 2
+                            if (G.player2Shrunk) {
+                                // Restore to normal size
+                                G.player2Shrunk = false;
+                                G.player2Scale = 1.0;
+                                G.player2Group.scale.set(1.0, 1.0, 1.0);
+                            } else if (!G.player2Giant) {
+                                // Become giant temporarily
+                                G.player2Giant = true;
+                                G.player2Scale = G.giantScale;
+                                G.giant2EndTime = Date.now() + G.giantDuration;
+                                G.player2Group.scale.set(G.giantScale, G.giantScale, G.giantScale);
+                            }
+                        }
+                    }
+                }
+            });
+        }
+        
+        // Update giant mode timer
+        if (G.playerGiant && Date.now() > G.giantEndTime) {
+            G.playerGiant = false;
+            G.playerScale = 1.0;
+            G.playerGroup.scale.set(1.0, 1.0, 1.0);
+        }
+        
+        // Update player 2 giant mode timer
+        if (G.player2Giant && Date.now() > G.giant2EndTime) {
+            G.player2Giant = false;
+            G.player2Scale = 1.0;
+            if (G.player2Group) G.player2Group.scale.set(1.0, 1.0, 1.0);
+        }
         
         // Collect scarabs
         G.scarabPickups.forEach((pickup, idx) => {

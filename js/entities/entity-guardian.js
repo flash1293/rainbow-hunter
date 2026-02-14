@@ -29,6 +29,8 @@
             buildSpectralKnight(goblinGrp);
         } else if (G.computerTheme) {
             buildFirewallSentry(goblinGrp);
+        } else if (G.enchantedTheme) {
+            buildDarkFairy(goblinGrp);
         } else {
             buildStandardGuardian(goblinGrp, textures);
         }
@@ -719,6 +721,96 @@
 
         group.userData.isFirewall = true;
         group.userData.floatOffset = Math.random() * Math.PI * 2;
+    }
+    
+    function buildDarkFairy(group) {
+        // DARK FAIRY - sinister fairy with shrink spell for enchanted theme
+        const skinColor = 0x8B7D9B;   // Purple-grey skin
+        const wingColor = 0x4B0082;   // Indigo wings
+        const glowColor = 0xFF00FF;   // Magenta glow
+
+        // Elegant body
+        const bodyGeometry = new THREE.CylinderGeometry(0.2, 0.3, 0.8, 8);
+        const bodyMaterial = new THREE.MeshLambertMaterial({ color: skinColor });
+        const body = new THREE.Mesh(bodyGeometry, bodyMaterial);
+        body.position.y = 1.0;
+        body.castShadow = true;
+        group.add(body);
+
+        // Dress/robe bottom
+        const dressGeometry = new THREE.ConeGeometry(0.4, 0.8, 8);
+        const dressMaterial = new THREE.MeshLambertMaterial({ color: 0x2E0854 });
+        const dress = new THREE.Mesh(dressGeometry, dressMaterial);
+        dress.position.y = 0.6;
+        dress.rotation.x = Math.PI;
+        group.add(dress);
+
+        // Head
+        const headGeometry = new THREE.SphereGeometry(0.25, 12, 12);
+        const head = new THREE.Mesh(headGeometry, bodyMaterial);
+        head.position.y = 1.6;
+        head.castShadow = true;
+        group.add(head);
+
+        // Glowing eyes
+        const eyeGeometry = new THREE.SphereGeometry(0.06, 8, 8);
+        const eyeMaterial = new THREE.MeshBasicMaterial({ color: glowColor });
+        [-0.1, 0.1].forEach(x => {
+            const eye = new THREE.Mesh(eyeGeometry, eyeMaterial);
+            eye.position.set(x, 1.65, 0.2);
+            group.add(eye);
+        });
+
+        // Dark crown/tiara
+        for (let i = 0; i < 5; i++) {
+            const spikeGeometry = new THREE.ConeGeometry(0.03, 0.15 + (i === 2 ? 0.1 : 0), 4);
+            const spikeMaterial = new THREE.MeshLambertMaterial({ color: 0x1A1A2E });
+            const spike = new THREE.Mesh(spikeGeometry, spikeMaterial);
+            const angle = ((i - 2) / 5) * Math.PI * 0.6;
+            spike.position.set(Math.sin(angle) * 0.2, 1.85, Math.cos(angle) * 0.1);
+            group.add(spike);
+        }
+
+        // Large dark wings - store references for animation
+        const wingMaterial = new THREE.MeshBasicMaterial({ 
+            color: wingColor, 
+            transparent: true, 
+            opacity: 0.7, 
+            side: THREE.DoubleSide 
+        });
+        
+        // Use ellipse shape for wings
+        const wingGeometry = new THREE.CircleGeometry(0.6, 16, 0, Math.PI);
+        
+        group.wings = [];
+        
+        const leftWing = new THREE.Mesh(wingGeometry, wingMaterial);
+        leftWing.position.set(-0.3, 1.2, -0.1);
+        leftWing.rotation.y = -0.6;
+        leftWing.rotation.z = 0.3;
+        leftWing.userData.baseRotY = -0.6;
+        leftWing.userData.isLeftWing = true;
+        group.add(leftWing);
+        group.wings.push(leftWing);
+        
+        const rightWing = new THREE.Mesh(wingGeometry, wingMaterial);
+        rightWing.position.set(0.3, 1.2, -0.1);
+        rightWing.rotation.y = 0.6;
+        rightWing.rotation.z = -0.3;
+        rightWing.userData.baseRotY = 0.6;
+        rightWing.userData.isLeftWing = false;
+        rightWing.scale.x = -1;
+        group.add(rightWing);
+        group.wings.push(rightWing);
+
+        // Magic orb in hand
+        const orbGeometry = new THREE.SphereGeometry(0.12, 12, 12);
+        const orbMaterial = new THREE.MeshBasicMaterial({ color: glowColor, transparent: true, opacity: 0.8 });
+        const orb = new THREE.Mesh(orbGeometry, orbMaterial);
+        orb.position.set(0.4, 1.0, 0.3);
+        group.add(orb);
+        
+        group.userData.isDarkFairy = true;
     }
     
     function buildStandardGuardian(group, textures) {
