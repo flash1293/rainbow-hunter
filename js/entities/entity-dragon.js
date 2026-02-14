@@ -35,10 +35,10 @@
             dragonEyeTexture = textures.dragonEye;
         }
         
-        // Trojan Dragon - corrupted data beast with glitch effects
-        const trojanColor = 0xFF0066;      // Magenta corruption
+        // Trojan Dragon - corrupted data beast with glitch effects (wiki style)
+        const trojanColor = 0x9900FF;      // Purple corruption (wiki glitchPurple)
         const dataColor = 0x00FFFF;        // Cyan data
-        const darkColor = 0x1A0A1A;        // Dark corrupted
+        const darkColor = 0x110022;        // Dark corrupted core
         
         // Body - long segmented shape
         const bodyGeometry = new THREE.CylinderGeometry(2, 2.5, 10, 12);

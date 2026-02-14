@@ -475,111 +475,59 @@
     }
     
     function buildBug(group) {
-        // COMPUTER BUG - literal digital beetle/glitch creature
-        const bugColor = 0xFF0066;      // Magenta glitch color
-        const glowColor = 0x00FFFF;     // Cyan data glow
-        const darkColor = 0x330033;     // Dark shell
+        // COMPUTER BUG - pixelated green glitch creature (wiki style)
+        const bugColor = 0x00FF00;      // Green glitch color
+        const darkColor = 0x003300;     // Dark green
 
-        // Bug body - beetle-like shell
-        const bodyGeometry = new THREE.SphereGeometry(0.5, 8, 6);
-        bodyGeometry.scale(1.2, 0.6, 1.0);
-        const bodyMaterial = new THREE.MeshPhongMaterial({
-            color: darkColor,
-            emissive: bugColor,
-            emissiveIntensity: 0.3,
-            shininess: 80,
-            specular: glowColor
+        // Glitchy pixelated body
+        const bodyGeometry = new THREE.BoxGeometry(0.8, 0.6, 0.4);
+        const bodyMaterial = new THREE.MeshBasicMaterial({ 
+            color: bugColor, 
+            transparent: true, 
+            opacity: 0.8 
         });
         const body = new THREE.Mesh(bodyGeometry, bodyMaterial);
-        body.position.y = 0.6;
+        body.position.y = 0.7;
         body.castShadow = true;
         group.add(body);
 
-        // Glitch pattern lines on shell
-        for (let i = 0; i < 4; i++) {
-            const lineGeometry = new THREE.BoxGeometry(0.6, 0.02, 0.04);
-            const lineMaterial = new THREE.MeshBasicMaterial({
-                color: glowColor,
-                transparent: true,
-                opacity: 0.8
-            });
-            const line = new THREE.Mesh(lineGeometry, lineMaterial);
-            line.position.set(0, 0.65 + i * 0.08, 0.3 - i * 0.08);
-            group.add(line);
-        }
-
-        // Bug head - angular digital
-        const headGeometry = new THREE.BoxGeometry(0.35, 0.25, 0.3);
-        const headMaterial = new THREE.MeshPhongMaterial({
-            color: darkColor,
-            emissive: bugColor,
-            emissiveIntensity: 0.4
-        });
-        const head = new THREE.Mesh(headGeometry, headMaterial);
-        head.position.set(0, 0.55, 0.45);
+        // Pixel head
+        const headGeometry = new THREE.BoxGeometry(0.5, 0.5, 0.4);
+        const head = new THREE.Mesh(headGeometry, bodyMaterial);
+        head.position.y = 1.3;
         head.castShadow = true;
         group.add(head);
 
-        // Glowing compound eyes
-        const eyeGeometry = new THREE.SphereGeometry(0.08, 8, 8);
-        const eyeMaterial = new THREE.MeshBasicMaterial({
-            color: 0xFF0000,
-            transparent: true,
-            blending: THREE.AdditiveBlending
+        // Red error eyes
+        const eyeMaterial = new THREE.MeshBasicMaterial({ color: 0xFF0000 });
+        const eyeGeometry = new THREE.BoxGeometry(0.12, 0.12, 0.1);
+        [-0.12, 0.12].forEach(x => {
+            const eye = new THREE.Mesh(eyeGeometry, eyeMaterial);
+            eye.position.set(x, 1.35, 0.22);
+            group.add(eye);
         });
-        const eye1 = new THREE.Mesh(eyeGeometry, eyeMaterial);
-        eye1.position.set(-0.12, 0.6, 0.58);
-        group.add(eye1);
 
-        const eye2 = new THREE.Mesh(eyeGeometry, eyeMaterial);
-        eye2.position.set(0.12, 0.6, 0.58);
-        group.add(eye2);
-
-        // Antennae - data probes
-        const antennaGeometry = new THREE.CylinderGeometry(0.015, 0.02, 0.4, 6);
-        const antennaMaterial = new THREE.MeshBasicMaterial({ color: glowColor });
-        
-        const antenna1 = new THREE.Mesh(antennaGeometry, antennaMaterial);
-        antenna1.position.set(-0.1, 0.85, 0.5);
-        antenna1.rotation.x = 0.5;
-        antenna1.rotation.z = -0.3;
-        group.add(antenna1);
-
-        const antenna2 = new THREE.Mesh(antennaGeometry, antennaMaterial);
-        antenna2.position.set(0.1, 0.85, 0.5);
-        antenna2.rotation.x = 0.5;
-        antenna2.rotation.z = 0.3;
-        group.add(antenna2);
-
-        // Six segmented legs
-        const legMaterial = new THREE.MeshLambertMaterial({ color: 0x222222 });
-        for (let side = -1; side <= 1; side += 2) {
-            for (let i = 0; i < 3; i++) {
-                const legGeometry = new THREE.CylinderGeometry(0.02, 0.015, 0.35, 4);
-                const leg = new THREE.Mesh(legGeometry, legMaterial);
-                leg.position.set(side * 0.4, 0.25, 0.15 - i * 0.2);
-                leg.rotation.z = side * 0.8;
-                leg.rotation.x = 0.3;
-                group.add(leg);
-            }
-        }
-
-        // Glitch particle effect (floating pixels)
-        const pixelGeometry = new THREE.BoxGeometry(0.06, 0.06, 0.06);
-        const pixelMaterial = new THREE.MeshBasicMaterial({
-            color: bugColor,
-            transparent: true,
-            opacity: 0.6
+        // Antenna (error flags)
+        const antennaGeometry = new THREE.CylinderGeometry(0.02, 0.02, 0.4, 4);
+        const antennaMaterial = new THREE.MeshBasicMaterial({ color: 0xFF0000 });
+        [-0.15, 0.15].forEach(x => {
+            const antenna = new THREE.Mesh(antennaGeometry, antennaMaterial);
+            antenna.position.set(x, 1.7, 0);
+            antenna.castShadow = true;
+            group.add(antenna);
         });
-        for (let i = 0; i < 5; i++) {
-            const pixel = new THREE.Mesh(pixelGeometry, pixelMaterial);
-            pixel.position.set(
-                (Math.random() - 0.5) * 0.8,
-                0.8 + Math.random() * 0.5,
-                (Math.random() - 0.5) * 0.6
-            );
-            pixel.userData.floatOffset = Math.random() * Math.PI * 2;
-            group.add(pixel);
+
+        // Glitch particles around
+        for (let i = 0; i < 6; i++) {
+            const glitchGeometry = new THREE.BoxGeometry(0.1, 0.1, 0.1);
+            const glitchMaterial = new THREE.MeshBasicMaterial({ 
+                color: [0x00FF00, 0xFF0000, 0x00FFFF][i % 3] 
+            });
+            const glitch = new THREE.Mesh(glitchGeometry, glitchMaterial);
+            const angle = (i / 6) * Math.PI * 2;
+            glitch.position.set(Math.cos(angle) * 0.6, 0.8 + (i % 3) * 0.3, Math.sin(angle) * 0.4);
+            glitch.userData.floatOffset = Math.random() * Math.PI * 2;
+            group.add(glitch);
         }
 
         group.userData.isBug = true;
