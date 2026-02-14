@@ -270,6 +270,60 @@
       "levels": [8],
       "health": 50,
       "damage": 2
+    },
+    {
+      "id": "bug",
+      "name": "Bug",
+      "description": "Digitaler Parasit mit pixeligen Umrissen und rot blinkenden Fehlercodes. Kriecht durch das Netzwerk und greift bei Kontakt an.",
+      "tags": ["System", "Nahkampf"],
+      "levels": [9],
+      "health": 3,
+      "damage": 1
+    },
+    {
+      "id": "firewall-sentry",
+      "name": "Firewall-Sentry",
+      "description": "Glühende Sicherheitseinheit mit neonblauen Schutzschilden. Überwacht die Netzwerkgrenzen und schießt Datenpakete auf eindringende Programme.",
+      "tags": ["System", "Elite", "Fernkampf"],
+      "levels": [9],
+      "health": 5,
+      "damage": 1
+    },
+    {
+      "id": "mainframe",
+      "name": "Mainframe",
+      "description": "Massiver Serverkern mit pulsierenden LEDs und Kühlrippen. Langsam aber mächtig, verteidigt kritische Datenbereiche.",
+      "tags": ["System", "Boss", "Schwer"],
+      "levels": [9],
+      "health": 20,
+      "damage": 2
+    },
+    {
+      "id": "hacker",
+      "name": "Hacker",
+      "description": "Vermummte Gestalt mit holografischem Bildschirm und grün leuchtenden Codezeilen. Wirft zerstörerische Malware-Projektile.",
+      "tags": ["System", "Magie", "Fernkampf"],
+      "levels": [9],
+      "health": 7,
+      "damage": 1
+    },
+    {
+      "id": "surveillance-drone",
+      "name": "Überwachungsdrohne",
+      "description": "Schwebende Drohne mit rotierendem Scanner und blinkenden Statuslichtern. Kreist über dem Netzwerk und wirft Logikbomben ab.",
+      "tags": ["System", "Fliegend", "Bomben"],
+      "levels": [9],
+      "health": 2,
+      "damage": 1
+    },
+    {
+      "id": "trojan-dragon",
+      "name": "Trojaner-Drache",
+      "description": "Korrupter Datendrache aus chaotischem Code mit glitchenden Flügeln und digitalen Flammen. Hüter des Systemkerns.",
+      "tags": ["System", "Boss", "Fliegend", "Feuerball"],
+      "levels": [9],
+      "health": 50,
+      "damage": 2
     }
   ],
   "items": [
@@ -368,6 +422,27 @@
       "description": "Sofortiger Schaden, mehrschichtiger Leuchteffekt.",
       "level": 4,
       "counter": "Überspringen oder Brücken bauen"
+    },
+    {
+      "id": "buffer-overflow",
+      "name": "Buffer-Overflow-Zone",
+      "description": "Expandierender Schadensbereich mit rotem Glitch-Effekt. Beginnt klein, wächst exponentiell.",
+      "level": 9,
+      "counter": "Beobachte den Radius und verlasse die Zone rechtzeitig"
+    },
+    {
+      "id": "virus-strike",
+      "name": "Virus-Strike",
+      "description": "Gelbe Warnzone, die rot wird und sofortigen Tod verursacht. Zielt auf aktuelle Spielerposition.",
+      "level": 9,
+      "counter": "Bewege dich sofort, wenn die Warnung erscheint"
+    },
+    {
+      "id": "system-blackout",
+      "name": "Systemausfall",
+      "description": "Periodischer Ausfall, der den Bildschirm verdunkelt. Bewegung normal, aber Sicht null.",
+      "level": 9,
+      "counter": "Merke dir deine Umgebung vor dem Ausfall"
     }
   ],
   "environment": [
@@ -460,6 +535,26 @@
       "id": "ancient-fountain",
       "name": "Alter Brunnen",
       "description": "Verfallener Springbrunnen im Burghof. Das Wasser ist längst versiegt, doch manchmal hört man noch ein Plätschern..."
+    },
+    {
+      "id": "server-rack",
+      "name": "Server-Rack",
+      "description": "Massive Wand aus blinkenden Servermodulen mit vertikalen LED-Streifen. Begrenzt die Netzwerkzonen im System Core."
+    },
+    {
+      "id": "data-stream",
+      "name": "Datenstrom",
+      "description": "Fließende Bänder aus leuchtenden Datenpaketen. Schiebt Spieler in die Flussrichtung."
+    },
+    {
+      "id": "firewall-gate",
+      "name": "Firewall-Tor",
+      "description": "Pulsierende Energiebarriere aus neonblauem Licht. Öffnet sich periodisch während Systemverzögerungen."
+    },
+    {
+      "id": "circuit-ground",
+      "name": "Schaltkreisboden",
+      "description": "Dunkler Boden mit leuchtenden cyan Gitterlinien. Das Fundament des digitalen Reichs."
     }
   ]
 }

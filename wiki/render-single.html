@@ -3306,6 +3306,597 @@
                 return group;
             },
 
+            // ========== LEVEL 9 - COMPUTER/SYSTEM CORE MOBS ==========
+
+            'bug': function() {
+                const group = new THREE.Group();
+                const bugColor = 0x00FF00;
+                const darkColor = 0x003300;
+
+                // Glitchy pixelated body
+                const bodyGeometry = new THREE.BoxGeometry(0.8, 0.6, 0.4);
+                const bodyMaterial = new THREE.MeshBasicMaterial({ color: bugColor, transparent: true, opacity: 0.8 });
+                const body = new THREE.Mesh(bodyGeometry, bodyMaterial);
+                body.position.y = 0.7;
+                group.add(body);
+
+                // Pixel head 
+                const headGeometry = new THREE.BoxGeometry(0.5, 0.5, 0.4);
+                const head = new THREE.Mesh(headGeometry, bodyMaterial);
+                head.position.y = 1.3;
+                group.add(head);
+
+                // Red error eyes
+                const eyeMaterial = new THREE.MeshBasicMaterial({ color: 0xFF0000 });
+                const eyeGeometry = new THREE.BoxGeometry(0.12, 0.12, 0.1);
+                [-0.12, 0.12].forEach(x => {
+                    const eye = new THREE.Mesh(eyeGeometry, eyeMaterial);
+                    eye.position.set(x, 1.35, 0.22);
+                    group.add(eye);
+                });
+
+                // Antenna (error flags)
+                const antennaGeometry = new THREE.CylinderGeometry(0.02, 0.02, 0.4, 4);
+                const antennaMaterial = new THREE.MeshBasicMaterial({ color: 0xFF0000 });
+                [-0.15, 0.15].forEach(x => {
+                    const antenna = new THREE.Mesh(antennaGeometry, antennaMaterial);
+                    antenna.position.set(x, 1.7, 0);
+                    group.add(antenna);
+                });
+
+                // Glitch particles around
+                for (let i = 0; i < 6; i++) {
+                    const glitchGeometry = new THREE.BoxGeometry(0.1, 0.1, 0.1);
+                    const glitchMaterial = new THREE.MeshBasicMaterial({ color: [0x00FF00, 0xFF0000, 0x00FFFF][i % 3] });
+                    const glitch = new THREE.Mesh(glitchGeometry, glitchMaterial);
+                    const angle = (i / 6) * Math.PI * 2;
+                    glitch.position.set(Math.cos(angle) * 0.6, 0.8 + (i % 3) * 0.3, Math.sin(angle) * 0.4);
+                    group.add(glitch);
+                }
+
+                return group;
+            },
+
+            'firewall-sentry': function() {
+                const group = new THREE.Group();
+                const neonBlue = 0x00AAFF;
+                const darkBlue = 0x001144;
+
+                // Shield body core
+                const bodyGeometry = new THREE.BoxGeometry(0.9, 1.2, 0.5);
+                const bodyMaterial = new THREE.MeshLambertMaterial({ color: darkBlue });
+                const body = new THREE.Mesh(bodyGeometry, bodyMaterial);
+                body.position.y = 1.0;
+                group.add(body);
+
+                // Glowing shield panels
+                const shieldMaterial = new THREE.MeshBasicMaterial({ color: neonBlue, transparent: true, opacity: 0.7 });
+                const shieldGeometry = new THREE.BoxGeometry(0.1, 1.0, 0.4);
+                [-0.5, 0.5].forEach(x => {
+                    const shield = new THREE.Mesh(shieldGeometry, shieldMaterial);
+                    shield.position.set(x, 1.0, 0);
+                    group.add(shield);
+                });
+
+                // Head with scanner
+                const headGeometry = new THREE.SphereGeometry(0.45, 12, 12);
+                const headMaterial = new THREE.MeshLambertMaterial({ color: darkBlue });
+                const head = new THREE.Mesh(headGeometry, headMaterial);
+                head.position.y = 2.0;
+                group.add(head);
+
+                // Scanner visor
+                const visorGeometry = new THREE.BoxGeometry(0.6, 0.15, 0.1);
+                const visorMaterial = new THREE.MeshBasicMaterial({ color: neonBlue });
+                const visor = new THREE.Mesh(visorGeometry, visorMaterial);
+                visor.position.set(0, 2.0, 0.4);
+                group.add(visor);
+
+                // LED indicators
+                for (let i = 0; i < 4; i++) {
+                    const ledGeometry = new THREE.SphereGeometry(0.06, 8, 8);
+                    const ledMaterial = new THREE.MeshBasicMaterial({ color: [0x00FF00, 0xFF0000][i % 2] });
+                    const led = new THREE.Mesh(ledGeometry, ledMaterial);
+                    led.position.set(-0.2 + i * 0.15, 0.5, 0.28);
+                    group.add(led);
+                }
+
+                return group;
+            },
+
+            'mainframe': function() {
+                const group = new THREE.Group();
+                const serverColor = 0x0A0A2E;
+                const neonCyan = 0x00FFFF;
+                const neonMagenta = 0xFF00FF;
+
+                // Main server tower body
+                const bodyGeometry = new THREE.BoxGeometry(2.0, 3.5, 1.5);
+                const bodyMaterial = new THREE.MeshLambertMaterial({ color: serverColor });
+                const body = new THREE.Mesh(bodyGeometry, bodyMaterial);
+                body.position.y = 2.0;
+                group.add(body);
+
+                // Vertical LED strips
+                const stripMaterial1 = new THREE.MeshBasicMaterial({ color: neonCyan });
+                const stripMaterial2 = new THREE.MeshBasicMaterial({ color: neonMagenta });
+                for (let i = 0; i < 3; i++) {
+                    const stripGeometry = new THREE.BoxGeometry(0.08, 3.2, 0.1);
+                    const strip = new THREE.Mesh(stripGeometry, [stripMaterial1, stripMaterial2, stripMaterial1][i]);
+                    strip.position.set(-0.6 + i * 0.6, 2.0, 0.8);
+                    group.add(strip);
+                }
+
+                // Blinking status lights
+                for (let i = 0; i < 8; i++) {
+                    const lightGeometry = new THREE.SphereGeometry(0.08, 8, 8);
+                    const lightColor = [0xFF0000, 0x00FF00, 0xFFFF00][Math.floor(Math.random() * 3)];
+                    const lightMaterial = new THREE.MeshBasicMaterial({ color: lightColor });
+                    const light = new THREE.Mesh(lightGeometry, lightMaterial);
+                    light.position.set(-0.7 + (i % 4) * 0.45, 3.5 + Math.floor(i / 4) * 0.3, 0.8);
+                    group.add(light);
+                }
+
+                // Cooling vents
+                for (let i = 0; i < 3; i++) {
+                    const ventGeometry = new THREE.BoxGeometry(1.6, 0.15, 0.1);
+                    const ventMaterial = new THREE.MeshLambertMaterial({ color: 0x1A1A3E });
+                    const vent = new THREE.Mesh(ventGeometry, ventMaterial);
+                    vent.position.set(0, 0.8 + i * 0.3, 0.8);
+                    group.add(vent);
+                }
+
+                // Core processing unit (glowing center)
+                const coreGeometry = new THREE.SphereGeometry(0.4, 16, 16);
+                const coreMaterial = new THREE.MeshBasicMaterial({ color: neonCyan, transparent: true, opacity: 0.8 });
+                const core = new THREE.Mesh(coreGeometry, coreMaterial);
+                core.position.y = 2.0;
+                group.add(core);
+
+                return group;
+            },
+
+            'hacker': function() {
+                const group = new THREE.Group();
+                const darkGray = 0x1A1A1A;
+                const neonGreen = 0x00FF00;
+
+                // Hooded robe body
+                const bodyGeometry = new THREE.ConeGeometry(0.6, 1.8, 8);
+                const bodyMaterial = new THREE.MeshLambertMaterial({ color: darkGray });
+                const body = new THREE.Mesh(bodyGeometry, bodyMaterial);
+                body.position.y = 1.2;
+                group.add(body);
+
+                // Hood
+                const hoodGeometry = new THREE.SphereGeometry(0.45, 16, 16, 0, Math.PI * 2, 0, Math.PI / 2);
+                const hoodMaterial = new THREE.MeshLambertMaterial({ color: darkGray });
+                const hood = new THREE.Mesh(hoodGeometry, hoodMaterial);
+                hood.position.y = 2.2;
+                hood.rotation.x = -0.4;
+                group.add(hood);
+
+                // Glowing eyes in shadow
+                const eyeMaterial = new THREE.MeshBasicMaterial({ color: neonGreen });
+                const eyeGeometry = new THREE.SphereGeometry(0.08, 8, 8);
+                [-0.12, 0.12].forEach(x => {
+                    const eye = new THREE.Mesh(eyeGeometry, eyeMaterial);
+                    eye.position.set(x, 2.1, 0.3);
+                    group.add(eye);
+                });
+
+                // Holographic screen in front
+                const screenGeometry = new THREE.PlaneGeometry(0.8, 0.6);
+                const screenMaterial = new THREE.MeshBasicMaterial({ 
+                    color: neonGreen, 
+                    transparent: true, 
+                    opacity: 0.4, 
+                    side: THREE.DoubleSide 
+                });
+                const screen = new THREE.Mesh(screenGeometry, screenMaterial);
+                screen.position.set(0, 1.5, 0.8);
+                group.add(screen);
+
+                // Matrix-like code lines on screen
+                for (let i = 0; i < 5; i++) {
+                    const codeGeometry = new THREE.BoxGeometry(0.6, 0.03, 0.01);
+                    const codeMaterial = new THREE.MeshBasicMaterial({ color: 0x00AA00 });
+                    const code = new THREE.Mesh(codeGeometry, codeMaterial);
+                    code.position.set(0, 1.35 + i * 0.12, 0.82);
+                    group.add(code);
+                }
+
+                return group;
+            },
+
+            'surveillance-drone': function() {
+                const group = new THREE.Group();
+                const droneColor = 0x2A2A3A;
+                const neonRed = 0xFF0000;
+
+                // Main body - disc shape
+                const bodyGeometry = new THREE.CylinderGeometry(0.8, 0.6, 0.4, 12);
+                const bodyMaterial = new THREE.MeshLambertMaterial({ color: droneColor });
+                const body = new THREE.Mesh(bodyGeometry, bodyMaterial);
+                body.position.y = 1.5;
+                group.add(body);
+
+                // Scanner eye in center
+                const eyeGeometry = new THREE.SphereGeometry(0.2, 16, 16);
+                const eyeMaterial = new THREE.MeshBasicMaterial({ color: neonRed });
+                const eye = new THREE.Mesh(eyeGeometry, eyeMaterial);
+                eye.position.set(0, 1.35, 0);
+                group.add(eye);
+
+                // Rotating scanner ring
+                const ringGeometry = new THREE.TorusGeometry(0.5, 0.05, 8, 16);
+                const ringMaterial = new THREE.MeshBasicMaterial({ color: 0x00FFFF });
+                const ring = new THREE.Mesh(ringGeometry, ringMaterial);
+                ring.position.y = 1.5;
+                ring.rotation.x = Math.PI / 2;
+                group.add(ring);
+
+                // Propeller arms
+                for (let i = 0; i < 4; i++) {
+                    const armGeometry = new THREE.BoxGeometry(0.1, 0.05, 0.6);
+                    const armMaterial = new THREE.MeshLambertMaterial({ color: droneColor });
+                    const arm = new THREE.Mesh(armGeometry, armMaterial);
+                    const angle = (i / 4) * Math.PI * 2;
+                    arm.position.set(Math.cos(angle) * 0.9, 1.5, Math.sin(angle) * 0.9);
+                    arm.rotation.y = angle;
+                    group.add(arm);
+
+                    // Propeller
+                    const propGeometry = new THREE.CircleGeometry(0.15, 8);
+                    const propMaterial = new THREE.MeshBasicMaterial({ color: 0x444444, transparent: true, opacity: 0.5, side: THREE.DoubleSide });
+                    const prop = new THREE.Mesh(propGeometry, propMaterial);
+                    prop.position.set(Math.cos(angle) * 1.1, 1.55, Math.sin(angle) * 1.1);
+                    prop.rotation.x = Math.PI / 2;
+                    group.add(prop);
+                }
+
+                // Status lights
+                const lightPositions = [[0.35, 0], [-0.35, 0], [0, 0.35], [0, -0.35]];
+                lightPositions.forEach((pos, i) => {
+                    const lightGeometry = new THREE.SphereGeometry(0.05, 8, 8);
+                    const lightMaterial = new THREE.MeshBasicMaterial({ color: [0xFF0000, 0x00FF00][i % 2] });
+                    const light = new THREE.Mesh(lightGeometry, lightMaterial);
+                    light.position.set(pos[0], 1.7, pos[1]);
+                    group.add(light);
+                });
+
+                return group;
+            },
+
+            'trojan-dragon': function() {
+                const group = new THREE.Group();
+                const glitchPurple = 0x9900FF;
+                const glitchCyan = 0x00FFFF;
+                const darkCore = 0x110022;
+
+                // Body - corrupted data shape
+                const bodyGeometry = new THREE.CylinderGeometry(0.7, 1.0, 4, 8);
+                const bodyMaterial = new THREE.MeshLambertMaterial({ color: darkCore });
+                const body = new THREE.Mesh(bodyGeometry, bodyMaterial);
+                body.rotation.z = Math.PI / 2;
+                body.position.x = 2;
+                group.add(body);
+
+                // Glitch corruption particles on body
+                for (let i = 0; i < 8; i++) {
+                    const glitchGeometry = new THREE.BoxGeometry(0.3, 0.3, 0.3);
+                    const glitchMaterial = new THREE.MeshBasicMaterial({ color: [glitchPurple, glitchCyan][i % 2], transparent: true, opacity: 0.7 });
+                    const glitch = new THREE.Mesh(glitchGeometry, glitchMaterial);
+                    glitch.position.set(i * 0.5, Math.sin(i) * 0.8 + 0.3, Math.cos(i) * 0.6);
+                    group.add(glitch);
+                }
+
+                // Neck
+                const neckGeometry = new THREE.CylinderGeometry(0.6, 0.7, 1.4, 8);
+                const neck = new THREE.Mesh(neckGeometry, bodyMaterial);
+                neck.rotation.z = Math.PI / 2;
+                neck.position.set(4, 0.4, 0);
+                group.add(neck);
+
+                // Head
+                const headGeometry = new THREE.ConeGeometry(0.9, 1.8, 8);
+                const head = new THREE.Mesh(headGeometry, bodyMaterial);
+                head.rotation.z = -Math.PI / 2;
+                head.position.set(5.0, 0.6, 0);
+                group.add(head);
+
+                // Glowing digital eyes
+                const eyeGeometry = new THREE.SphereGeometry(0.22, 16, 16);
+                const eyeMaterial = new THREE.MeshBasicMaterial({ color: 0xFF00FF });
+                const leftEye = new THREE.Mesh(eyeGeometry, eyeMaterial);
+                leftEye.position.set(5.2, 1.0, 0.45);
+                group.add(leftEye);
+                const rightEye = new THREE.Mesh(eyeGeometry, eyeMaterial);
+                rightEye.position.set(5.2, 1.0, -0.45);
+                group.add(rightEye);
+
+                // Glitched wings
+                const wingShape = new THREE.Shape();
+                wingShape.moveTo(0, 0);
+                wingShape.lineTo(2.2, 0.7);
+                wingShape.lineTo(2.8, 0);
+                wingShape.lineTo(2.2, -0.7);
+                wingShape.lineTo(1.3, -0.3);
+                wingShape.lineTo(0, 0);
+
+                const wingGeometry = new THREE.ShapeGeometry(wingShape);
+                const wingMaterial = new THREE.MeshBasicMaterial({ color: glitchPurple, side: THREE.DoubleSide, transparent: true, opacity: 0.6 });
+
+                const leftWing = new THREE.Mesh(wingGeometry, wingMaterial);
+                leftWing.position.set(1.0, 1.2, 0);
+                leftWing.rotation.y = Math.PI / 2;
+                group.add(leftWing);
+
+                const rightWing = new THREE.Mesh(wingGeometry, wingMaterial);
+                rightWing.position.set(1.0, 1.2, 0);
+                rightWing.rotation.y = -Math.PI / 2;
+                rightWing.scale.z = -1;
+                group.add(rightWing);
+
+                // Digital flame breath particles
+                for (let i = 0; i < 5; i++) {
+                    const flameGeometry = new THREE.SphereGeometry(0.15 - i * 0.02, 8, 8);
+                    const flameMaterial = new THREE.MeshBasicMaterial({ color: [0xFF00FF, 0x00FFFF, 0xFF00FF][i % 3], transparent: true, opacity: 0.7 });
+                    const flame = new THREE.Mesh(flameGeometry, flameMaterial);
+                    flame.position.set(6.0 + i * 0.3, 0.5, 0);
+                    group.add(flame);
+                }
+
+                // Tail with data corruption
+                const tailGeometry = new THREE.ConeGeometry(0.5, 2.8, 8);
+                const tail = new THREE.Mesh(tailGeometry, bodyMaterial);
+                tail.rotation.z = Math.PI / 2;
+                tail.position.set(-1.3, 0, 0);
+                group.add(tail);
+
+                return group;
+            },
+
+            // ========== LEVEL 9 ENVIRONMENT ==========
+
+            'server-rack': function() {
+                const group = new THREE.Group();
+                const rackColor = 0x0A0A1A;
+                const neonCyan = 0x00FFFF;
+                const neonMagenta = 0xFF00FF;
+
+                // Main rack body
+                const rackGeometry = new THREE.BoxGeometry(2.0, 3.0, 0.4);
+                const rackMaterial = new THREE.MeshLambertMaterial({ color: rackColor });
+                const rack = new THREE.Mesh(rackGeometry, rackMaterial);
+                rack.position.y = 1.5;
+                group.add(rack);
+
+                // LED strips
+                for (let i = 0; i < 3; i++) {
+                    const stripGeometry = new THREE.BoxGeometry(0.05, 2.8, 0.1);
+                    const stripMaterial = new THREE.MeshBasicMaterial({ color: [neonCyan, neonMagenta, 0x00FF00][i] });
+                    const strip = new THREE.Mesh(stripGeometry, stripMaterial);
+                    strip.position.set(-0.7 + i * 0.7, 1.5, 0.25);
+                    group.add(strip);
+                }
+
+                // Blinking lights
+                for (let i = 0; i < 10; i++) {
+                    const lightGeometry = new THREE.SphereGeometry(0.05, 8, 8);
+                    const lightMaterial = new THREE.MeshBasicMaterial({ color: [0xFF0000, 0x00FF00][i % 2] });
+                    const light = new THREE.Mesh(lightGeometry, lightMaterial);
+                    light.position.set(-0.8 + (i % 5) * 0.4, 2.8 - Math.floor(i / 5) * 0.3, 0.25);
+                    group.add(light);
+                }
+
+                return group;
+            },
+
+            'data-stream': function() {
+                const group = new THREE.Group();
+                const streamColor = 0x00FFFF;
+
+                // Base stream channel
+                const baseGeometry = new THREE.BoxGeometry(3.0, 0.1, 0.8);
+                const baseMaterial = new THREE.MeshBasicMaterial({ color: 0x002222 });
+                const base = new THREE.Mesh(baseGeometry, baseMaterial);
+                base.position.y = 0.05;
+                group.add(base);
+
+                // Flowing data packets
+                for (let i = 0; i < 8; i++) {
+                    const packetGeometry = new THREE.BoxGeometry(0.2, 0.15, 0.15);
+                    const packetMaterial = new THREE.MeshBasicMaterial({ color: streamColor, transparent: true, opacity: 0.7 });
+                    const packet = new THREE.Mesh(packetGeometry, packetMaterial);
+                    packet.position.set(-1.2 + i * 0.35, 0.15, (i % 3 - 1) * 0.25);
+                    group.add(packet);
+                }
+
+                // Glow effect
+                const glowGeometry = new THREE.BoxGeometry(3.0, 0.3, 0.8);
+                const glowMaterial = new THREE.MeshBasicMaterial({ color: streamColor, transparent: true, opacity: 0.2 });
+                const glow = new THREE.Mesh(glowGeometry, glowMaterial);
+                glow.position.y = 0.2;
+                group.add(glow);
+
+                return group;
+            },
+
+            'firewall-gate': function() {
+                const group = new THREE.Group();
+                const gateColor = 0x00AAFF;
+
+                // Gate frame posts
+                const postGeometry = new THREE.BoxGeometry(0.2, 2.5, 0.2);
+                const postMaterial = new THREE.MeshLambertMaterial({ color: 0x1A1A3A });
+                [-0.8, 0.8].forEach(x => {
+                    const post = new THREE.Mesh(postGeometry, postMaterial);
+                    post.position.set(x, 1.25, 0);
+                    group.add(post);
+                });
+
+                // Energy barrier (pulsing)
+                const barrierGeometry = new THREE.PlaneGeometry(1.4, 2.3);
+                const barrierMaterial = new THREE.MeshBasicMaterial({ 
+                    color: gateColor, 
+                    transparent: true, 
+                    opacity: 0.5, 
+                    side: THREE.DoubleSide 
+                });
+                const barrier = new THREE.Mesh(barrierGeometry, barrierMaterial);
+                barrier.position.y = 1.25;
+                group.add(barrier);
+
+                // Horizontal scan lines
+                for (let i = 0; i < 5; i++) {
+                    const lineGeometry = new THREE.BoxGeometry(1.3, 0.03, 0.05);
+                    const lineMaterial = new THREE.MeshBasicMaterial({ color: 0xFFFFFF });
+                    const line = new THREE.Mesh(lineGeometry, lineMaterial);
+                    line.position.set(0, 0.4 + i * 0.45, 0.02);
+                    group.add(line);
+                }
+
+                return group;
+            },
+
+            'circuit-ground': function() {
+                const group = new THREE.Group();
+                const groundColor = 0x000808;
+                const gridColor = 0x00FFFF;
+
+                // Base ground
+                const groundGeometry = new THREE.PlaneGeometry(4, 4);
+                const groundMaterial = new THREE.MeshBasicMaterial({ color: groundColor, side: THREE.DoubleSide });
+                const ground = new THREE.Mesh(groundGeometry, groundMaterial);
+                ground.rotation.x = -Math.PI / 2;
+                group.add(ground);
+
+                // Circuit grid lines
+                for (let i = 0; i < 5; i++) {
+                    const hLineGeometry = new THREE.BoxGeometry(4, 0.02, 0.02);
+                    const hLineMaterial = new THREE.MeshBasicMaterial({ color: gridColor });
+                    const hLine = new THREE.Mesh(hLineGeometry, hLineMaterial);
+                    hLine.position.set(0, 0.01, -2 + i);
+                    group.add(hLine);
+
+                    const vLineGeometry = new THREE.BoxGeometry(0.02, 0.02, 4);
+                    const vLine = new THREE.Mesh(vLineGeometry, hLineMaterial);
+                    vLine.position.set(-2 + i, 0.01, 0);
+                    group.add(vLine);
+                }
+
+                // Circuit nodes at intersections
+                for (let x = 0; x < 3; x++) {
+                    for (let z = 0; z < 3; z++) {
+                        const nodeGeometry = new THREE.SphereGeometry(0.06, 8, 8);
+                        const nodeMaterial = new THREE.MeshBasicMaterial({ color: gridColor });
+                        const node = new THREE.Mesh(nodeGeometry, nodeMaterial);
+                        node.position.set(-1 + x, 0.03, -1 + z);
+                        group.add(node);
+                    }
+                }
+
+                return group;
+            },
+
+            // ========== LEVEL 9 HAZARDS ==========
+
+            'buffer-overflow': function() {
+                const group = new THREE.Group();
+                const dangerRed = 0xFF0000;
+
+                // Glitchy expanding zone
+                const zoneGeometry = new THREE.CylinderGeometry(1.5, 1.5, 0.1, 16);
+                const zoneMaterial = new THREE.MeshBasicMaterial({ color: dangerRed, transparent: true, opacity: 0.3 });
+                const zone = new THREE.Mesh(zoneGeometry, zoneMaterial);
+                zone.position.y = 0.05;
+                group.add(zone);
+
+                // Inner core
+                const coreGeometry = new THREE.CylinderGeometry(0.5, 0.5, 0.2, 12);
+                const coreMaterial = new THREE.MeshBasicMaterial({ color: dangerRed, transparent: true, opacity: 0.7 });
+                const core = new THREE.Mesh(coreGeometry, coreMaterial);
+                core.position.y = 0.1;
+                group.add(core);
+
+                // Glitch particles
+                for (let i = 0; i < 8; i++) {
+                    const glitchGeometry = new THREE.BoxGeometry(0.15, 0.15, 0.15);
+                    const glitchMaterial = new THREE.MeshBasicMaterial({ color: [0xFF0000, 0xFF00FF, 0x00FFFF][i % 3] });
+                    const glitch = new THREE.Mesh(glitchGeometry, glitchMaterial);
+                    const angle = (i / 8) * Math.PI * 2;
+                    glitch.position.set(Math.cos(angle) * 1.0, 0.2, Math.sin(angle) * 1.0);
+                    group.add(glitch);
+                }
+
+                return group;
+            },
+
+            'virus-strike': function() {
+                const group = new THREE.Group();
+
+                // Warning zone (yellow)
+                const warningGeometry = new THREE.CylinderGeometry(1.2, 1.2, 0.05, 16);
+                const warningMaterial = new THREE.MeshBasicMaterial({ color: 0xFFFF00, transparent: true, opacity: 0.5 });
+                const warning = new THREE.Mesh(warningGeometry, warningMaterial);
+                warning.position.y = 0.025;
+                group.add(warning);
+
+                // Danger zone (red inner)
+                const dangerGeometry = new THREE.CylinderGeometry(0.6, 0.6, 0.1, 12);
+                const dangerMaterial = new THREE.MeshBasicMaterial({ color: 0xFF0000, transparent: true, opacity: 0.7 });
+                const danger = new THREE.Mesh(dangerGeometry, dangerMaterial);
+                danger.position.y = 0.05;
+                group.add(danger);
+
+                // Target crosshairs
+                const crossMaterial = new THREE.MeshBasicMaterial({ color: 0xFF0000 });
+                const hCrossGeometry = new THREE.BoxGeometry(2.0, 0.02, 0.05);
+                const hCross = new THREE.Mesh(hCrossGeometry, crossMaterial);
+                hCross.position.y = 0.1;
+                group.add(hCross);
+
+                const vCrossGeometry = new THREE.BoxGeometry(0.05, 0.02, 2.0);
+                const vCross = new THREE.Mesh(vCrossGeometry, crossMaterial);
+                vCross.position.y = 0.1;
+                group.add(vCross);
+
+                return group;
+            },
+
+            'system-blackout': function() {
+                const group = new THREE.Group();
+
+                // Dark cloud representing blackout
+                const cloudGeometry = new THREE.SphereGeometry(1.5, 16, 16);
+                const cloudMaterial = new THREE.MeshBasicMaterial({ color: 0x000000, transparent: true, opacity: 0.8 });
+                const cloud = new THREE.Mesh(cloudGeometry, cloudMaterial);
+                cloud.position.y = 1.0;
+                cloud.scale.set(1, 0.5, 1);
+                group.add(cloud);
+
+                // Static noise particles
+                for (let i = 0; i < 20; i++) {
+                    const noiseGeometry = new THREE.BoxGeometry(0.1, 0.1, 0.1);
+                    const noiseMaterial = new THREE.MeshBasicMaterial({ color: [0xFFFFFF, 0x888888][i % 2] });
+                    const noise = new THREE.Mesh(noiseGeometry, noiseMaterial);
+                    noise.position.set((Math.random() - 0.5) * 2.5, 0.5 + Math.random() * 1.0, (Math.random() - 0.5) * 2.5);
+                    group.add(noise);
+                }
+
+                // SYSTEMAUSFALL text representation (binary)
+                const textMaterial = new THREE.MeshBasicMaterial({ color: 0xFF0000 });
+                for (let i = 0; i < 5; i++) {
+                    const digitGeometry = new THREE.BoxGeometry(0.15, 0.25, 0.02);
+                    const digit = new THREE.Mesh(digitGeometry, textMaterial);
+                    digit.position.set(-0.5 + i * 0.25, 1.5, 0);
+                    group.add(digit);
+                }
+
+                return group;
+            },
+
             // ========== RUINS ENVIRONMENT ==========
 
             'broken-column': function() {

@@ -402,6 +402,10 @@ async function build() {
         .level-3 .level-header { background: #c4a35a; }
         .level-4 .level-header { background: #8a3a2a; }
         .level-5 .level-header { background: #2a5a7a; }
+        .level-6 .level-header { background: #e75480; }
+        .level-7 .level-header { background: #4a4a5a; }
+        .level-8 .level-header { background: #7a6a5a; }
+        .level-9 .level-header { background: #00aaaa; }
         
         .feature-list { margin: 20px 0; list-style: none; }
         .feature-list li { padding: 8px 0; display: flex; align-items: center; gap: 10px; }
@@ -615,6 +619,22 @@ async function build() {
                         </ul>
                     </div>
                 </div>
+                
+                <div class="level-card level-9">
+                    <div class="level-header">
+                        <span class="level-number">Level 9</span>
+                        <h3 class="level-title">System Core</h3>
+                        <p class="level-subtitle">Digitaler Cyberspace</p>
+                    </div>
+                    <div class="level-content">
+                        <p>Tauche ein in die digitale Welt, wo Viren, Firewalls und korrupte Programme lauern.</p>
+                        <ul class="feature-list">
+                            <li>Lag-Events und Systemausfälle stören das Spiel</li>
+                            <li>Bugs, Hacker und Überwachungsdrohnen</li>
+                            <li>Der Trojaner-Drache als finaler Boss</li>
+                        </ul>
+                    </div>
+                </div>
             </div>
         </section>
         
@@ -674,7 +694,7 @@ ${environmentHTML}
             <p>Sammle Brückenmaterial, um Brücken über Schluchten und Lava zu bauen. Drücke E in der Nähe einer Lücke, um eine Brücke zu bauen (erfordert Materialien).</p>
             
             <h3>🎯 Ziel</h3>
-            <p>Erreiche den Regenbogen am Ende jedes Levels, um es abzuschließen. Weiche Gegnern aus, sammle Gegenstände und überlebe, um alle 8 Level zu durchqueren.</p>
+            <p>Erreiche den Regenbogen am Ende jedes Levels, um es abzuschließen. Weiche Gegnern aus, sammle Gegenstände und überlebe, um alle 9 Level zu durchqueren.</p>
             
             <h3>🏆 Schwierigkeitsmodi</h3>
             <table>
