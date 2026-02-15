@@ -1352,20 +1352,22 @@ function initEntities() {
     G.extraDragons = [];
     G.fireballs = [];
     
-    // Spawn boss - Reaper for graveyard, Unicorn for enchanted, Easter Bunny for easter, Dragon for others
+    // Spawn boss - Reaper for graveyard, Unicorn for enchanted, Easter Bunny for easter, Evil Santa for christmas, Dragon for others
     if (G.graveyardTheme || G.levelConfig.useReaper) {
         G.dragon = createReaper();
     } else if (G.enchantedTheme || G.levelConfig.useUnicorn) {
         G.dragon = createUnicorn();
     } else if (G.easterTheme || G.levelConfig.useEasterBunny) {
         G.dragon = createEasterBunny(G.levelConfig.dragon, G.levelConfig.dragon.scale || 1, 60);
+    } else if (G.christmasTheme || G.levelConfig.useEvilSanta) {
+        G.dragon = createEvilSanta(G.levelConfig.dragon, G.levelConfig.dragon.scale || 1, 70);
     } else if (difficulty === 'hard') {
         G.dragon = createDragon();
     }
     
     if (difficulty === 'hard') {
         
-        // Create extra bosses for levels with multiple dragons/reapers/unicorns/bunnies
+        // Create extra bosses for levels with multiple dragons/reapers/unicorns/bunnies/santas
         if (G.levelConfig.extraDragons) {
             G.levelConfig.extraDragons.forEach(pos => {
                 const bossScale = pos.scale || 0.6;
@@ -1379,6 +1381,9 @@ function initEntities() {
                 } else if (G.easterTheme || pos.useEasterBunny) {
                     const extraBunny = createEasterBunny(pos, bossScale, bossHealth);
                     G.extraDragons.push(extraBunny);
+                } else if (G.christmasTheme || pos.useEvilSanta) {
+                    const extraSanta = createEvilSanta(pos, bossScale, bossHealth);
+                    G.extraDragons.push(extraSanta);
                 } else {
                     const extraDragon = createDragon(pos, bossScale, bossHealth);
                     G.extraDragons.push(extraDragon);

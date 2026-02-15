@@ -635,6 +635,22 @@ async function build() {
                         </ul>
                     </div>
                 </div>
+                
+                <div class="level-card level-12">
+                    <div class="level-header">
+                        <span class="level-number">Level 12</span>
+                        <h3 class="level-title">Christmas Village</h3>
+                        <p class="level-subtitle">Weihnachtsdorf</p>
+                    </div>
+                    <div class="level-content">
+                        <p>Frohe Weihnachten! Erkunde ein verschneites Weihnachtsdorf und besiege den bösen Weihnachtsmann, der die Geschenke gestohlen hat.</p>
+                        <ul class="feature-list">
+                            <li>Verschneites Dorf mit Weihnachtsdekorationen</li>
+                            <li>Böse Elfen und Nussknacker-Soldaten</li>
+                            <li>Der böse Weihnachtsmann auf seinem fliegenden Schlitten</li>
+                        </ul>
+                    </div>
+                </div>
             </div>
         </section>
         

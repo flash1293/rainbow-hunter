@@ -2146,6 +2146,49 @@ function initSetup() {
             hookStripe.rotation.z = Math.PI / 2;
             treeGroup.add(hookStripe);
             
+        } else if (treeType === 'snow-pine') {
+            // Snow-covered pine tree for Christmas theme
+            const pineGreen = pos.color || 0x1e5631;
+            const snowWhite = 0xffffff;
+            
+            // Pine trunk - brown
+            const trunkGeometry = new THREE.CylinderGeometry(0.2, 0.3, 1.5, 8);
+            const trunkMaterial = new THREE.MeshLambertMaterial({ color: 0x4a3020 });
+            const trunk = new THREE.Mesh(trunkGeometry, trunkMaterial);
+            trunk.position.y = 0.75;
+            trunk.castShadow = true;
+            treeGroup.add(trunk);
+            
+            // Layered pine branches (3 tiers)
+            for (let i = 0; i < 3; i++) {
+                const tierRadius = 1.2 - i * 0.3;
+                const tierHeight = 1.5;
+                const tierY = 1.5 + i * 1.0;
+                
+                // Green pine layer
+                const pineGeometry = new THREE.ConeGeometry(tierRadius, tierHeight, 8);
+                const pineMaterial = new THREE.MeshLambertMaterial({ color: pineGreen });
+                const pineTier = new THREE.Mesh(pineGeometry, pineMaterial);
+                pineTier.position.y = tierY;
+                pineTier.castShadow = true;
+                treeGroup.add(pineTier);
+                
+                // Snow on top of each tier
+                const snowGeometry = new THREE.ConeGeometry(tierRadius * 0.95, tierHeight * 0.3, 8);
+                const snowMaterial = new THREE.MeshLambertMaterial({ color: snowWhite });
+                const snowCap = new THREE.Mesh(snowGeometry, snowMaterial);
+                snowCap.position.y = tierY + tierHeight * 0.4;
+                snowCap.castShadow = true;
+                treeGroup.add(snowCap);
+            }
+            
+            // Star on top
+            const starGeometry = new THREE.SphereGeometry(0.15, 6, 6);
+            const starMaterial = new THREE.MeshBasicMaterial({ color: 0xffd700 });
+            const star = new THREE.Mesh(starGeometry, starMaterial);
+            star.position.y = 4.5;
+            treeGroup.add(star);
+            
         } else if (treeType === 'tombstone') {
             // Graveyard tombstone
             const stoneColor = 0x5a5a5a;
@@ -2584,6 +2627,7 @@ function initSetup() {
         else if (treeType === 'tombstone') treeRadius = 0.5;
         else if (treeType === 'deadtree') treeRadius = 0.4;
         else if (treeType === 'jackolantern') treeRadius = 0.6;
+        else if (treeType === 'snow-pine') treeRadius = 1.2;
         G.trees.push({ mesh: treeGroup, type: treeType, radius: treeRadius });
     });
 
@@ -3404,6 +3448,601 @@ function initSetup() {
             G.scene.add(statueGroup);
         });
     }
+    
+    // Christmas Decorations scattered around
+    G.christmasDecorations = [];
+    if (G.christmasTheme) {
+        // Snowmen scattered around the map
+        for (let i = 0; i < 15; i++) {
+            const snowmanGroup = new THREE.Group();
+            
+            // Bottom snowball
+            const bottomGeometry = new THREE.SphereGeometry(0.6, 12, 12);
+            const snowMaterial = new THREE.MeshLambertMaterial({ color: 0xffffff });
+            const bottom = new THREE.Mesh(bottomGeometry, snowMaterial);
+            bottom.position.y = 0.6;
+            bottom.castShadow = true;
+            snowmanGroup.add(bottom);
+            
+            // Middle snowball
+            const middleGeometry = new THREE.SphereGeometry(0.45, 10, 10);
+            const middle = new THREE.Mesh(middleGeometry, snowMaterial);
+            middle.position.y = 1.4;
+            middle.castShadow = true;
+            snowmanGroup.add(middle);
+            
+            // Top snowball (head)
+            const headGeometry = new THREE.SphereGeometry(0.3, 10, 10);
+            const head = new THREE.Mesh(headGeometry, snowMaterial);
+            head.position.y = 2.05;
+            head.castShadow = true;
+            snowmanGroup.add(head);
+            
+            // Carrot nose
+            const noseGeometry = new THREE.ConeGeometry(0.05, 0.25, 8);
+            const noseMaterial = new THREE.MeshLambertMaterial({ color: 0xff8800 });
+            const nose = new THREE.Mesh(noseGeometry, noseMaterial);
+            nose.position.set(0, 2.05, 0.3);
+            nose.rotation.x = Math.PI / 2;
+            snowmanGroup.add(nose);
+            
+            // Coal eyes
+            const eyeMaterial = new THREE.MeshBasicMaterial({ color: 0x000000 });
+            for (let side = -1; side <= 1; side += 2) {
+                const eyeGeometry = new THREE.SphereGeometry(0.05, 6, 6);
+                const eye = new THREE.Mesh(eyeGeometry, eyeMaterial);
+                eye.position.set(side * 0.1, 2.15, 0.25);
+                snowmanGroup.add(eye);
+            }
+            
+            // Coal buttons
+            for (let b = 0; b < 3; b++) {
+                const buttonGeometry = new THREE.SphereGeometry(0.06, 6, 6);
+                const button = new THREE.Mesh(buttonGeometry, eyeMaterial);
+                button.position.set(0, 1.6 - b * 0.2, 0.42);
+                snowmanGroup.add(button);
+            }
+            
+            // Random position
+            const snowmanX = (Math.random() - 0.5) * 180;
+            const snowmanZ = 170 - Math.random() * 340;
+            
+            const terrainHeight = getTerrainHeight(snowmanX, snowmanZ);
+            snowmanGroup.position.set(snowmanX, terrainHeight, snowmanZ);
+            G.scene.add(snowmanGroup);
+            
+            G.christmasDecorations.push({ 
+                mesh: snowmanGroup, 
+                type: 'snowman',
+                x: snowmanX, 
+                z: snowmanZ 
+            });
+        }
+        
+        // Candy canes scattered around
+        for (let i = 0; i < 25; i++) {
+            const candyCaneGroup = new THREE.Group();
+            
+            // Main cane stick
+            const stickGeometry = new THREE.CylinderGeometry(0.08, 0.08, 1.5, 8);
+            const whiteMaterial = new THREE.MeshPhongMaterial({ color: 0xffffff, shininess: 60 });
+            const stick = new THREE.Mesh(stickGeometry, whiteMaterial);
+            stick.position.y = 0.75;
+            stick.castShadow = true;
+            candyCaneGroup.add(stick);
+            
+            // Red stripes
+            for (let s = 0; s < 5; s++) {
+                const stripeGeometry = new THREE.TorusGeometry(0.085, 0.03, 6, 12);
+                const redMaterial = new THREE.MeshPhongMaterial({ color: 0xff0000, shininess: 60 });
+                const stripe = new THREE.Mesh(stripeGeometry, redMaterial);
+                stripe.position.y = 0.2 + s * 0.3;
+                stripe.rotation.x = Math.PI / 2;
+                candyCaneGroup.add(stripe);
+            }
+            
+            // Curved hook
+            const hookGeometry = new THREE.TorusGeometry(0.25, 0.08, 8, 12, Math.PI);
+            const hook = new THREE.Mesh(hookGeometry, whiteMaterial);
+            hook.position.set(0.25, 1.5, 0);
+            hook.rotation.z = Math.PI / 2;
+            hook.castShadow = true;
+            candyCaneGroup.add(hook);
+            
+            // Random position
+            const caneX = (Math.random() - 0.5) * 180;
+            const caneZ = 170 - Math.random() * 340;
+            
+            const terrainHeight = getTerrainHeight(caneX, caneZ);
+            candyCaneGroup.position.set(caneX, terrainHeight, caneZ);
+            G.scene.add(candyCaneGroup);
+            
+            G.christmasDecorations.push({ 
+                mesh: candyCaneGroup, 
+                type: 'candycane',
+                x: caneX, 
+                z: caneZ 
+            });
+        }
+        
+        // Decorated Christmas trees (smaller ornamental ones)
+        for (let i = 0; i < 18; i++) {
+            const treeGroup = new THREE.Group();
+            
+            // Trunk
+            const trunkGeometry = new THREE.CylinderGeometry(0.1, 0.15, 0.5, 8);
+            const trunkMaterial = new THREE.MeshLambertMaterial({ color: 0x4a3020 });
+            const trunk = new THREE.Mesh(trunkGeometry, trunkMaterial);
+            trunk.position.y = 0.25;
+            trunk.castShadow = true;
+            treeGroup.add(trunk);
+            
+            // Pine layers
+            const pineGreen = 0x1e5631;
+            const pineMaterial = new THREE.MeshLambertMaterial({ color: pineGreen });
+            for (let layer = 0; layer < 3; layer++) {
+                const layerRadius = 0.8 - layer * 0.2;
+                const layerGeometry = new THREE.ConeGeometry(layerRadius, 1.0, 8);
+                const layerMesh = new THREE.Mesh(layerGeometry, pineMaterial);
+                layerMesh.position.y = 0.5 + layer * 0.7;
+                layerMesh.castShadow = true;
+                treeGroup.add(layerMesh);
+            }
+            
+            // Ornaments - colorful baubles
+            const ornamentColors = [0xff0000, 0xffd700, 0x0000ff, 0xff00ff];
+            for (let o = 0; o < 6; o++) {
+                const ornamentGeometry = new THREE.SphereGeometry(0.08, 6, 6);
+                const ornamentColor = ornamentColors[o % ornamentColors.length];
+                const ornamentMaterial = new THREE.MeshPhongMaterial({ 
+                    color: ornamentColor,
+                    shininess: 100
+                });
+                const ornament = new THREE.Mesh(ornamentGeometry, ornamentMaterial);
+                const angle = (o / 6) * Math.PI * 2;
+                const radius = 0.4 - (o % 3) * 0.1;
+                const height = 1.0 + (o % 3) * 0.6;
+                ornament.position.set(
+                    Math.cos(angle) * radius,
+                    height,
+                    Math.sin(angle) * radius
+                );
+                treeGroup.add(ornament);
+            }
+            
+            // Star on top
+            const starGeometry = new THREE.SphereGeometry(0.12, 5, 5);
+            const starMaterial = new THREE.MeshBasicMaterial({ color: 0xffd700 });
+            const star = new THREE.Mesh(starGeometry, starMaterial);
+            star.position.y = 2.6;
+            treeGroup.add(star);
+            
+            // Random position
+            const christmasTreeX = (Math.random() - 0.5) * 150;
+            const christmasTreeZ = 150 - Math.random() * 300;
+            
+            const terrainHeight = getTerrainHeight(christmasTreeX, christmasTreeZ);
+            treeGroup.position.set(christmasTreeX, terrainHeight, christmasTreeZ);
+            G.scene.add(treeGroup);
+            
+            G.christmasDecorations.push({ 
+                mesh: treeGroup, 
+                type: 'christmas-tree',
+                x: christmasTreeX, 
+                z: christmasTreeZ 
+            });
+        }
+        
+        // Lampposts with light
+        for (let i = 0; i < 12; i++) {
+            const lamppostGroup = new THREE.Group();
+            
+            // Post
+            const postGeometry = new THREE.CylinderGeometry(0.08, 0.1, 3.5, 8);
+            const postMaterial = new THREE.MeshLambertMaterial({ color: 0x2a2a2a });
+            const post = new THREE.Mesh(postGeometry, postMaterial);
+            post.position.y = 1.75;
+            post.castShadow = true;
+            lamppostGroup.add(post);
+            
+            // Lamp housing
+            const lampGeometry = new THREE.CylinderGeometry(0.35, 0.25, 0.6, 8);
+            const lampMaterial = new THREE.MeshLambertMaterial({ color: 0x1a1a1a });
+            const lamp = new THREE.Mesh(lampGeometry, lampMaterial);
+            lamp.position.y = 3.7;
+            lamp.castShadow = true;
+            lamppostGroup.add(lamp);
+            
+            // Glowing light
+            const lightGeometry = new THREE.SphereGeometry(0.2, 8, 8);
+            const lightMaterial = new THREE.MeshBasicMaterial({ 
+                color: 0xffffaa,
+                transparent: true,
+                opacity: 0.9
+            });
+            const light = new THREE.Mesh(lightGeometry, lightMaterial);
+            light.position.y = 3.7;
+            lamppostGroup.add(light);
+            
+            // Random position
+            const lampX = (Math.random() - 0.5) * 160;
+            const lampZ = 160 - Math.random() * 320;
+            
+            const terrainHeight = getTerrainHeight(lampX, lampZ);
+            lamppostGroup.position.set(lampX, terrainHeight, lampZ);
+            G.scene.add(lamppostGroup);
+            
+            G.christmasDecorations.push({ 
+                mesh: lamppostGroup, 
+                type: 'lamppost',
+                x: lampX, 
+                z: lampZ 
+            });
+        }
+        
+        // Wreaths on the ground
+        for (let i = 0; i < 4; i++) {
+            const wreathGroup = new THREE.Group();
+            
+            // Wreath ring
+            const wreathGeometry = new THREE.TorusGeometry(0.5, 0.15, 12, 16);
+            const wreathMaterial = new THREE.MeshLambertMaterial({ color: 0x2d5a27 });
+            const wreath = new THREE.Mesh(wreathGeometry, wreathMaterial);
+            wreath.rotation.x = Math.PI / 2;
+            wreath.position.y = 0.15;
+            wreath.castShadow = true;
+            wreathGroup.add(wreath);
+            
+            // Red bow
+            const bowGeometry = new THREE.BoxGeometry(0.3, 0.15, 0.1);
+            const bowMaterial = new THREE.MeshLambertMaterial({ color: 0xff0000 });
+            const bow = new THREE.Mesh(bowGeometry, bowMaterial);
+            bow.position.set(0, 0.15, 0.5);
+            wreathGroup.add(bow);
+            
+            // Berries
+            const berryMaterial = new THREE.MeshBasicMaterial({ color: 0xff0000 });
+            for (let b = 0; b < 6; b++) {
+                const berryGeometry = new THREE.SphereGeometry(0.05, 6, 6);
+                const berry = new THREE.Mesh(berryGeometry, berryMaterial);
+                const angle = (b / 6) * Math.PI * 2;
+                berry.position.set(
+                    Math.cos(angle) * 0.45,
+                    0.15,
+                    Math.sin(angle) * 0.45
+                );
+                wreathGroup.add(berry);
+            }
+            
+            // Random position
+            const wreathX = (Math.random() - 0.5) * 140;
+            const wreathZ = 140 - Math.random() * 280;
+            
+            const terrainHeight = getTerrainHeight(wreathX, wreathZ);
+            wreathGroup.position.set(wreathX, terrainHeight, wreathZ);
+            G.scene.add(wreathGroup);
+            
+            G.christmasDecorations.push({ 
+                mesh: wreathGroup, 
+                type: 'wreath',
+                x: wreathX, 
+                z: wreathZ 
+            });
+        }
+        
+        // Gingerbread houses
+        for (let i = 0; i < 2; i++) {
+            const houseGroup = new THREE.Group();
+            
+            // House walls
+            const wallGeometry = new THREE.BoxGeometry(3, 2, 2.5);
+            const wallMaterial = new THREE.MeshLambertMaterial({ color: 0x8B4513 });
+            const walls = new THREE.Mesh(wallGeometry, wallMaterial);
+            walls.position.y = 1;
+            walls.castShadow = true;
+            houseGroup.add(walls);
+            
+            // Roof
+            const roofGeometry = new THREE.ConeGeometry(2.2, 1.5, 4);
+            const roofMaterial = new THREE.MeshLambertMaterial({ color: 0xffffff });
+            const roof = new THREE.Mesh(roofGeometry, roofMaterial);
+            roof.position.y = 2.75;
+            roof.rotation.y = Math.PI / 4;
+            roof.castShadow = true;
+            houseGroup.add(roof);
+            
+            // Door
+            const doorGeometry = new THREE.BoxGeometry(0.6, 1, 0.1);
+            const doorMaterial = new THREE.MeshLambertMaterial({ color: 0x4a3020 });
+            const door = new THREE.Mesh(doorGeometry, doorMaterial);
+            door.position.set(0, 0.5, 1.3);
+            houseGroup.add(door);
+            
+            // Windows
+            const windowMaterial = new THREE.MeshBasicMaterial({ color: 0xffffaa });
+            for (let side = -1; side <= 1; side += 2) {
+                const windowGeometry = new THREE.PlaneGeometry(0.4, 0.4);
+                const window = new THREE.Mesh(windowGeometry, windowMaterial);
+                window.position.set(side * 0.8, 1.2, 1.26);
+                houseGroup.add(window);
+            }
+            
+            // Candy decorations on walls
+            for (let c = 0; c < 8; c++) {
+                const candyGeometry = new THREE.SphereGeometry(0.08, 6, 6);
+                const candyColors = [0xff0000, 0x00ff00, 0xffffff];
+                const candyColor = candyColors[c % candyColors.length];
+                const candyMaterial = new THREE.MeshBasicMaterial({ color: candyColor });
+                const candy = new THREE.Mesh(candyGeometry, candyMaterial);
+                candy.position.set(
+                    (Math.random() - 0.5) * 2.5,
+                    0.5 + Math.random() * 1.5,
+                    1.3
+                );
+                houseGroup.add(candy);
+            }
+            
+            // Random position
+            const houseX = (i === 0 ? -1 : 1) * (80 + Math.random() * 30);
+            const houseZ = 100 - Math.random() * 200;
+            
+            const terrainHeight = getTerrainHeight(houseX, houseZ);
+            houseGroup.position.set(houseX, terrainHeight, houseZ);
+            G.scene.add(houseGroup);
+            
+            G.christmasDecorations.push({ 
+                mesh: houseGroup, 
+                type: 'gingerbread-house',
+                x: houseX, 
+                z: houseZ 
+            });
+        }
+        
+        // LOTS of tall pine trees scattered around the snowy landscape
+        for (let i = 0; i < 35; i++) {
+            const pineGroup = new THREE.Group();
+            const treeScale = 1.5 + Math.random() * 2.5; // Varied sizes
+            
+            // Trunk
+            const trunkGeometry = new THREE.CylinderGeometry(0.15 * treeScale, 0.25 * treeScale, 1.2 * treeScale, 8);
+            const trunkMaterial = new THREE.MeshLambertMaterial({ color: 0x3d2914 });
+            const trunk = new THREE.Mesh(trunkGeometry, trunkMaterial);
+            trunk.position.y = 0.6 * treeScale;
+            trunk.castShadow = true;
+            pineGroup.add(trunk);
+            
+            // Multiple layers of pine branches
+            const pineGreen = 0x1e5631;
+            const pineMaterial = new THREE.MeshLambertMaterial({ color: pineGreen });
+            for (let layer = 0; layer < 4; layer++) {
+                const layerRadius = (1.0 - layer * 0.2) * treeScale;
+                const layerHeight = 1.2 * treeScale;
+                const layerGeometry = new THREE.ConeGeometry(layerRadius, layerHeight, 8);
+                const layerMesh = new THREE.Mesh(layerGeometry, pineMaterial);
+                layerMesh.position.y = (1.2 + layer * 0.9) * treeScale;
+                layerMesh.castShadow = true;
+                pineGroup.add(layerMesh);
+            }
+            
+            // Snow on branches
+            const snowCapMaterial = new THREE.MeshLambertMaterial({ color: 0xffffff });
+            for (let layer = 0; layer < 3; layer++) {
+                const snowRadius = (0.6 - layer * 0.15) * treeScale;
+                const snowGeometry = new THREE.ConeGeometry(snowRadius, 0.2 * treeScale, 8);
+                const snow = new THREE.Mesh(snowGeometry, snowCapMaterial);
+                snow.position.y = (1.8 + layer * 0.9) * treeScale;
+                pineGroup.add(snow);
+            }
+            
+            // Random position - spread across entire map
+            const pineX = (Math.random() - 0.5) * 200;
+            const pineZ = 190 - Math.random() * 420;
+            
+            const terrainHeight = getTerrainHeight(pineX, pineZ);
+            pineGroup.position.set(pineX, terrainHeight, pineZ);
+            G.scene.add(pineGroup);
+            
+            G.christmasDecorations.push({ 
+                mesh: pineGroup, 
+                type: 'pine-tree',
+                x: pineX, 
+                z: pineZ 
+            });
+        }
+        
+        // Natural snow drifts (Schneewehen) scattered everywhere
+        for (let i = 0; i < 50; i++) {
+            const driftGroup = new THREE.Group();
+            const driftScale = 1 + Math.random() * 2;
+            
+            // Main drift body - elongated sphere
+            const driftGeometry = new THREE.SphereGeometry(1, 10, 8);
+            const driftMaterial = new THREE.MeshLambertMaterial({ color: 0xFAFAFA });
+            const drift = new THREE.Mesh(driftGeometry, driftMaterial);
+            drift.scale.set(driftScale * 1.5, driftScale * 0.4, driftScale);
+            drift.position.y = driftScale * 0.2;
+            drift.rotation.y = Math.random() * Math.PI;
+            drift.castShadow = true;
+            drift.receiveShadow = true;
+            driftGroup.add(drift);
+            
+            // Additional smaller mounds for natural look
+            for (let m = 0; m < 2; m++) {
+                const moundGeometry = new THREE.SphereGeometry(0.6, 8, 6);
+                const mound = new THREE.Mesh(moundGeometry, driftMaterial);
+                const offset = (Math.random() - 0.5) * driftScale;
+                mound.scale.set(driftScale * 0.8, driftScale * 0.3, driftScale * 0.6);
+                mound.position.set(offset, driftScale * 0.15, (Math.random() - 0.5) * driftScale * 0.5);
+                mound.receiveShadow = true;
+                driftGroup.add(mound);
+            }
+            
+            // Random position
+            const driftX = (Math.random() - 0.5) * 200;
+            const driftZ = 190 - Math.random() * 420;
+            
+            const terrainHeight = getTerrainHeight(driftX, driftZ);
+            driftGroup.position.set(driftX, terrainHeight, driftZ);
+            G.scene.add(driftGroup);
+            
+            G.christmasDecorations.push({ 
+                mesh: driftGroup, 
+                type: 'snowdrift',
+                x: driftX, 
+                z: driftZ 
+            });
+        }
+        
+        // Christmas Present Pickups (good presents that spawn items)
+        G.christmasPresents = [];
+        for (let i = 0; i < 12; i++) {
+            const presentGroup = new THREE.Group();
+            
+            // Present box
+            const wrapColors = [0xFF0000, 0x00AA00, 0x0066FF, 0xFFD700, 0xFF00FF, 0x00FFFF];
+            const wrapColor = wrapColors[Math.floor(Math.random() * wrapColors.length)];
+            const boxSize = 1.5 + Math.random() * 0.5;
+            
+            const boxGeometry = new THREE.BoxGeometry(boxSize, boxSize, boxSize);
+            const boxMaterial = new THREE.MeshLambertMaterial({ color: wrapColor });
+            const box = new THREE.Mesh(boxGeometry, boxMaterial);
+            box.position.y = boxSize / 2;
+            box.castShadow = true;
+            presentGroup.add(box);
+            
+            // Golden ribbon
+            const ribbonMaterial = new THREE.MeshLambertMaterial({ 
+                color: 0xFFD700,
+                emissive: 0xFFAA00,
+                emissiveIntensity: 0.3
+            });
+            const ribbonH = new THREE.Mesh(
+                new THREE.BoxGeometry(boxSize + 0.05, 0.08, 0.12),
+                ribbonMaterial
+            );
+            ribbonH.position.y = boxSize / 2;
+            presentGroup.add(ribbonH);
+            
+            const ribbonV = new THREE.Mesh(
+                new THREE.BoxGeometry(0.12, 0.08, boxSize + 0.05),
+                ribbonMaterial
+            );
+            ribbonV.position.y = boxSize / 2;
+            presentGroup.add(ribbonV);
+            
+            // Bow on top
+            const bowGeometry = new THREE.SphereGeometry(0.12, 8, 8);
+            const bow = new THREE.Mesh(bowGeometry, ribbonMaterial);
+            bow.position.y = boxSize + 0.1;
+            bow.scale.set(1.5, 0.7, 1.5);
+            presentGroup.add(bow);
+            
+            // Sparkle glow effect
+            const glowGeometry = new THREE.SphereGeometry(boxSize * 0.8, 8, 8);
+            const glowMaterial = new THREE.MeshBasicMaterial({ 
+                color: 0xFFFFAA, 
+                transparent: true, 
+                opacity: 0.2 
+            });
+            const glow = new THREE.Mesh(glowGeometry, glowMaterial);
+            glow.position.y = boxSize / 2;
+            presentGroup.add(glow);
+            
+            // Random position
+            const presentX = (Math.random() - 0.5) * 180;
+            const presentZ = 170 - Math.random() * 360;
+            
+            const terrainHeight = getTerrainHeight(presentX, presentZ);
+            presentGroup.position.set(presentX, terrainHeight, presentZ);
+            G.scene.add(presentGroup);
+            
+            // Determine reward type
+            const rewards = ['ammo', 'health', 'bomb', 'banana', 'herzman'];
+            const rewardType = rewards[Math.floor(Math.random() * rewards.length)];
+            
+            G.christmasPresents.push({ 
+                mesh: presentGroup, 
+                collected: false, 
+                radius: 1.5,
+                x: presentX,
+                z: presentZ,
+                rewardType: rewardType
+            });
+        }
+        
+        // Decoy Presents (evil exploding presents - look identical to good presents!)
+        G.decoyPresents = [];
+        for (let i = 0; i < 8; i++) {
+            const decoyGroup = new THREE.Group();
+            
+            // Same colors as good presents - indistinguishable!
+            const wrapColors = [0xFF0000, 0x00AA00, 0x0066FF, 0xFFD700, 0xFF00FF, 0x00FFFF];
+            const wrapColor = wrapColors[Math.floor(Math.random() * wrapColors.length)];
+            const boxSize = 1.5 + Math.random() * 0.5;
+            
+            const boxGeometry = new THREE.BoxGeometry(boxSize, boxSize, boxSize);
+            const boxMaterial = new THREE.MeshLambertMaterial({ color: wrapColor });
+            const box = new THREE.Mesh(boxGeometry, boxMaterial);
+            box.position.y = boxSize / 2;
+            box.castShadow = true;
+            decoyGroup.add(box);
+            
+            // Golden ribbon (same as good presents)
+            const ribbonMaterial = new THREE.MeshLambertMaterial({ 
+                color: 0xFFD700,
+                emissive: 0xFFAA00,
+                emissiveIntensity: 0.3
+            });
+            const ribbonH = new THREE.Mesh(
+                new THREE.BoxGeometry(boxSize + 0.05, 0.08, 0.12),
+                ribbonMaterial
+            );
+            ribbonH.position.y = boxSize / 2;
+            decoyGroup.add(ribbonH);
+            
+            const ribbonV = new THREE.Mesh(
+                new THREE.BoxGeometry(0.12, 0.08, boxSize + 0.05),
+                ribbonMaterial
+            );
+            ribbonV.position.y = boxSize / 2;
+            decoyGroup.add(ribbonV);
+            
+            // Bow on top (same as good presents)
+            const bowGeometry = new THREE.SphereGeometry(0.12, 8, 8);
+            const bow = new THREE.Mesh(bowGeometry, ribbonMaterial);
+            bow.position.y = boxSize + 0.1;
+            bow.scale.set(1.5, 0.7, 1.5);
+            decoyGroup.add(bow);
+            
+            // Sparkle glow effect (same as good presents)
+            const glowGeometry = new THREE.SphereGeometry(boxSize * 0.8, 8, 8);
+            const glowMaterial = new THREE.MeshBasicMaterial({ 
+                color: 0xFFFFAA, 
+                transparent: true, 
+                opacity: 0.2 
+            });
+            const glow = new THREE.Mesh(glowGeometry, glowMaterial);
+            glow.position.y = boxSize / 2;
+            decoyGroup.add(glow);
+            
+            // Random position
+            const decoyX = (Math.random() - 0.5) * 180;
+            const decoyZ = 170 - Math.random() * 360;
+            
+            const terrainHeight = getTerrainHeight(decoyX, decoyZ);
+            decoyGroup.position.set(decoyX, terrainHeight, decoyZ);
+            G.scene.add(decoyGroup);
+            
+            G.decoyPresents.push({ 
+                mesh: decoyGroup, 
+                collected: false, 
+                radius: 1.5,
+                x: decoyX,
+                z: decoyZ,
+                explosionDamage: 1
+            });
+        }
+    }
 
     // Rocks - use level config if available, otherwise use default positions
     G.rocks = [];
@@ -3469,7 +4108,10 @@ function initSetup() {
             const rockGeometry = new THREE.DodecahedronGeometry(0.6, 0);
             // Theme-appropriate rock colors
             let rockColor;
-            if (G.candyTheme) {
+            if (G.christmasTheme) {
+                // Snowrocks - white/gray icy rocks
+                rockColor = 0xd3d3d3; // Light gray
+            } else if (G.candyTheme) {
                 // Candy rocks - colorful like hard candy
                 const candyRockColors = [0xFF69B4, 0x87CEEB, 0xFFD700, 0x98FB98, 0xFF6347, 0xDDA0DD];
                 rockColor = candyRockColors[Math.floor(Math.random() * candyRockColors.length)];

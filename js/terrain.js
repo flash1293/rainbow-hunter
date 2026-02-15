@@ -2453,7 +2453,7 @@ function getTerrainHeight(x, z) {
 }
 
 // Create visual hill meshes
-function createHills(scene, THREE, hillPositions, hillColor, iceTheme, desertTheme, lavaTheme, waterTheme, candyTheme, graveyardTheme, ruinsTheme, computerTheme) {
+function createHills(scene, THREE, hillPositions, hillColor, iceTheme, desertTheme, lavaTheme, waterTheme, candyTheme, graveyardTheme, ruinsTheme, computerTheme, christmasTheme) {
     const textures = getTerrainTextures(THREE);
     const hills = hillPositions || HILLS;
     const color = hillColor || 0x88cc88;
@@ -2473,7 +2473,7 @@ function createHills(scene, THREE, hillPositions, hillColor, iceTheme, desertThe
         textureToUse = textures.graveyard; // Burial mound texture
     } else if (ruinsTheme) {
         textureToUse = textures.rock; // Rubble pile texture
-    } else if (iceTheme) {
+    } else if (iceTheme || christmasTheme) {
         textureToUse = textures.grassIce;
     } else {
         textureToUse = textures.grass;
@@ -2692,7 +2692,7 @@ function createHills(scene, THREE, hillPositions, hillColor, iceTheme, desertThe
 }
 
 // Create mountains (world boundaries)
-function createMountains(scene, THREE, mountainPositions, candyTheme, graveyardTheme, ruinsTheme, computerTheme, enchantedTheme, easterTheme) {
+function createMountains(scene, THREE, mountainPositions, candyTheme, graveyardTheme, ruinsTheme, computerTheme, enchantedTheme, easterTheme, christmasTheme) {
     const textures = getTerrainTextures(THREE);
     mountainPositions.forEach(mtn => {
         if (computerTheme) {
@@ -3084,6 +3084,95 @@ function createMountains(scene, THREE, mountainPositions, candyTheme, graveyardT
                 scene.add(rightEar);
             }
             
+        } else if (christmasTheme) {
+            // Christmas snowy walls - natural rounded snow banks (not built structures)
+            const wallHeight = mtn.height;
+            const wallWidth = mtn.width;
+            const wallDepth = Math.min(mtn.width * 0.3, 8);
+            
+            const snowMaterial = new THREE.MeshLambertMaterial({ 
+                color: 0xF0F8FF,  // Alice blue - natural snow
+                map: textures.grassIce
+            });
+            const pureSnowMaterial = new THREE.MeshLambertMaterial({ color: 0xFFFAFA }); // Snow white
+            
+            // Build natural snowbank from overlapping elongated spheres
+            const moundCount = Math.max(3, Math.floor(wallWidth / 12));
+            for (let i = 0; i < moundCount; i++) {
+                const moundX = mtn.x - wallWidth/2 + (i + 0.5) * (wallWidth / moundCount);
+                const moundWidth = wallWidth / moundCount * 1.4; // Overlap slightly
+                const moundHeight = wallHeight * (0.7 + Math.random() * 0.3);
+                const moundDepth = wallDepth * (0.8 + Math.random() * 0.4);
+                
+                // Main mound body - elongated sphere
+                const moundGeometry = new THREE.SphereGeometry(1, 12, 8);
+                const mound = new THREE.Mesh(moundGeometry, snowMaterial);
+                mound.position.set(moundX + (Math.random() - 0.5) * 2, moundHeight * 0.4, mtn.z);
+                mound.scale.set(moundWidth * 0.5, moundHeight * 0.5, moundDepth * 0.5);
+                mound.castShadow = true;
+                mound.receiveShadow = true;
+                scene.add(mound);
+                
+                // Add smaller rounded top for fluffy look
+                const topGeometry = new THREE.SphereGeometry(1, 10, 6);
+                const top = new THREE.Mesh(topGeometry, pureSnowMaterial);
+                top.position.set(moundX + (Math.random() - 0.5) * 3, moundHeight * 0.75, mtn.z);
+                top.scale.set(moundWidth * 0.35, moundHeight * 0.3, moundDepth * 0.4);
+                top.castShadow = true;
+                scene.add(top);
+            }
+            
+            // Add natural snow drifts scattered around base
+            const driftCount = Math.max(4, Math.floor(wallWidth / 10));
+            for (let i = 0; i < driftCount; i++) {
+                const driftX = mtn.x - wallWidth/2 + Math.random() * wallWidth;
+                const driftSize = 1.5 + Math.random() * 2.5;
+                const driftGeometry = new THREE.SphereGeometry(driftSize, 8, 6);
+                const drift = new THREE.Mesh(driftGeometry, pureSnowMaterial);
+                const side = Math.random() > 0.5 ? 1 : -1;
+                drift.position.set(driftX, driftSize * 0.25, mtn.z + side * (wallDepth/2 + driftSize * 0.4));
+                drift.scale.set(1.2 + Math.random() * 0.5, 0.35, 0.9 + Math.random() * 0.3); // Flatten into natural drift
+                drift.receiveShadow = true;
+                scene.add(drift);
+            }
+            
+            // Occasional icicles hanging from taller mounds
+            if (Math.random() > 0.5) {
+                const icicleCount = Math.floor(wallWidth / 12);
+                for (let i = 0; i < icicleCount; i++) {
+                    const icicleX = mtn.x - wallWidth/2 + Math.random() * wallWidth;
+                    const icicleLength = 0.4 + Math.random() * 1.2;
+                    const icicleGeometry = new THREE.ConeGeometry(0.08, icicleLength, 4);
+                    const icicleMaterial = new THREE.MeshPhongMaterial({ 
+                        color: 0xB0E0E6,  // Pale blue ice
+                        shininess: 100,
+                        transparent: true,
+                        opacity: 0.7
+                    });
+                    const icicle = new THREE.Mesh(icicleGeometry, icicleMaterial);
+                    icicle.position.set(icicleX, wallHeight * 0.6 + Math.random() * wallHeight * 0.3, mtn.z + wallDepth/3);
+                    icicle.rotation.x = Math.PI; // Point downward
+                    scene.add(icicle);
+                }
+            }
+            
+            // Add subtle sparkle effects
+            for (let i = 0; i < wallWidth / 12; i++) {
+                const sparkleGeometry = new THREE.SphereGeometry(0.06, 4, 4);
+                const sparkleMaterial = new THREE.MeshBasicMaterial({ 
+                    color: 0xFFFFFF,
+                    transparent: true,
+                    opacity: 0.5
+                });
+                const sparkle = new THREE.Mesh(sparkleGeometry, sparkleMaterial);
+                sparkle.position.set(
+                    mtn.x - wallWidth/2 + Math.random() * wallWidth,
+                    wallHeight * 0.2 + Math.random() * wallHeight * 0.6,
+                    mtn.z + (Math.random() - 0.5) * wallDepth
+                );
+                scene.add(sparkle);
+            }
+            
         } else {
             // Regular mountain (cone shape)
             const mountainGeometry = new THREE.ConeGeometry(mtn.width/2, mtn.height, 6);
@@ -3285,7 +3374,7 @@ function createComputerGround(scene, THREE) {
 }
 
 // Create ground plane
-function createGround(scene, THREE, groundColor, iceTheme, desertTheme, lavaTheme, waterTheme, candyTheme, graveyardTheme, ruinsTheme, computerTheme) {
+function createGround(scene, THREE, groundColor, iceTheme, desertTheme, lavaTheme, waterTheme, candyTheme, graveyardTheme, ruinsTheme, computerTheme, christmasTheme) {
     const textures = getTerrainTextures(THREE);
     const color = groundColor || 0xffffff; // Tint color applied over texture
     let textureToUse;
@@ -3344,7 +3433,7 @@ function createGround(scene, THREE, groundColor, iceTheme, desertTheme, lavaThem
         textureToUse = textures.graveyard || textures.grass; // Graveyard dead grass/dirt texture
     } else if (ruinsTheme) {
         textureToUse = textures.grass; // Green grass ground for ruins // Stone floor texture for ruins
-    } else if (iceTheme) {
+    } else if (iceTheme || christmasTheme) {
         textureToUse = textures.grassIce;
     } else {
         textureToUse = textures.grass;

@@ -643,8 +643,8 @@
             const canPassMountains = G.waterTheme && G.player.isGliding;
             if (!canPassMountains) {
                 G.levelConfig.mountains.forEach(mtn => {
-                    // For graveyard, ruins, computer, enchanted, and easter theme walls, use rectangular (box) collision
-                    if (G.graveyardTheme || G.ruinsTheme || G.computerTheme || G.enchantedTheme || G.easterTheme) {
+                    // For graveyard, ruins, computer, enchanted, easter, and christmas theme walls, use rectangular (box) collision
+                    if (G.graveyardTheme || G.ruinsTheme || G.computerTheme || G.enchantedTheme || G.easterTheme || G.christmasTheme) {
                         const wallWidth = mtn.width;
                         // Use fixed depth of 2 for computer theme (matches visual), variable for others
                         const wallDepth = G.computerTheme ? 2 : Math.min(mtn.width * 0.15, 8);
@@ -1169,6 +1169,141 @@
                         pickup.mesh.aura.material.opacity = 0.3 + Math.sin(pickup.bobPhase * 2) * 0.2;
                         pickup.mesh.aura.scale.setScalar(1 + Math.sin(pickup.bobPhase) * 0.1);
                     }
+                }
+            });
+        }
+        
+        // Christmas Present collection (good presents that give rewards)
+        if (G.christmasTheme && G.christmasPresents) {
+            G.christmasPresents.forEach((pickup, idx) => {
+                if (!pickup.collected) {
+                    const dist = Math.sqrt(
+                        Math.pow(G.playerGroup.position.x - pickup.x, 2) +
+                        Math.pow(G.playerGroup.position.z - pickup.z, 2)
+                    );
+                    let collected = dist < pickup.radius;
+                    let isPlayer2 = false;
+                    
+                    // Check player 2 in native splitscreen
+                    if (!collected && isNativeSplitscreen && G.player2Group) {
+                        const dist2 = Math.sqrt(
+                            Math.pow(G.player2Group.position.x - pickup.x, 2) +
+                            Math.pow(G.player2Group.position.z - pickup.z, 2)
+                        );
+                        if (dist2 < pickup.radius) {
+                            collected = true;
+                            isPlayer2 = true;
+                        }
+                    }
+                    
+                    if (collected) {
+                        pickup.collected = true;
+                        G.scene.remove(pickup.mesh);
+                        Audio.playCollectSound();
+                        
+                        // Grant reward based on type
+                        if (isPlayer2) {
+                            switch(pickup.rewardType) {
+                                case 'ammo': G.player2Ammo = Math.min(G.player2Ammo + 10, G.maxAmmo); break;
+                                case 'health': G.player2Health = Math.min(G.player2Health + 1, G.maxPlayerHealth); break;
+                                case 'bomb': G.bombInventory++; break;
+                                case 'banana': G.bananaInventory++; break;
+                                case 'herzman': G.herzmanInventory++; break;
+                            }
+                        } else {
+                            switch(pickup.rewardType) {
+                                case 'ammo': G.ammo = Math.min(G.ammo + 10, G.maxAmmo); break;
+                                case 'health': G.playerHealth = Math.min(G.playerHealth + 1, G.maxPlayerHealth); break;
+                                case 'bomb': G.bombInventory++; break;
+                                case 'banana': G.bananaInventory++; break;
+                                case 'herzman': G.herzmanInventory++; break;
+                            }
+                        }
+                        
+                        // Notify other player in multiplayer
+                        if (multiplayerManager && multiplayerManager.isConnected()) {
+                            multiplayerManager.sendGameEvent('itemCollected', { type: 'christmasPresent', index: idx });
+                        }
+                    }
+                }
+            });
+            
+            // Animate uncollected presents (gentle bob)
+            G.christmasPresents.forEach((pickup) => {
+                if (!pickup.collected && pickup.mesh) {
+                    pickup.bobPhase = (pickup.bobPhase || 0) + 0.04;
+                    const baseHeight = getTerrainHeight(pickup.x, pickup.z);
+                    pickup.mesh.position.y = baseHeight + Math.sin(pickup.bobPhase) * 0.15;
+                }
+            });
+        }
+        
+        // Christmas Decoy Presents (evil exploding presents)
+        if (G.christmasTheme && G.decoyPresents) {
+            G.decoyPresents.forEach((pickup, idx) => {
+                if (!pickup.collected) {
+                    const dist = Math.sqrt(
+                        Math.pow(G.playerGroup.position.x - pickup.x, 2) +
+                        Math.pow(G.playerGroup.position.z - pickup.z, 2)
+                    );
+                    let triggered = dist < pickup.radius;
+                    let isPlayer2 = false;
+                    
+                    // Check player 2 in native splitscreen
+                    if (!triggered && isNativeSplitscreen && G.player2Group) {
+                        const dist2 = Math.sqrt(
+                            Math.pow(G.player2Group.position.x - pickup.x, 2) +
+                            Math.pow(G.player2Group.position.z - pickup.z, 2)
+                        );
+                        if (dist2 < pickup.radius) {
+                            triggered = true;
+                            isPlayer2 = true;
+                        }
+                    }
+                    
+                    if (triggered) {
+                        pickup.collected = true;
+                        
+                        // Create explosion effect
+                        createFireballExplosion(pickup.mesh.position.x, pickup.mesh.position.y + 0.5, pickup.mesh.position.z);
+                        Audio.playExplosionSound();
+                        G.scene.remove(pickup.mesh);
+                        
+                        // Apply damage
+                        if (!godMode) {
+                            if (isPlayer2) {
+                                G.player2Health -= pickup.explosionDamage;
+                                G.damageFlashTime2 = Date.now();
+                                if (G.player2Health <= 0 && !gameDead) {
+                                    gameDead = true;
+                                    Audio.stopBackgroundMusic();
+                                    Audio.playDeathSound();
+                                }
+                            } else {
+                                G.playerHealth -= pickup.explosionDamage;
+                                G.damageFlashTime = Date.now();
+                                if (G.playerHealth <= 0 && !gameDead) {
+                                    gameDead = true;
+                                    Audio.stopBackgroundMusic();
+                                    Audio.playDeathSound();
+                                }
+                            }
+                        }
+                        
+                        // Notify other player in multiplayer
+                        if (multiplayerManager && multiplayerManager.isConnected()) {
+                            multiplayerManager.sendGameEvent('itemCollected', { type: 'decoyPresent', index: idx });
+                        }
+                    }
+                }
+            });
+            
+            // Animate decoy presents (same as good presents - indistinguishable)
+            G.decoyPresents.forEach((pickup) => {
+                if (!pickup.collected && pickup.mesh) {
+                    // Gentle bob animation like good presents
+                    pickup.bobPhase = (pickup.bobPhase || Math.random() * Math.PI * 2) + 0.03;
+                    pickup.mesh.position.y = getTerrainHeight(pickup.x, pickup.z) + Math.sin(pickup.bobPhase) * 0.1;
                 }
             });
         }

@@ -610,8 +610,8 @@
             // Check mountains/walls
             if (!collided && G.levelConfig.mountains && G.levelConfig.mountains.length > 0) {
                 for (const mtn of G.levelConfig.mountains) {
-                    if (G.graveyardTheme || G.ruinsTheme || G.computerTheme || G.enchantedTheme || G.easterTheme) {
-                        // Box collision for graveyard, ruins, computer, enchanted, and easter walls
+                    if (G.graveyardTheme || G.ruinsTheme || G.computerTheme || G.enchantedTheme || G.easterTheme || G.christmasTheme) {
+                        // Box collision for graveyard, ruins, computer, enchanted, easter, and christmas walls
                         const wallWidth = mtn.width;
                         // Use fixed depth of 2 for computer theme (matches visual), variable for others
                         const wallDepth = G.computerTheme ? 2 : Math.min(mtn.width * 0.15, 8);

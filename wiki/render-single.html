@@ -71,6 +71,118 @@
                 return group;
             },
 
+            'goblin-christmas': function() {
+                const group = new THREE.Group();
+                const elfGreen = 0x228b22;          // Forest green for evil elf
+                const elfRed = 0xcc0000;            // Christmas red
+                const snowWhite = 0xffffff;         // Snow white
+                const hatRed = 0xdc143c;            // Bright red for santa hat
+                const goldBell = 0xffd700;          // Gold for bell
+                
+                // Body (green elf outfit)
+                const bodyGeometry = new THREE.BoxGeometry(0.6, 0.8, 0.4);
+                const bodyMaterial = new THREE.MeshLambertMaterial({ color: elfGreen });
+                const body = new THREE.Mesh(bodyGeometry, bodyMaterial);
+                body.position.y = 0.8;
+                group.add(body);
+                
+                // Red belt
+                const beltGeometry = new THREE.BoxGeometry(0.65, 0.15, 0.42);
+                const beltMaterial = new THREE.MeshLambertMaterial({ color: elfRed });
+                const belt = new THREE.Mesh(beltGeometry, beltMaterial);
+                belt.position.y = 0.7;
+                group.add(belt);
+                
+                // Gold belt buckle
+                const buckleGeometry = new THREE.BoxGeometry(0.2, 0.12, 0.05);
+                const buckleMaterial = new THREE.MeshLambertMaterial({ color: goldBell });
+                const buckle = new THREE.Mesh(buckleGeometry, buckleMaterial);
+                buckle.position.set(0, 0.7, 0.23);
+                group.add(buckle);
+                
+                // Head (green elf skin)
+                const headGeometry = new THREE.SphereGeometry(0.4, 16, 16);
+                const headMaterial = new THREE.MeshLambertMaterial({ color: elfGreen });
+                const head = new THREE.Mesh(headGeometry, headMaterial);
+                head.position.y = 1.5;
+                group.add(head);
+                
+                // Evil red eyes
+                const eyeMaterial = new THREE.MeshBasicMaterial({ color: 0xff0000 });
+                const eyeGeometry = new THREE.SphereGeometry(0.1, 16, 16);
+                [-0.15, 0.15].forEach(x => {
+                    const eye = new THREE.Mesh(eyeGeometry, eyeMaterial);
+                    eye.position.set(x, 1.5, 0.35);
+                    group.add(eye);
+                });
+                
+                // Pointed elf ears (green)
+                const earGeometry = new THREE.ConeGeometry(0.15, 0.4, 4);
+                const earMaterial = new THREE.MeshLambertMaterial({ color: elfGreen });
+                [-0.5, 0.5].forEach((x, i) => {
+                    const ear = new THREE.Mesh(earGeometry, earMaterial);
+                    ear.rotation.z = i === 0 ? Math.PI / 2 : -Math.PI / 2;
+                    ear.position.set(x, 1.5, 0);
+                    group.add(ear);
+                });
+                
+                // Santa hat (red with white trim)
+                const hatConeGeometry = new THREE.ConeGeometry(0.35, 0.6, 16);
+                const hatMaterial = new THREE.MeshLambertMaterial({ color: hatRed });
+                const hatCone = new THREE.Mesh(hatConeGeometry, hatMaterial);
+                hatCone.position.y = 2.1;
+                hatCone.rotation.z = 0.3; // Tilt slightly
+                group.add(hatCone);
+                
+                // Hat trim (white fur)
+                const trimGeometry = new THREE.TorusGeometry(0.36, 0.08, 8, 16);
+                const trimMaterial = new THREE.MeshLambertMaterial({ color: snowWhite });
+                const trim = new THREE.Mesh(trimGeometry, trimMaterial);
+                trim.position.y = 1.8;
+                trim.rotation.x = Math.PI / 2;
+                group.add(trim);
+                
+                // Hat pom-pom
+                const pomGeometry = new THREE.SphereGeometry(0.12, 12, 12);
+                const pom = new THREE.Mesh(pomGeometry, trimMaterial);
+                pom.position.set(0.15, 2.5, 0);
+                group.add(pom);
+                
+                // Red scarf
+                const scarfGeometry = new THREE.TorusGeometry(0.3, 0.08, 8, 16);
+                const scarfMaterial = new THREE.MeshLambertMaterial({ color: elfRed });
+                const scarf = new THREE.Mesh(scarfGeometry, scarfMaterial);
+                scarf.position.y = 1.2;
+                scarf.rotation.x = Math.PI / 2;
+                group.add(scarf);
+                
+                // Scarf tail
+                const tailGeometry = new THREE.BoxGeometry(0.15, 0.4, 0.08);
+                const tail = new THREE.Mesh(tailGeometry, scarfMaterial);
+                tail.position.set(0.25, 0.9, 0.1);
+                tail.rotation.z = -0.3;
+                group.add(tail);
+                
+                // Jingle bell on outfit
+                const bellGeometry = new THREE.SphereGeometry(0.1, 12, 12);
+                const bellMaterial = new THREE.MeshLambertMaterial({ color: goldBell });
+                const bell = new THREE.Mesh(bellGeometry, bellMaterial);
+                bell.position.set(0, 1.2, 0.35);
+                group.add(bell);
+                
+                // Snow accents on shoulders
+                const snowGeometry = new THREE.SphereGeometry(0.12, 8, 8);
+                const snowMaterial = new THREE.MeshLambertMaterial({ color: snowWhite });
+                [-0.35, 0.35].forEach(x => {
+                    const snow = new THREE.Mesh(snowGeometry, snowMaterial);
+                    snow.position.set(x, 1.2, 0);
+                    snow.scale.set(1, 0.5, 1);
+                    group.add(snow);
+                });
+                
+                return group;
+            },
+
             'shark': function() {
                 const group = new THREE.Group();
                 const finGeometry = new THREE.ConeGeometry(0.5, 2.5, 3);
@@ -226,6 +338,101 @@
                     ear.rotation.z = i === 0 ? Math.PI / 2 : -Math.PI / 2;
                     ear.position.set(x, 1.8, 0);
                     group.add(ear);
+                });
+                
+                return group;
+            },
+
+            'guardian-christmas': function() {
+                const group = new THREE.Group();
+                const nutcrackerRed = 0xb22222;
+                const nutcrackerGold = 0xffd700;
+                const nutcrackerBlack = 0x111111;
+                const nutcrackerWhite = 0xffffff;
+                
+                // Body - nutcracker soldier uniform
+                const bodyGeometry = new THREE.BoxGeometry(0.8, 1.0, 0.5);
+                const bodyMaterial = new THREE.MeshLambertMaterial({ color: nutcrackerRed });
+                const body = new THREE.Mesh(bodyGeometry, bodyMaterial);
+                body.position.y = 1.0;
+                group.add(body);
+                
+                // Gold buttons on uniform
+                for (let i = 0; i < 3; i++) {
+                    const button = new THREE.Mesh(
+                        new THREE.CylinderGeometry(0.08, 0.08, 0.05, 16),
+                        new THREE.MeshLambertMaterial({ color: nutcrackerGold })
+                    );
+                    button.rotation.x = Math.PI / 2;
+                    button.position.set(0, 1.3 - i * 0.3, 0.28);
+                    group.add(button);
+                }
+                
+                // Head - wooden/painted look
+                const headGeometry = new THREE.CylinderGeometry(0.4, 0.45, 0.6, 16);
+                const headMaterial = new THREE.MeshLambertMaterial({ color: 0xffc0a0 });
+                const head = new THREE.Mesh(headGeometry, headMaterial);
+                head.position.y = 1.9;
+                group.add(head);
+                
+                // Black eyes - nutcracker style
+                const eyeMaterial = new THREE.MeshBasicMaterial({ color: nutcrackerBlack });
+                const eyeGeometry = new THREE.SphereGeometry(0.08, 12, 12);
+                [-0.15, 0.15].forEach(x => {
+                    const eye = new THREE.Mesh(eyeGeometry, eyeMaterial);
+                    eye.position.set(x, 1.95, 0.38);
+                    group.add(eye);
+                });
+                
+                // Tall nutcracker hat - black with gold trim
+                const hatBase = new THREE.Mesh(
+                    new THREE.CylinderGeometry(0.5, 0.5, 0.15, 16),
+                    new THREE.MeshLambertMaterial({ color: nutcrackerBlack })
+                );
+                hatBase.position.y = 2.3;
+                group.add(hatBase);
+                
+                const hatTop = new THREE.Mesh(
+                    new THREE.CylinderGeometry(0.35, 0.38, 0.8, 16),
+                    new THREE.MeshLambertMaterial({ color: nutcrackerBlack })
+                );
+                hatTop.position.y = 2.75;
+                group.add(hatTop);
+                
+                // Gold hat trim
+                const hatTrim = new THREE.Mesh(
+                    new THREE.CylinderGeometry(0.39, 0.39, 0.1, 16),
+                    new THREE.MeshLambertMaterial({ color: nutcrackerGold })
+                );
+                hatTrim.position.y = 2.38;
+                group.add(hatTrim);
+                
+                // White beard/mustache
+                const beard = new THREE.Mesh(
+                    new THREE.BoxGeometry(0.5, 0.25, 0.2),
+                    new THREE.MeshLambertMaterial({ color: nutcrackerWhite })
+                );
+                beard.position.set(0, 1.75, 0.35);
+                group.add(beard);
+                
+                // Red scarf around neck
+                const scarf = new THREE.Mesh(
+                    new THREE.TorusGeometry(0.5, 0.12, 8, 12, Math.PI),
+                    new THREE.MeshLambertMaterial({ color: 0xff0000 })
+                );
+                scarf.rotation.x = Math.PI / 2;
+                scarf.position.y = 1.5;
+                group.add(scarf);
+                
+                // Snowy shoulder pads (snow accumulated on shoulders)
+                [-0.45, 0.45].forEach(x => {
+                    const snow = new THREE.Mesh(
+                        new THREE.SphereGeometry(0.18, 12, 12),
+                        new THREE.MeshLambertMaterial({ color: nutcrackerWhite })
+                    );
+                    snow.position.set(x, 1.55, 0);
+                    snow.scale.y = 0.5;
+                    group.add(snow);
                 });
                 
                 return group;
@@ -430,6 +637,116 @@
                 const orbMaterial = new THREE.MeshBasicMaterial({ color: 0x00FFFF });
                 const orb = new THREE.Mesh(orbGeometry, orbMaterial);
                 orb.position.set(0.9, 3.2, 0.3);
+                group.add(orb);
+                
+                return group;
+            },
+
+            'wizard-christmas': function() {
+                const group = new THREE.Group();
+                
+                // Red Santa coat
+                const bodyGeometry = new THREE.CylinderGeometry(0.6, 1.0, 2.5, 12);
+                const bodyMaterial = new THREE.MeshLambertMaterial({ color: 0xcc0000 });
+                const body = new THREE.Mesh(bodyGeometry, bodyMaterial);
+                body.position.y = 1.5;
+                group.add(body);
+                
+                // White fur trim on coat
+                const trimGeometry = new THREE.CylinderGeometry(1.02, 1.02, 0.3, 12);
+                const trimMaterial = new THREE.MeshLambertMaterial({ color: 0xffffff });
+                const trim = new THREE.Mesh(trimGeometry, trimMaterial);
+                trim.position.y = 0.4;
+                group.add(trim);
+                
+                // Belt
+                const beltGeometry = new THREE.CylinderGeometry(1.01, 1.01, 0.25, 12);
+                const beltMaterial = new THREE.MeshLambertMaterial({ color: 0x1a1a1a });
+                const belt = new THREE.Mesh(beltGeometry, beltMaterial);
+                belt.position.y = 1.5;
+                group.add(belt);
+                
+                // Gold belt buckle
+                const buckleGeometry = new THREE.BoxGeometry(0.35, 0.35, 0.1);
+                const buckleMaterial = new THREE.MeshLambertMaterial({ color: 0xffd700 });
+                const buckle = new THREE.Mesh(buckleGeometry, buckleMaterial);
+                buckle.position.set(0, 1.5, 1.05);
+                group.add(buckle);
+                
+                // Head with pale skin
+                const headGeometry = new THREE.SphereGeometry(0.6, 16, 16);
+                const headMaterial = new THREE.MeshLambertMaterial({ color: 0xffdbac });
+                const head = new THREE.Mesh(headGeometry, headMaterial);
+                head.position.y = 3.0;
+                group.add(head);
+                
+                // White beard
+                const beardGeometry = new THREE.SphereGeometry(0.55, 16, 12);
+                beardGeometry.scale(1.0, 0.8, 0.9);
+                const beardMaterial = new THREE.MeshLambertMaterial({ color: 0xffffff });
+                const beard = new THREE.Mesh(beardGeometry, beardMaterial);
+                beard.position.set(0, 2.7, 0.3);
+                group.add(beard);
+                
+                // Red Santa hat
+                const hatGeometry = new THREE.ConeGeometry(0.7, 1.5, 8);
+                const hatMaterial = new THREE.MeshLambertMaterial({ color: 0xcc0000 });
+                const hat = new THREE.Mesh(hatGeometry, hatMaterial);
+                hat.position.y = 4.0;
+                group.add(hat);
+                
+                // White fur trim on hat
+                const hatTrimGeometry = new THREE.TorusGeometry(0.72, 0.15, 8, 16);
+                const hatTrim = new THREE.Mesh(hatTrimGeometry, trimMaterial);
+                hatTrim.rotation.x = Math.PI / 2;
+                hatTrim.position.y = 3.4;
+                group.add(hatTrim);
+                
+                // White pompom on hat
+                const pompomGeometry = new THREE.SphereGeometry(0.2, 12, 12);
+                const pompom = new THREE.Mesh(pompomGeometry, trimMaterial);
+                pompom.position.y = 4.75;
+                group.add(pompom);
+                
+                // Dark evil eyes
+                const eyeMaterial = new THREE.MeshBasicMaterial({ color: 0xff0000 });
+                const eyeGeometry = new THREE.SphereGeometry(0.12, 16, 16);
+                [-0.22, 0.22].forEach(x => {
+                    const eye = new THREE.Mesh(eyeGeometry, eyeMaterial);
+                    eye.position.set(x, 3.1, 0.52);
+                    group.add(eye);
+                });
+                
+                // Candy cane staff instead of wizard staff
+                const staffGeometry = new THREE.CylinderGeometry(0.08, 0.08, 3.0, 8);
+                const staffMaterial = new THREE.MeshLambertMaterial({ color: 0xffffff });
+                const staff = new THREE.Mesh(staffGeometry, staffMaterial);
+                staff.position.set(0.8, 1.5, 0.3);
+                staff.rotation.z = -0.2;
+                group.add(staff);
+                
+                // Red stripes on candy cane
+                for (let i = 0; i < 6; i++) {
+                    const stripeGeometry = new THREE.CylinderGeometry(0.09, 0.09, 0.3, 8);
+                    const stripeMaterial = new THREE.MeshLambertMaterial({ color: 0xff0000 });
+                    const stripe = new THREE.Mesh(stripeGeometry, stripeMaterial);
+                    stripe.position.set(0.8, 0.5 + i * 0.5, 0.3);
+                    stripe.rotation.z = -0.2;
+                    group.add(stripe);
+                }
+                
+                // Curved top of candy cane
+                const caneTopGeometry = new THREE.TorusGeometry(0.3, 0.08, 8, 16, Math.PI);
+                const caneTop = new THREE.Mesh(caneTopGeometry, staffMaterial);
+                caneTop.rotation.z = Math.PI / 2 - 0.2;
+                caneTop.position.set(0.85, 3.2, 0.3);
+                group.add(caneTop);
+                
+                // Red glowing ornament orb
+                const orbGeometry = new THREE.SphereGeometry(0.25, 12, 12);
+                const orbMaterial = new THREE.MeshBasicMaterial({ color: 0xff0000 });
+                const orb = new THREE.Mesh(orbGeometry, orbMaterial);
+                orb.position.set(0.55, 3.2, 0.3);
                 group.add(orb);
                 
                 return group;
@@ -5820,6 +6137,483 @@
                 sparkle.position.y = 0.5;
                 group.add(sparkle);
 
+                return group;
+            },
+
+            // ========== LEVEL 12 CHRISTMAS ENTITIES ==========
+
+            'evil-elf': function() {
+                const group = new THREE.Group();
+                const elfGreen = 0x228b22;      // Forest green
+                const elfRed = 0xdc143c;        // Crimson red
+                const skinColor = 0xffdab9;     // Peach
+                const hatRed = 0xb22222;        // Firebrick
+                const eyeColor = 0xff0000;      // Red glowing eyes
+
+                // Body with green tunic
+                const bodyGeometry = new THREE.BoxGeometry(0.6, 0.8, 0.4);
+                const bodyMaterial = new THREE.MeshLambertMaterial({ color: elfGreen });
+                const body = new THREE.Mesh(bodyGeometry, bodyMaterial);
+                body.position.y = 0.8;
+                group.add(body);
+
+                // Red belt
+                const beltGeometry = new THREE.BoxGeometry(0.62, 0.15, 0.42);
+                const beltMaterial = new THREE.MeshLambertMaterial({ color: elfRed });
+                const belt = new THREE.Mesh(beltGeometry, beltMaterial);
+                belt.position.y = 0.7;
+                group.add(belt);
+
+                // Belt buckle
+                const buckleGeometry = new THREE.BoxGeometry(0.15, 0.12, 0.05);
+                const buckleMaterial = new THREE.MeshLambertMaterial({ color: 0xffd700 });
+                const buckle = new THREE.Mesh(buckleGeometry, buckleMaterial);
+                buckle.position.set(0, 0.7, 0.25);
+                group.add(buckle);
+
+                // Head
+                const headGeometry = new THREE.SphereGeometry(0.35, 16, 16);
+                const headMaterial = new THREE.MeshLambertMaterial({ color: skinColor });
+                const head = new THREE.Mesh(headGeometry, headMaterial);
+                head.position.y = 1.45;
+                group.add(head);
+
+                // Pointed ears
+                const earGeometry = new THREE.ConeGeometry(0.12, 0.35, 8);
+                const earMaterial = new THREE.MeshLambertMaterial({ color: skinColor });
+                [-0.45, 0.45].forEach((x, i) => {
+                    const ear = new THREE.Mesh(earGeometry, earMaterial);
+                    ear.rotation.z = i === 0 ? Math.PI / 2 : -Math.PI / 2;
+                    ear.position.set(x, 1.5, 0);
+                    group.add(ear);
+                });
+
+                // Evil red glowing eyes
+                const eyeMaterial = new THREE.MeshBasicMaterial({ color: eyeColor });
+                const eyeGeometry = new THREE.SphereGeometry(0.08, 12, 12);
+                [-0.12, 0.12].forEach(x => {
+                    const eye = new THREE.Mesh(eyeGeometry, eyeMaterial);
+                    eye.position.set(x, 1.45, 0.32);
+                    group.add(eye);
+                });
+
+                // Pointy red hat
+                const hatGeometry = new THREE.ConeGeometry(0.35, 0.6, 16);
+                const hatMaterial = new THREE.MeshLambertMaterial({ color: hatRed });
+                const hat = new THREE.Mesh(hatGeometry, hatMaterial);
+                hat.position.y = 2.0;
+                group.add(hat);
+
+                // White pom-pom on hat
+                const pomGeometry = new THREE.SphereGeometry(0.1, 8, 8);
+                const pomMaterial = new THREE.MeshLambertMaterial({ color: 0xffffff });
+                const pom = new THREE.Mesh(pomGeometry, pomMaterial);
+                pom.position.y = 2.3;
+                group.add(pom);
+
+                // Arms
+                const armGeometry = new THREE.CylinderGeometry(0.1, 0.12, 0.6, 8);
+                const armMaterial = new THREE.MeshLambertMaterial({ color: elfGreen });
+                [-0.45, 0.45].forEach(x => {
+                    const arm = new THREE.Mesh(armGeometry, armMaterial);
+                    arm.position.set(x, 0.8, 0);
+                    arm.rotation.z = x < 0 ? 0.3 : -0.3;
+                    group.add(arm);
+                });
+
+                // Legs
+                const legGeometry = new THREE.CylinderGeometry(0.12, 0.1, 0.5, 8);
+                const legMaterial = new THREE.MeshLambertMaterial({ color: elfRed });
+                [-0.2, 0.2].forEach(x => {
+                    const leg = new THREE.Mesh(legGeometry, legMaterial);
+                    leg.position.set(x, 0.25, 0);
+                    group.add(leg);
+                });
+
+                // Curled toe shoes
+                const shoeGeometry = new THREE.SphereGeometry(0.15, 8, 8);
+                const shoeMaterial = new THREE.MeshLambertMaterial({ color: elfGreen });
+                [-0.2, 0.2].forEach(x => {
+                    const shoe = new THREE.Mesh(shoeGeometry, shoeMaterial);
+                    shoe.position.set(x, 0.05, 0.15);
+                    shoe.scale.set(1, 0.6, 1.5);
+                    group.add(shoe);
+                });
+
+                return group;
+            },
+
+            'evil-santa': function() {
+                const group = new THREE.Group();
+                const santaRed = 0xCC0000;      // Dark red coat
+                const santaWhite = 0xFFFFFF;    // White trim
+                const skinColor = 0xFFCCCC;     // Pale skin
+                const beltColor = 0x222222;     // Black belt
+                const buckleColor = 0xFFD700;   // Gold buckle
+                const sledgeColor = 0x8B0000;   // Dark red sledge
+                const sledgeRailColor = 0xFFD700; // Gold rails
+                const eyeGlow = 0xFF0000;       // Evil red eyes
+                
+                // Large body with coat
+                const bodyGeometry = new THREE.CylinderGeometry(1.0, 1.4, 2.5, 12);
+                const bodyMaterial = new THREE.MeshLambertMaterial({ color: santaRed });
+                const body = new THREE.Mesh(bodyGeometry, bodyMaterial);
+                body.position.y = 2.5;
+                group.add(body);
+                
+                // White coat trim (bottom)
+                const trimBottomGeometry = new THREE.CylinderGeometry(1.5, 1.5, 0.3, 12);
+                const trimMaterial = new THREE.MeshLambertMaterial({ color: santaWhite });
+                const trimBottom = new THREE.Mesh(trimBottomGeometry, trimMaterial);
+                trimBottom.position.y = 1.3;
+                group.add(trimBottom);
+                
+                // White coat trim (middle)
+                const trimMiddleGeometry = new THREE.CylinderGeometry(1.1, 1.1, 0.15, 12);
+                const trimMiddle = new THREE.Mesh(trimMiddleGeometry, trimMaterial);
+                trimMiddle.position.y = 3.7;
+                group.add(trimMiddle);
+                
+                // Black belt
+                const beltGeometry = new THREE.CylinderGeometry(1.05, 1.35, 0.25, 12);
+                const beltMaterial = new THREE.MeshLambertMaterial({ color: beltColor });
+                const belt = new THREE.Mesh(beltGeometry, beltMaterial);
+                belt.position.y = 2.3;
+                group.add(belt);
+                
+                // Gold belt buckle
+                const buckleGeometry = new THREE.BoxGeometry(0.4, 0.3, 0.15);
+                const buckleMaterial = new THREE.MeshLambertMaterial({ color: buckleColor });
+                const buckle = new THREE.Mesh(buckleGeometry, buckleMaterial);
+                buckle.position.set(0, 2.3, 1.4);
+                group.add(buckle);
+                
+                // Head
+                const headGeometry = new THREE.SphereGeometry(0.8, 16, 16);
+                const headMaterial = new THREE.MeshLambertMaterial({ color: skinColor });
+                const head = new THREE.Mesh(headGeometry, headMaterial);
+                head.position.y = 4.5;
+                group.add(head);
+                
+                // Santa hat
+                const hatGeometry = new THREE.ConeGeometry(0.7, 1.5, 12);
+                const hat = new THREE.Mesh(hatGeometry, bodyMaterial);
+                hat.position.y = 5.6;
+                group.add(hat);
+                
+                // Hat trim
+                const hatTrimGeometry = new THREE.CylinderGeometry(0.75, 0.75, 0.2, 12);
+                const hatTrim = new THREE.Mesh(hatTrimGeometry, trimMaterial);
+                hatTrim.position.y = 4.9;
+                group.add(hatTrim);
+                
+                // Hat pom-pom
+                const pomPomGeometry = new THREE.SphereGeometry(0.2, 12, 12);
+                const pomPom = new THREE.Mesh(pomPomGeometry, trimMaterial);
+                pomPom.position.y = 6.3;
+                group.add(pomPom);
+                
+                // Evil glowing eyes
+                const eyeGeometry = new THREE.SphereGeometry(0.15, 12, 12);
+                const eyeMaterial = new THREE.MeshBasicMaterial({ color: eyeGlow });
+                [-0.3, 0.3].forEach(x => {
+                    const eye = new THREE.Mesh(eyeGeometry, eyeMaterial);
+                    eye.position.set(x, 4.6, 0.7);
+                    group.add(eye);
+                    
+                    // Evil glow effect
+                    const glowGeometry = new THREE.SphereGeometry(0.2, 12, 12);
+                    const glowMaterial = new THREE.MeshBasicMaterial({ 
+                        color: eyeGlow, 
+                        transparent: true, 
+                        opacity: 0.3 
+                    });
+                    const glow = new THREE.Mesh(glowGeometry, glowMaterial);
+                    glow.position.set(x, 4.6, 0.7);
+                    group.add(glow);
+                });
+                
+                // Evil beard (darker, scraggly)
+                const beardGeometry = new THREE.SphereGeometry(0.6, 12, 12);
+                const beardMaterial = new THREE.MeshLambertMaterial({ color: 0xE0E0E0 });
+                const beard = new THREE.Mesh(beardGeometry, beardMaterial);
+                beard.position.set(0, 4.0, 0.6);
+                beard.scale.set(1.2, 1.0, 0.8);
+                group.add(beard);
+                
+                // Mustache
+                [-0.3, 0.3].forEach(x => {
+                    const mustacheGeometry = new THREE.SphereGeometry(0.25, 12, 12);
+                    const mustache = new THREE.Mesh(mustacheGeometry, beardMaterial);
+                    mustache.position.set(x, 4.3, 0.65);
+                    mustache.scale.set(1.5, 0.5, 0.8);
+                    group.add(mustache);
+                });
+                
+                // Arms
+                const armGeometry = new THREE.CylinderGeometry(0.3, 0.35, 1.8, 8);
+                const armMaterial = new THREE.MeshLambertMaterial({ color: santaRed });
+                [-1.3, 1.3].forEach((x, i) => {
+                    const arm = new THREE.Mesh(armGeometry, armMaterial);
+                    arm.position.set(x, 2.8, 0);
+                    arm.rotation.z = i === 0 ? 0.4 : -0.4;
+                    group.add(arm);
+                    
+                    // White cuff
+                    const cuffGeometry = new THREE.CylinderGeometry(0.38, 0.38, 0.2, 8);
+                    const cuff = new THREE.Mesh(cuffGeometry, trimMaterial);
+                    const cuffOffset = i === 0 ? 
+                        { x: x - 0.4, y: 2.2 } : 
+                        { x: x + 0.4, y: 2.2 };
+                    cuff.position.set(cuffOffset.x, cuffOffset.y, 0);
+                    group.add(cuff);
+                    
+                    // Black gloves
+                    const gloveGeometry = new THREE.SphereGeometry(0.35, 8, 8);
+                    const gloveMaterial = new THREE.MeshLambertMaterial({ color: beltColor });
+                    const glove = new THREE.Mesh(gloveGeometry, gloveMaterial);
+                    const gloveOffset = i === 0 ? 
+                        { x: x - 0.6, y: 1.8 } : 
+                        { x: x + 0.6, y: 1.8 };
+                    glove.position.set(gloveOffset.x, gloveOffset.y, 0);
+                    group.add(glove);
+                });
+                
+                // Flying Sledge
+                const sledgeBaseGeometry = new THREE.BoxGeometry(3.0, 0.3, 1.5);
+                const sledgeMaterial = new THREE.MeshLambertMaterial({ color: sledgeColor });
+                const sledgeBase = new THREE.Mesh(sledgeBaseGeometry, sledgeMaterial);
+                sledgeBase.position.set(0, 0.5, 0);
+                group.add(sledgeBase);
+                
+                // Sledge curved front
+                const sledgeFrontGeometry = new THREE.CylinderGeometry(0.15, 0.15, 1.5, 8);
+                const sledgeFront = new THREE.Mesh(sledgeFrontGeometry, sledgeMaterial);
+                sledgeFront.position.set(1.5, 0.6, 0);
+                sledgeFront.rotation.x = Math.PI / 2;
+                sledgeFront.rotation.z = 0.5;
+                group.add(sledgeFront);
+                
+                // Gold rails (runners)
+                const railGeometry = new THREE.BoxGeometry(3.5, 0.15, 0.2);
+                const railMaterial = new THREE.MeshLambertMaterial({ color: sledgeRailColor });
+                [-0.6, 0.6].forEach(z => {
+                    const rail = new THREE.Mesh(railGeometry, railMaterial);
+                    rail.position.set(0, 0.2, z);
+                    group.add(rail);
+                    
+                    // Curved front of rail
+                    const railFrontGeometry = new THREE.TorusGeometry(0.3, 0.1, 8, 16, Math.PI / 2);
+                    const railFront = new THREE.Mesh(railFrontGeometry, railMaterial);
+                    railFront.position.set(1.6, 0.3, z);
+                    railFront.rotation.y = Math.PI / 2;
+                    group.add(railFront);
+                });
+                
+                // Gift bag on sledge (stolen presents!)
+                const bagGeometry = new THREE.SphereGeometry(0.6, 12, 12);
+                const bagMaterial = new THREE.MeshLambertMaterial({ color: 0x8B4513 });
+                const bag = new THREE.Mesh(bagGeometry, bagMaterial);
+                bag.position.set(-1.0, 0.9, 0);
+                bag.scale.set(1.2, 1.4, 1.0);
+                group.add(bag);
+                
+                // Rope tied around bag
+                const ropeGeometry = new THREE.TorusGeometry(0.5, 0.05, 8, 16);
+                const ropeMaterial = new THREE.MeshLambertMaterial({ color: 0xFFD700 });
+                const rope = new THREE.Mesh(ropeGeometry, ropeMaterial);
+                rope.position.set(-1.0, 1.5, 0);
+                rope.rotation.x = Math.PI / 2;
+                group.add(rope);
+                
+                // Evil magical aura
+                for (let i = 0; i < 12; i++) {
+                    const angle = (i / 12) * Math.PI * 2;
+                    const radius = 2.5 + Math.random() * 0.5;
+                    const sparkleGeometry = new THREE.SphereGeometry(0.08, 6, 6);
+                    const sparkleMaterial = new THREE.MeshBasicMaterial({ 
+                        color: Math.random() > 0.5 ? 0xFF0000 : 0x8B0000,
+                        transparent: true,
+                        opacity: 0.6
+                    });
+                    const sparkle = new THREE.Mesh(sparkleGeometry, sparkleMaterial);
+                    sparkle.position.set(
+                        Math.cos(angle) * radius,
+                        2.5 + Math.sin(angle * 3) * 0.5,
+                        Math.sin(angle) * radius
+                    );
+                    group.add(sparkle);
+                }
+                
+                return group;
+            },
+
+            'giant-christmas': function() {
+                const group = new THREE.Group();
+                const snowWhite = 0xffffff;         // Snow white body
+                const coalBlack = 0x222222;         // Coal eyes/buttons
+                const carrotOrange = 0xff6600;      // Carrot nose
+                const scarfRed = 0xdc143c;          // Red scarf
+                const hatBlack = 0x1a1a1a;          // Black top hat
+                const hatRibbon = 0xcc0000;         // Red hat ribbon
+                const iceBlue = 0xccffff;           // Icy highlights
+                
+                // Large snowball body (bottom)
+                const bodyBottomGeometry = new THREE.SphereGeometry(1.8, 16, 16);
+                const snowMaterial = new THREE.MeshLambertMaterial({ color: snowWhite });
+                const bodyBottom = new THREE.Mesh(bodyBottomGeometry, snowMaterial);
+                bodyBottom.position.y = 2.0;
+                bodyBottom.scale.set(1, 0.95, 1);
+                group.add(bodyBottom);
+                
+                // Middle snowball
+                const bodyMiddleGeometry = new THREE.SphereGeometry(1.5, 16, 16);
+                const bodyMiddle = new THREE.Mesh(bodyMiddleGeometry, snowMaterial);
+                bodyMiddle.position.y = 4.2;
+                bodyMiddle.scale.set(1, 0.9, 1);
+                group.add(bodyMiddle);
+                
+                // Coal buttons on body
+                const buttonGeometry = new THREE.SphereGeometry(0.25, 12, 12);
+                const coalMaterial = new THREE.MeshLambertMaterial({ color: coalBlack });
+                for (let i = 0; i < 3; i++) {
+                    const button = new THREE.Mesh(buttonGeometry, coalMaterial);
+                    button.position.set(0, 3.5 + (i * 0.5), 1.5);
+                    group.add(button);
+                }
+                
+                // Head (top snowball)
+                const headGeometry = new THREE.SphereGeometry(1.2, 16, 16);
+                const head = new THREE.Mesh(headGeometry, snowMaterial);
+                head.position.y = 6.0;
+                group.add(head);
+                
+                // Evil coal eyes (glowing red)
+                const eyeGeometry = new THREE.SphereGeometry(0.2, 12, 12);
+                const eyeMaterial = new THREE.MeshBasicMaterial({ color: 0xff0000 });
+                [-0.4, 0.4].forEach(x => {
+                    const eye = new THREE.Mesh(eyeGeometry, eyeMaterial);
+                    eye.position.set(x, 6.2, 1.1);
+                    group.add(eye);
+                    
+                    // Evil glow
+                    const glowGeometry = new THREE.SphereGeometry(0.25, 12, 12);
+                    const glowMaterial = new THREE.MeshBasicMaterial({ 
+                        color: 0xff0000, 
+                        transparent: true, 
+                        opacity: 0.3 
+                    });
+                    const glow = new THREE.Mesh(glowGeometry, glowMaterial);
+                    glow.position.set(x, 6.2, 1.1);
+                    group.add(glow);
+                });
+                
+                // Carrot nose
+                const noseGeometry = new THREE.ConeGeometry(0.15, 0.8, 8);
+                const noseMaterial = new THREE.MeshLambertMaterial({ color: carrotOrange });
+                const nose = new THREE.Mesh(noseGeometry, noseMaterial);
+                nose.position.set(0, 5.9, 1.2);
+                nose.rotation.x = Math.PI / 2;
+                group.add(nose);
+                
+                // Evil grin made of coal pieces
+                const mouthCoalGeometry = new THREE.SphereGeometry(0.12, 8, 8);
+                for (let i = 0; i < 7; i++) {
+                    const angle = (i - 3) * 0.15;
+                    const x = Math.sin(angle) * 0.6;
+                    const y = 5.5 - Math.abs(i - 3) * 0.08;
+                    const mouthCoal = new THREE.Mesh(mouthCoalGeometry, coalMaterial);
+                    mouthCoal.position.set(x, y, 1.1);
+                    group.add(mouthCoal);
+                }
+                
+                // Black top hat
+                const hatBaseGeometry = new THREE.CylinderGeometry(0.8, 0.8, 0.2, 16);
+                const hatMaterial = new THREE.MeshLambertMaterial({ color: hatBlack });
+                const hatBase = new THREE.Mesh(hatBaseGeometry, hatMaterial);
+                hatBase.position.y = 7.0;
+                group.add(hatBase);
+                
+                const hatTopGeometry = new THREE.CylinderGeometry(0.6, 0.6, 1.2, 16);
+                const hatTop = new THREE.Mesh(hatTopGeometry, hatMaterial);
+                hatTop.position.y = 7.7;
+                group.add(hatTop);
+                
+                // Red ribbon on hat
+                const ribbonGeometry = new THREE.CylinderGeometry(0.65, 0.65, 0.15, 16);
+                const ribbonMaterial = new THREE.MeshLambertMaterial({ color: hatRibbon });
+                const ribbon = new THREE.Mesh(ribbonGeometry, ribbonMaterial);
+                ribbon.position.y = 7.2;
+                group.add(ribbon);
+                
+                // Red scarf around neck
+                const scarfMaterial = new THREE.MeshLambertMaterial({ color: scarfRed });
+                const scarfRingGeometry = new THREE.TorusGeometry(1.3, 0.2, 8, 16);
+                const scarfRing = new THREE.Mesh(scarfRingGeometry, scarfMaterial);
+                scarfRing.position.y = 5.2;
+                scarfRing.rotation.x = Math.PI / 2;
+                group.add(scarfRing);
+                
+                // Scarf tails hanging down
+                const scarfTailGeometry = new THREE.CylinderGeometry(0.18, 0.15, 1.5, 8);
+                [-0.9, 0.9].forEach(x => {
+                    const tail = new THREE.Mesh(scarfTailGeometry, scarfMaterial);
+                    tail.position.set(x, 4.2, 0.8);
+                    tail.rotation.z = x < 0 ? 0.2 : -0.2;
+                    group.add(tail);
+                });
+                
+                // Stick arms (frozen tree branches)
+                const stickMaterial = new THREE.MeshLambertMaterial({ color: 0x4a3a2a });
+                const armGeometry = new THREE.CylinderGeometry(0.15, 0.12, 2.5, 8);
+                
+                const leftArm = new THREE.Mesh(armGeometry, stickMaterial);
+                leftArm.position.set(-1.8, 4.5, 0);
+                leftArm.rotation.z = Math.PI / 3;
+                group.add(leftArm);
+                
+                const rightArm = new THREE.Mesh(armGeometry, stickMaterial);
+                rightArm.position.set(1.8, 4.5, 0);
+                rightArm.rotation.z = -Math.PI / 3;
+                group.add(rightArm);
+                
+                // Stick fingers (3 per hand)
+                const fingerGeometry = new THREE.CylinderGeometry(0.05, 0.04, 0.6, 6);
+                [[-2.7, 3.8], [2.7, 3.8]].forEach(([x, y], armIndex) => {
+                    for (let i = 0; i < 3; i++) {
+                        const finger = new THREE.Mesh(fingerGeometry, stickMaterial);
+                        const angleOffset = (i - 1) * 0.3;
+                        finger.position.set(
+                            x + Math.sin(angleOffset) * 0.2,
+                            y + Math.cos(angleOffset) * 0.2,
+                            0
+                        );
+                        finger.rotation.z = armIndex === 0 ? 
+                            (Math.PI / 3 + angleOffset) : 
+                            (-Math.PI / 3 + angleOffset);
+                        group.add(finger);
+                    }
+                });
+                
+                // Icy highlights/frost patches
+                const frostMaterial = new THREE.MeshLambertMaterial({ 
+                    color: iceBlue, 
+                    transparent: true, 
+                    opacity: 0.4 
+                });
+                const frostGeometry = new THREE.SphereGeometry(0.3, 12, 12);
+                [
+                    [0.8, 4.5, 1.4],
+                    [-0.9, 3.2, 1.6],
+                    [0.5, 6.3, 1.0],
+                    [-0.6, 2.5, 1.7]
+                ].forEach(([x, y, z]) => {
+                    const frost = new THREE.Mesh(frostGeometry, frostMaterial);
+                    frost.position.set(x, y, z);
+                    frost.scale.set(1.2, 0.8, 0.6);
+                    group.add(frost);
+                });
+                
                 return group;
             }
         };

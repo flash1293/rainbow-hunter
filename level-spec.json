@@ -47,8 +47,8 @@
   },
 
   "collision": {
-    "mountainShape": "circular",
-    "useWallCollision": false
+    "mountainShape": "box",
+    "useWallCollision": true
   },
 
   "newEntities": [
@@ -86,6 +86,28 @@
     "hasMountains": true,
     "hasTreasure": true,
     "hasMaterials": false
+  },
+
+  "specialMechanic": {
+    "name": "Christmas Present Collection",
+    "description": "Collect wrapped presents scattered around the village to get random rewards. Beware of decoy presents that explode when touched!",
+    "collectibles": {
+      "type": "christmasPresents",
+      "count": 12,
+      "rewards": ["ammo", "health", "bomb", "banana", "herzman"],
+      "appearance": "Colorful wrapped gift boxes with golden ribbons and bow"
+    },
+    "hazards": {
+      "type": "decoyPresents",
+      "count": 8,
+      "damage": 2,
+      "appearance": "Dark colored presents with black ribbons and subtle red glow"
+    },
+    "bossProjectile": {
+      "type": "explosivePresent",
+      "function": "createPresentProjectile",
+      "appearance": "Tumbling wrapped gift that explodes on impact"
+    }
   },
 
   "positions": {

@@ -37,6 +37,8 @@
             buildPixie(goblinGrp);
         } else if (G.easterTheme) {
             buildBunny(goblinGrp);
+        } else if (G.christmasTheme) {
+            buildGingerbreadMan(goblinGrp);
         } else {
             buildStandardGoblin(goblinGrp, textures);
         }
@@ -692,6 +694,186 @@
         });
 
         group.userData.isBunny = true;
+    }
+    
+    function buildElf(group) {
+        // Evil Elf for Christmas theme
+        const elfGreen = 0x228b22;      // Forest green
+        const elfRed = 0xdc143c;        // Crimson red
+        const skinColor = 0xffdab9;     // Peach
+        const hatRed = 0xb22222;        // Firebrick
+        const eyeColor = 0xff0000;      // Red glowing eyes
+
+        // Body with green tunic
+        const bodyGeometry = new THREE.BoxGeometry(0.6, 0.8, 0.4);
+        const bodyMaterial = new THREE.MeshLambertMaterial({ color: elfGreen });
+        const body = new THREE.Mesh(bodyGeometry, bodyMaterial);
+        body.position.y = 0.8;
+        body.castShadow = true;
+        group.add(body);
+
+        // Red belt
+        const beltGeometry = new THREE.BoxGeometry(0.62, 0.15, 0.42);
+        const beltMaterial = new THREE.MeshLambertMaterial({ color: elfRed });
+        const belt = new THREE.Mesh(beltGeometry, beltMaterial);
+        belt.position.y = 0.7;
+        group.add(belt);
+
+        // Belt buckle
+        const buckleGeometry = new THREE.BoxGeometry(0.15, 0.12, 0.05);
+        const buckleMaterial = new THREE.MeshLambertMaterial({ color: 0xffd700 });
+        const buckle = new THREE.Mesh(buckleGeometry, buckleMaterial);
+        buckle.position.set(0, 0.7, 0.25);
+        group.add(buckle);
+
+        // Head
+        const headGeometry = new THREE.SphereGeometry(0.35, 16, 16);
+        const headMaterial = new THREE.MeshLambertMaterial({ color: skinColor });
+        const head = new THREE.Mesh(headGeometry, headMaterial);
+        head.position.y = 1.45;
+        head.castShadow = true;
+        group.add(head);
+
+        // Pointed ears
+        const earGeometry = new THREE.ConeGeometry(0.12, 0.35, 8);
+        const earMaterial = new THREE.MeshLambertMaterial({ color: skinColor });
+        [-0.45, 0.45].forEach((x, i) => {
+            const ear = new THREE.Mesh(earGeometry, earMaterial);
+            ear.rotation.z = i === 0 ? Math.PI / 2 : -Math.PI / 2;
+            ear.position.set(x, 1.5, 0);
+            ear.castShadow = true;
+            group.add(ear);
+        });
+
+        // Evil red glowing eyes
+        const eyeMaterial = new THREE.MeshBasicMaterial({ color: eyeColor });
+        const eyeGeometry = new THREE.SphereGeometry(0.08, 12, 12);
+        [-0.12, 0.12].forEach(x => {
+            const eye = new THREE.Mesh(eyeGeometry, eyeMaterial);
+            eye.position.set(x, 1.45, 0.32);
+            group.add(eye);
+        });
+
+        // Pointy red hat
+        const hatGeometry = new THREE.ConeGeometry(0.35, 0.6, 16);
+        const hatMaterial = new THREE.MeshLambertMaterial({ color: hatRed });
+        const hat = new THREE.Mesh(hatGeometry, hatMaterial);
+        hat.position.y = 2.0;
+        hat.castShadow = true;
+        group.add(hat);
+
+        // White pom-pom on hat
+        const pomGeometry = new THREE.SphereGeometry(0.1, 8, 8);
+        const pomMaterial = new THREE.MeshLambertMaterial({ color: 0xffffff });
+        const pom = new THREE.Mesh(pomGeometry, pomMaterial);
+        pom.position.y = 2.3;
+        group.add(pom);
+
+        // Arms
+        const armGeometry = new THREE.CylinderGeometry(0.1, 0.12, 0.6, 8);
+        const armMaterial = new THREE.MeshLambertMaterial({ color: elfGreen });
+        [-0.45, 0.45].forEach(x => {
+            const arm = new THREE.Mesh(armGeometry, armMaterial);
+            arm.position.set(x, 0.8, 0);
+            arm.rotation.z = x < 0 ? 0.3 : -0.3;
+            group.add(arm);
+        });
+
+        // Legs
+        const legGeometry = new THREE.CylinderGeometry(0.12, 0.1, 0.5, 8);
+        const legMaterial = new THREE.MeshLambertMaterial({ color: elfRed });
+        [-0.2, 0.2].forEach(x => {
+            const leg = new THREE.Mesh(legGeometry, legMaterial);
+            leg.position.set(x, 0.25, 0);
+            group.add(leg);
+        });
+
+        // Curled toe shoes
+        const shoeGeometry = new THREE.SphereGeometry(0.15, 8, 8);
+        const shoeMaterial = new THREE.MeshLambertMaterial({ color: elfGreen });
+        [-0.2, 0.2].forEach(x => {
+            const shoe = new THREE.Mesh(shoeGeometry, shoeMaterial);
+            shoe.position.set(x, 0.05, 0.15);
+            shoe.scale.set(1, 0.6, 1.5);
+            group.add(shoe);
+        });
+    }
+    
+    function buildGingerbreadMan(group) {
+        // Smaller gingerbread man for goblin-type enemy
+        const cookieColor = 0xB5651D;
+        const icingWhite = 0xFFFFFF;
+        const icingPink = 0xFF69B4;
+
+        // Gingerbread body - flat and cookie-shaped
+        const bodyGeometry = new THREE.CylinderGeometry(0.4, 0.4, 0.2, 16);
+        const bodyMaterial = new THREE.MeshLambertMaterial({ color: cookieColor });
+        const body = new THREE.Mesh(bodyGeometry, bodyMaterial);
+        body.rotation.x = Math.PI / 2;
+        body.position.y = 0.9;
+        body.castShadow = true;
+        group.add(body);
+
+        // Gingerbread head
+        const headGeometry = new THREE.CylinderGeometry(0.3, 0.3, 0.18, 16);
+        const head = new THREE.Mesh(headGeometry, bodyMaterial);
+        head.rotation.x = Math.PI / 2;
+        head.position.y = 1.4;
+        head.castShadow = true;
+        group.add(head);
+
+        // Icing button details on body
+        const buttonGeometry = new THREE.CylinderGeometry(0.05, 0.05, 0.04, 12);
+        const icingMaterial = new THREE.MeshBasicMaterial({ color: icingWhite });
+        for (let i = 0; i < 2; i++) {
+            const button = new THREE.Mesh(buttonGeometry, icingMaterial);
+            button.rotation.x = Math.PI / 2;
+            button.position.set(0, 0.75 + i * 0.2, 0.12);
+            group.add(button);
+        }
+
+        // Icing smile
+        const smileGeometry = new THREE.TorusGeometry(0.1, 0.02, 8, 16, Math.PI);
+        const smileMaterial = new THREE.MeshBasicMaterial({ color: icingPink });
+        const smile = new THREE.Mesh(smileGeometry, smileMaterial);
+        smile.position.set(0, 1.32, 0.1);
+        smile.rotation.x = -0.2;
+        group.add(smile);
+
+        // Candy eyes
+        const eyeGeometry = new THREE.SphereGeometry(0.05, 12, 12);
+        const eyeMaterial = new THREE.MeshBasicMaterial({ color: 0x000000 });
+        [-0.1, 0.1].forEach(x => {
+            const eye = new THREE.Mesh(eyeGeometry, eyeMaterial);
+            eye.position.set(x, 1.45, 0.15);
+            group.add(eye);
+        });
+
+        // Arms - cookie style
+        const armGeometry = new THREE.CylinderGeometry(0.08, 0.1, 0.5, 8);
+        const arm1 = new THREE.Mesh(armGeometry, bodyMaterial);
+        arm1.position.set(-0.45, 0.95, 0);
+        arm1.rotation.z = 0.8;
+        arm1.castShadow = true;
+        group.add(arm1);
+
+        const arm2 = new THREE.Mesh(armGeometry, bodyMaterial);
+        arm2.position.set(0.45, 0.95, 0);
+        arm2.rotation.z = -0.8;
+        arm2.castShadow = true;
+        group.add(arm2);
+
+        // Legs - cookie style
+        const legGeometry = new THREE.CylinderGeometry(0.1, 0.12, 0.6, 8);
+        const leg1 = new THREE.Mesh(legGeometry, bodyMaterial);
+        leg1.position.set(-0.18, 0.3, 0);
+        leg1.castShadow = true;
+        group.add(leg1);
+
+        const leg2 = new THREE.Mesh(legGeometry, bodyMaterial);
+        leg2.position.set(0.18, 0.3, 0);
+        leg2.castShadow = true;
+        group.add(leg2);
     }
     
     function buildStandardGoblin(group, textures) {

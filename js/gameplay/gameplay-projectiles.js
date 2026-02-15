@@ -1040,6 +1040,12 @@
             const fireball = G.fireballs[i];
             fireball.mesh.position.add(fireball.velocity);
             
+            // Present tumbling animation
+            if (fireball.isPresent && fireball.rotationSpeed) {
+                fireball.mesh.rotation.x += fireball.rotationSpeed;
+                fireball.mesh.rotation.z += fireball.rotationSpeed * 0.7;
+            }
+            
             // Add flame trail particles
             if (fireball.trail && now - fireball.lastTrailTime > 30) {
                 // Clone pre-cached material for trail
@@ -1347,9 +1353,104 @@
         });
     }
 
+    // Explosive Present projectile for Evil Santa boss
+    function createPresentProjectile(santa, targetPlayer) {
+        const presentGroup = new THREE.Group();
+        const scale = santa.scale || 1;
+        
+        // Present box - wrapped gift
+        const boxGeometry = new THREE.BoxGeometry(0.7 * scale, 0.7 * scale, 0.7 * scale);
+        const wrapColors = [0xFF0000, 0x00FF00, 0x0000FF, 0xFFD700, 0xFF00FF];
+        const wrapColor = wrapColors[Math.floor(Math.random() * wrapColors.length)];
+        const boxMaterial = new THREE.MeshLambertMaterial({ color: wrapColor });
+        const box = new THREE.Mesh(boxGeometry, boxMaterial);
+        presentGroup.add(box);
+        
+        // Ribbon cross on top
+        const ribbonMaterial = new THREE.MeshLambertMaterial({ color: 0xFFD700 }); // Gold ribbon
+        const ribbonH = new THREE.Mesh(
+            new THREE.BoxGeometry(0.75 * scale, 0.1 * scale, 0.15 * scale),
+            ribbonMaterial
+        );
+        ribbonH.position.y = 0.35 * scale;
+        presentGroup.add(ribbonH);
+        
+        const ribbonV = new THREE.Mesh(
+            new THREE.BoxGeometry(0.15 * scale, 0.1 * scale, 0.75 * scale),
+            ribbonMaterial
+        );
+        ribbonV.position.y = 0.35 * scale;
+        presentGroup.add(ribbonV);
+        
+        // Bow on top
+        const bowGeometry = new THREE.SphereGeometry(0.15 * scale, 8, 8);
+        const bowMaterial = new THREE.MeshLambertMaterial({ color: 0xFFD700 });
+        const bow = new THREE.Mesh(bowGeometry, bowMaterial);
+        bow.position.y = 0.45 * scale;
+        bow.scale.set(1.5, 0.6, 1.5);
+        presentGroup.add(bow);
+        
+        // Evil glow effect - sparkles around the present
+        for (let i = 0; i < 8; i++) {
+            const sparkleGeometry = new THREE.SphereGeometry(0.06 * scale, 6, 6);
+            const sparkleMaterial = new THREE.MeshBasicMaterial({
+                color: 0xFF0000,
+                transparent: true,
+                opacity: 0.7
+            });
+            const sparkle = new THREE.Mesh(sparkleGeometry, sparkleMaterial);
+            const angle = (i / 8) * Math.PI * 2;
+            sparkle.position.set(
+                Math.cos(angle) * 0.5 * scale,
+                (Math.random() - 0.3) * 0.4 * scale,
+                Math.sin(angle) * 0.5 * scale
+            );
+            presentGroup.add(sparkle);
+        }
+        
+        // Position at Santa's sledge (lower than dragon)
+        presentGroup.position.set(
+            santa.mesh.position.x,
+            santa.mesh.position.y - 1, // Drop from below sledge
+            santa.mesh.position.z
+        );
+        
+        // Calculate direction to target - lobbed trajectory
+        const dirX = targetPlayer.position.x - presentGroup.position.x;
+        const dirY = (targetPlayer.position.y + 1) - presentGroup.position.y;
+        const dirZ = targetPlayer.position.z - presentGroup.position.z;
+        const length = Math.sqrt(dirX * dirX + dirY * dirY + dirZ * dirZ);
+        
+        G.scene.add(presentGroup);
+        
+        // Medium speed with ballistic arc
+        const speed = 0.22;
+        const horizontalDist = Math.sqrt(dirX * dirX + dirZ * dirZ);
+        const arcHeight = 0.15 + (horizontalDist / length) * 0.1; // Higher arc for farther targets
+        
+        G.fireballs.push({
+            mesh: presentGroup,
+            velocity: new THREE.Vector3(
+                (dirX / length) * speed,
+                arcHeight, // Strong upward arc for ballistic trajectory
+                (dirZ / length) * speed
+            ),
+            radius: 2.0,
+            damage: 1,
+            trail: [],
+            lastTrailTime: 0,
+            scale: scale,
+            isPresent: true,
+            rotationSpeed: 0.05 + Math.random() * 0.03, // Tumbling rotation
+            spawnTime: Date.now(),
+            maxLifetime: 5000
+        });
+    }
+
     // Export functions to global scope
     window.createDragonFireball = createDragonFireball;
     window.createEasterEggProjectile = createEasterEggProjectile;
+    window.createPresentProjectile = createPresentProjectile;
     window.createScytheWave = createScytheWave;
     window.createRainbowBolt = createRainbowBolt;
     window.createWizardFireball = createWizardFireball;

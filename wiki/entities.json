@@ -432,6 +432,60 @@
       "levels": [11],
       "health": 60,
       "damage": 2
+    },
+    {
+      "id": "evil-elf",
+      "name": "Böser Elf",
+      "description": "Ein bösartiger Elf in rot-grüner Kleidung mit spitzen Ohren. Einst ein Helfer des Weihnachtsmanns, jetzt vom bösen Santa verdorben.",
+      "tags": ["Boden", "Nahkampf"],
+      "levels": [12],
+      "health": 3,
+      "damage": 1
+    },
+    {
+      "id": "evil-santa",
+      "name": "Böser Weihnachtsmann",
+      "description": "Der böse Weihnachtsmann auf seinem fliegenden Schlitten! Fliegt durch die Luft und wirft explodierende Geschenke herab. Ruft böse Elfen herbei.",
+      "tags": ["Boss", "Fernkampf", "Fliegend"],
+      "levels": [12],
+      "health": 70,
+      "damage": 2
+    },
+    {
+      "id": "goblin-christmas",
+      "name": "Grüner Elf",
+      "description": "Ein kleiner grüner Elf in festlicher Kleidung. Vom bösen Weihnachtsmann verdorben, patrouilliert er das verschneite Dorf und greift Eindringlinge an.",
+      "tags": ["Boden", "Nahkampf"],
+      "levels": [12],
+      "health": 3,
+      "damage": 1
+    },
+    {
+      "id": "guardian-christmas",
+      "name": "Nussknacker-Soldat",
+      "description": "Ein hölzerner Nussknacker-Soldat mit roter Uniform und goldenem Helm. Bewacht das Weihnachtsdorf mit seinem Gewehr und schießt Spielzeugpfeile.",
+      "tags": ["Elite", "Fernkampf"],
+      "levels": [12],
+      "health": 5,
+      "damage": 1
+    },
+    {
+      "id": "giant-christmas",
+      "name": "Böser Schneemann",
+      "description": "Massiver Schneemann mit kohleschwarzen Augen, verdrehtem Lächeln und bedrohlichen Stockarmen. Langsam aber gefährlich mächtig.",
+      "tags": ["Boss", "Schwer"],
+      "levels": [12],
+      "health": 20,
+      "damage": 2
+    },
+    {
+      "id": "wizard-christmas",
+      "name": "Gehender Böser Weihnachtsmann",
+      "description": "Ein zu Fuß gehender böser Weihnachtsmann in rotem Mantel mit weißem Bart. Ohne Schlitten, wirft er Feuerbälle aus seinem Sack voller verdorbener Geschenke.",
+      "tags": ["Magie", "Fernkampf"],
+      "levels": [12],
+      "health": 7,
+      "damage": 1
     }
   ],
   "items": [

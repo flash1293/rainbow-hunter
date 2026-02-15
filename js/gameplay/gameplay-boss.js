@@ -113,6 +113,21 @@
                 return;
             }
             
+            // Evil Santa flying animation
+            if (d.isEvilSanta) {
+                // Sledge hovering animation
+                d.hoverPhase = (d.hoverPhase || 0) + 0.025;
+                const hoverOffset = Math.sin(d.hoverPhase) * 1.5;
+                const baseY = d.flyingHeight !== undefined ? d.flyingHeight : 8;
+                d.mesh.position.y = baseY + hoverOffset;
+                
+                // Subtle rocking of sledge
+                d.mesh.rotation.z = Math.sin(d.hoverPhase * 0.7) * 0.05;
+                d.mesh.rotation.x = Math.sin(d.hoverPhase * 0.5) * 0.03;
+                
+                return;
+            }
+            
             // Wing flap animation (dragons only)
             d.wingFlapPhase += 0.15;
             const flapAngle = Math.sin(d.wingFlapPhase) * 0.5;
@@ -259,8 +274,8 @@
                 }
             }
             
-            // Flying behavior - randomly fly up sometimes (dragons only, not reapers, unicorns, or Easter Bunny)
-            if (!d.isReaper && !d.isEasterBunny) {
+            // Flying behavior - randomly fly up sometimes (dragons only, not reapers, unicorns, Easter Bunny, or Evil Santa)
+            if (!d.isReaper && !d.isEasterBunny && !d.isUnicorn && !d.isEvilSanta) {
                 const flyHeight = (d.scale || 1) * 15;
                 if (!d.isFlying && Math.random() < 0.0005) {
                     d.isFlying = true;
@@ -290,9 +305,9 @@
                 }
             }
             
-            // Patrol movement - Reapers, Unicorns, and Easter Bunnies chase player within range, dragons patrol
-            if (d.isReaper || d.isUnicorn || d.isEasterBunny) {
-                // Reaper/Unicorn/Easter Bunny chases if player is within chase range
+            // Patrol movement - Reapers, Unicorns, Easter Bunnies, and Evil Santa chase player within range, dragons patrol
+            if (d.isReaper || d.isUnicorn || d.isEasterBunny || d.isEvilSanta) {
+                // Reaper/Unicorn/Easter Bunny/Evil Santa chases if player is within chase range
                 const chaseRange = d.chaseRange || 50;
                 const distToTarget = Math.sqrt(
                     Math.pow(targetPlayer.position.x - d.mesh.position.x, 2) +
@@ -383,13 +398,16 @@
                 // Reapers have shorter range (melee scythe), dragons/unicorns have longer range
                 const fireRange = d.isReaper ? 35 : 100;
                 if (fireTargetDist < fireRange) {
-                    // Reapers use scythe wave attack, unicorns use rainbow bolts, Easter Bunny uses eggs, dragons use fireballs
+                    // Reapers use scythe wave attack, unicorns use rainbow bolts, Easter Bunny uses eggs, Evil Santa throws presents, dragons use fireballs
                     if (d.isReaper) {
                         createScytheWave(d, fireTargetPlayer);
                     } else if (d.isUnicorn) {
                         createRainbowBolt(d, fireTargetPlayer);
                     } else if (d.isEasterBunny) {
                         createEasterEggProjectile(d, fireTargetPlayer);
+                    } else if (d.isEvilSanta) {
+                        // Evil Santa throws explosive presents
+                        createPresentProjectile(d, fireTargetPlayer);
                     } else {
                         createDragonFireball(d, fireTargetPlayer);
                     }

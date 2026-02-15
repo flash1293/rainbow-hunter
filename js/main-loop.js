@@ -423,6 +423,15 @@ function initLoop() {
             nextYPos += 25;
         }
         
+        // Christmas presents display (only if christmas theme)
+        if (G.christmasTheme && G.christmasPresents) {
+            const total = G.christmasPresents.length;
+            const collected = G.christmasPresents.filter(p => p.collected).length;
+            const remaining = total - collected;
+            drawTextWithOutline(G.hudCtx, `Geschenke: ${remaining}/${total}`, 10, nextYPos, '#FF0000', '#006400');
+            nextYPos += 25;
+        }
+        
         // Health display
         if (useOutline) {
             drawTextWithOutline(G.hudCtx, `Leben: ${G.playerHealth}/${G.maxPlayerHealth}`, 10, nextYPos, defaultTextColor, outlineColor);
@@ -903,6 +912,15 @@ function initLoop() {
             G.hudCtx.fillStyle = collected >= total ? '#8B008B' : '#FF69B4';
             G.hudCtx.fillText(`Süßigkeiten: ${collected}/${total}`, G.hudCanvas.width / 2, bottomY);
             G.hudCtx.fillStyle = sharedTextColor;
+            bottomY += 18;
+        }
+        
+        // Christmas presents display (only if christmas theme)
+        if (G.christmasTheme && G.christmasPresents) {
+            const total = G.christmasPresents.length;
+            const collected = G.christmasPresents.filter(p => p.collected).length;
+            const remaining = total - collected;
+            drawTextWithOutline(G.hudCtx, `Geschenke: ${remaining}/${total}`, G.hudCanvas.width / 2, bottomY, '#FF0000', '#006400');
             bottomY += 18;
         }
         

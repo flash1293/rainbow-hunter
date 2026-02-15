@@ -29,7 +29,7 @@ LOG_DIR="$WORKSPACE/level-creation-logs"
 SESSION_LOG="$LOG_DIR/session_${LEVEL_NUM}_${THEME}_${TIMESTAMP}.log"
 mkdir -p "$LOG_DIR"
 
-# Function to run copilot with logging
+# Function to run copilot with logging (using claude-4.5-opus)
 run_copilot() {
     local step_name="$1"
     local prompt="$2"
@@ -37,7 +37,7 @@ run_copilot() {
     echo "========== [$step_name] $(date) ==========" >> "$SESSION_LOG"
     echo "PROMPT: $prompt" >> "$SESSION_LOG"
     echo "---" >> "$SESSION_LOG"
-    copilot -p "$prompt" --allow-all-tools 2>&1 | tee -a "$SESSION_LOG"
+    copilot -p "$prompt" -m claude-4.5-opus --allow-all-tools 2>&1 | tee -a "$SESSION_LOG"
     echo "" >> "$SESSION_LOG"
 }
 
@@ -63,7 +63,7 @@ cd "$WORKSPACE"
 echo ""
 echo "=== PHASE A: Wiki Entity Definitions ==="
 
-echo "[1/14] Adding entities to wiki/entities.json..."
+echo "[1/15] Adding entities to wiki/entities.json..."
 run_copilot "1-wiki-entities-json" "Read $CONTEXT for project context, then read level-spec.json. 
 
 Add entries to wiki/entities.json for:
@@ -200,7 +200,7 @@ done
 echo ""
 echo "=== PHASE C: Wiki Level Card ==="
 
-echo "[2/14] Adding level card to wiki/build-wiki.js..."
+echo "[2/15] Adding level card to wiki/build-wiki.js..."
 run_copilot "2-wiki-level-card" "Read $CONTEXT for project context, then read level-spec.json.
 
 Edit wiki/build-wiki.js to add a level card for Level $LEVEL_NUM. 
@@ -213,7 +213,7 @@ Find the section with existing level cards (search for 'level-card' or 'Drachenh
 
 Make sure it appears after the existing level cards in numerical order."
 
-echo "[3/14] Building wiki..."
+echo "[3/15] Building wiki..."
 run_copilot "3-build-wiki" "Run this command to rebuild the wiki: cd $WORKSPACE/wiki && node build-wiki.js
 
 Report if it succeeds or fails."
@@ -224,7 +224,7 @@ Report if it succeeds or fails."
 echo ""
 echo "=== PHASE D: Theme File ==="
 
-echo "[4/14] Creating theme file..."
+echo "[4/15] Creating theme file..."
 run_copilot "4-theme-file" "Read $CONTEXT for project context, then read level-spec.json.
 
 Create the file js/themes/theme-$THEME.js following the pattern in existing theme files (especially theme-easter.js as reference).
@@ -247,7 +247,7 @@ Make sure hex colors are written as numbers (0x...) not strings."
 echo ""
 echo "=== PHASE E: Level File ==="
 
-echo "[5/14] Creating level file..."
+echo "[5/15] Creating level file..."
 run_copilot "5-level-file" "Read $CONTEXT for project context, then read level-spec.json.
 
 Create the file js/levels/level-$LEVEL_NUM-$THEME.js following the pattern in existing level files (especially level-11-easter.js as reference).
@@ -274,7 +274,7 @@ Generate reasonable x,z coordinates spread across the playable area (-60 to 60 f
 echo ""
 echo "=== PHASE F: Game Entity Files ==="
 
-echo "[6/14] Creating game entity files for NEW entities..."
+echo "[6/15] Creating game entity files for NEW entities..."
 run_copilot "6-game-entities-new" "Read $CONTEXT for project context, then read level-spec.json.
 
 For EACH entity in the 'newEntities' array, create a game entity file at js/entities/entity-{id}.js.
@@ -292,7 +292,7 @@ The game entity MUST visually match the wiki renderer.
 
 Create one file per entity in newEntities."
 
-echo "[6b/14] Creating game entity files for THEMED existing entities..."
+echo "[6b/15] Creating game entity files for THEMED existing entities..."
 run_copilot "6-game-entities-themed" "Read $CONTEXT for project context, then read level-spec.json.
 
 For EACH entity in 'existingEntities' that has reskin:true, create a game entity file at js/entities/entity-{id}-$THEME.js.
@@ -312,7 +312,7 @@ The game entity MUST visually match the wiki renderer.
 
 Create one file per themed existing entity."
 
-echo "[6c/14] Hooking themed entities into EXISTING entity files..."
+echo "[6c/15] Hooking themed entities into EXISTING entity files..."
 run_copilot "6-hook-themed-entities" "Read \$CONTEXT for project context, then read level-spec.json.
 
 CRITICAL: The existing entity files (js/entities/entity-goblin.js, entity-guardian.js, entity-giant.js, entity-wizard.js) 
@@ -345,7 +345,7 @@ This step is REQUIRED - without it, the themed entities will NOT render!"
 echo ""
 echo "=== PHASE G: Environment Objects ==="
 
-echo "[7/14] Adding themed environment objects..."
+echo "[7/15] Adding themed environment objects..."
 run_copilot "7-environment" "Read $CONTEXT for project context, then read level-spec.json.
 
 Edit js/main-setup.js to support the new theme's environment objects.
@@ -365,7 +365,7 @@ If the theme uses standard trees/rocks, this step may just need adding the theme
 echo ""
 echo "=== PHASE H: Collision Configuration ==="
 
-echo "[8/14] Configuring collision detection..."
+echo "[8/15] Configuring collision detection..."
 USE_WALL=$(jq -r '.collision.useWallCollision' "$SPEC")
 
 if [ "$USE_WALL" = "true" ]; then
@@ -379,9 +379,82 @@ Add 'G.${THEME}Theme' to the condition so this theme uses box/wall collision ins
 
 The line should become something like:
 if (G.graveyardTheme || G.ruinsTheme || G.computerTheme || G.enchantedTheme || G.easterTheme || G.${THEME}Theme) {"
+
+    # Also update gameplay-player.js 
+    run_copilot "8b-collision-p2" "Read $CONTEXT for project context.
+
+Edit js/gameplay/gameplay-player.js - find the similar theme collision conditional (search for 'G.graveyardTheme || G.ruinsTheme' around line 613).
+
+Add 'G.${THEME}Theme' to this condition as well so player 2 collision works correctly."
 else
     echo "Theme uses circular collision (default) - no changes needed"
 fi
+
+# ==========================================
+# PHASE H2: Theme Integration in Core Files
+# ==========================================
+echo ""
+echo "=== PHASE H2: Theme Integration in Core Files (CRITICAL) ==="
+
+echo "[8c/15] Integrating theme flag in main.js..."
+run_copilot "8c-main-theme-flag" "Read $CONTEXT for project context, then read level-spec.json.
+
+CRITICAL: The theme will NOT work without these changes in main.js!
+
+Edit js/main.js to integrate the new theme:
+
+1. Find the theme flag initializations (search for 'G.easterTheme = G.levelConfig.easterTheme' around line 345).
+   Add AFTER that line:
+   // Check if this is a ${THEME^}-themed level
+   G.${THEME}Theme = G.levelConfig.${THEME}Theme || false;
+
+2. Find createGround() call (search for 'createGround(G.scene' around line 524).
+   Add G.${THEME}Theme as the LAST parameter.
+   
+3. Find createHills() call (right after createGround).
+   Add G.${THEME}Theme as the LAST parameter.
+
+4. Find createMountains() call (search for 'createMountains(G.scene' around line 529).
+   Add G.${THEME}Theme as the LAST parameter.
+
+These changes ensure the theme flag is available globally and passed to terrain functions."
+
+echo "[8d/15] Adding theme support to terrain.js ground/hills..."
+run_copilot "8d-terrain-ground" "Read $CONTEXT for project context, then read level-spec.json.
+
+Edit js/terrain.js to support the new theme:
+
+1. Find createGround function signature (search for 'function createGround(' around line 3288).
+   Add '${THEME}Theme' as the LAST parameter.
+
+2. Inside createGround, find the theme texture selection chain (search for '} else if (iceTheme) {' around line 3347).
+   Change it to include the new theme for snowy/themed ground:
+   } else if (iceTheme || ${THEME}Theme) {
+
+3. Find createHills function signature (search for 'function createHills(' around line 2456).
+   Add '${THEME}Theme' as the LAST parameter.
+
+4. Inside createHills, find similar texture selection and add the theme there too."
+
+echo "[8e/15] Adding theme-specific mountain/wall rendering..."
+run_copilot "8e-terrain-mountains" "Read $CONTEXT for project context, then read level-spec.json.
+
+Edit js/terrain.js to add theme-specific wall rendering in createMountains:
+
+1. Find createMountains function signature (search for 'function createMountains(' around line 2695).
+   Add '${THEME}Theme' as the LAST parameter.
+
+2. Find the easterTheme wall rendering block (search for '} else if (easterTheme) {' around line 3018).
+
+3. Add a NEW block AFTER the easterTheme block, BEFORE the final '} else {':
+
+} else if (${THEME}Theme) {
+    // ${THEME^} themed walls - describe based on spec
+    // Use mtn.width, mtn.height to create appropriate wall shapes
+    // Add theme-appropriate details (snow, decorations, etc.)
+    // See easterTheme block for pattern
+
+The wall rendering should match the theme's visual style. For Christmas: snow banks with icicles, sparkles."
 
 # ==========================================
 # PHASE I: Update index.html - Script Tags
@@ -389,7 +462,7 @@ fi
 echo ""
 echo "=== PHASE I: Update index.html ==="
 
-echo "[9/14] Adding script tags to index.html..."
+echo "[9/15] Adding script tags to index.html..."
 run_copilot "9-script-tags" "Read $CONTEXT for project context, then read level-spec.json.
 
 Edit index.html to add script tags for the new files:
@@ -415,7 +488,7 @@ Add them in the appropriate sections, after the existing entries of the same typ
 echo ""
 echo "=== PHASE J: Level Dropdown ==="
 
-echo "[10/14] Adding level to dropdown menu..."
+echo "[10/15] Adding level to dropdown menu..."
 run_copilot "10-dropdown" "Read $CONTEXT for project context, then read level-spec.json.
 
 THIS IS CRITICAL - DO NOT SKIP.
@@ -430,12 +503,83 @@ Edit index.html to add the new level to the level selector dropdown.
 Verify the option is inside the <select> element and properly formatted."
 
 # ==========================================
+# PHASE J2: Special Game Mechanics
+# ==========================================
+echo ""
+echo "=== PHASE J2: Special Game Mechanics (IMPORTANT) ==="
+
+# Check if spec has special mechanics
+if [ -f "level-spec.json" ]; then
+    HAS_SPECIAL=$(cat level-spec.json | grep -c '"specialMechanic"' || echo 0)
+else
+    HAS_SPECIAL=0
+fi
+
+if [ "$HAS_SPECIAL" -gt 0 ]; then
+    echo "[10a/15] Implementing special game mechanic..."
+    run_copilot "10a-special-mechanic" "Read $CONTEXT for project context, then read level-spec.json.
+
+The level spec defines a SPECIAL GAME MECHANIC that must be implemented.
+Look at spec.specialMechanic in level-spec.json for details.
+
+Common mechanics include:
+1. Collectibles (presents, eggs, candy, etc.)
+   - Add G.{mechanic}Pickups array in main-setup.js (after Christmas decorations section)
+   - Create mesh with visible reward indication
+   - Add collision detection in main-gameplay.js (after candy theme pickups)
+   - Grant rewards (ammo, health, bombs, bananas, herzmen)
+   
+2. Hazards (decoy items, traps)
+   - Add G.{hazard}s array in main-setup.js
+   - Create mesh with subtle danger indication (dark colors, red glow)
+   - Add collision detection that triggers explosion and damage
+   
+3. Custom boss projectiles
+   - Create function in gameplay-projectiles.js
+   - Register with window.create{Projectile}
+   - Hook into gameplay-boss.js attack logic (if d.is{BossType})
+
+Key files to modify:
+- js/main-setup.js: Add pickup/hazard arrays and mesh creation
+- js/main-gameplay.js: Add collision detection and reward/damage logic
+- js/gameplay/gameplay-projectiles.js: Custom projectiles if needed
+- js/gameplay/gameplay-boss.js: Boss attack patterns
+
+IMPLEMENTATION PATTERN (for collectibles):
+1. In main-setup.js after theme decorations, add:
+   G.{themePrefix}Pickups = [];
+   for (let i = 0; i < COUNT; i++) { ... create mesh, push to array ... }
+
+2. In main-gameplay.js after similar pickups (search for 'candyPickups'), add:
+   if (G.{theme}Theme && G.{themePrefix}Pickups) {
+       G.{themePrefix}Pickups.forEach((pickup, idx) => {
+           // Collision detection, rewards, audio
+       });
+   }
+
+Implement the mechanic according to the spec."
+
+    echo "[10b/15] Verifying mechanic implementation..."
+    run_copilot "10b-verify-mechanic" "Verify the special game mechanic was implemented correctly:
+
+1. Check that arrays are initialized in main-setup.js
+2. Check collision detection exists in main-gameplay.js
+3. Check rewards/effects are applied correctly
+4. If the mechanic involves projectiles, check gameplay-projectiles.js
+
+Test by grepping for the key arrays and functions.
+Report any missing pieces."
+else
+    echo "No special mechanic defined in spec - skipping"
+fi
+
+# ==========================================
 # PHASE K: Wiki Verification
 # ==========================================
 echo ""
 echo "=== PHASE K: Wiki Verification ==="
 
-echo "[11/14] Verifying wiki..."
+echo "[11/15] Verifying wiki..."
 run_copilot "11-verify-wiki" "Use Chrome DevTools MCP to:
 
 1. Navigate to: file://$WORKSPACE/wiki/index.html
@@ -452,7 +596,7 @@ Report what you see and any issues."
 echo ""
 echo "=== PHASE L: Game Verification ==="
 
-echo "[12/14] Verifying game loads..."
+echo "[12/15] Verifying game loads..."
 run_copilot "12-verify-game-start" "Use Chrome DevTools MCP to:
 
 1. Navigate to: file://$WORKSPACE/index.html
@@ -462,7 +606,7 @@ run_copilot "12-verify-game-start" "Use Chrome DevTools MCP to:
 
 Report what you see."
 
-echo "[13/14] Testing level rendering..."
+echo "[13/15] Testing level rendering..."
 run_copilot "13-verify-level-render" "Use Chrome DevTools MCP to:
 
 1. Navigate to: file://$WORKSPACE/index.html
