@@ -1,0 +1,79 @@
+{
+  "levelNumber": 12,
+  "levelName": "Pirate Cove",
+  "themeName": "pirate",
+  "description": "Tropical pirate cove with ship battles and hidden treasure",
+  "wikiDescription": "Segler der Karibik! Kämpfe gegen Piraten und finde den versteckten Schatz in dieser tropischen Bucht.",
+  "mechanic": "Cannon battles - dodge cannonballs from ships while navigating the cove",
+
+  "colors": {
+    "skyColor": "0x87CEEB",
+    "fogColor": "0xADD8E6",
+    "fogDensity": "0.008",
+    "groundColor": "0xF4A460",
+    "hillColor": "0xDEB887",
+    "grassColor": "0x228B22",
+    "treeColor": "0x228B22"
+  },
+
+  "environment": {
+    "treeType": "palm",
+    "rockType": "coral",
+    "decorations": ["barrel", "anchor", "cannon"],
+    "hazards": ["whirlpool"]
+  },
+
+  "collision": {
+    "mountainShape": "circular",
+    "useWallCollision": false
+  },
+
+  "newEntities": [
+    {
+      "id": "pirate",
+      "name": "Pirat",
+      "role": "critter",
+      "description": "Einfacher Piratengegner mit Cutlass. Patrouilliert die Küste und greift Spieler in der Nähe an.",
+      "hp": 3,
+      "damage": 1,
+      "tags": ["Boden", "Nahkampf"]
+    },
+    {
+      "id": "pirate-captain",
+      "name": "Piratenkapitän",
+      "role": "boss",
+      "description": "Der gefürchtete Kapitän mit seinem Geisterschiff. Feuert Kanonenkugeln und ruft Verstärkung herbei.",
+      "hp": 60,
+      "damage": 2,
+      "tags": ["Boss", "Fernkampf"]
+    }
+  ],
+
+  "existingEntities": {
+    "skeleton": { "reskin": true, "color": "0xD2B48C", "note": "Undead pirate crew" },
+    "guardian": { "reskin": false }
+  },
+
+  "features": {
+    "hasRiver": true,
+    "hasMountains": false,
+    "hasTreasure": true,
+    "hasMaterials": false
+  },
+
+  "positions": {
+    "playerStart": { "x": 0, "z": 180 },
+    "portal": { "x": 0, "z": -220, "destinationLevel": 1 },
+    "boss": { "x": 0, "z": -175, "scale": 1.0 },
+    "treasure": { "x": 0, "z": -200 },
+    "rainbow": { "x": 0, "z": -195 },
+    "worldKite": { "x": 5, "z": 175 }
+  },
+
+  "enemies": {
+    "critterCount": 15,
+    "rangedCount": 8,
+    "tankCount": 2,
+    "miniBossCount": 2
+  }
+}

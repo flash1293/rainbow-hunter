@@ -396,10 +396,12 @@ function initLoop() {
         if (G.totalScarabs > 0) {
             const collectibleColor = G.scarabsCollected >= G.totalScarabs ? '#00ff88' : '#00ccaa';
             const collectibleName = G.easterTheme ? 'Ostereier' : 'Scarabs';
-            const easterColor = G.scarabsCollected >= G.totalScarabs ? '#FF69B4' : '#FFB6C1';
+            // Easter uses dark purple for contrast against pink sky
+            const easterColor = G.scarabsCollected >= G.totalScarabs ? '#006400' : '#4B0082';
             const displayColor = G.easterTheme ? easterColor : collectibleColor;
-            if (useOutline) {
-                drawTextWithOutline(G.hudCtx, `${collectibleName}: ${G.scarabsCollected}/${G.totalScarabs}`, 10, nextYPos, displayColor, outlineColor);
+            if (useOutline || G.easterTheme) {
+                // Easter theme also needs outline for readability
+                drawTextWithOutline(G.hudCtx, `${collectibleName}: ${G.scarabsCollected}/${G.totalScarabs}`, 10, nextYPos, G.easterTheme ? '#FFFFFF' : displayColor, G.easterTheme ? '#4B0082' : outlineColor);
             } else {
                 G.hudCtx.fillStyle = displayColor;
                 G.hudCtx.fillText(`${collectibleName}: ${G.scarabsCollected}/${G.totalScarabs}`, 10, nextYPos);
@@ -876,21 +878,30 @@ function initLoop() {
         G.hudCtx.fillText(`Kobolde: ${aliveGoblins} | Material: ${G.materialsCollected}/${G.materialsNeeded}`, G.hudCanvas.width / 2, bottomY);
         bottomY += 18;
         
-        // Scarab/Easter Egg display (only if level has collectibles)
-        if (G.totalScarabs > 0) {
+        // Scarab/Easter Egg display (only if level has collectibles OR is Easter theme)
+        if (G.totalScarabs > 0 || G.easterTheme) {
             const collectibleName = G.easterTheme ? 'Ostereier' : 'Scarabs';
-            const easterColor = G.scarabsCollected >= G.totalScarabs ? '#FF69B4' : '#FFB6C1';
-            const collectibleColor = G.scarabsCollected >= G.totalScarabs ? '#00ff88' : '#00ccaa';
-            G.hudCtx.fillStyle = G.easterTheme ? easterColor : collectibleColor;
-            G.hudCtx.fillText(`${collectibleName}: ${G.scarabsCollected}/${G.totalScarabs}`, G.hudCanvas.width / 2, bottomY);
+            const total = G.totalScarabs || 0;
+            const collected = G.scarabsCollected || 0;
+            // Easter uses white text with dark outline for contrast against pink sky
+            const easterColor = collected >= total ? '#006400' : '#4B0082';
+            const collectibleColor = collected >= total ? '#00ff88' : '#00ccaa';
+            if (G.easterTheme) {
+                drawTextWithOutline(G.hudCtx, `${collectibleName}: ${collected}/${total}`, G.hudCanvas.width / 2, bottomY, '#FFFFFF', '#4B0082');
+            } else {
+                G.hudCtx.fillStyle = collectibleColor;
+                G.hudCtx.fillText(`${collectibleName}: ${collected}/${total}`, G.hudCanvas.width / 2, bottomY);
+            }
             G.hudCtx.fillStyle = sharedTextColor;
             bottomY += 18;
         }
         
-        // Candy display (only if candy theme with candy to collect)
-        if (G.candyTheme && G.totalCandy > 0) {
-            G.hudCtx.fillStyle = G.candyCollected >= G.totalCandy ? '#8B008B' : '#660066';
-            G.hudCtx.fillText(`Süßigkeiten: ${G.candyCollected}/${G.totalCandy}`, G.hudCanvas.width / 2, bottomY);
+        // Candy display (only if candy theme)
+        if (G.candyTheme) {
+            const total = G.totalCandy || 0;
+            const collected = G.candyCollected || 0;
+            G.hudCtx.fillStyle = collected >= total ? '#8B008B' : '#FF69B4';
+            G.hudCtx.fillText(`Süßigkeiten: ${collected}/${total}`, G.hudCanvas.width / 2, bottomY);
             G.hudCtx.fillStyle = sharedTextColor;
             bottomY += 18;
         }
