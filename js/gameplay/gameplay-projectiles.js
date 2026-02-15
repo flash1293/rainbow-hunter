@@ -1262,8 +1262,94 @@
         }
     }
 
+    // Easter Egg projectile for Easter Bunny boss
+    function createEasterEggProjectile(bunny, targetPlayer) {
+        const eggGroup = new THREE.Group();
+        const scale = bunny.scale || 1;
+        
+        // Pastel Easter colors
+        const easterColors = [0xFFB6C1, 0x98FB98, 0x87CEEB, 0xDDA0DD, 0xFFD700, 0xFFA07A];
+        const eggColor = easterColors[Math.floor(Math.random() * easterColors.length)];
+        
+        // Egg body - oval shape
+        const eggGeometry = new THREE.SphereGeometry(0.5 * scale, 16, 16);
+        const eggMaterial = new THREE.MeshPhongMaterial({
+            color: eggColor,
+            shininess: 80,
+            emissive: eggColor,
+            emissiveIntensity: 0.2
+        });
+        const egg = new THREE.Mesh(eggGeometry, eggMaterial);
+        egg.scale.set(0.8, 1.2, 0.8); // Egg shape
+        eggGroup.add(egg);
+        
+        // Decorative stripe
+        const stripeGeometry = new THREE.TorusGeometry(0.35 * scale, 0.06 * scale, 8, 16);
+        const stripeMaterial = new THREE.MeshBasicMaterial({
+            color: 0xFFFFFF,
+            transparent: true,
+            opacity: 0.9
+        });
+        const stripe = new THREE.Mesh(stripeGeometry, stripeMaterial);
+        stripe.rotation.x = Math.PI / 2;
+        eggGroup.add(stripe);
+        
+        // Sparkle trail
+        for (let i = 0; i < 6; i++) {
+            const sparkleGeometry = new THREE.SphereGeometry(0.08 * scale, 6, 6);
+            const sparkleMaterial = new THREE.MeshBasicMaterial({
+                color: easterColors[i % easterColors.length],
+                transparent: true,
+                opacity: 0.7
+            });
+            const sparkle = new THREE.Mesh(sparkleGeometry, sparkleMaterial);
+            sparkle.position.set(
+                (Math.random() - 0.5) * 0.8 * scale,
+                (Math.random() - 0.5) * 0.8 * scale,
+                (Math.random() - 0.5) * 0.8 * scale
+            );
+            eggGroup.add(sparkle);
+        }
+        
+        // Position at bunny's basket area
+        eggGroup.position.set(
+            bunny.mesh.position.x,
+            bunny.mesh.position.y + 4 * scale,
+            bunny.mesh.position.z
+        );
+        
+        // Calculate direction to target - aim directly at player
+        const dirX = targetPlayer.position.x - eggGroup.position.x;
+        const dirY = (targetPlayer.position.y + 1) - eggGroup.position.y;
+        const dirZ = targetPlayer.position.z - eggGroup.position.z;
+        const length = Math.sqrt(dirX * dirX + dirY * dirY + dirZ * dirZ);
+        
+        G.scene.add(eggGroup);
+        
+        // Medium speed for Easter eggs
+        const speed = 0.22;
+        
+        G.fireballs.push({
+            mesh: eggGroup,
+            velocity: new THREE.Vector3(
+                (dirX / length) * speed,
+                (dirY / length) * speed, // Direct targeting, no arc
+                (dirZ / length) * speed
+            ),
+            radius: 2.0,
+            damage: 1,
+            trail: [],
+            lastTrailTime: 0,
+            scale: scale,
+            isEasterEgg: true,
+            spawnTime: Date.now(),
+            maxLifetime: 6000
+        });
+    }
+
     // Export functions to global scope
     window.createDragonFireball = createDragonFireball;
+    window.createEasterEggProjectile = createEasterEggProjectile;
     window.createScytheWave = createScytheWave;
     window.createRainbowBolt = createRainbowBolt;
     window.createWizardFireball = createWizardFireball;

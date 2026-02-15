@@ -341,6 +341,9 @@ function initGame() {
     // Check if this is an enchanted/fairy-themed level
     G.enchantedTheme = G.levelConfig.enchantedTheme || false;
     
+    // Check if this is an Easter-themed level
+    G.easterTheme = G.levelConfig.easterTheme || false;
+    
     // Three.js setup
     G.container = document.getElementById('gameCanvas');
     G.scene = new THREE.Scene();
@@ -523,7 +526,7 @@ function initGame() {
     
     // Mountains are optional (disabled in desert)
     if (G.levelConfig.hasMountains !== false && G.levelConfig.mountains && G.levelConfig.mountains.length > 0) {
-        createMountains(G.scene, THREE, G.levelConfig.mountains, G.candyTheme, G.graveyardTheme, G.ruinsTheme, G.computerTheme, G.enchantedTheme);
+        createMountains(G.scene, THREE, G.levelConfig.mountains, G.candyTheme, G.graveyardTheme, G.ruinsTheme, G.computerTheme, G.enchantedTheme, G.easterTheme);
     }
     
     // Natural scenic mountains (backdrop around perimeter)

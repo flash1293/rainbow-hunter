@@ -87,6 +87,32 @@
                 return;
             }
             
+            // Easter Bunny hopping animation
+            if (d.isEasterBunny) {
+                // Hopping bounce animation
+                d.hopPhase = (d.hopPhase || 0) + 0.08;
+                const hopOffset = Math.abs(Math.sin(d.hopPhase)) * 3 * (d.scale || 1);
+                const terrainY = getTerrainHeight(d.mesh.position.x, d.mesh.position.z);
+                d.mesh.position.y = terrainY + hopOffset;
+                
+                // Ear wiggle
+                d.mesh.children.forEach(child => {
+                    if (child.geometry && child.geometry.type === 'CylinderGeometry') {
+                        // Ears wiggle with hop
+                        const wiggle = Math.sin(d.hopPhase * 2) * 0.1;
+                        child.rotation.x = wiggle;
+                    }
+                });
+                
+                // Body squash and stretch
+                const squash = 1 + Math.sin(d.hopPhase) * 0.1;
+                d.mesh.scale.y = (d.scale || 1) * squash;
+                d.mesh.scale.x = (d.scale || 1) / Math.sqrt(squash);
+                d.mesh.scale.z = (d.scale || 1) / Math.sqrt(squash);
+                
+                return;
+            }
+            
             // Wing flap animation (dragons only)
             d.wingFlapPhase += 0.15;
             const flapAngle = Math.sin(d.wingFlapPhase) * 0.5;
@@ -233,8 +259,8 @@
                 }
             }
             
-            // Flying behavior - randomly fly up sometimes (dragons only, not reapers)
-            if (!d.isReaper) {
+            // Flying behavior - randomly fly up sometimes (dragons only, not reapers, unicorns, or Easter Bunny)
+            if (!d.isReaper && !d.isEasterBunny) {
                 const flyHeight = (d.scale || 1) * 15;
                 if (!d.isFlying && Math.random() < 0.0005) {
                     d.isFlying = true;
@@ -264,9 +290,9 @@
                 }
             }
             
-            // Patrol movement - Reapers and Unicorns chase player within range, dragons patrol
-            if (d.isReaper || d.isUnicorn) {
-                // Reaper/Unicorn chases if player is within chase range
+            // Patrol movement - Reapers, Unicorns, and Easter Bunnies chase player within range, dragons patrol
+            if (d.isReaper || d.isUnicorn || d.isEasterBunny) {
+                // Reaper/Unicorn/Easter Bunny chases if player is within chase range
                 const chaseRange = d.chaseRange || 50;
                 const distToTarget = Math.sqrt(
                     Math.pow(targetPlayer.position.x - d.mesh.position.x, 2) +
@@ -357,11 +383,13 @@
                 // Reapers have shorter range (melee scythe), dragons/unicorns have longer range
                 const fireRange = d.isReaper ? 35 : 100;
                 if (fireTargetDist < fireRange) {
-                    // Reapers use scythe wave attack, unicorns use rainbow bolts, dragons use fireballs
+                    // Reapers use scythe wave attack, unicorns use rainbow bolts, Easter Bunny uses eggs, dragons use fireballs
                     if (d.isReaper) {
                         createScytheWave(d, fireTargetPlayer);
                     } else if (d.isUnicorn) {
                         createRainbowBolt(d, fireTargetPlayer);
+                    } else if (d.isEasterBunny) {
+                        createEasterEggProjectile(d, fireTargetPlayer);
                     } else {
                         createDragonFireball(d, fireTargetPlayer);
                     }

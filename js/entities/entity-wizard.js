@@ -27,6 +27,8 @@
             buildHacker(wizardGrp);
         } else if (G.enchantedTheme) {
             buildEnchantress(wizardGrp);
+        } else if (G.easterTheme) {
+            buildEasterWizard(wizardGrp);
         } else {
             buildStandardWizard(wizardGrp, textures);
         }
@@ -686,6 +688,103 @@
         }
         
         group.userData.isEnchantress = true;
+    }
+    
+    function buildEasterWizard(group) {
+        // EASTER WIZARD - bunny in wizard robes with carrot staff
+        const robeColor = 0xE6E6FA;     // Lavender
+        const furColor = 0xFFFFFF;      // White
+        const staffColor = 0xFFD700;    // Gold
+        const gemColor = 0xFFA500;      // Orange (carrot)
+
+        // Body (robe)
+        const robeGeometry = new THREE.ConeGeometry(0.5, 1.2, 8);
+        const robeMaterial = new THREE.MeshLambertMaterial({ color: robeColor });
+        const robe = new THREE.Mesh(robeGeometry, robeMaterial);
+        robe.position.y = 0.6;
+        robe.castShadow = true;
+        group.add(robe);
+
+        // Head (bunny)
+        const headGeometry = new THREE.SphereGeometry(0.35, 16, 16);
+        const headMaterial = new THREE.MeshLambertMaterial({ color: furColor });
+        const head = new THREE.Mesh(headGeometry, headMaterial);
+        head.position.y = 1.5;
+        head.castShadow = true;
+        group.add(head);
+
+        // Ears
+        const earGeometry = new THREE.CylinderGeometry(0.06, 0.1, 0.5, 8);
+        const innerEarMaterial = new THREE.MeshLambertMaterial({ color: 0xFFB6C1 });
+        [-0.12, 0.12].forEach((x, i) => {
+            const ear = new THREE.Mesh(earGeometry, headMaterial);
+            ear.position.set(x, 2.0, 0);
+            ear.rotation.z = i === 0 ? 0.15 : -0.15;
+            ear.castShadow = true;
+            group.add(ear);
+        });
+
+        // Eyes
+        const eyeGeometry = new THREE.SphereGeometry(0.06, 8, 8);
+        const eyeMaterial = new THREE.MeshBasicMaterial({ color: 0x000000 });
+        [-0.1, 0.1].forEach(x => {
+            const eye = new THREE.Mesh(eyeGeometry, eyeMaterial);
+            eye.position.set(x, 1.55, 0.3);
+            group.add(eye);
+        });
+
+        // Nose
+        const noseGeometry = new THREE.SphereGeometry(0.05, 8, 8);
+        const noseMaterial = new THREE.MeshLambertMaterial({ color: 0xFF69B4 });
+        const nose = new THREE.Mesh(noseGeometry, noseMaterial);
+        nose.position.set(0, 1.45, 0.35);
+        group.add(nose);
+
+        // Wizard hat
+        const hatGeometry = new THREE.ConeGeometry(0.3, 0.6, 8);
+        const hatMaterial = new THREE.MeshLambertMaterial({ color: 0x9370DB });
+        const hat = new THREE.Mesh(hatGeometry, hatMaterial);
+        hat.position.y = 2.1;
+        hat.castShadow = true;
+        group.add(hat);
+
+        // Hat brim
+        const brimGeometry = new THREE.CylinderGeometry(0.4, 0.4, 0.05, 16);
+        const brim = new THREE.Mesh(brimGeometry, hatMaterial);
+        brim.position.y = 1.8;
+        group.add(brim);
+
+        // Staff (carrot)
+        const staffGeometry = new THREE.CylinderGeometry(0.03, 0.08, 1.2, 8);
+        const staffMaterial = new THREE.MeshLambertMaterial({ color: gemColor });
+        const staff = new THREE.Mesh(staffGeometry, staffMaterial);
+        staff.position.set(0.5, 1.0, 0.2);
+        staff.rotation.z = -0.3;
+        group.add(staff);
+
+        // Staff top (leaf)
+        const leafGeometry = new THREE.ConeGeometry(0.1, 0.2, 6);
+        const leafMaterial = new THREE.MeshLambertMaterial({ color: 0x228B22 });
+        const leaf = new THREE.Mesh(leafGeometry, leafMaterial);
+        leaf.position.set(0.4, 1.7, 0.15);
+        group.add(leaf);
+
+        // Magic sparkles
+        for (let i = 0; i < 5; i++) {
+            const sparkleGeometry = new THREE.SphereGeometry(0.04, 6, 6);
+            const sparkleMaterial = new THREE.MeshBasicMaterial({ 
+                color: [0xFFD700, 0xFF69B4, 0x98FB98][i % 3] 
+            });
+            const sparkle = new THREE.Mesh(sparkleGeometry, sparkleMaterial);
+            sparkle.position.set(
+                0.3 + Math.random() * 0.4,
+                1.5 + Math.random() * 0.5,
+                0.1 + Math.random() * 0.2
+            );
+            group.add(sparkle);
+        }
+
+        group.userData.isEasterWizard = true;
     }
     
     function buildStandardWizard(group, textures) {

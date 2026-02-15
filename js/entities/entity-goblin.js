@@ -35,6 +35,8 @@
             buildBug(goblinGrp);
         } else if (G.enchantedTheme) {
             buildPixie(goblinGrp);
+        } else if (G.easterTheme) {
+            buildBunny(goblinGrp);
         } else {
             buildStandardGoblin(goblinGrp, textures);
         }
@@ -616,6 +618,80 @@
         
         // Mark as pixie for animation
         group.userData.isPixie = true;
+    }
+    
+    function buildBunny(group) {
+        // BUNNY - cute white rabbit for Easter theme
+        const furColor = 0xFFFFFF;      // White
+        const innerEarColor = 0xFFB6C1; // Light pink
+        const noseColor = 0xFF69B4;     // Pink
+        const eyeColor = 0x000000;      // Black
+
+        // Body
+        const bodyGeometry = new THREE.SphereGeometry(0.5, 16, 16);
+        const bodyMaterial = new THREE.MeshLambertMaterial({ color: furColor });
+        const body = new THREE.Mesh(bodyGeometry, bodyMaterial);
+        body.position.y = 0.6;
+        body.scale.y = 0.8;
+        body.castShadow = true;
+        group.add(body);
+
+        // Head
+        const headGeometry = new THREE.SphereGeometry(0.4, 16, 16);
+        const head = new THREE.Mesh(headGeometry, bodyMaterial);
+        head.position.y = 1.3;
+        head.castShadow = true;
+        group.add(head);
+
+        // Ears
+        const earGeometry = new THREE.CylinderGeometry(0.08, 0.12, 0.6, 8);
+        const innerEarMaterial = new THREE.MeshLambertMaterial({ color: innerEarColor });
+        [-0.15, 0.15].forEach((x, i) => {
+            const ear = new THREE.Mesh(earGeometry, bodyMaterial);
+            ear.position.set(x, 1.8, 0);
+            ear.rotation.z = i === 0 ? 0.2 : -0.2;
+            ear.castShadow = true;
+            group.add(ear);
+            // Inner ear
+            const innerEarGeometry = new THREE.CylinderGeometry(0.04, 0.08, 0.4, 8);
+            const innerEar = new THREE.Mesh(innerEarGeometry, innerEarMaterial);
+            innerEar.position.set(x, 1.8, 0.05);
+            innerEar.rotation.z = i === 0 ? 0.2 : -0.2;
+            group.add(innerEar);
+        });
+
+        // Eyes
+        const eyeGeometry = new THREE.SphereGeometry(0.08, 8, 8);
+        const eyeMaterial = new THREE.MeshBasicMaterial({ color: eyeColor });
+        [-0.12, 0.12].forEach(x => {
+            const eye = new THREE.Mesh(eyeGeometry, eyeMaterial);
+            eye.position.set(x, 1.35, 0.35);
+            group.add(eye);
+        });
+
+        // Nose
+        const noseGeometry = new THREE.SphereGeometry(0.06, 8, 8);
+        const noseMaterial = new THREE.MeshLambertMaterial({ color: noseColor });
+        const nose = new THREE.Mesh(noseGeometry, noseMaterial);
+        nose.position.set(0, 1.25, 0.4);
+        group.add(nose);
+
+        // Tail (fluffy ball)
+        const tailGeometry = new THREE.SphereGeometry(0.15, 8, 8);
+        const tail = new THREE.Mesh(tailGeometry, bodyMaterial);
+        tail.position.set(0, 0.5, -0.5);
+        group.add(tail);
+
+        // Feet
+        const footGeometry = new THREE.SphereGeometry(0.15, 8, 8);
+        [-0.2, 0.2].forEach(x => {
+            const foot = new THREE.Mesh(footGeometry, bodyMaterial);
+            foot.position.set(x, 0.15, 0.2);
+            foot.scale.set(1, 0.5, 1.4);
+            group.add(foot);
+        });
+
+        group.userData.isBunny = true;
     }
     
     function buildStandardGoblin(group, textures) {

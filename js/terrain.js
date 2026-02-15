@@ -2692,7 +2692,7 @@ function createHills(scene, THREE, hillPositions, hillColor, iceTheme, desertThe
 }
 
 // Create mountains (world boundaries)
-function createMountains(scene, THREE, mountainPositions, candyTheme, graveyardTheme, ruinsTheme, computerTheme, enchantedTheme) {
+function createMountains(scene, THREE, mountainPositions, candyTheme, graveyardTheme, ruinsTheme, computerTheme, enchantedTheme, easterTheme) {
     const textures = getTerrainTextures(THREE);
     mountainPositions.forEach(mtn => {
         if (computerTheme) {
@@ -3014,6 +3014,74 @@ function createMountains(scene, THREE, mountainPositions, candyTheme, graveyardT
                 );
                 vine.rotation.z = (Math.random() - 0.5) * 0.3;
                 scene.add(vine);
+            }
+            
+        } else if (easterTheme) {
+            // Easter hedge walls - decorative garden hedges
+            const wallHeight = mtn.height;
+            const wallWidth = mtn.width;
+            const wallDepth = Math.min(mtn.width * 0.15, 8);
+            
+            // Main hedge body - lush green
+            const hedgeGeometry = new THREE.BoxGeometry(wallWidth, wallHeight * 0.85, wallDepth);
+            const hedgeMaterial = new THREE.MeshLambertMaterial({ 
+                color: 0x228B22  // Forest green
+            });
+            const hedge = new THREE.Mesh(hedgeGeometry, hedgeMaterial);
+            hedge.position.set(mtn.x, wallHeight * 0.425, mtn.z);
+            hedge.castShadow = true;
+            scene.add(hedge);
+            
+            // Rounded top layer - slightly different green
+            const topGeometry = new THREE.BoxGeometry(wallWidth * 1.02, wallHeight * 0.2, wallDepth * 1.1);
+            const topMaterial = new THREE.MeshLambertMaterial({ color: 0x32CD32 }); // Lime green
+            const top = new THREE.Mesh(topGeometry, topMaterial);
+            top.position.set(mtn.x, wallHeight * 0.95, mtn.z);
+            scene.add(top);
+            
+            // Add spring flowers scattered on hedge
+            const flowerColors = [0xFF69B4, 0xFFFF00, 0xFF6347, 0xFFB6C1, 0xFFA500]; // Pink, yellow, red, light pink, orange
+            for (let i = 0; i < wallWidth / 4; i++) {
+                const flowerColor = flowerColors[Math.floor(Math.random() * flowerColors.length)];
+                const flowerGeometry = new THREE.SphereGeometry(0.3, 6, 6);
+                const flowerMaterial = new THREE.MeshBasicMaterial({ color: flowerColor });
+                const flower = new THREE.Mesh(flowerGeometry, flowerMaterial);
+                flower.position.set(
+                    mtn.x - wallWidth/2 + Math.random() * wallWidth,
+                    wallHeight * 0.4 + Math.random() * wallHeight * 0.5,
+                    mtn.z + (Math.random() > 0.5 ? 1 : -1) * (wallDepth/2 + 0.2)
+                );
+                scene.add(flower);
+            }
+            
+            // Easter bunny decorations on top occasionally
+            if (Math.random() > 0.6) {
+                const bunnyX = mtn.x + (Math.random() - 0.5) * wallWidth * 0.5;
+                // Simple bunny silhouette - body
+                const bunnyBody = new THREE.Mesh(
+                    new THREE.SphereGeometry(0.5, 8, 8),
+                    new THREE.MeshLambertMaterial({ color: 0xFFFFFF })
+                );
+                bunnyBody.position.set(bunnyX, wallHeight + 0.5, mtn.z);
+                scene.add(bunnyBody);
+                // Head
+                const bunnyHead = new THREE.Mesh(
+                    new THREE.SphereGeometry(0.35, 8, 8),
+                    new THREE.MeshLambertMaterial({ color: 0xFFFFFF })
+                );
+                bunnyHead.position.set(bunnyX, wallHeight + 1.1, mtn.z);
+                scene.add(bunnyHead);
+                // Ears
+                const earGeometry = new THREE.CylinderGeometry(0.1, 0.12, 0.5, 6);
+                const earMaterial = new THREE.MeshLambertMaterial({ color: 0xFFB6C1 }); // Pink inner ear
+                const leftEar = new THREE.Mesh(earGeometry, earMaterial);
+                leftEar.position.set(bunnyX - 0.15, wallHeight + 1.6, mtn.z);
+                leftEar.rotation.z = -0.2;
+                scene.add(leftEar);
+                const rightEar = new THREE.Mesh(earGeometry, earMaterial);
+                rightEar.position.set(bunnyX + 0.15, wallHeight + 1.6, mtn.z);
+                rightEar.rotation.z = 0.2;
+                scene.add(rightEar);
             }
             
         } else {

@@ -97,6 +97,8 @@ function getThemeForLevel(levelConfig) {
     if (levelConfig.candyTheme) return THEME_REGISTRY.get('candy');
     if (levelConfig.graveyardTheme) return THEME_REGISTRY.get('graveyard');
     if (levelConfig.ruinsTheme) return THEME_REGISTRY.get('ruins');
+    if (levelConfig.enchantedTheme) return THEME_REGISTRY.get('enchanted');
+    if (levelConfig.easterTheme) return THEME_REGISTRY.get('easter');
     // Default to forest theme
     return THEME_REGISTRY.get('forest');
 }

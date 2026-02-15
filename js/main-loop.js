@@ -391,15 +391,18 @@ function initLoop() {
             G.hudCtx.fillText(`Material: ${G.materialsCollected}/${G.materialsNeeded}`, 10, 75);
         }
         
-        // Scarab display (only if level has scarabs)
+        // Scarab/Easter Egg display (only if level has collectibles)
         let nextYPos = 100;
         if (G.totalScarabs > 0) {
-            const scarabColor = G.scarabsCollected >= G.totalScarabs ? '#00ff88' : '#00ccaa';
+            const collectibleColor = G.scarabsCollected >= G.totalScarabs ? '#00ff88' : '#00ccaa';
+            const collectibleName = G.easterTheme ? 'Ostereier' : 'Scarabs';
+            const easterColor = G.scarabsCollected >= G.totalScarabs ? '#FF69B4' : '#FFB6C1';
+            const displayColor = G.easterTheme ? easterColor : collectibleColor;
             if (useOutline) {
-                drawTextWithOutline(G.hudCtx, `Scarabs: ${G.scarabsCollected}/${G.totalScarabs}`, 10, nextYPos, scarabColor, outlineColor);
+                drawTextWithOutline(G.hudCtx, `${collectibleName}: ${G.scarabsCollected}/${G.totalScarabs}`, 10, nextYPos, displayColor, outlineColor);
             } else {
-                G.hudCtx.fillStyle = scarabColor;
-                G.hudCtx.fillText(`Scarabs: ${G.scarabsCollected}/${G.totalScarabs}`, 10, nextYPos);
+                G.hudCtx.fillStyle = displayColor;
+                G.hudCtx.fillText(`${collectibleName}: ${G.scarabsCollected}/${G.totalScarabs}`, 10, nextYPos);
                 G.hudCtx.fillStyle = '#000';
             }
             nextYPos += 25;
@@ -873,10 +876,13 @@ function initLoop() {
         G.hudCtx.fillText(`Kobolde: ${aliveGoblins} | Material: ${G.materialsCollected}/${G.materialsNeeded}`, G.hudCanvas.width / 2, bottomY);
         bottomY += 18;
         
-        // Scarab display (only if level has scarabs)
+        // Scarab/Easter Egg display (only if level has collectibles)
         if (G.totalScarabs > 0) {
-            G.hudCtx.fillStyle = G.scarabsCollected >= G.totalScarabs ? '#00ff88' : '#00ccaa';
-            G.hudCtx.fillText(`Scarabs: ${G.scarabsCollected}/${G.totalScarabs}`, G.hudCanvas.width / 2, bottomY);
+            const collectibleName = G.easterTheme ? 'Ostereier' : 'Scarabs';
+            const easterColor = G.scarabsCollected >= G.totalScarabs ? '#FF69B4' : '#FFB6C1';
+            const collectibleColor = G.scarabsCollected >= G.totalScarabs ? '#00ff88' : '#00ccaa';
+            G.hudCtx.fillStyle = G.easterTheme ? easterColor : collectibleColor;
+            G.hudCtx.fillText(`${collectibleName}: ${G.scarabsCollected}/${G.totalScarabs}`, G.hudCanvas.width / 2, bottomY);
             G.hudCtx.fillStyle = sharedTextColor;
             bottomY += 18;
         }

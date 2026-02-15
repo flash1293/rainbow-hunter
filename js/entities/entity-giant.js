@@ -27,6 +27,8 @@
             buildMainframe(giantGrp);
         } else if (G.enchantedTheme) {
             buildTreant(giantGrp);
+        } else if (G.easterTheme) {
+            buildChick(giantGrp);
         } else {
             buildStandardGiant(giantGrp, textures);
         }
@@ -815,6 +817,78 @@
         }
         
         group.userData.isTreant = true;
+    }
+    
+    function buildChick(group) {
+        // CHICK - giant fluffy baby chicken for Easter theme
+        const bodyColor = 0xFFD700;     // Golden yellow
+        const beakColor = 0xFF8C00;     // Dark orange
+        const eyeColor = 0x000000;
+        const wingColor = 0xFFA500;     // Orange
+
+        // Round body (scaled for giant size)
+        const bodyGeometry = new THREE.SphereGeometry(1.6, 16, 16);
+        const bodyMaterial = new THREE.MeshLambertMaterial({ color: bodyColor });
+        const body = new THREE.Mesh(bodyGeometry, bodyMaterial);
+        body.position.y = 2.0;
+        body.castShadow = true;
+        group.add(body);
+
+        // Head
+        const headGeometry = new THREE.SphereGeometry(1.0, 16, 16);
+        const head = new THREE.Mesh(headGeometry, bodyMaterial);
+        head.position.y = 4.0;
+        head.castShadow = true;
+        group.add(head);
+
+        // Eyes
+        const eyeGeometry = new THREE.SphereGeometry(0.2, 8, 8);
+        const eyeMaterial = new THREE.MeshBasicMaterial({ color: eyeColor });
+        [-0.4, 0.4].forEach(x => {
+            const eye = new THREE.Mesh(eyeGeometry, eyeMaterial);
+            eye.position.set(x, 4.2, 0.8);
+            group.add(eye);
+        });
+
+        // Beak
+        const beakGeometry = new THREE.ConeGeometry(0.3, 0.6, 8);
+        const beakMaterial = new THREE.MeshLambertMaterial({ color: beakColor });
+        const beak = new THREE.Mesh(beakGeometry, beakMaterial);
+        beak.position.set(0, 3.8, 1.1);
+        beak.rotation.x = Math.PI / 2;
+        group.add(beak);
+
+        // Small comb on head
+        const combGeometry = new THREE.ConeGeometry(0.16, 0.4, 4);
+        const combMaterial = new THREE.MeshLambertMaterial({ color: 0xFF4444 });
+        for (let i = 0; i < 3; i++) {
+            const comb = new THREE.Mesh(combGeometry, combMaterial);
+            comb.position.set(0, 5.0 + i * 0.1, -0.2 + i * 0.1);
+            group.add(comb);
+        }
+
+        // Wings
+        const wingGeometry = new THREE.SphereGeometry(0.6, 8, 8);
+        const wingMaterial = new THREE.MeshLambertMaterial({ color: wingColor });
+        [-1.4, 1.4].forEach(x => {
+            const wing = new THREE.Mesh(wingGeometry, wingMaterial);
+            wing.position.set(x, 2.4, 0);
+            wing.scale.set(0.4, 0.8, 0.6);
+            wing.castShadow = true;
+            group.add(wing);
+        });
+
+        // Feet
+        const legGeometry = new THREE.CylinderGeometry(0.1, 0.1, 0.6, 6);
+        const legMaterial = new THREE.MeshLambertMaterial({ color: beakColor });
+        [-0.6, 0.6].forEach(x => {
+            const leg = new THREE.Mesh(legGeometry, legMaterial);
+            leg.position.set(x, 0.3, 0);
+            leg.castShadow = true;
+            group.add(leg);
+        });
+
+        group.userData.isChick = true;
     }
     
     function buildStandardGiant(group, textures) {

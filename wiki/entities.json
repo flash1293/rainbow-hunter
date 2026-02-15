@@ -378,6 +378,60 @@
       "levels": [10],
       "health": 60,
       "damage": 2
+    },
+    {
+      "id": "bunny",
+      "name": "Osterhase",
+      "description": "Flauschiger weißer Hase mit langen Ohren und rosa Nase. Hüpft fröhlich durch die Osterwiese und verteidigt sein Revier.",
+      "tags": ["Ostern", "Nahkampf"],
+      "levels": [11],
+      "health": 3,
+      "damage": 1
+    },
+    {
+      "id": "chick",
+      "name": "Küken",
+      "description": "Pummeliges gelbes Küken mit orangefarbenem Schnabel. Größer als erwartet und überraschend stark. Watschelt langsam aber unaufhaltsam.",
+      "tags": ["Ostern", "Schwer"],
+      "levels": [11],
+      "health": 15,
+      "damage": 2
+    },
+    {
+      "id": "egg-warrior",
+      "name": "Eier-Krieger",
+      "description": "Bemaltes Osterei mit Armen und Beinen. Trägt einen kleinen Bogen und schießt bunte Mini-Eier auf Eindringlinge.",
+      "tags": ["Ostern", "Fernkampf"],
+      "levels": [11],
+      "health": 5,
+      "damage": 1
+    },
+    {
+      "id": "easter-wizard",
+      "name": "Oster-Zauberer",
+      "description": "Magischer Hase in pastellfarbenem Umhang mit Zauberstab aus Karottengold. Wirft bunte Magie-Eier auf Spieler.",
+      "tags": ["Ostern", "Magie", "Fernkampf"],
+      "levels": [11],
+      "health": 7,
+      "damage": 1
+    },
+    {
+      "id": "egg-bomber",
+      "name": "Eier-Bomber",
+      "description": "Fliegender Vogel mit buntem Gefieder und Osternest auf dem Kopf. Kreist über der Wiese und wirft explosive Eier ab.",
+      "tags": ["Ostern", "Fliegend", "Bomben"],
+      "levels": [11],
+      "health": 2,
+      "damage": 1
+    },
+    {
+      "id": "giant-easter-bunny",
+      "name": "Riesen-Osterhase",
+      "description": "Kolossaler Hase mit rosa Schleife und goldenem Korb. Hütet den legendären Osterschatz. Schwebt majestätisch und verschießt regenbogenfarbene Karotten.",
+      "tags": ["Ostern", "Boss", "Fliegend", "Feuerball"],
+      "levels": [11],
+      "health": 60,
+      "damage": 2
     }
   ],
   "items": [
@@ -451,6 +505,12 @@
       "id": "size-potion",
       "name": "Größentrank",
       "description": "Magische Flasche mit pink schimmerndem Inhalt. Stellt normale Größe wieder her wenn geschrumpft, oder macht temporär zu einem Riesen!",
+      "category": "special"
+    },
+    {
+      "id": "easter-egg",
+      "name": "Osterei",
+      "description": "Bunt bemaltes Osterei mit pastellfarbenen Mustern. Sammle alle versteckten Eier, um das Portal zu öffnen!",
       "category": "special"
     }
   ],

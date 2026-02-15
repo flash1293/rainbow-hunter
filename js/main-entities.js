@@ -1352,18 +1352,20 @@ function initEntities() {
     G.extraDragons = [];
     G.fireballs = [];
     
-    // Spawn boss - Reaper for graveyard, Unicorn for enchanted, Dragon for others
+    // Spawn boss - Reaper for graveyard, Unicorn for enchanted, Easter Bunny for easter, Dragon for others
     if (G.graveyardTheme || G.levelConfig.useReaper) {
         G.dragon = createReaper();
     } else if (G.enchantedTheme || G.levelConfig.useUnicorn) {
         G.dragon = createUnicorn();
+    } else if (G.easterTheme || G.levelConfig.useEasterBunny) {
+        G.dragon = createEasterBunny(G.levelConfig.dragon, G.levelConfig.dragon.scale || 1, 60);
     } else if (difficulty === 'hard') {
         G.dragon = createDragon();
     }
     
     if (difficulty === 'hard') {
         
-        // Create extra bosses for levels with multiple dragons/reapers/unicorns
+        // Create extra bosses for levels with multiple dragons/reapers/unicorns/bunnies
         if (G.levelConfig.extraDragons) {
             G.levelConfig.extraDragons.forEach(pos => {
                 const bossScale = pos.scale || 0.6;
@@ -1374,6 +1376,9 @@ function initEntities() {
                 } else if (G.enchantedTheme || pos.useUnicorn) {
                     const extraUnicorn = createUnicorn(pos, bossScale, bossHealth);
                     G.extraDragons.push(extraUnicorn);
+                } else if (G.easterTheme || pos.useEasterBunny) {
+                    const extraBunny = createEasterBunny(pos, bossScale, bossHealth);
+                    G.extraDragons.push(extraBunny);
                 } else {
                     const extraDragon = createDragon(pos, bossScale, bossHealth);
                     G.extraDragons.push(extraDragon);

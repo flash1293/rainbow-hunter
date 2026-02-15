@@ -286,6 +286,13 @@ Add script tags for new files in the correct order:
 <script src="js/entities/entity-<name>.js"></script>
 ```
 
+**IMPORTANT:** Also add the level to the level selector dropdown:
+
+```html
+<!-- In the #start-level select element -->
+<option value="N">🎨 Level N - Level Name</option>
+```
+
 ### 4.5 Update Terrain (if needed)
 
 If the theme needs special terrain textures or generation, update `js/terrain.js`:
@@ -356,6 +363,7 @@ Open `file:///Users/joereuter/Clones/eat-the-rainbow/index.html` and:
 - [ ] Create level file (js/levels/)
 - [ ] Create entity files if needed (js/entities/)
 - [ ] Update index.html with new scripts
+- [ ] Add level to index.html dropdown (#start-level)
 - [ ] Update terrain.js if needed
 - [ ] Update gameplay files if needed
 - [ ] Verify level renders correctly (screenshot)

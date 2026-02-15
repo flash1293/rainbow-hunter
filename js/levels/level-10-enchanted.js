@@ -9,8 +9,8 @@ LEVEL_REGISTRY.register(10, {
     // Player start position - Forest entrance clearing
     playerStart: { x: 0, z: 180 },
     
-    // Portal leads to victory/Level 1
-    portal: { x: 0, z: -220, destinationLevel: 1 },
+    // Portal leads to Level 11 - Easter Meadow
+    portal: { x: 0, z: -220, destinationLevel: 11 },
     
     // Enchanted theme settings
     enchantedTheme: true,

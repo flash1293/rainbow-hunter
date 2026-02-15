@@ -2984,6 +2984,427 @@ function initSetup() {
         });
     }
 
+    // ====================================
+    // EASTER THEME DECORATIONS
+    // ====================================
+    
+    // Blossom Trees - pink flowering trees for Easter
+    G.blossomTrees = [];
+    if (G.levelConfig.blossomTrees) {
+        G.levelConfig.blossomTrees.forEach(treeConfig => {
+            const blossomGroup = new THREE.Group();
+            const scale = treeConfig.scale || 1.0;
+            
+            // Tree trunk - brown bark
+            const trunkGeometry = new THREE.CylinderGeometry(0.2 * scale, 0.35 * scale, 2.5 * scale, 8);
+            const trunkMaterial = new THREE.MeshLambertMaterial({ color: 0x8B4513 });
+            const trunk = new THREE.Mesh(trunkGeometry, trunkMaterial);
+            trunk.position.y = 1.25 * scale;
+            trunk.castShadow = true;
+            blossomGroup.add(trunk);
+            
+            // Pink blossom canopy - multiple spheres
+            const blossomColors = [0xFFB6C1, 0xFF69B4, 0xFFC0CB]; // Various pinks
+            for (let i = 0; i < 5; i++) {
+                const canopyGeometry = new THREE.SphereGeometry(0.8 * scale + Math.random() * 0.3 * scale, 8, 8);
+                const canopyMaterial = new THREE.MeshLambertMaterial({ 
+                    color: blossomColors[i % blossomColors.length] 
+                });
+                const canopy = new THREE.Mesh(canopyGeometry, canopyMaterial);
+                const angle = (i / 5) * Math.PI * 2;
+                canopy.position.set(
+                    Math.cos(angle) * 0.5 * scale,
+                    3 * scale + Math.random() * 0.5 * scale,
+                    Math.sin(angle) * 0.5 * scale
+                );
+                canopy.castShadow = true;
+                blossomGroup.add(canopy);
+            }
+            
+            // Center canopy
+            const centerCanopyGeometry = new THREE.SphereGeometry(1.0 * scale, 8, 8);
+            const centerCanopyMaterial = new THREE.MeshLambertMaterial({ color: 0xFFB6C1 });
+            const centerCanopy = new THREE.Mesh(centerCanopyGeometry, centerCanopyMaterial);
+            centerCanopy.position.y = 3.2 * scale;
+            centerCanopy.castShadow = true;
+            blossomGroup.add(centerCanopy);
+            
+            // Falling petals (small spheres)
+            for (let i = 0; i < 8; i++) {
+                const petalGeometry = new THREE.SphereGeometry(0.08 * scale, 6, 6);
+                const petalMaterial = new THREE.MeshBasicMaterial({ 
+                    color: 0xFFB6C1, 
+                    transparent: true, 
+                    opacity: 0.8 
+                });
+                const petal = new THREE.Mesh(petalGeometry, petalMaterial);
+                petal.position.set(
+                    (Math.random() - 0.5) * 2 * scale,
+                    1 + Math.random() * 2 * scale,
+                    (Math.random() - 0.5) * 2 * scale
+                );
+                petal.userData.fallSpeed = 0.005 + Math.random() * 0.01;
+                petal.userData.swayPhase = Math.random() * Math.PI * 2;
+                blossomGroup.add(petal);
+            }
+            
+            const terrainHeight = getTerrainHeight(treeConfig.x, treeConfig.z);
+            blossomGroup.position.set(treeConfig.x, terrainHeight, treeConfig.z);
+            G.scene.add(blossomGroup);
+            
+            G.blossomTrees.push({ 
+                mesh: blossomGroup, 
+                x: treeConfig.x, 
+                z: treeConfig.z, 
+                scale: scale 
+            });
+            // Add to trees for collision
+            G.trees.push({ mesh: blossomGroup, type: 'blossomTree', radius: 0.4 * scale });
+        });
+    }
+    
+    // Easter Baskets - decorative baskets with eggs
+    G.easterBaskets = [];
+    if (G.levelConfig.easterBaskets) {
+        const basketEggColors = [0xFF69B4, 0x98FB98, 0x87CEEB, 0xFFD700, 0xE6E6FA];
+        G.levelConfig.easterBaskets.forEach(basketConfig => {
+            const basketGroup = new THREE.Group();
+            const scale = basketConfig.scale || 1.0;
+            
+            // Basket body - woven look
+            const basketGeometry = new THREE.CylinderGeometry(0.5 * scale, 0.3 * scale, 0.4 * scale, 12);
+            const basketMaterial = new THREE.MeshLambertMaterial({ color: 0xD2691E });
+            const basket = new THREE.Mesh(basketGeometry, basketMaterial);
+            basket.position.y = 0.2 * scale;
+            basket.castShadow = true;
+            basketGroup.add(basket);
+            
+            // Basket rim
+            const rimGeometry = new THREE.TorusGeometry(0.5 * scale, 0.05 * scale, 8, 16);
+            const rimMaterial = new THREE.MeshLambertMaterial({ color: 0x8B4513 });
+            const rim = new THREE.Mesh(rimGeometry, rimMaterial);
+            rim.position.y = 0.4 * scale;
+            rim.rotation.x = Math.PI / 2;
+            basketGroup.add(rim);
+            
+            // Basket handle
+            const handleGeometry = new THREE.TorusGeometry(0.4 * scale, 0.04 * scale, 8, 16, Math.PI);
+            const handle = new THREE.Mesh(handleGeometry, rimMaterial);
+            handle.position.y = 0.6 * scale;
+            basketGroup.add(handle);
+            
+            // Grass/straw in basket
+            const strawGeometry = new THREE.BoxGeometry(0.8 * scale, 0.15 * scale, 0.8 * scale);
+            const strawMaterial = new THREE.MeshLambertMaterial({ color: 0x9ACD32 });
+            const straw = new THREE.Mesh(strawGeometry, strawMaterial);
+            straw.position.y = 0.35 * scale;
+            basketGroup.add(straw);
+            
+            // Eggs in basket
+            for (let i = 0; i < 5; i++) {
+                const eggGeometry = new THREE.SphereGeometry(0.12 * scale, 8, 8);
+                const eggMaterial = new THREE.MeshPhongMaterial({ 
+                    color: basketEggColors[i],
+                    shininess: 60
+                });
+                const egg = new THREE.Mesh(eggGeometry, eggMaterial);
+                egg.scale.set(0.7, 1, 0.7);
+                const angle = (i / 5) * Math.PI * 2;
+                egg.position.set(
+                    Math.cos(angle) * 0.25 * scale,
+                    0.5 * scale,
+                    Math.sin(angle) * 0.25 * scale
+                );
+                egg.rotation.x = Math.random() * 0.3;
+                basketGroup.add(egg);
+            }
+            
+            // Pink ribbon bow
+            const ribbonGeometry = new THREE.SphereGeometry(0.1 * scale, 6, 6);
+            const ribbonMaterial = new THREE.MeshLambertMaterial({ color: 0xFF69B4 });
+            const bow = new THREE.Mesh(ribbonGeometry, ribbonMaterial);
+            bow.position.set(0, 0.6 * scale, 0.4 * scale);
+            bow.scale.set(1.5, 0.5, 1);
+            basketGroup.add(bow);
+            
+            const terrainHeight = getTerrainHeight(basketConfig.x, basketConfig.z);
+            basketGroup.position.set(basketConfig.x, terrainHeight, basketConfig.z);
+            G.scene.add(basketGroup);
+            
+            G.easterBaskets.push({ 
+                mesh: basketGroup, 
+                x: basketConfig.x, 
+                z: basketConfig.z 
+            });
+        });
+    }
+    
+    // Flower Patches - spring flower decorations
+    G.flowerPatches = [];
+    if (G.levelConfig.flowerPatches) {
+        const flowerColors = [0xFF69B4, 0xFFFF00, 0xFF6347, 0xFFB6C1, 0xFFA500, 0x9370DB];
+        G.levelConfig.flowerPatches.forEach(patchConfig => {
+            const patchGroup = new THREE.Group();
+            const radius = patchConfig.radius || 5;
+            const flowerCount = Math.floor(radius * 3);
+            
+            for (let i = 0; i < flowerCount; i++) {
+                const angle = Math.random() * Math.PI * 2;
+                const dist = Math.random() * radius;
+                const flowerX = Math.cos(angle) * dist;
+                const flowerZ = Math.sin(angle) * dist;
+                
+                const flowerGroup = new THREE.Group();
+                
+                // Stem
+                const stemGeometry = new THREE.CylinderGeometry(0.02, 0.03, 0.3 + Math.random() * 0.2, 4);
+                const stemMaterial = new THREE.MeshLambertMaterial({ color: 0x228B22 });
+                const stem = new THREE.Mesh(stemGeometry, stemMaterial);
+                stem.position.y = 0.15;
+                flowerGroup.add(stem);
+                
+                // Flower head - petals
+                const flowerColor = flowerColors[Math.floor(Math.random() * flowerColors.length)];
+                for (let p = 0; p < 5; p++) {
+                    const petalGeometry = new THREE.SphereGeometry(0.08, 6, 6);
+                    const petalMaterial = new THREE.MeshLambertMaterial({ color: flowerColor });
+                    const petal = new THREE.Mesh(petalGeometry, petalMaterial);
+                    const petalAngle = (p / 5) * Math.PI * 2;
+                    petal.position.set(
+                        Math.cos(petalAngle) * 0.08,
+                        0.35,
+                        Math.sin(petalAngle) * 0.08
+                    );
+                    petal.scale.set(1, 0.5, 1);
+                    flowerGroup.add(petal);
+                }
+                
+                // Yellow center
+                const centerGeometry = new THREE.SphereGeometry(0.05, 6, 6);
+                const centerMaterial = new THREE.MeshBasicMaterial({ color: 0xFFD700 });
+                const center = new THREE.Mesh(centerGeometry, centerMaterial);
+                center.position.y = 0.35;
+                flowerGroup.add(center);
+                
+                flowerGroup.position.set(flowerX, 0, flowerZ);
+                patchGroup.add(flowerGroup);
+            }
+            
+            const terrainHeight = getTerrainHeight(patchConfig.x, patchConfig.z);
+            patchGroup.position.set(patchConfig.x, terrainHeight, patchConfig.z);
+            G.scene.add(patchGroup);
+            
+            G.flowerPatches.push({ 
+                mesh: patchGroup, 
+                x: patchConfig.x, 
+                z: patchConfig.z, 
+                radius: radius 
+            });
+        });
+    }
+    
+    // Decorative Easter Eggs scattered around
+    G.decorativeEggs = [];
+    if (G.easterTheme) {
+        const decorEggColors = [0xFF69B4, 0x98FB98, 0x87CEEB, 0xFFD700, 0xE6E6FA, 0xFFA500];
+        // Generate random decorative eggs across the map
+        for (let i = 0; i < 50; i++) {
+            const eggGroup = new THREE.Group();
+            const eggColor = decorEggColors[i % decorEggColors.length];
+            
+            // Egg shape
+            const eggGeometry = new THREE.SphereGeometry(0.25, 8, 8);
+            const eggMaterial = new THREE.MeshPhongMaterial({ 
+                color: eggColor,
+                shininess: 60
+            });
+            const egg = new THREE.Mesh(eggGeometry, eggMaterial);
+            egg.scale.set(0.7, 1.0, 0.7);
+            egg.position.y = 0.25;
+            eggGroup.add(egg);
+            
+            // Random stripe
+            if (Math.random() > 0.5) {
+                const stripeGeometry = new THREE.TorusGeometry(0.18, 0.03, 6, 12);
+                const stripeColor = decorEggColors[(i + 2) % decorEggColors.length];
+                const stripeMaterial = new THREE.MeshLambertMaterial({ color: stripeColor });
+                const stripe = new THREE.Mesh(stripeGeometry, stripeMaterial);
+                stripe.position.y = 0.25;
+                stripe.rotation.x = Math.PI / 2;
+                stripe.scale.set(0.7, 1, 0.7);
+                eggGroup.add(stripe);
+            }
+            
+            // Random position across the map
+            const eggX = (Math.random() - 0.5) * 180;
+            const eggZ = 170 - Math.random() * 340; // From spawn to boss area
+            
+            const terrainHeight = getTerrainHeight(eggX, eggZ);
+            eggGroup.position.set(eggX, terrainHeight, eggZ);
+            G.scene.add(eggGroup);
+            
+            G.decorativeEggs.push({ 
+                mesh: eggGroup, 
+                x: eggX, 
+                z: eggZ 
+            });
+        }
+        
+        // Add egg piles - clusters of eggs in nests
+        const eggPilePositions = [
+            { x: -60, z: 150 }, { x: 50, z: 120 }, { x: -40, z: 60 },
+            { x: 70, z: 30 }, { x: -70, z: -20 }, { x: 30, z: -60 },
+            { x: -50, z: -100 }, { x: 60, z: -130 }, { x: -30, z: -170 },
+            { x: 80, z: 80 }, { x: -80, z: 100 }, { x: 40, z: 160 }
+        ];
+        
+        eggPilePositions.forEach((pos, idx) => {
+            const pileGroup = new THREE.Group();
+            
+            // Nest base - straw/grass circle
+            const nestGeometry = new THREE.CylinderGeometry(1.5, 2, 0.4, 16);
+            const nestMaterial = new THREE.MeshLambertMaterial({ color: 0x8B7355 }); // Tan straw
+            const nest = new THREE.Mesh(nestGeometry, nestMaterial);
+            nest.position.y = 0.2;
+            pileGroup.add(nest);
+            
+            // Straw rim
+            const rimGeometry = new THREE.TorusGeometry(1.7, 0.2, 8, 16);
+            const rim = new THREE.Mesh(rimGeometry, nestMaterial);
+            rim.position.y = 0.35;
+            rim.rotation.x = Math.PI / 2;
+            pileGroup.add(rim);
+            
+            // 5-8 eggs per pile
+            const numEggs = 5 + Math.floor(Math.random() * 4);
+            for (let i = 0; i < numEggs; i++) {
+                const eggGeometry = new THREE.SphereGeometry(0.35, 8, 8);
+                const eggColor = decorEggColors[Math.floor(Math.random() * decorEggColors.length)];
+                const eggMaterial = new THREE.MeshPhongMaterial({ 
+                    color: eggColor,
+                    shininess: 80
+                });
+                const egg = new THREE.Mesh(eggGeometry, eggMaterial);
+                egg.scale.set(0.7, 1.0, 0.7);
+                
+                // Position eggs in pile
+                const angle = (i / numEggs) * Math.PI * 2;
+                const radius = 0.6 + Math.random() * 0.4;
+                egg.position.set(
+                    Math.cos(angle) * radius,
+                    0.5 + Math.random() * 0.3,
+                    Math.sin(angle) * radius
+                );
+                egg.rotation.z = (Math.random() - 0.5) * 0.3;
+                pileGroup.add(egg);
+            }
+            
+            const terrainHeight = getTerrainHeight(pos.x, pos.z);
+            pileGroup.position.set(pos.x, terrainHeight, pos.z);
+            G.scene.add(pileGroup);
+        });
+        
+        // Add giant decorative Easter eggs
+        const giantEggPositions = [
+            { x: -90, z: 130 }, { x: 95, z: 145 }, { x: -85, z: -80 },
+            { x: 90, z: -65 }, { x: 0, z: -140 }, { x: -100, z: 30 }
+        ];
+        
+        giantEggPositions.forEach((pos, idx) => {
+            const eggGroup = new THREE.Group();
+            const eggColor = decorEggColors[idx % decorEggColors.length];
+            
+            // Giant egg shape
+            const eggGeometry = new THREE.SphereGeometry(2.5, 16, 16);
+            const eggMaterial = new THREE.MeshPhongMaterial({ 
+                color: eggColor,
+                shininess: 100,
+                emissive: eggColor,
+                emissiveIntensity: 0.1
+            });
+            const egg = new THREE.Mesh(eggGeometry, eggMaterial);
+            egg.scale.set(0.7, 1.0, 0.7);
+            egg.position.y = 2.5;
+            eggGroup.add(egg);
+            
+            // Multiple decorative stripes
+            for (let s = 0; s < 3; s++) {
+                const stripeGeometry = new THREE.TorusGeometry(1.8 - s * 0.3, 0.15, 8, 24);
+                const stripeColor = decorEggColors[(idx + s + 1) % decorEggColors.length];
+                const stripeMaterial = new THREE.MeshPhongMaterial({ 
+                    color: stripeColor,
+                    shininess: 80
+                });
+                const stripe = new THREE.Mesh(stripeGeometry, stripeMaterial);
+                stripe.position.y = 2.0 + s * 0.8;
+                stripe.rotation.x = Math.PI / 2;
+                stripe.scale.set(0.7, 1, 0.7);
+                eggGroup.add(stripe);
+            }
+            
+            // Star pattern on egg
+            const starMaterial = new THREE.MeshBasicMaterial({ color: 0xFFFFFF });
+            for (let i = 0; i < 5; i++) {
+                const starGeometry = new THREE.CircleGeometry(0.2, 5);
+                const star = new THREE.Mesh(starGeometry, starMaterial);
+                const angle = (i / 5) * Math.PI * 2;
+                star.position.set(
+                    Math.cos(angle) * 1.2,
+                    2.5 + Math.sin(angle * 2) * 0.5,
+                    Math.sin(angle) * 1.2 + 0.8
+                );
+                star.rotation.y = angle;
+                eggGroup.add(star);
+            }
+            
+            const terrainHeight = getTerrainHeight(pos.x, pos.z);
+            eggGroup.position.set(pos.x, terrainHeight, pos.z);
+            G.scene.add(eggGroup);
+        });
+        
+        // Add Easter bunny statues
+        const bunnyStatuePositions = [
+            { x: -40, z: 180 }, { x: 40, z: 185 }, { x: 0, z: -200 }
+        ];
+        
+        bunnyStatuePositions.forEach((pos) => {
+            const statueGroup = new THREE.Group();
+            const stoneMaterial = new THREE.MeshLambertMaterial({ color: 0xD4C4B0 }); // Cream stone
+            
+            // Body
+            const bodyGeometry = new THREE.SphereGeometry(1.5, 12, 12);
+            const body = new THREE.Mesh(bodyGeometry, stoneMaterial);
+            body.scale.y = 1.1;
+            body.position.y = 2;
+            statueGroup.add(body);
+            
+            // Head  
+            const headGeometry = new THREE.SphereGeometry(1, 12, 12);
+            const head = new THREE.Mesh(headGeometry, stoneMaterial);
+            head.position.y = 4;
+            statueGroup.add(head);
+            
+            // Ears
+            for (let side = -1; side <= 1; side += 2) {
+                const earGeometry = new THREE.CylinderGeometry(0.2, 0.3, 2, 8);
+                const ear = new THREE.Mesh(earGeometry, stoneMaterial);
+                ear.position.set(side * 0.5, 5.5, 0);
+                ear.rotation.z = side * 0.15;
+                statueGroup.add(ear);
+            }
+            
+            // Pedestal
+            const pedestalGeometry = new THREE.CylinderGeometry(1.8, 2, 1, 12);
+            const pedestal = new THREE.Mesh(pedestalGeometry, stoneMaterial);
+            pedestal.position.y = 0.5;
+            statueGroup.add(pedestal);
+            
+            const terrainHeight = getTerrainHeight(pos.x, pos.z);
+            statueGroup.position.set(pos.x, terrainHeight, pos.z);
+            G.scene.add(statueGroup);
+        });
+    }
+
     // Rocks - use level config if available, otherwise use default positions
     G.rocks = [];
     G.rockPositions = G.levelConfig.rockPositions || [
@@ -3744,68 +4165,135 @@ function initSetup() {
         });
     });
     
-    // Scarab collectibles - ancient gems needed to unlock treasure
+    // Scarab/Easter Egg collectibles - needed to unlock treasure
     G.scarabPositions = G.levelConfig.scarabs || [];
     G.totalScarabs = G.scarabPositions.length;
     G.scarabsCollected = 0;
     
+    // Easter egg colors for Easter theme
+    const easterEggColors = [0xFF69B4, 0x98FB98, 0x87CEEB, 0xFFD700, 0xE6E6FA]; // Pink, Green, Blue, Gold, Lavender
+    
     G.scarabPositions.forEach((pos, idx) => {
-        const scarabGroup = new THREE.Group();
+        const collectibleGroup = new THREE.Group();
         
-        // Scarab body - beetle shape
-        const bodyGeometry = new THREE.SphereGeometry(0.5, 8, 6);
-        const bodyMaterial = new THREE.MeshPhongMaterial({
-            color: 0x00cc88,
-            emissive: 0x004422,
-            shininess: 100,
-            specular: 0xffffff
-        });
-        const body = new THREE.Mesh(bodyGeometry, bodyMaterial);
-        body.scale.set(1, 0.5, 1.3);
-        body.position.y = 0.3;
-        scarabGroup.add(body);
-        
-        // Head
-        const headGeometry = new THREE.SphereGeometry(0.25, 6, 6);
-        const head = new THREE.Mesh(headGeometry, bodyMaterial);
-        head.position.set(0, 0.3, 0.6);
-        scarabGroup.add(head);
-        
-        // Wings (shell)
-        const wingGeometry = new THREE.SphereGeometry(0.45, 8, 6);
-        const wingMaterial = new THREE.MeshPhongMaterial({
-            color: 0x00ffaa,
-            emissive: 0x005533,
-            shininess: 150,
-            specular: 0xffffff,
-            transparent: true,
-            opacity: 0.9
-        });
-        const wings = new THREE.Mesh(wingGeometry, wingMaterial);
-        wings.scale.set(1.1, 0.3, 1.2);
-        wings.position.y = 0.5;
-        scarabGroup.add(wings);
-        
-        // Glowing aura
-        const auraGeometry = new THREE.RingGeometry(0.8, 1.2, 16);
-        const auraMaterial = new THREE.MeshBasicMaterial({
-            color: 0x00ffcc,
-            transparent: true,
-            opacity: 0.5,
-            side: THREE.DoubleSide
-        });
-        const aura = new THREE.Mesh(auraGeometry, auraMaterial);
-        aura.rotation.x = -Math.PI / 2;
-        aura.position.y = 0.1;
-        scarabGroup.add(aura);
-        scarabGroup.aura = aura;
+        if (G.easterTheme) {
+            // EASTER EGG rendering - large collectible eggs
+            const eggColor = easterEggColors[idx % easterEggColors.length];
+            const stripeColors = [0xFF69B4, 0x98FB98, 0x87CEEB]; // Pink, Green, Blue stripes
+            
+            // Main egg shape - much bigger
+            const eggGeometry = new THREE.SphereGeometry(1.5, 16, 16);
+            const eggMaterial = new THREE.MeshPhongMaterial({
+                color: eggColor,
+                emissive: eggColor,
+                emissiveIntensity: 0.2,
+                shininess: 80,
+                specular: 0xffffff
+            });
+            const egg = new THREE.Mesh(eggGeometry, eggMaterial);
+            egg.scale.set(0.7, 1.0, 0.7);
+            egg.position.y = 1.5;
+            collectibleGroup.add(egg);
+            
+            // Decorative stripes
+            stripeColors.forEach((color, i) => {
+                const stripeGeometry = new THREE.TorusGeometry(1.0, 0.1, 8, 16);
+                const stripeMaterial = new THREE.MeshPhongMaterial({
+                    color: color,
+                    emissive: color,
+                    emissiveIntensity: 0.3,
+                    shininess: 100
+                });
+                const stripe = new THREE.Mesh(stripeGeometry, stripeMaterial);
+                stripe.position.y = 1.0 + i * 0.5;
+                stripe.rotation.x = Math.PI / 2;
+                stripe.scale.set(0.7, 1, 0.7);
+                collectibleGroup.add(stripe);
+            });
+            
+            // Golden sparkle dots
+            for (let i = 0; i < 6; i++) {
+                const dotGeometry = new THREE.SphereGeometry(0.12, 6, 6);
+                const dotMaterial = new THREE.MeshBasicMaterial({ color: 0xFFD700 });
+                const dot = new THREE.Mesh(dotGeometry, dotMaterial);
+                const angle = (i / 6) * Math.PI * 2;
+                dot.position.set(
+                    Math.cos(angle) * 0.8,
+                    1.5,
+                    Math.sin(angle) * 0.8
+                );
+                collectibleGroup.add(dot);
+            }
+            
+            // Glowing aura (Easter colored) - larger
+            const auraGeometry = new THREE.RingGeometry(2.0, 2.8, 16);
+            const auraMaterial = new THREE.MeshBasicMaterial({
+                color: eggColor,
+                transparent: true,
+                opacity: 0.4,
+                side: THREE.DoubleSide
+            });
+            const aura = new THREE.Mesh(auraGeometry, auraMaterial);
+            aura.rotation.x = -Math.PI / 2;
+            aura.position.y = 0.1;
+            collectibleGroup.add(aura);
+            collectibleGroup.aura = aura;
+        } else {
+            // SCARAB rendering (original)
+            const bodyGeometry = new THREE.SphereGeometry(0.5, 8, 6);
+            const bodyMaterial = new THREE.MeshPhongMaterial({
+                color: 0x00cc88,
+                emissive: 0x004422,
+                shininess: 100,
+                specular: 0xffffff
+            });
+            const body = new THREE.Mesh(bodyGeometry, bodyMaterial);
+            body.scale.set(1, 0.5, 1.3);
+            body.position.y = 0.3;
+            collectibleGroup.add(body);
+            
+            // Head
+            const headGeometry = new THREE.SphereGeometry(0.25, 6, 6);
+            const head = new THREE.Mesh(headGeometry, bodyMaterial);
+            head.position.set(0, 0.3, 0.6);
+            collectibleGroup.add(head);
+            
+            // Wings (shell)
+            const wingGeometry = new THREE.SphereGeometry(0.45, 8, 6);
+            const wingMaterial = new THREE.MeshPhongMaterial({
+                color: 0x00ffaa,
+                emissive: 0x005533,
+                shininess: 150,
+                specular: 0xffffff,
+                transparent: true,
+                opacity: 0.9
+            });
+            const wings = new THREE.Mesh(wingGeometry, wingMaterial);
+            wings.scale.set(1.1, 0.3, 1.2);
+            wings.position.y = 0.5;
+            collectibleGroup.add(wings);
+            
+            // Glowing aura
+            const auraGeometry = new THREE.RingGeometry(0.8, 1.2, 16);
+            const auraMaterial = new THREE.MeshBasicMaterial({
+                color: 0x00ffcc,
+                transparent: true,
+                opacity: 0.5,
+                side: THREE.DoubleSide
+            });
+            const aura = new THREE.Mesh(auraGeometry, auraMaterial);
+            aura.rotation.x = -Math.PI / 2;
+            aura.position.y = 0.1;
+            collectibleGroup.add(aura);
+            collectibleGroup.aura = aura;
+        }
         
         const terrainHeight = getTerrainHeight(pos.x, pos.z);
-        scarabGroup.position.set(pos.x, terrainHeight + 0.5, pos.z);
-        G.scene.add(scarabGroup);
+        collectibleGroup.position.set(pos.x, terrainHeight + 0.5, pos.z);
+        G.scene.add(collectibleGroup);
         
         G.scarabPickups.push({
-            mesh: scarabGroup,
+            mesh: collectibleGroup,
             collected: false,
             x: pos.x,
             z: pos.z,

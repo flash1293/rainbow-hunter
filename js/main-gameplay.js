@@ -643,8 +643,8 @@
             const canPassMountains = G.waterTheme && G.player.isGliding;
             if (!canPassMountains) {
                 G.levelConfig.mountains.forEach(mtn => {
-                    // For graveyard, ruins, computer, and enchanted theme walls, use rectangular (box) collision
-                    if (G.graveyardTheme || G.ruinsTheme || G.computerTheme || G.enchantedTheme) {
+                    // For graveyard, ruins, computer, enchanted, and easter theme walls, use rectangular (box) collision
+                    if (G.graveyardTheme || G.ruinsTheme || G.computerTheme || G.enchantedTheme || G.easterTheme) {
                         const wallWidth = mtn.width;
                         // Use fixed depth of 2 for computer theme (matches visual), variable for others
                         const wallDepth = G.computerTheme ? 2 : Math.min(mtn.width * 0.15, 8);

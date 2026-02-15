@@ -31,6 +31,8 @@
             buildFirewallSentry(goblinGrp);
         } else if (G.enchantedTheme) {
             buildDarkFairy(goblinGrp);
+        } else if (G.easterTheme) {
+            buildEggWarrior(goblinGrp);
         } else {
             buildStandardGuardian(goblinGrp, textures);
         }
@@ -811,6 +813,80 @@
         group.add(orb);
         
         group.userData.isDarkFairy = true;
+    }
+    
+    function buildEggWarrior(group) {
+        // EGG WARRIOR - decorated easter egg with limbs and bow
+        const eggColor = 0xFFE4E1;      // Misty rose
+        const stripColor1 = 0xFF69B4;   // Hot pink
+        const stripColor2 = 0x98FB98;   // Pale green
+        const stripColor3 = 0x87CEEB;   // Sky blue
+
+        // Egg body
+        const eggGeometry = new THREE.SphereGeometry(0.5, 16, 16);
+        const eggMaterial = new THREE.MeshLambertMaterial({ color: eggColor });
+        const egg = new THREE.Mesh(eggGeometry, eggMaterial);
+        egg.position.y = 1.0;
+        egg.scale.set(0.8, 1.2, 0.8);
+        egg.castShadow = true;
+        group.add(egg);
+
+        // Decorative stripes
+        [stripColor1, stripColor2, stripColor3].forEach((color, i) => {
+            const stripeGeometry = new THREE.TorusGeometry(0.4, 0.04, 8, 16);
+            const stripeMaterial = new THREE.MeshLambertMaterial({ color });
+            const stripe = new THREE.Mesh(stripeGeometry, stripeMaterial);
+            stripe.position.y = 0.7 + i * 0.3;
+            stripe.rotation.x = Math.PI / 2;
+            stripe.scale.set(0.8, 1, 0.8);
+            group.add(stripe);
+        });
+
+        // Eyes
+        const eyeGeometry = new THREE.SphereGeometry(0.08, 8, 8);
+        const eyeMaterial = new THREE.MeshBasicMaterial({ color: 0x000000 });
+        [-0.15, 0.15].forEach(x => {
+            // Eye whites
+            const whiteGeometry = new THREE.SphereGeometry(0.1, 8, 8);
+            const whiteMaterial = new THREE.MeshBasicMaterial({ color: 0xFFFFFF });
+            const white = new THREE.Mesh(whiteGeometry, whiteMaterial);
+            white.position.set(x, 1.2, 0.38);
+            group.add(white);
+            // Pupils
+            const eye = new THREE.Mesh(eyeGeometry, eyeMaterial);
+            eye.position.set(x, 1.2, 0.4);
+            group.add(eye);
+        });
+
+        // Little arms
+        const armGeometry = new THREE.CylinderGeometry(0.06, 0.08, 0.4, 6);
+        const armMaterial = new THREE.MeshLambertMaterial({ color: eggColor });
+        [-0.5, 0.5].forEach((x, i) => {
+            const arm = new THREE.Mesh(armGeometry, armMaterial);
+            arm.position.set(x, 1.0, 0);
+            arm.rotation.z = i === 0 ? 0.8 : -0.8;
+            arm.castShadow = true;
+            group.add(arm);
+        });
+
+        // Little legs
+        const legGeometry = new THREE.CylinderGeometry(0.08, 0.1, 0.3, 6);
+        [-0.2, 0.2].forEach(x => {
+            const leg = new THREE.Mesh(legGeometry, armMaterial);
+            leg.position.set(x, 0.2, 0);
+            leg.castShadow = true;
+            group.add(leg);
+        });
+
+        // Bow (weapon)
+        const bowGeometry = new THREE.TorusGeometry(0.25, 0.02, 6, 16, Math.PI);
+        const bowMaterial = new THREE.MeshLambertMaterial({ color: 0x8B4513 });
+        const bow = new THREE.Mesh(bowGeometry, bowMaterial);
+        bow.position.set(0.6, 1.0, 0.2);
+        bow.rotation.y = Math.PI / 2;
+        group.add(bow);
+
+        group.userData.isEggWarrior = true;
     }
     
     function buildStandardGuardian(group, textures) {
