@@ -63,8 +63,22 @@ cd "$WORKSPACE"
 echo ""
 echo "=== PHASE A: Wiki Entity Definitions ==="
 
-echo "[1/13] Adding entities to wiki/entities.json..."
-run_copilot "1-wiki-entities-json" "Read $CONTEXT for project context, then read level-spec.json. For each entity in the 'newEntities' array, add an entry to wiki/entities.json. Each entry needs: id, name, description (in German), tags, levels (array with levelNumber), health, damage. Match the existing JSON structure exactly. Preserve all existing entries."
+echo "[1/14] Adding entities to wiki/entities.json..."
+run_copilot "1-wiki-entities-json" "Read $CONTEXT for project context, then read level-spec.json. 
+
+Add entries to wiki/entities.json for:
+
+1. Each entity in the 'newEntities' array - use their id, name, description, tags, levels, health, damage directly.
+
+2. Each entity in 'existingEntities' that has reskin:true - create a themed variant entry:
+   - id: '{original-id}-$THEME' (e.g., 'goblin-$THEME')
+   - name: Use the 'note' field as inspiration for a German name
+   - description: German description of the themed variant
+   - tags: Same as original entity
+   - levels: [$LEVEL_NUM]
+   - health/damage: Same as original entity (look up in existing entries)
+
+Match the existing JSON structure exactly. Preserve all existing entries."
 
 # ==========================================
 # PHASE B: Wiki Entity Renderers (loop per entity)
@@ -114,12 +128,65 @@ Report what the final entity looks like."
 done
 
 # ==========================================
+# PHASE B2: Wiki Renderers for Themed Existing Entities
+# ==========================================
+echo ""
+echo "=== PHASE B2: Wiki Renderers for Themed Existing Entities ==="
+
+# Get list of existing entities that need reskinning
+EXISTING_ENTITIES=$(jq -r '.existingEntities | keys[]' "$SPEC")
+
+for ENTITY_ID in $EXISTING_ENTITIES; do
+    RESKIN=$(jq -r ".existingEntities.\"$ENTITY_ID\".reskin" "$SPEC")
+    
+    if [ "$RESKIN" = "true" ]; then
+        ENTITY_NOTE=$(jq -r ".existingEntities.\"$ENTITY_ID\".note" "$SPEC")
+        ENTITY_COLOR=$(jq -r ".existingEntities.\"$ENTITY_ID\".color" "$SPEC")
+        THEMED_ID="${ENTITY_ID}-${THEME}"
+        
+        echo ""
+        echo "[Loop] Creating themed wiki renderer for: $THEMED_ID ($ENTITY_NOTE)"
+        
+        # Step: Create themed renderer based on existing entity
+        run_copilot "wiki-renderer-$THEMED_ID" "Read $CONTEXT for project context, then read level-spec.json. Create a wiki renderer for themed entity '$THEMED_ID' in wiki/render-single.html.
+
+This is a themed variant of the existing '$ENTITY_ID' entity for the $THEME theme.
+
+1. Find the existing '$ENTITY_ID' renderer in wiki/render-single.html
+2. Copy it and create a new function for '$THEMED_ID'
+3. Modify it to match the theme:
+   - Theme: $THEME (Christmas)
+   - Note: $ENTITY_NOTE
+   - Primary color: $ENTITY_COLOR
+   - Add theme-appropriate details (e.g., for Christmas: santa hats, scarves, snowy textures)
+
+Make sure it's clearly themed but still recognizable as a variant of $ENTITY_ID."
+
+        # Step: Generate image and verify
+        echo "[Loop] Generating and verifying image for: $THEMED_ID"
+        run_copilot "wiki-verify-$THEMED_ID" "Read $CONTEXT for project context.
+
+1. Run this command to generate the wiki image: cd wiki && node generate-images.js
+
+2. Use Chrome DevTools MCP to navigate to: file://$WORKSPACE/wiki/render-single.html?entity=$THEMED_ID
+
+3. Take a screenshot and examine it carefully.
+
+4. If the entity looks wrong, fix the renderer code in wiki/render-single.html and regenerate.
+
+5. It should look like a $THEME-themed version of $ENTITY_ID ($ENTITY_NOTE).
+
+Report what the final entity looks like."
+    fi
+done
+
+# ==========================================
 # PHASE C: Wiki Level Card
 # ==========================================
 echo ""
 echo "=== PHASE C: Wiki Level Card ==="
 
-echo "[2/13] Adding level card to wiki/build-wiki.js..."
+echo "[2/14] Adding level card to wiki/build-wiki.js..."
 run_copilot "2-wiki-level-card" "Read $CONTEXT for project context, then read level-spec.json.
 
 Edit wiki/build-wiki.js to add a level card for Level $LEVEL_NUM. 
@@ -132,7 +199,7 @@ Find the section with existing level cards (search for 'level-card' or 'Drachenh
 
 Make sure it appears after the existing level cards in numerical order."
 
-echo "[3/13] Building wiki..."
+echo "[3/14] Building wiki..."
 run_copilot "3-build-wiki" "Run this command to rebuild the wiki: cd $WORKSPACE/wiki && node build-wiki.js
 
 Report if it succeeds or fails."
@@ -143,7 +210,7 @@ Report if it succeeds or fails."
 echo ""
 echo "=== PHASE D: Theme File ==="
 
-echo "[4/13] Creating theme file..."
+echo "[4/14] Creating theme file..."
 run_copilot "4-theme-file" "Read $CONTEXT for project context, then read level-spec.json.
 
 Create the file js/themes/theme-$THEME.js following the pattern in existing theme files (especially theme-easter.js as reference).
@@ -166,7 +233,7 @@ Make sure hex colors are written as numbers (0x...) not strings."
 echo ""
 echo "=== PHASE E: Level File ==="
 
-echo "[5/13] Creating level file..."
+echo "[5/14] Creating level file..."
 run_copilot "5-level-file" "Read $CONTEXT for project context, then read level-spec.json.
 
 Create the file js/levels/level-$LEVEL_NUM-$THEME.js following the pattern in existing level files (especially level-11-easter.js as reference).
@@ -193,8 +260,8 @@ Generate reasonable x,z coordinates spread across the playable area (-60 to 60 f
 echo ""
 echo "=== PHASE F: Game Entity Files ==="
 
-echo "[6/13] Creating game entity files..."
-run_copilot "6-game-entities" "Read $CONTEXT for project context, then read level-spec.json.
+echo "[6/14] Creating game entity files for NEW entities..."
+run_copilot "6-game-entities-new" "Read $CONTEXT for project context, then read level-spec.json.
 
 For EACH entity in the 'newEntities' array, create a game entity file at js/entities/entity-{id}.js.
 
@@ -211,13 +278,60 @@ The game entity MUST visually match the wiki renderer.
 
 Create one file per entity in newEntities."
 
+echo "[6b/14] Creating game entity files for THEMED existing entities..."
+run_copilot "6-game-entities-themed" "Read $CONTEXT for project context, then read level-spec.json.
+
+For EACH entity in 'existingEntities' that has reskin:true, create a game entity file at js/entities/entity-{id}-$THEME.js.
+
+For example, if goblin has reskin:true, create js/entities/entity-goblin-$THEME.js.
+
+IMPORTANT: 
+1. First read the wiki renderer code for the themed variant (e.g., 'goblin-$THEME') from wiki/render-single.html
+2. Copy the Three.js mesh creation code
+3. Adapt it for game use:
+   - Wrap in function create{EntityName}{Theme}(config = {}) that returns THREE.Group
+   - Add castShadow = true to all meshes
+   - Add receiveShadow = true to body meshes
+   - Register with ENTITY_REGISTRY.register('{id}-$THEME', create{EntityName}{Theme})
+
+The game entity MUST visually match the wiki renderer.
+
+Create one file per themed existing entity."
+
+echo "[6c/14] Hooking themed entities into EXISTING entity files..."
+run_copilot "6-hook-themed-entities" "Read \$CONTEXT for project context, then read level-spec.json.
+
+CRITICAL: The existing entity files (js/entities/entity-goblin.js, entity-guardian.js, entity-giant.js, entity-wizard.js) 
+use CONDITIONALS inside the create functions to render different variants based on theme flags like G.easterTheme.
+
+For EACH entity in 'existingEntities' that has reskin:true, you MUST modify the EXISTING entity file:
+
+1. Read the existing file (e.g., js/entities/entity-goblin.js)
+2. Find the chain of theme conditionals (e.g., 'if (G.waterTheme) ... else if (G.easterTheme) ...')
+3. ADD a new condition: 'else if (G.\${THEME}Theme) { build{ThemedName}(goblinGrp); }'
+4. ADD the builder function (e.g., buildElf) BELOW the other builder functions in the same file
+
+The builder function code should come from the wiki renderer you created in Phase B2.
+
+Example for entity-goblin.js with Christmas theme:
+- Add: else if (G.christmasTheme) { buildElf(goblinGrp); }
+- Add: function buildElf(group) { ... Three.js code from wiki ... }
+
+Do this for ALL entities in existingEntities with reskin:true:
+- goblin: add buildElf function
+- guardian: add buildNutcracker function  
+- giant: add buildSnowman function (or similar themed variant)
+- wizard: add build{ThemeWizard} function
+
+This step is REQUIRED - without it, the themed entities will NOT render!"
+
 # ==========================================
 # PHASE G: Environment Objects
 # ==========================================
 echo ""
 echo "=== PHASE G: Environment Objects ==="
 
-echo "[7/13] Adding themed environment objects..."
+echo "[7/14] Adding themed environment objects..."
 run_copilot "7-environment" "Read $CONTEXT for project context, then read level-spec.json.
 
 Edit js/main-setup.js to support the new theme's environment objects.
@@ -237,7 +351,7 @@ If the theme uses standard trees/rocks, this step may just need adding the theme
 echo ""
 echo "=== PHASE H: Collision Configuration ==="
 
-echo "[8/13] Configuring collision detection..."
+echo "[8/14] Configuring collision detection..."
 USE_WALL=$(jq -r '.collision.useWallCollision' "$SPEC")
 
 if [ "$USE_WALL" = "true" ]; then
@@ -261,7 +375,7 @@ fi
 echo ""
 echo "=== PHASE I: Update index.html ==="
 
-echo "[9/13] Adding script tags to index.html..."
+echo "[9/14] Adding script tags to index.html..."
 run_copilot "9-script-tags" "Read $CONTEXT for project context, then read level-spec.json.
 
 Edit index.html to add script tags for the new files:
@@ -272,8 +386,12 @@ Edit index.html to add script tags for the new files:
 2. Find the levels section (search for 'level-11-easter.js' or '<!-- Levels -->') and add:
    <script src=\"js/levels/level-$LEVEL_NUM-$THEME.js\"></script>
 
-3. Find the entities section (search for 'entity-easter-bunny.js' or '<!-- Entities -->') and add script tags for each new entity file from spec.newEntities:
-   <script src=\"js/entities/entity-{id}.js\"></script>
+3. Find the entities section (search for 'entity-easter-bunny.js' or '<!-- Entities -->') and add script tags for:
+   a) Each new entity file from spec.newEntities:
+      <script src=\"js/entities/entity-{id}.js\"></script>
+   b) Each themed existing entity (where reskin:true in existingEntities):
+      <script src=\"js/entities/entity-{id}-$THEME.js\"></script>
+      For example: entity-goblin-$THEME.js, entity-guardian-$THEME.js, entity-giant-$THEME.js
 
 Add them in the appropriate sections, after the existing entries of the same type."
 
@@ -283,7 +401,7 @@ Add them in the appropriate sections, after the existing entries of the same typ
 echo ""
 echo "=== PHASE J: Level Dropdown ==="
 
-echo "[10/13] Adding level to dropdown menu..."
+echo "[10/14] Adding level to dropdown menu..."
 run_copilot "10-dropdown" "Read $CONTEXT for project context, then read level-spec.json.
 
 THIS IS CRITICAL - DO NOT SKIP.
@@ -303,7 +421,7 @@ Verify the option is inside the <select> element and properly formatted."
 echo ""
 echo "=== PHASE K: Wiki Verification ==="
 
-echo "[11/13] Verifying wiki..."
+echo "[11/14] Verifying wiki..."
 run_copilot "11-verify-wiki" "Use Chrome DevTools MCP to:
 
 1. Navigate to: file://$WORKSPACE/wiki/index.html
@@ -320,7 +438,7 @@ Report what you see and any issues."
 echo ""
 echo "=== PHASE L: Game Verification ==="
 
-echo "[12/13] Verifying game loads..."
+echo "[12/14] Verifying game loads..."
 run_copilot "12-verify-game-start" "Use Chrome DevTools MCP to:
 
 1. Navigate to: file://$WORKSPACE/index.html
@@ -330,7 +448,7 @@ run_copilot "12-verify-game-start" "Use Chrome DevTools MCP to:
 
 Report what you see."
 
-echo "[13/13] Testing level rendering..."
+echo "[13/14] Testing level rendering..."
 run_copilot "13-verify-level-render" "Use Chrome DevTools MCP to:
 
 1. Navigate to: file://$WORKSPACE/index.html

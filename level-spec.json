@@ -1,26 +1,49 @@
 {
   "levelNumber": 12,
-  "levelName": "Pirate Cove",
-  "themeName": "pirate",
-  "description": "Tropical pirate cove with ship battles and hidden treasure",
-  "wikiDescription": "Segler der Karibik! Kämpfe gegen Piraten und finde den versteckten Schatz in dieser tropischen Bucht.",
-  "mechanic": "Cannon battles - dodge cannonballs from ships while navigating the cove",
+  "levelName": "Christmas Village",
+  "themeName": "christmas",
+  "description": "Magical snowy Christmas village with festive enemies and the Evil Santa boss",
+  "wikiDescription": "Frohe Weihnachten! Erkunde ein verschneites Weihnachtsdorf und besiege den bösen Weihnachtsmann, der die Geschenke gestohlen hat.",
+  "mechanic": "Gift collection - collect presents scattered around the village to unlock the portal. When a present is collected, it spawns a circle of useful items around it (ammo, bombs, herzmen turrets). More presents = more supplies for the boss fight. DANGER: Some presents are decoys wrapped in darker paper - they explode when collected, dealing 1 damage to the player!",
 
   "colors": {
-    "skyColor": "0x87CEEB",
-    "fogColor": "0xADD8E6",
-    "fogDensity": "0.008",
-    "groundColor": "0xF4A460",
-    "hillColor": "0xDEB887",
-    "grassColor": "0x228B22",
-    "treeColor": "0x228B22"
+    "skyColor": "0x1a1a2e",
+    "fogColor": "0xc4d4e0",
+    "fogDensity": "0.012",
+    "groundColor": "0xfffafa",
+    "hillColor": "0xe8e8e8",
+    "grassColor": "0xffffff",
+    "treeColor": "0x1e5631",
+    "ambientLightColor": "0x4466aa",
+    "ambientLightIntensity": 0.4,
+    "directionalLightColor": "0xfff5e6",
+    "directionalLightIntensity": 0.6
   },
 
   "environment": {
-    "treeType": "palm",
-    "rockType": "coral",
-    "decorations": ["barrel", "anchor", "cannon"],
-    "hazards": ["whirlpool"]
+    "groundTexture": "snow",
+    "groundColor": "0xfffafa",
+    "treeType": "snow-pine",
+    "treeColor": "0x1e5631",
+    "treeSnowColor": "0xffffff",
+    "rockType": "snowrock",
+    "rockColor": "0xd3d3d3",
+    "decorations": [
+      { "id": "present", "colors": ["0xff0000", "0x00ff00", "0xffd700"], "ribbon": "0xffd700", "count": 15 },
+      { "id": "decoy-present", "colors": ["0x4a0000", "0x003300"], "ribbon": "0x333333", "count": 5, "explodes": true },
+      { "id": "snowman", "count": 8 },
+      { "id": "candycane", "colors": ["0xff0000", "0xffffff"], "count": 12 },
+      { "id": "christmas-tree", "lit": true, "ornamentColors": ["0xff0000", "0xffd700", "0x0000ff"], "count": 5 },
+      { "id": "lamppost", "light": true, "count": 6 },
+      { "id": "wreath", "count": 4 },
+      { "id": "gingerbread-house", "count": 2 }
+    ],
+    "hazards": ["icepatch"],
+    "effects": {
+      "snowfall": true,
+      "snowflakeCount": 200,
+      "snowflakeSpeed": 0.02
+    }
   },
 
   "collision": {
@@ -30,33 +53,37 @@
 
   "newEntities": [
     {
-      "id": "pirate",
-      "name": "Pirat",
+      "id": "evil-elf",
+      "name": "Böser Elf",
       "role": "critter",
-      "description": "Einfacher Piratengegner mit Cutlass. Patrouilliert die Küste und greift Spieler in der Nähe an.",
+      "description": "Ein bösartiger Elf in rot-grüner Kleidung mit spitzen Ohren. Einst ein Helfer des Weihnachtsmanns, jetzt vom bösen Santa verdorben.",
       "hp": 3,
       "damage": 1,
       "tags": ["Boden", "Nahkampf"]
     },
     {
-      "id": "pirate-captain",
-      "name": "Piratenkapitän",
+      "id": "evil-santa",
+      "name": "Böser Weihnachtsmann",
       "role": "boss",
-      "description": "Der gefürchtete Kapitän mit seinem Geisterschiff. Feuert Kanonenkugeln und ruft Verstärkung herbei.",
-      "hp": 60,
+      "description": "Der böse Weihnachtsmann auf seinem fliegenden Schlitten! Fliegt durch die Luft und wirft explodierende Geschenke herab. Ruft böse Elfen herbei.",
+      "hp": 70,
       "damage": 2,
-      "tags": ["Boss", "Fernkampf"]
+      "tags": ["Boss", "Fernkampf", "Fliegend"],
+      "flying": true,
+      "hasSledge": true
     }
   ],
 
   "existingEntities": {
-    "skeleton": { "reskin": true, "color": "0xD2B48C", "note": "Undead pirate crew" },
-    "guardian": { "reskin": false }
+    "goblin": { "reskin": true, "color": "0x228b22", "note": "Evil elves (green variant)" },
+    "guardian": { "reskin": true, "color": "0xb22222", "note": "Nutcracker soldiers" },
+    "giant": { "reskin": true, "color": "0xffffff", "note": "Evil snowman" },
+    "wizard": { "reskin": true, "color": "0xcc0000", "note": "Walking Evil Santa - red coat, white beard, no sledge, walks on ground" }
   },
 
   "features": {
-    "hasRiver": true,
-    "hasMountains": false,
+    "hasRiver": false,
+    "hasMountains": true,
     "hasTreasure": true,
     "hasMaterials": false
   },
@@ -71,9 +98,9 @@
   },
 
   "enemies": {
-    "critterCount": 15,
-    "rangedCount": 8,
-    "tankCount": 2,
+    "critterCount": 18,
+    "rangedCount": 10,
+    "tankCount": 3,
     "miniBossCount": 2
   }
 }
