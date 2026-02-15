@@ -1,8 +1,12 @@
 /**
  * Wiki Image Generator
  * 
- * Renders all game entities using Three.js and saves them as PNG files.
- * Run with: node generate-images.js
+ * Renders game entities using Three.js and saves them as PNG files.
+ * 
+ * Usage:
+ *   node generate-images.js              # Render ALL entities
+ *   node generate-images.js evil-elf     # Render ONLY 'evil-elf' entity
+ *   node generate-images.js goblin-christmas  # Render ONLY 'goblin-christmas' entity
  * 
  * Requirements: npm install puppeteer
  */
@@ -15,6 +19,9 @@ const WIKI_DIR = __dirname;
 const IMAGES_DIR = path.join(WIKI_DIR, 'images');
 const ENTITIES_FILE = path.join(WIKI_DIR, 'entities.json');
 
+// Get optional single entity ID from command line argument
+const SINGLE_ENTITY_ID = process.argv[2] || null;
+
 async function generateImages() {
     // Ensure images directory exists
     if (!fs.existsSync(IMAGES_DIR)) {
@@ -25,14 +32,25 @@ async function generateImages() {
     const entities = JSON.parse(fs.readFileSync(ENTITIES_FILE, 'utf8'));
     
     // Collect all entity IDs to render
-    const toRender = [
+    let toRender = [
         ...entities.mobs.map(e => ({ ...e, category: 'mobs' })),
         ...entities.items.map(e => ({ ...e, category: 'items' })),
         ...entities.hazards.map(e => ({ ...e, category: 'hazards' })),
         ...entities.environment.map(e => ({ ...e, category: 'environment' }))
     ];
 
-    console.log(`🎨 Generating ${toRender.length} entity images...\n`);
+    // Filter to single entity if specified
+    if (SINGLE_ENTITY_ID) {
+        toRender = toRender.filter(e => e.id === SINGLE_ENTITY_ID);
+        if (toRender.length === 0) {
+            console.error(`❌ Entity '${SINGLE_ENTITY_ID}' not found in entities.json`);
+            console.log(`   Make sure to add it to entities.json first!`);
+            process.exit(1);
+        }
+        console.log(`🎨 Generating image for: ${SINGLE_ENTITY_ID}\n`);
+    } else {
+        console.log(`🎨 Generating ${toRender.length} entity images...\n`);
+    }
 
     // Launch browser
     const browser = await puppeteer.launch({ 

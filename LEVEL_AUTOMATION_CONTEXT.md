@@ -60,6 +60,32 @@ Set `G.{theme}Theme = true` in level file. Terrain.js and main-setup.js use thes
 ### 4. German Language for Wiki
 All wiki descriptions must be in German.
 
+## Wiki Image Generation
+
+### Generate Single Image (Fast)
+```bash
+cd wiki && node generate-images.js <entity-id>
+# Example: node generate-images.js evil-elf
+# Example: node generate-images.js goblin-christmas
+```
+
+### Generate All Images (Slow)
+```bash
+cd wiki && node generate-images.js
+```
+
+### Visual Verification Harness
+Use `wiki/verify-entity.html?entity=<id>` to verify rendered entities:
+- Shows entity in 512x512 frame with checkered background
+- Displays entity ID prominently
+- Status indicator: green = rendered OK, red = missing renderer
+- Built-in checklist of what to look for
+
+**IMPORTANT**: The 512x512 size in the harness IS the correct wiki size. Do NOT scale entities just because they appear "small" - focus on:
+- All body parts present and connected
+- Colors match theme/description
+- Entity not cut off at edges
+
 ## Common Mistakes to Avoid
 
 - ❌ **Forgetting to add level to #start-level dropdown in index.html**

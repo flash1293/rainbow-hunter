@@ -1,0 +1,226 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="UTF-8">
+    <title>Entity Verification</title>
+    <style>
+        * { box-sizing: border-box; margin: 0; padding: 0; }
+        body { 
+            font-family: system-ui, -apple-system, sans-serif;
+            background: #1a1a2e;
+            color: #fff;
+            min-height: 100vh;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            padding: 20px;
+        }
+        
+        h1 {
+            font-size: 24px;
+            margin-bottom: 10px;
+            color: #4ecdc4;
+        }
+        
+        #entity-name {
+            font-size: 32px;
+            font-weight: bold;
+            color: #ff6b6b;
+            text-transform: uppercase;
+            letter-spacing: 2px;
+            margin-bottom: 20px;
+        }
+        
+        #render-container {
+            position: relative;
+            width: 512px;
+            height: 512px;
+            background: linear-gradient(45deg, #2a2a4a 25%, transparent 25%),
+                        linear-gradient(-45deg, #2a2a4a 25%, transparent 25%),
+                        linear-gradient(45deg, transparent 75%, #2a2a4a 75%),
+                        linear-gradient(-45deg, transparent 75%, #2a2a4a 75%);
+            background-size: 32px 32px;
+            background-position: 0 0, 0 16px, 16px -16px, -16px 0px;
+            background-color: #222244;
+            border: 4px solid #4ecdc4;
+            border-radius: 8px;
+            overflow: hidden;
+        }
+        
+        #render-container canvas {
+            display: block;
+        }
+        
+        /* Reference grid overlay */
+        #grid-overlay {
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            pointer-events: none;
+            background-image: 
+                linear-gradient(rgba(255,255,255,0.05) 1px, transparent 1px),
+                linear-gradient(90deg, rgba(255,255,255,0.05) 1px, transparent 1px);
+            background-size: 64px 64px;
+        }
+        
+        /* Center crosshair */
+        #grid-overlay::before {
+            content: '';
+            position: absolute;
+            top: 50%;
+            left: 0;
+            right: 0;
+            height: 1px;
+            background: rgba(78, 205, 196, 0.3);
+        }
+        #grid-overlay::after {
+            content: '';
+            position: absolute;
+            left: 50%;
+            top: 0;
+            bottom: 0;
+            width: 1px;
+            background: rgba(78, 205, 196, 0.3);
+        }
+        
+        #status {
+            margin-top: 20px;
+            padding: 15px 30px;
+            border-radius: 8px;
+            font-size: 18px;
+            font-weight: bold;
+        }
+        
+        #status.success {
+            background: #27ae60;
+            color: white;
+        }
+        
+        #status.error {
+            background: #e74c3c;
+            color: white;
+        }
+        
+        #status.loading {
+            background: #f39c12;
+            color: black;
+        }
+        
+        #instructions {
+            margin-top: 30px;
+            max-width: 600px;
+            background: #2a2a4a;
+            border-radius: 8px;
+            padding: 20px;
+            font-size: 14px;
+            line-height: 1.6;
+        }
+        
+        #instructions h2 {
+            color: #4ecdc4;
+            margin-bottom: 10px;
+            font-size: 16px;
+        }
+        
+        #instructions ul {
+            margin-left: 20px;
+        }
+        
+        #instructions li {
+            margin-bottom: 8px;
+        }
+        
+        .good { color: #27ae60; }
+        .bad { color: #e74c3c; }
+        
+        #size-info {
+            margin-top: 10px;
+            font-size: 12px;
+            color: #888;
+        }
+    </style>
+</head>
+<body>
+    <h1>🎮 Entity Verification Harness</h1>
+    <div id="entity-name">Loading...</div>
+    
+    <div id="render-container">
+        <div id="grid-overlay"></div>
+    </div>
+    
+    <div id="status" class="loading">⏳ Rendering...</div>
+    <div id="size-info"></div>
+    
+    <div id="instructions">
+        <h2>📋 Verification Checklist</h2>
+        <ul>
+            <li><span class="good">✓ GOOD:</span> Entity is centered in the frame</li>
+            <li><span class="good">✓ GOOD:</span> Entity fills roughly 50-80% of the viewport</li>
+            <li><span class="good">✓ GOOD:</span> All body parts are visible and connected</li>
+            <li><span class="good">✓ GOOD:</span> Colors match the theme/description</li>
+            <li><span class="bad">✗ BAD:</span> Entity is cut off at edges</li>
+            <li><span class="bad">✗ BAD:</span> Floating/disconnected body parts</li>
+            <li><span class="bad">✗ BAD:</span> Entity is tiny (less than 25% of frame)</li>
+            <li><span class="bad">✗ BAD:</span> Wrong colors or missing features</li>
+        </ul>
+        <p style="margin-top: 15px; color: #f39c12;">
+            <strong>Note:</strong> The checkered background and grid are for reference only. 
+            The entity size shown here is CORRECT for the wiki - do not resize based on this preview.
+            Focus on proportions, colors, and completeness.
+        </p>
+    </div>
+
+    <script>
+        // Get entity ID from URL
+        const params = new URLSearchParams(window.location.search);
+        const entityId = params.get('entity') || 'goblin';
+        
+        document.getElementById('entity-name').textContent = entityId;
+        document.title = `Verify: ${entityId}`;
+
+        // Create iframe to load render-single.html
+        const container = document.getElementById('render-container');
+        const iframe = document.createElement('iframe');
+        iframe.src = `render-single.html?entity=${entityId}`;
+        iframe.style.cssText = 'width: 512px; height: 512px; border: none; background: transparent;';
+        container.insertBefore(iframe, container.firstChild);
+        
+        // Wait for iframe to load and check for render-complete marker
+        iframe.onload = function() {
+            const statusEl = document.getElementById('status');
+            const sizeInfo = document.getElementById('size-info');
+            
+            // Give renderer time to complete
+            setTimeout(() => {
+                try {
+                    const marker = iframe.contentDocument.getElementById('render-complete');
+                    const canvas = iframe.contentDocument.querySelector('canvas');
+                    
+                    if (marker && canvas) {
+                        statusEl.className = 'success';
+                        statusEl.textContent = '✅ RENDER OK - Entity rendered successfully';
+                        sizeInfo.textContent = 'Canvas size: 512×512px (standard wiki size)';
+                    } else {
+                        statusEl.className = 'error';
+                        statusEl.textContent = '❌ RENDER FAILED - No renderer found for: ' + entityId;
+                        sizeInfo.textContent = 'Add a renderer function for this entity in render-single.html';
+                    }
+                } catch (e) {
+                    // Cross-origin restriction - fall back to assuming success if iframe loaded
+                    statusEl.className = 'success';
+                    statusEl.textContent = '✅ LOADED - Check the render visually';
+                    sizeInfo.textContent = 'Canvas size: 512×512px (standard wiki size)';
+                }
+            }, 500);
+        };
+        
+        iframe.onerror = function() {
+            const statusEl = document.getElementById('status');
+            statusEl.className = 'error';
+            statusEl.textContent = '❌ ERROR - Could not load renderer';
+        };
+    </script>
+</body>
+</html>

@@ -113,17 +113,27 @@ Look at similar existing renderers for the same role as reference. Make sure the
     echo "[Loop] Generating and verifying image for: $ENTITY_ID"
     run_copilot "wiki-verify-$ENTITY_ID" "Read $CONTEXT for project context.
 
-1. Run this command to generate the wiki image: cd wiki && node generate-images.js
+1. Generate ONLY this entity's wiki image (fast): cd wiki && node generate-images.js $ENTITY_ID
 
-2. Use Chrome DevTools MCP to navigate to: file://$WORKSPACE/wiki/render-single.html?entity=$ENTITY_ID
+2. Use Chrome DevTools MCP to navigate to: file://$WORKSPACE/wiki/verify-entity.html?entity=$ENTITY_ID
 
-3. Take a screenshot and examine it carefully.
+3. Take a screenshot. The verification harness shows:
+   - The entity name at the top
+   - A 512x512 render area with checkered background and grid
+   - A status indicator (green = OK, red = failed)
+   - A checklist of what to look for
 
-4. If the entity looks wrong (missing body parts, bad proportions, wrong colors, floating pieces, etc.), fix the renderer code in wiki/render-single.html and regenerate. 
+4. IMPORTANT SIZE NOTE: The entity size shown is CORRECT for the wiki. Do NOT resize entities just because they look small in the harness. The 512x512 canvas is the standard wiki image size.
 
-5. Iterate until the entity looks good - it should be recognizable as a '$ENTITY_ROLE' type enemy that fits the theme.
+5. Only fix if there are REAL problems:
+   - Missing body parts or floating/disconnected pieces
+   - Wrong colors that don't match the theme
+   - Entity is cut off at the edges
+   - Entity is truly tiny (less than 25% of the frame)
 
-Report what the final entity looks like."
+6. If fixes are needed, edit wiki/render-single.html and regenerate with: cd wiki && node generate-images.js $ENTITY_ID
+
+Report: Entity name, whether it rendered OK, and brief description of appearance."
 
 done
 
@@ -166,17 +176,21 @@ Make sure it's clearly themed but still recognizable as a variant of $ENTITY_ID.
         echo "[Loop] Generating and verifying image for: $THEMED_ID"
         run_copilot "wiki-verify-$THEMED_ID" "Read $CONTEXT for project context.
 
-1. Run this command to generate the wiki image: cd wiki && node generate-images.js
+1. Generate ONLY this entity's wiki image (fast): cd wiki && node generate-images.js $THEMED_ID
 
-2. Use Chrome DevTools MCP to navigate to: file://$WORKSPACE/wiki/render-single.html?entity=$THEMED_ID
+2. Use Chrome DevTools MCP to navigate to: file://$WORKSPACE/wiki/verify-entity.html?entity=$THEMED_ID
 
-3. Take a screenshot and examine it carefully.
+3. Take a screenshot. The verification harness shows the entity in a 512x512 frame with helpful indicators.
 
-4. If the entity looks wrong, fix the renderer code in wiki/render-single.html and regenerate.
+4. IMPORTANT SIZE NOTE: The entity size shown is CORRECT. Do NOT resize just because it looks small. Focus on:
+   - Does it look like a $THEME-themed version of $ENTITY_ID?
+   - Does it match the description: $ENTITY_NOTE?
+   - Are all body parts present and connected?
+   - Are the colors appropriate for the theme?
 
-5. It should look like a $THEME-themed version of $ENTITY_ID ($ENTITY_NOTE).
+5. Only fix REAL problems (missing parts, wrong colors, cut-off edges). Regenerate with: cd wiki && node generate-images.js $THEMED_ID
 
-Report what the final entity looks like."
+Report: Entity name, render status, and brief visual description."
     fi
 done
 
