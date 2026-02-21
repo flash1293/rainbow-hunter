@@ -347,6 +347,27 @@ function initGame() {
     // Check if this is a Christmas-themed level
     G.christmasTheme = G.levelConfig.christmasTheme || false;
     
+    // Check if this is a Crystal-themed level
+    G.crystalTheme = G.levelConfig.crystalTheme || false;
+    
+    // Crystal gem power-up state
+    G.playerSpeedBoost = 1;
+    G.playerSpeedBoostEnd = 0;
+    G.playerDamageBoost = 1;
+    G.playerDamageBoostEnd = 0;
+    G.playerShieldActive = false;
+    G.playerShieldEnd = 0;
+    G.player2SpeedBoost = 1;
+    G.player2SpeedBoostEnd = 0;
+    G.player2DamageBoost = 1;
+    G.player2DamageBoostEnd = 0;
+    G.player2ShieldActive = false;
+    G.player2ShieldEnd = 0;
+    G.playerInfiniteAmmo = false;
+    G.playerInfiniteAmmoEnd = 0;
+    G.player2InfiniteAmmo = false;
+    G.player2InfiniteAmmoEnd = 0;
+    
     // Three.js setup
     G.container = document.getElementById('gameCanvas');
     G.scene = new THREE.Scene();
@@ -524,12 +545,12 @@ function initGame() {
     G.grassColor = G.levelConfig.grassColor || 0x228B22;
 
     // Create terrain (use level-specific ground color and theme)
-    createGround(G.scene, THREE, G.levelConfig.groundColor, G.iceTheme, G.desertTheme, G.lavaTheme, G.waterTheme, G.candyTheme, G.graveyardTheme, G.ruinsTheme, G.computerTheme, G.christmasTheme);
-    createHills(G.scene, THREE, G.levelConfig.hills, G.hillColor, G.iceTheme, G.desertTheme, G.lavaTheme, G.waterTheme, G.candyTheme, G.graveyardTheme, G.ruinsTheme, G.computerTheme, G.christmasTheme);
+    createGround(G.scene, THREE, G.levelConfig.groundColor, G.iceTheme, G.desertTheme, G.lavaTheme, G.waterTheme, G.candyTheme, G.graveyardTheme, G.ruinsTheme, G.computerTheme, G.christmasTheme, G.crystalTheme);
+    createHills(G.scene, THREE, G.levelConfig.hills, G.hillColor, G.iceTheme, G.desertTheme, G.lavaTheme, G.waterTheme, G.candyTheme, G.graveyardTheme, G.ruinsTheme, G.computerTheme, G.christmasTheme, G.crystalTheme);
     
     // Mountains are optional (disabled in desert)
     if (G.levelConfig.hasMountains !== false && G.levelConfig.mountains && G.levelConfig.mountains.length > 0) {
-        createMountains(G.scene, THREE, G.levelConfig.mountains, G.candyTheme, G.graveyardTheme, G.ruinsTheme, G.computerTheme, G.enchantedTheme, G.easterTheme, G.christmasTheme);
+        createMountains(G.scene, THREE, G.levelConfig.mountains, G.candyTheme, G.graveyardTheme, G.ruinsTheme, G.computerTheme, G.enchantedTheme, G.easterTheme, G.christmasTheme, G.crystalTheme);
     }
     
     // Natural scenic mountains (backdrop around perimeter)

@@ -62,7 +62,7 @@
             damage: isGiantBullet ? 3 : 1 // Giant bullets deal 3x damage
         };
         G.bullets.push(bullet);
-        if (!godMode) G.ammo--;
+        if (!godMode && !G.playerInfiniteAmmo) G.ammo--;
         
         // Sync bullet to other player
         if (multiplayerManager && multiplayerManager.isConnected()) {
@@ -108,9 +108,9 @@
                 return;
             }
             
-            if (G.player2Ammo <= 0) return;
+            if (G.player2Ammo <= 0 && !G.player2InfiniteAmmo) return;
             
-            G.player2Ammo--;
+            if (!G.player2InfiniteAmmo) G.player2Ammo--;
             Audio.playShootSound();
             
             // Giant bullets are bigger and more powerful
@@ -186,7 +186,9 @@
                         
                         // Only host applies actual damage
                         if (!multiplayerManager || !multiplayerManager.isConnected() || multiplayerManager.isHost) {
-                            const damage = bullet.damage || 1;
+                            // Apply crystal gem damage boost if active
+                            const damageBoost = (bullet.isPlayer2 ? G.player2DamageBoost : G.playerDamageBoost) || 1;
+                            const damage = (bullet.damage || 1) * damageBoost;
                             gob.health -= damage;
                             gob.isChasing = true;
                             if (gob.health <= 0) {
@@ -222,7 +224,9 @@
                     
                     // Only host applies damage
                     if (!multiplayerManager || !multiplayerManager.isConnected() || multiplayerManager.isHost) {
-                        const damage = bullet.damage || 1;
+                        // Apply crystal gem damage boost if active
+                        const damageBoost = (bullet.isPlayer2 ? G.player2DamageBoost : G.playerDamageBoost) || 1;
+                        const damage = (bullet.damage || 1) * damageBoost;
                         G.dragon.health -= damage;
                         if (G.dragon.health <= 0 && G.dragon.alive) {
                             G.dragon.alive = false;
@@ -281,7 +285,9 @@
                         
                         // Only host applies damage
                         if (!multiplayerManager || !multiplayerManager.isConnected() || multiplayerManager.isHost) {
-                            const damage = bullet.damage || 1;
+                            // Apply crystal gem damage boost if active
+                            const damageBoost = (bullet.isPlayer2 ? G.player2DamageBoost : G.playerDamageBoost) || 1;
+                            const damage = (bullet.damage || 1) * damageBoost;
                             extraDragon.health -= damage;
                             if (extraDragon.health <= 0 && extraDragon.alive) {
                                 extraDragon.alive = false;

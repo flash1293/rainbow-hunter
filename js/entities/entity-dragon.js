@@ -30,6 +30,9 @@
             useGlitchStyle = true;
             dragonScaleTexture = null;
             dragonEyeTexture = null;
+        } else if (G.crystalTheme) {
+            dragonScaleTexture = textures.dragonScaleCrystal;
+            dragonEyeTexture = textures.dragonEyeCrystal;
         } else {
             dragonScaleTexture = textures.dragonScale;
             dragonEyeTexture = textures.dragonEye;

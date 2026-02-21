@@ -643,8 +643,8 @@
             const canPassMountains = G.waterTheme && G.player.isGliding;
             if (!canPassMountains) {
                 G.levelConfig.mountains.forEach(mtn => {
-                    // For graveyard, ruins, computer, enchanted, easter, and christmas theme walls, use rectangular (box) collision
-                    if (G.graveyardTheme || G.ruinsTheme || G.computerTheme || G.enchantedTheme || G.easterTheme || G.christmasTheme) {
+                    // For graveyard, ruins, computer, enchanted, easter, christmas, and crystal theme walls, use rectangular (box) collision
+                    if (G.graveyardTheme || G.ruinsTheme || G.computerTheme || G.enchantedTheme || G.easterTheme || G.christmasTheme || G.crystalTheme) {
                         const wallWidth = mtn.width;
                         // Use fixed depth of 2 for computer theme (matches visual), variable for others
                         const wallDepth = G.computerTheme ? 2 : Math.min(mtn.width * 0.15, 8);
@@ -788,7 +788,7 @@
             }
             
             if (distToGob < gob.radius + 1) {
-                if (!godMode && now - G.lastDamageTime > G.damageCooldown) {
+                if (!godMode && !G.playerShieldActive && now - G.lastDamageTime > G.damageCooldown) {
                     // Trigger giant attack animation and sound BEFORE damage
                     if (gob.isGiant) {
                         gob.isAttacking = true;
@@ -1306,6 +1306,143 @@
                     pickup.mesh.position.y = getTerrainHeight(pickup.x, pickup.z) + Math.sin(pickup.bobPhase) * 0.1;
                 }
             });
+        }
+        
+        // Crystal Gem Collection (crystal theme power-ups)
+        if (G.crystalTheme && G.crystalGems) {
+            G.crystalGems.forEach((gem, idx) => {
+                if (!gem.collected) {
+                    const dist = Math.sqrt(
+                        Math.pow(G.playerGroup.position.x - gem.x, 2) +
+                        Math.pow(G.playerGroup.position.z - gem.z, 2)
+                    );
+                    let collected = dist < gem.radius;
+                    let isPlayer2 = false;
+                    
+                    // Check player 2 in native splitscreen
+                    if (!collected && isNativeSplitscreen && G.player2Group) {
+                        const dist2 = Math.sqrt(
+                            Math.pow(G.player2Group.position.x - gem.x, 2) +
+                            Math.pow(G.player2Group.position.z - gem.z, 2)
+                        );
+                        if (dist2 < gem.radius) {
+                            collected = true;
+                            isPlayer2 = true;
+                        }
+                    }
+                    
+                    if (collected) {
+                        gem.collected = true;
+                        G.scene.remove(gem.mesh);
+                        Audio.playCollectSound();
+                        
+                        // Apply power-up based on gem type
+                        switch(gem.powerUp) {
+                            case 'speed':
+                                // Temporary speed boost
+                                if (isPlayer2) {
+                                    G.player2SpeedBoost = 1.5;
+                                    G.player2SpeedBoostEnd = Date.now() + gem.powerUpDuration;
+                                } else {
+                                    G.playerSpeedBoost = 1.5;
+                                    G.playerSpeedBoostEnd = Date.now() + gem.powerUpDuration;
+                                }
+                                break;
+                            case 'damage':
+                                // Temporary damage boost
+                                if (isPlayer2) {
+                                    G.player2DamageBoost = 2;
+                                    G.player2DamageBoostEnd = Date.now() + gem.powerUpDuration;
+                                } else {
+                                    G.playerDamageBoost = 2;
+                                    G.playerDamageBoostEnd = Date.now() + gem.powerUpDuration;
+                                }
+                                break;
+                            case 'shield':
+                                // Temporary shield (damage immunity)
+                                if (isPlayer2) {
+                                    G.player2ShieldActive = true;
+                                    G.player2ShieldEnd = Date.now() + gem.powerUpDuration;
+                                } else {
+                                    G.playerShieldActive = true;
+                                    G.playerShieldEnd = Date.now() + gem.powerUpDuration;
+                                }
+                                break;
+                            case 'ammo':
+                                // Instant ammo refill
+                                if (isPlayer2) {
+                                    G.player2Ammo = Math.min(G.player2Ammo + 25, G.maxAmmo);
+                                } else {
+                                    G.ammo = Math.min(G.ammo + 25, G.maxAmmo);
+                                }
+                                break;
+                            case 'infiniteAmmo':
+                                // Temporary infinite ammo
+                                if (isPlayer2) {
+                                    G.player2InfiniteAmmo = true;
+                                    G.player2InfiniteAmmoEnd = Date.now() + gem.powerUpDuration;
+                                } else {
+                                    G.playerInfiniteAmmo = true;
+                                    G.playerInfiniteAmmoEnd = Date.now() + gem.powerUpDuration;
+                                }
+                                break;
+                        }
+                        
+                        // Notify other player in multiplayer
+                        if (multiplayerManager && multiplayerManager.isConnected()) {
+                            multiplayerManager.sendGameEvent('itemCollected', { type: 'crystalGem', index: idx });
+                        }
+                    }
+                }
+            });
+            
+            // Animate uncollected gems (bob and rotate)
+            G.crystalGems.forEach((gem) => {
+                if (!gem.collected && gem.mesh) {
+                    gem.bobPhase = (gem.bobPhase || 0) + 0.05;
+                    const baseHeight = getTerrainHeight(gem.x, gem.z);
+                    gem.mesh.position.y = baseHeight + Math.sin(gem.bobPhase) * 0.2;
+                    
+                    // Rotate the gem
+                    if (gem.gem) {
+                        gem.gem.rotation.y += gem.rotationSpeed;
+                    }
+                    if (gem.core) {
+                        gem.core.rotation.y -= gem.rotationSpeed * 1.5;
+                    }
+                    // Pulse the aura
+                    if (gem.aura) {
+                        gem.aura.scale.setScalar(1 + Math.sin(gem.bobPhase * 2) * 0.1);
+                    }
+                }
+            });
+            
+            // Update power-up timers
+            const now = Date.now();
+            if (G.playerSpeedBoost && now >= G.playerSpeedBoostEnd) {
+                G.playerSpeedBoost = 1;
+            }
+            if (G.playerDamageBoost && now >= G.playerDamageBoostEnd) {
+                G.playerDamageBoost = 1;
+            }
+            if (G.playerShieldActive && now >= G.playerShieldEnd) {
+                G.playerShieldActive = false;
+            }
+            if (G.player2SpeedBoost && now >= G.player2SpeedBoostEnd) {
+                G.player2SpeedBoost = 1;
+            }
+            if (G.player2DamageBoost && now >= G.player2DamageBoostEnd) {
+                G.player2DamageBoost = 1;
+            }
+            if (G.player2ShieldActive && now >= G.player2ShieldEnd) {
+                G.player2ShieldActive = false;
+            }
+            if (G.playerInfiniteAmmo && now >= G.playerInfiniteAmmoEnd) {
+                G.playerInfiniteAmmo = false;
+            }
+            if (G.player2InfiniteAmmo && now >= G.player2InfiniteAmmoEnd) {
+                G.player2InfiniteAmmo = false;
+            }
         }
         
         // Portal collision - level switching (only if portal exists)

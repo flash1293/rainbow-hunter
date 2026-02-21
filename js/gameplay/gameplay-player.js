@@ -371,7 +371,9 @@
             const moveScale = G.player.gamepadMoveScale > 0 ? G.player.gamepadMoveScale : 1;
             // Apply lag slowdown for computer level
             const lagFactor = (typeof getLagSlowdownFactor === 'function') ? getLagSlowdownFactor() : 1;
-            const effectiveSpeed = G.player.speed * moveScale * lagFactor;
+            // Apply crystal gem speed boost
+            const speedBoost = G.playerSpeedBoost || 1;
+            const effectiveSpeed = G.player.speed * moveScale * lagFactor * speedBoost;
             if (G.keys.ArrowUp || G.keys.w) {
                 G.playerGroup.position.x += Math.sin(G.player.rotation) * effectiveSpeed;
                 G.playerGroup.position.z += Math.cos(G.player.rotation) * effectiveSpeed;
@@ -610,8 +612,8 @@
             // Check mountains/walls
             if (!collided && G.levelConfig.mountains && G.levelConfig.mountains.length > 0) {
                 for (const mtn of G.levelConfig.mountains) {
-                    if (G.graveyardTheme || G.ruinsTheme || G.computerTheme || G.enchantedTheme || G.easterTheme || G.christmasTheme) {
-                        // Box collision for graveyard, ruins, computer, enchanted, easter, and christmas walls
+                    if (G.graveyardTheme || G.ruinsTheme || G.computerTheme || G.enchantedTheme || G.easterTheme || G.christmasTheme || G.crystalTheme) {
+                        // Box collision for graveyard, ruins, computer, enchanted, easter, christmas, and crystal walls
                         const wallWidth = mtn.width;
                         // Use fixed depth of 2 for computer theme (matches visual), variable for others
                         const wallDepth = G.computerTheme ? 2 : Math.min(mtn.width * 0.15, 8);

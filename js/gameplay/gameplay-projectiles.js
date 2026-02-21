@@ -856,7 +856,7 @@
             
             if (dist < tornado.radius + 0.8) {
                 // Player hit by tornado
-                if (!godMode) {
+                if (!godMode && !G.playerShieldActive) {
                     G.playerHealth -= tornado.damage;
                     G.damageFlashTime = Date.now();
                     
@@ -1095,7 +1095,7 @@
             
             if (distToPlayer < fireball.radius) {
                 // Only host applies damage to host player
-                if (!godMode && (!multiplayerManager || !multiplayerManager.isConnected() || multiplayerManager.isHost)) {
+                if (!godMode && !G.playerShieldActive && (!multiplayerManager || !multiplayerManager.isConnected() || multiplayerManager.isHost)) {
                     G.playerHealth -= fireball.damage;
                     G.damageFlashTime = Date.now();
                     if (G.playerHealth <= 0) {
@@ -1194,27 +1194,43 @@
             const inGracePeriod = elapsed < graceTime;
             
             // Check collision with mountains (if level has them) - skip during grace period
-            // Also skip for wizard fireballs, scythe waves, and dragon fireballs - they pass through walls
+            // In crystal theme, ALL fireballs collide with walls (including dragon fireballs)
+            // In other themes, wizard fireballs, scythe waves, and dragon fireballs pass through walls
             let hitMountain = false;
-            if (!inGracePeriod && !fireball.isWizardFireball && !fireball.isScytheWave && !fireball.isDragonFireball && G.levelConfig.mountains && G.levelConfig.mountains.length > 0) {
+            const skipWallCollision = !G.crystalTheme && (fireball.isWizardFireball || fireball.isScytheWave || fireball.isDragonFireball);
+            if (!inGracePeriod && !skipWallCollision && G.levelConfig.mountains && G.levelConfig.mountains.length > 0) {
                 for (const mtn of G.levelConfig.mountains) {
-                    const distToMountain = Math.sqrt(
-                        (fireball.mesh.position.x - mtn.x) ** 2 +
-                        (fireball.mesh.position.z - mtn.z) ** 2
-                    );
-                    // Mountain collision: within radius AND below mountain height
-                    const mtnHeight = mtn.height || 15;
-                    if (distToMountain < mtn.width / 2 && fireball.mesh.position.y < mtnHeight) {
-                        hitMountain = true;
-                        break;
+                    // Use box collision for themed levels (crystal, graveyard, etc)
+                    if (G.crystalTheme || G.graveyardTheme || G.easterTheme || G.christmasTheme) {
+                        const halfWidth = mtn.width / 2;
+                        const halfDepth = (mtn.depth || 8) / 2;
+                        const dx = Math.abs(fireball.mesh.position.x - mtn.x);
+                        const dz = Math.abs(fireball.mesh.position.z - mtn.z);
+                        const mtnHeight = mtn.height || 25;
+                        if (dx < halfWidth && dz < halfDepth && fireball.mesh.position.y < mtnHeight) {
+                            hitMountain = true;
+                            break;
+                        }
+                    } else {
+                        // Original circular collision for cone-shaped mountains
+                        const distToMountain = Math.sqrt(
+                            (fireball.mesh.position.x - mtn.x) ** 2 +
+                            (fireball.mesh.position.z - mtn.z) ** 2
+                        );
+                        // Mountain collision: within radius AND below mountain height
+                        const mtnHeight = mtn.height || 15;
+                        if (distToMountain < mtn.width / 2 && fireball.mesh.position.y < mtnHeight) {
+                            hitMountain = true;
+                            break;
+                        }
                     }
                 }
             }
             
             // Check collision with canyon walls - skip during grace period
-            // Also skip for wizard fireballs, scythe waves, and dragon fireballs
+            // In crystal theme, all fireballs collide
             let hitCanyonWall = false;
-            if (!inGracePeriod && !fireball.isWizardFireball && !fireball.isScytheWave && !fireball.isDragonFireball) {
+            if (!inGracePeriod && !skipWallCollision) {
                 for (const wall of G.canyonWalls) {
                     // Transform fireball position into wall's local space
                     const cos = Math.cos(-wall.rotation);
@@ -1236,9 +1252,9 @@
             }
 
             // Check collision with impassable cliffs - skip during grace period
-            // Also skip for wizard fireballs, scythe waves, and dragon fireballs
+            // In crystal theme, all fireballs collide
             let hitCliff = false;
-            if (!inGracePeriod && !fireball.isWizardFireball && !fireball.isScytheWave && !fireball.isDragonFireball) {
+            if (!inGracePeriod && !skipWallCollision) {
                 for (const cliff of G.impassableCliffs) {
                     const distToCliff = Math.sqrt(
                         (fireball.mesh.position.x - cliff.x) ** 2 +
@@ -1415,7 +1431,7 @@
             santa.mesh.position.z
         );
         
-        // Calculate direction to target - lobbed trajectory
+        // Calculate direction to target - aim directly at player like Easter eggs
         const dirX = targetPlayer.position.x - presentGroup.position.x;
         const dirY = (targetPlayer.position.y + 1) - presentGroup.position.y;
         const dirZ = targetPlayer.position.z - presentGroup.position.z;
@@ -1423,16 +1439,14 @@
         
         G.scene.add(presentGroup);
         
-        // Medium speed with ballistic arc
+        // Medium speed for presents - direct targeting like Easter eggs
         const speed = 0.22;
-        const horizontalDist = Math.sqrt(dirX * dirX + dirZ * dirZ);
-        const arcHeight = 0.15 + (horizontalDist / length) * 0.1; // Higher arc for farther targets
         
         G.fireballs.push({
             mesh: presentGroup,
             velocity: new THREE.Vector3(
                 (dirX / length) * speed,
-                arcHeight, // Strong upward arc for ballistic trajectory
+                (dirY / length) * speed, // Direct targeting, no faulty arc
                 (dirZ / length) * speed
             ),
             radius: 2.0,

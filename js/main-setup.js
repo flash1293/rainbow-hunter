@@ -833,6 +833,7 @@ function initSetup() {
                 healthPickups: G.healthPickups.map(h => h.collected),
                 scarabs: G.scarabPickups.map(s => s.collected),
                 candy: G.candyPickups ? G.candyPickups.map(c => c.collected) : [],
+                christmasPresents: G.christmasPresents ? G.christmasPresents.map(p => p.collected) : [],
                 kiteCollected: G.worldKiteCollected,
                 icePowerCollected: G.icePowerCollected
             },
@@ -1487,6 +1488,16 @@ function initSetup() {
                     }
                 });
             }
+            
+            // Update christmas presents collection state
+            if (data.items.christmasPresents && G.christmasPresents) {
+                data.items.christmasPresents.forEach((collected, i) => {
+                    if (G.christmasPresents[i] && collected && !G.christmasPresents[i].collected) {
+                        G.christmasPresents[i].collected = true;
+                        G.scene.remove(G.christmasPresents[i].mesh);
+                    }
+                });
+            }
         }
         
         // Update scarab count from game state
@@ -2003,6 +2014,62 @@ function initSetup() {
             cable.position.y = 0.1;
             cable.rotation.x = Math.PI / 2;
             treeGroup.add(cable);
+            
+        } else if (G.crystalTheme) {
+            // Crystal Formation - glowing crystalline structures
+            const crystalColors = [0xff4488, 0x44aaff, 0x44ff88, 0xaa44ff];
+            const mainColor = crystalColors[Math.floor(Math.random() * crystalColors.length)];
+            const height = 2 + Math.random() * 2;
+            
+            // Main crystal spire
+            const mainGeometry = new THREE.ConeGeometry(0.4, height, 6);
+            const mainMaterial = new THREE.MeshLambertMaterial({ 
+                color: mainColor,
+                emissive: mainColor,
+                emissiveIntensity: 0.3,
+                transparent: true,
+                opacity: 0.85
+            });
+            const mainCrystal = new THREE.Mesh(mainGeometry, mainMaterial);
+            mainCrystal.position.y = height / 2;
+            mainCrystal.castShadow = true;
+            treeGroup.add(mainCrystal);
+            
+            // Secondary smaller crystals around base
+            for (let i = 0; i < 3 + Math.floor(Math.random() * 3); i++) {
+                const subColor = crystalColors[Math.floor(Math.random() * crystalColors.length)];
+                const subHeight = 0.5 + Math.random() * 1.5;
+                const subGeometry = new THREE.ConeGeometry(0.15, subHeight, 5);
+                const subMaterial = new THREE.MeshLambertMaterial({ 
+                    color: subColor,
+                    emissive: subColor,
+                    emissiveIntensity: 0.4,
+                    transparent: true,
+                    opacity: 0.8
+                });
+                const subCrystal = new THREE.Mesh(subGeometry, subMaterial);
+                const angle = (i / 5) * Math.PI * 2 + Math.random();
+                subCrystal.position.set(
+                    Math.cos(angle) * (0.3 + Math.random() * 0.3),
+                    subHeight / 2,
+                    Math.sin(angle) * (0.3 + Math.random() * 0.3)
+                );
+                subCrystal.rotation.x = (Math.random() - 0.5) * 0.3;
+                subCrystal.rotation.z = (Math.random() - 0.5) * 0.3;
+                subCrystal.castShadow = true;
+                treeGroup.add(subCrystal);
+            }
+            
+            // Glow effect at base
+            const glowGeometry = new THREE.SphereGeometry(0.6, 8, 8);
+            const glowMaterial = new THREE.MeshBasicMaterial({ 
+                color: mainColor,
+                transparent: true,
+                opacity: 0.15
+            });
+            const glow = new THREE.Mesh(glowGeometry, glowMaterial);
+            glow.position.y = 0.3;
+            treeGroup.add(glow);
             
         } else if (treeType === 'cactus') {
             // Desert cactus
@@ -4044,6 +4111,241 @@ function initSetup() {
         }
     }
 
+    // Crystal Gem Collectibles - collect for temporary power-ups
+    G.crystalGems = [];
+    if (G.crystalTheme && G.levelConfig.gemPositions) {
+        const gemColors = {
+            'amethyst': { color: 0xaa44ff, powerUp: 'speed', duration: 16000 },
+            'ruby': { color: 0xff4466, powerUp: 'damage', duration: 20000 },
+            'sapphire': { color: 0x4488ff, powerUp: 'shield', duration: 12000 },
+            'emerald': { color: 0x44ff88, powerUp: 'ammo', duration: 0 },
+            'diamond': { color: 0xccffff, powerUp: 'infiniteAmmo', duration: 24000 }
+        };
+        
+        G.levelConfig.gemPositions.forEach((pos, idx) => {
+            const gemGroup = new THREE.Group();
+            const gemType = pos.color || 'amethyst';
+            const gemData = gemColors[gemType] || gemColors['amethyst'];
+            
+            // Main gem - large octahedron
+            const gemGeometry = new THREE.OctahedronGeometry(0.8, 0);
+            const gemMaterial = new THREE.MeshLambertMaterial({
+                color: gemData.color,
+                emissive: gemData.color,
+                emissiveIntensity: 0.5,
+                transparent: true,
+                opacity: 0.9
+            });
+            const gem = new THREE.Mesh(gemGeometry, gemMaterial);
+            gem.position.y = 1.2;
+            gem.castShadow = true;
+            gemGroup.add(gem);
+            
+            // Inner glow core
+            const coreGeometry = new THREE.OctahedronGeometry(0.4, 0);
+            const coreMaterial = new THREE.MeshBasicMaterial({
+                color: 0xffffff,
+                transparent: true,
+                opacity: 0.4
+            });
+            const core = new THREE.Mesh(coreGeometry, coreMaterial);
+            core.position.y = 1.2;
+            gemGroup.add(core);
+            
+            // Outer glow aura
+            const auraGeometry = new THREE.SphereGeometry(1.2, 16, 16);
+            const auraMaterial = new THREE.MeshBasicMaterial({
+                color: gemData.color,
+                transparent: true,
+                opacity: 0.15,
+                side: THREE.DoubleSide
+            });
+            const aura = new THREE.Mesh(auraGeometry, auraMaterial);
+            aura.position.y = 1.2;
+            gemGroup.add(aura);
+            
+            // Pedestal crystal base
+            const baseGeometry = new THREE.ConeGeometry(0.3, 0.5, 6);
+            const baseMaterial = new THREE.MeshLambertMaterial({
+                color: 0x4a4a6a,
+                emissive: gemData.color,
+                emissiveIntensity: 0.2
+            });
+            const base = new THREE.Mesh(baseGeometry, baseMaterial);
+            base.position.y = 0.25;
+            gemGroup.add(base);
+            
+            const terrainHeight = getTerrainHeight(pos.x, pos.z);
+            gemGroup.position.set(pos.x, terrainHeight, pos.z);
+            G.scene.add(gemGroup);
+            
+            G.crystalGems.push({
+                mesh: gemGroup,
+                gem: gem,
+                core: core,
+                aura: aura,
+                collected: false,
+                radius: 1.8,
+                x: pos.x,
+                z: pos.z,
+                gemType: gemType,
+                powerUp: gemData.powerUp,
+                powerUpDuration: gemData.duration,
+                bobPhase: Math.random() * Math.PI * 2,
+                rotationSpeed: 0.02 + Math.random() * 0.01
+            });
+        });
+    }
+
+    // Crystal Cave Decorations - stalactites, stalagmites, glowing mushrooms
+    G.crystalDecorations = [];
+    if (G.crystalTheme) {
+        const crystalColors = [0xff4488, 0x44aaff, 0x44ff88, 0xaa44ff];
+        
+        // Large crystal pillars throughout the cave
+        for (let i = 0; i < 20; i++) {
+            const pillarGroup = new THREE.Group();
+            const pillarColor = crystalColors[Math.floor(Math.random() * crystalColors.length)];
+            const pillarHeight = 3 + Math.random() * 5;
+            
+            // Main crystal pillar
+            const pillarGeometry = new THREE.ConeGeometry(0.5 + Math.random() * 0.5, pillarHeight, 6);
+            const pillarMaterial = new THREE.MeshLambertMaterial({ 
+                color: pillarColor,
+                emissive: pillarColor,
+                emissiveIntensity: 0.35,
+                transparent: true,
+                opacity: 0.8
+            });
+            const pillar = new THREE.Mesh(pillarGeometry, pillarMaterial);
+            pillar.position.y = pillarHeight / 2;
+            pillar.castShadow = true;
+            pillarGroup.add(pillar);
+            
+            // Glow sphere at base
+            const glowGeometry = new THREE.SphereGeometry(1, 8, 8);
+            const glowMaterial = new THREE.MeshBasicMaterial({ 
+                color: pillarColor,
+                transparent: true,
+                opacity: 0.15
+            });
+            const glow = new THREE.Mesh(glowGeometry, glowMaterial);
+            glow.position.y = 0.5;
+            pillarGroup.add(glow);
+            
+            const pillarX = (Math.random() - 0.5) * 180;
+            const pillarZ = 170 - Math.random() * 340;
+            const terrainHeight = getTerrainHeight(pillarX, pillarZ);
+            pillarGroup.position.set(pillarX, terrainHeight, pillarZ);
+            G.scene.add(pillarGroup);
+            
+            G.crystalDecorations.push({ mesh: pillarGroup, type: 'pillar', x: pillarX, z: pillarZ });
+        }
+        
+        // Glowing cave mushrooms
+        for (let i = 0; i < 30; i++) {
+            const mushroomGroup = new THREE.Group();
+            const mushColors = [0x00ffaa, 0x44ffcc, 0x88ffdd];
+            const mushColor = mushColors[Math.floor(Math.random() * mushColors.length)];
+            
+            // Stem
+            const stemGeometry = new THREE.CylinderGeometry(0.05, 0.08, 0.3, 8);
+            const stemMaterial = new THREE.MeshLambertMaterial({ color: 0x6a5a8a });
+            const stem = new THREE.Mesh(stemGeometry, stemMaterial);
+            stem.position.y = 0.15;
+            mushroomGroup.add(stem);
+            
+            // Cap (glowing)
+            const capGeometry = new THREE.SphereGeometry(0.15, 8, 8, 0, Math.PI * 2, 0, Math.PI * 0.6);
+            const capMaterial = new THREE.MeshLambertMaterial({ 
+                color: mushColor,
+                emissive: mushColor,
+                emissiveIntensity: 0.6
+            });
+            const cap = new THREE.Mesh(capGeometry, capMaterial);
+            cap.position.y = 0.32;
+            mushroomGroup.add(cap);
+            
+            const mushX = (Math.random() - 0.5) * 180;
+            const mushZ = 170 - Math.random() * 340;
+            const terrainHeight = getTerrainHeight(mushX, mushZ);
+            mushroomGroup.position.set(mushX, terrainHeight, mushZ);
+            G.scene.add(mushroomGroup);
+            
+            G.crystalDecorations.push({ mesh: mushroomGroup, type: 'mushroom', x: mushX, z: mushZ });
+        }
+        
+        // Gem deposits - clusters of collectible-looking gems
+        for (let i = 0; i < 15; i++) {
+            const gemClusterGroup = new THREE.Group();
+            
+            // Multiple gems in a cluster
+            for (let j = 0; j < 4 + Math.floor(Math.random() * 4); j++) {
+                const gemColor = crystalColors[Math.floor(Math.random() * crystalColors.length)];
+                const gemSize = 0.15 + Math.random() * 0.2;
+                const gemGeometry = new THREE.OctahedronGeometry(gemSize, 0);
+                const gemMaterial = new THREE.MeshLambertMaterial({ 
+                    color: gemColor,
+                    emissive: gemColor,
+                    emissiveIntensity: 0.6,
+                    transparent: true,
+                    opacity: 0.9
+                });
+                const gem = new THREE.Mesh(gemGeometry, gemMaterial);
+                gem.position.set(
+                    (Math.random() - 0.5) * 0.8,
+                    gemSize + Math.random() * 0.3,
+                    (Math.random() - 0.5) * 0.8
+                );
+                gem.rotation.y = Math.random() * Math.PI;
+                gemClusterGroup.add(gem);
+            }
+            
+            const clusterX = (Math.random() - 0.5) * 160;
+            const clusterZ = 160 - Math.random() * 320;
+            const terrainHeight = getTerrainHeight(clusterX, clusterZ);
+            gemClusterGroup.position.set(clusterX, terrainHeight, clusterZ);
+            G.scene.add(gemClusterGroup);
+            
+            G.crystalDecorations.push({ mesh: gemClusterGroup, type: 'gem_cluster', x: clusterX, z: clusterZ });
+        }
+        
+        // Stalactites and stalagmites near walls
+        for (let i = 0; i < 40; i++) {
+            const formationGroup = new THREE.Group();
+            const formColor = 0x5a5a7a;
+            const isStalactite = Math.random() > 0.5;
+            const height = 0.5 + Math.random() * 1.5;
+            
+            const formGeometry = new THREE.ConeGeometry(0.1 + Math.random() * 0.1, height, 6);
+            const formMaterial = new THREE.MeshLambertMaterial({ color: formColor });
+            const formation = new THREE.Mesh(formGeometry, formMaterial);
+            
+            if (isStalactite) {
+                formation.rotation.x = Math.PI; // Point down
+                formation.position.y = 5 + Math.random() * 3; // High up
+            } else {
+                formation.position.y = height / 2;
+            }
+            formation.castShadow = true;
+            formationGroup.add(formation);
+            
+            // Place near edges (high x or z values)
+            const side = Math.floor(Math.random() * 4);
+            let formX, formZ;
+            if (side === 0) { formX = -60 - Math.random() * 20; formZ = (Math.random() - 0.5) * 300; }
+            else if (side === 1) { formX = 60 + Math.random() * 20; formZ = (Math.random() - 0.5) * 300; }
+            else if (side === 2) { formX = (Math.random() - 0.5) * 140; formZ = -180 - Math.random() * 20; }
+            else { formX = (Math.random() - 0.5) * 140; formZ = 180 + Math.random() * 20; }
+            
+            const terrainHeight = getTerrainHeight(formX, formZ);
+            formationGroup.position.set(formX, isStalactite ? 0 : terrainHeight, formZ);
+            G.scene.add(formationGroup);
+            
+            G.crystalDecorations.push({ mesh: formationGroup, type: isStalactite ? 'stalactite' : 'stalagmite', x: formX, z: formZ });
+        }
+    }
+
     // Rocks - use level config if available, otherwise use default positions
     G.rocks = [];
     G.rockPositions = G.levelConfig.rockPositions || [
@@ -4055,7 +4357,60 @@ function initSetup() {
     G.rockPositions.forEach(pos => {
         let rockMesh;
         
-        if (G.computerTheme) {
+        if (G.crystalTheme) {
+            // Glowing gem cluster - like amethyst geode
+            const crystalGroup = new THREE.Group();
+            const crystalColors = [0xff4488, 0x44aaff, 0x44ff88, 0xaa44ff];
+            const mainColor = crystalColors[Math.floor(Math.random() * crystalColors.length)];
+            
+            // Geode shell base - dark rock
+            const shellGeometry = new THREE.SphereGeometry(0.5, 8, 8, 0, Math.PI * 2, 0, Math.PI * 0.7);
+            const shellMaterial = new THREE.MeshLambertMaterial({ color: 0x2a2a4a });
+            const shell = new THREE.Mesh(shellGeometry, shellMaterial);
+            shell.castShadow = true;
+            crystalGroup.add(shell);
+            
+            // Inner crystal cluster
+            for (let i = 0; i < 5; i++) {
+                const gemColor = crystalColors[Math.floor(Math.random() * crystalColors.length)];
+                const gemHeight = 0.2 + Math.random() * 0.4;
+                const gemGeometry = new THREE.ConeGeometry(0.08, gemHeight, 5);
+                const gemMaterial = new THREE.MeshLambertMaterial({ 
+                    color: gemColor,
+                    emissive: gemColor,
+                    emissiveIntensity: 0.5
+                });
+                const gem = new THREE.Mesh(gemGeometry, gemMaterial);
+                const angle = (i / 5) * Math.PI * 2;
+                gem.position.set(
+                    Math.cos(angle) * 0.15,
+                    0.3 + gemHeight / 2,
+                    Math.sin(angle) * 0.15
+                );
+                gem.rotation.x = (Math.random() - 0.5) * 0.5;
+                gem.rotation.z = (Math.random() - 0.5) * 0.5;
+                crystalGroup.add(gem);
+            }
+            
+            // Center large gem
+            const centerGemGeometry = new THREE.OctahedronGeometry(0.2, 0);
+            const centerGemMaterial = new THREE.MeshLambertMaterial({ 
+                color: mainColor,
+                emissive: mainColor,
+                emissiveIntensity: 0.6,
+                transparent: true,
+                opacity: 0.9
+            });
+            const centerGem = new THREE.Mesh(centerGemGeometry, centerGemMaterial);
+            centerGem.position.y = 0.5;
+            crystalGroup.add(centerGem);
+            
+            const terrainHeight = getTerrainHeight(pos.x, pos.z);
+            crystalGroup.position.set(pos.x, terrainHeight, pos.z);
+            G.scene.add(crystalGroup);
+            rockMesh = crystalGroup;
+            
+        } else if (G.computerTheme) {
             // Data crystal / corrupted data block
             const crystalGroup = new THREE.Group();
             const crystalColors = [0x00FFFF, 0xFF00FF, 0x00FF00, 0xFFFF00];

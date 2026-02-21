@@ -432,6 +432,37 @@ function initLoop() {
             nextYPos += 25;
         }
         
+        // Crystal gems display (only if crystal theme)
+        if (G.crystalTheme && G.crystalGems) {
+            const total = G.crystalGems.length;
+            const collected = G.crystalGems.filter(g => g.collected).length;
+            drawTextWithOutline(G.hudCtx, `Edelsteine: ${collected}/${total}`, 10, nextYPos, '#AA44FF', '#440066');
+            nextYPos += 25;
+        }
+        
+        // Active power-up indicators (show for all levels when buffs are active)
+        const buffNow = Date.now();
+        if (G.playerSpeedBoost > 1 && G.playerSpeedBoostEnd > buffNow) {
+            const remaining = Math.ceil((G.playerSpeedBoostEnd - buffNow) / 1000);
+            drawTextWithOutline(G.hudCtx, `⚡ Geschwindigkeit: ${remaining}s`, 10, nextYPos, '#AA44FF', '#440066');
+            nextYPos += 20;
+        }
+        if (G.playerDamageBoost > 1 && G.playerDamageBoostEnd > buffNow) {
+            const remaining = Math.ceil((G.playerDamageBoostEnd - buffNow) / 1000);
+            drawTextWithOutline(G.hudCtx, `💎 Schaden x2: ${remaining}s`, 10, nextYPos, '#FF4466', '#660022');
+            nextYPos += 20;
+        }
+        if (G.playerShieldActive && G.playerShieldEnd > buffNow) {
+            const remaining = Math.ceil((G.playerShieldEnd - buffNow) / 1000);
+            drawTextWithOutline(G.hudCtx, `🛡️ Schild: ${remaining}s`, 10, nextYPos, '#4488FF', '#002266');
+            nextYPos += 20;
+        }
+        if (G.playerInfiniteAmmo && G.playerInfiniteAmmoEnd > buffNow) {
+            const remaining = Math.ceil((G.playerInfiniteAmmoEnd - buffNow) / 1000);
+            drawTextWithOutline(G.hudCtx, `💠 Unendlich Schüsse: ${remaining}s`, 10, nextYPos, '#CCFFFF', '#006666');
+            nextYPos += 20;
+        }
+        
         // Health display
         if (useOutline) {
             drawTextWithOutline(G.hudCtx, `Leben: ${G.playerHealth}/${G.maxPlayerHealth}`, 10, nextYPos, defaultTextColor, outlineColor);
@@ -1065,6 +1096,43 @@ function initLoop() {
         const placedCount = G.placedHerzmen ? G.placedHerzmen.length : 0;
         G.hudCtx.fillStyle = '#FF69B4';
         G.hudCtx.fillText(`💕 ${herzmen} (${placedCount} aktiv)`, x, y);
+        G.hudCtx.fillStyle = textColor;
+        y += lineHeight;
+        
+        // Active power-up indicators for this player
+        const speedBoost = playerNum === 1 ? G.playerSpeedBoost : G.player2SpeedBoost;
+        const speedBoostEnd = playerNum === 1 ? G.playerSpeedBoostEnd : G.player2SpeedBoostEnd;
+        const damageBoost = playerNum === 1 ? G.playerDamageBoost : G.player2DamageBoost;
+        const damageBoostEnd = playerNum === 1 ? G.playerDamageBoostEnd : G.player2DamageBoostEnd;
+        const shieldActive = playerNum === 1 ? G.playerShieldActive : G.player2ShieldActive;
+        const shieldEnd = playerNum === 1 ? G.playerShieldEnd : G.player2ShieldEnd;
+        const infiniteAmmo = playerNum === 1 ? G.playerInfiniteAmmo : G.player2InfiniteAmmo;
+        const infiniteAmmoEnd = playerNum === 1 ? G.playerInfiniteAmmoEnd : G.player2InfiniteAmmoEnd;
+        
+        if (speedBoost > 1 && speedBoostEnd > now) {
+            const remaining = Math.ceil((speedBoostEnd - now) / 1000);
+            G.hudCtx.fillStyle = '#AA44FF';
+            G.hudCtx.fillText(`⚡ ${remaining}s`, x, y);
+            y += lineHeight - 4;
+        }
+        if (damageBoost > 1 && damageBoostEnd > now) {
+            const remaining = Math.ceil((damageBoostEnd - now) / 1000);
+            G.hudCtx.fillStyle = '#FF4466';
+            G.hudCtx.fillText(`💎 x2 ${remaining}s`, x, y);
+            y += lineHeight - 4;
+        }
+        if (shieldActive && shieldEnd > now) {
+            const remaining = Math.ceil((shieldEnd - now) / 1000);
+            G.hudCtx.fillStyle = '#4488FF';
+            G.hudCtx.fillText(`🛡️ ${remaining}s`, x, y);
+            y += lineHeight - 4;
+        }
+        if (infiniteAmmo && infiniteAmmoEnd > now) {
+            const remaining = Math.ceil((infiniteAmmoEnd - now) / 1000);
+            G.hudCtx.fillStyle = '#CCFFFF';
+            G.hudCtx.fillText(`💠 ∞ ${remaining}s`, x, y);
+            y += lineHeight - 4;
+        }
         G.hudCtx.fillStyle = textColor;
     }
 

@@ -31,6 +31,8 @@
             buildChick(giantGrp);
         } else if (G.christmasTheme) {
             buildEvilSnowman(giantGrp);
+        } else if (G.crystalTheme) {
+            buildCrystalGiant(giantGrp);
         } else {
             buildStandardGiant(giantGrp, textures);
         }
@@ -1171,6 +1173,140 @@
         rightLeg.position.set(0.9, 1.2, 0);
         rightLeg.castShadow = true;
         group.add(rightLeg);
+    }
+    
+    function buildCrystalGiant(group) {
+        // Crystal Giant - massive amethyst colossus
+        const crystalPurple = 0xaa44ff;
+        const crystalPink = 0xff4488;
+        const crystalBlue = 0x44aaff;
+        const crystalGlow = 0xcc77ff;
+        const darkCrystal = 0x5a3a7a;
+        
+        // Massive crystal body - multiple faceted shapes
+        const bodyGeometry = new THREE.OctahedronGeometry(2.0, 0);
+        const bodyMaterial = new THREE.MeshLambertMaterial({ 
+            color: crystalPurple,
+            emissive: crystalPurple,
+            emissiveIntensity: 0.15,
+            transparent: true,
+            opacity: 0.85
+        });
+        const body = new THREE.Mesh(bodyGeometry, bodyMaterial);
+        body.position.y = 4.0;
+        body.scale.set(1.0, 1.5, 0.8);
+        body.castShadow = true;
+        group.add(body);
+        
+        // Inner glow core
+        const coreGeometry = new THREE.OctahedronGeometry(1.2, 0);
+        const coreMaterial = new THREE.MeshBasicMaterial({ 
+            color: crystalGlow,
+            transparent: true,
+            opacity: 0.4
+        });
+        const core = new THREE.Mesh(coreGeometry, coreMaterial);
+        core.position.y = 4.0;
+        group.add(core);
+        
+        // Crystal head - large angular faceted shape
+        const headGeometry = new THREE.OctahedronGeometry(1.2, 0);
+        const headMaterial = new THREE.MeshLambertMaterial({ 
+            color: crystalPurple,
+            emissive: crystalPurple,
+            emissiveIntensity: 0.2,
+            transparent: true,
+            opacity: 0.85
+        });
+        const head = new THREE.Mesh(headGeometry, headMaterial);
+        head.position.y = 7.0;
+        head.rotation.y = Math.PI / 4;
+        head.castShadow = true;
+        group.add(head);
+        
+        // Glowing eyes - large gem-like
+        const eyeMaterial = new THREE.MeshBasicMaterial({ color: 0x00ffff });
+        const eyeGeometry = new THREE.OctahedronGeometry(0.3, 0);
+        [-0.5, 0.5].forEach(x => {
+            const eye = new THREE.Mesh(eyeGeometry, eyeMaterial);
+            eye.position.set(x, 7.0, 1.0);
+            group.add(eye);
+        });
+        
+        // Massive crystal spikes on shoulders
+        [-2.2, 2.2].forEach(x => {
+            const spike = new THREE.Mesh(
+                new THREE.ConeGeometry(0.6, 2.5, 5),
+                new THREE.MeshLambertMaterial({ 
+                    color: crystalPink,
+                    emissive: crystalPink,
+                    emissiveIntensity: 0.3,
+                    transparent: true,
+                    opacity: 0.85
+                })
+            );
+            spike.position.set(x, 5.5, 0);
+            spike.rotation.z = x > 0 ? -0.3 : 0.3;
+            spike.castShadow = true;
+            group.add(spike);
+        });
+        
+        // Crystal arms - angular formations
+        [-2.5, 2.5].forEach((x, i) => {
+            const armGeometry = new THREE.ConeGeometry(0.5, 3.0, 6);
+            const armMaterial = new THREE.MeshLambertMaterial({ 
+                color: darkCrystal,
+                transparent: true,
+                opacity: 0.85
+            });
+            const arm = new THREE.Mesh(armGeometry, armMaterial);
+            arm.position.set(x, 3.5, 0);
+            arm.rotation.z = x > 0 ? 0.6 : -0.6;
+            arm.castShadow = true;
+            group.add(arm);
+            if (i === 0) group.leftArm = arm;
+            else group.rightArm = arm;
+            
+            // Crystal fist
+            const fist = new THREE.Mesh(
+                new THREE.OctahedronGeometry(0.5, 0),
+                new THREE.MeshLambertMaterial({ color: crystalBlue, emissive: crystalBlue, emissiveIntensity: 0.3 })
+            );
+            fist.position.set(x * 1.3, 1.5, 0);
+            group.add(fist);
+            if (i === 0) group.leftFist = fist;
+            else group.rightFist = fist;
+        });
+        
+        // Crystal legs - thick angular supports
+        [-1.0, 1.0].forEach(x => {
+            const legGeometry = new THREE.ConeGeometry(0.7, 3.0, 6);
+            const legMaterial = new THREE.MeshLambertMaterial({ 
+                color: darkCrystal,
+                transparent: true,
+                opacity: 0.85
+            });
+            const leg = new THREE.Mesh(legGeometry, legMaterial);
+            leg.position.set(x, 1.5, 0);
+            leg.rotation.x = Math.PI;
+            leg.castShadow = true;
+            group.add(leg);
+        });
+        
+        // Crown of crystal spikes
+        for (let i = 0; i < 6; i++) {
+            const angle = (i / 6) * Math.PI * 2;
+            const spike = new THREE.Mesh(
+                new THREE.ConeGeometry(0.2, 1.2, 4),
+                new THREE.MeshLambertMaterial({ color: crystalPink, emissive: crystalPink, emissiveIntensity: 0.4 })
+            );
+            spike.position.set(
+                Math.cos(angle) * 0.8,
+                8.2,
+                Math.sin(angle) * 0.8
+            );
+            group.add(spike);
+        }
     }
     
     // ========================================

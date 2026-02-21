@@ -212,7 +212,7 @@
             
             // Check collision damage with host player (host only handles damage)
             const collisionRadius = 5 * (d.scale || 1);
-            if (distToPlayer < collisionRadius && !godMode) {
+            if (distToPlayer < collisionRadius && !godMode && !G.playerShieldActive) {
                 if (now - G.lastDamageTime > G.damageCooldown) {
                     G.playerHealth--;
                     G.lastDamageTime = now;

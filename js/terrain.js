@@ -1729,6 +1729,103 @@ function generateDragonScaleTextureCandy(THREE) {
     return texture;
 }
 
+// Generate crystal dragon scale texture (faceted amethyst with inner glow)
+function generateDragonScaleTextureCrystal(THREE) {
+    const canvas = document.createElement('canvas');
+    canvas.width = 256;
+    canvas.height = 256;
+    const ctx = canvas.getContext('2d');
+
+    // Base deep amethyst purple
+    ctx.fillStyle = '#2a0a4a';
+    ctx.fillRect(0, 0, 256, 256);
+
+    // Add crystalline faceted scale pattern
+    for (let row = 0; row < 32; row++) {
+        for (let col = 0; col < 32; col++) {
+            const offsetX = (row % 2 === 0) ? 4 : 0;
+            const x = col * 8 + offsetX;
+            const y = row * 8;
+            const brightness = 0.5 + Math.random() * 0.6;
+            // Alternate between purple, pink, and cyan crystal facets
+            const colorType = (row + col) % 3;
+            let r, g, b;
+            if (colorType === 0) {
+                // Amethyst purple
+                r = Math.floor(138 * brightness);
+                g = Math.floor(43 * brightness);
+                b = Math.floor(226 * brightness);
+            } else if (colorType === 1) {
+                // Crystal pink
+                r = Math.floor(255 * brightness);
+                g = Math.floor(68 * brightness);
+                b = Math.floor(170 * brightness);
+            } else {
+                // Cyan crystal
+                r = Math.floor(68 * brightness);
+                g = Math.floor(170 * brightness);
+                b = Math.floor(255 * brightness);
+            }
+
+            // Draw hexagonal faceted scale
+            ctx.fillStyle = `rgb(${r}, ${g}, ${b})`;
+            ctx.beginPath();
+            const cx = x + 4, cy = y + 4;
+            for (let i = 0; i < 6; i++) {
+                const angle = i * Math.PI / 3;
+                const px = cx + Math.cos(angle) * 3.5;
+                const py = cy + Math.sin(angle) * 3;
+                if (i === 0) ctx.moveTo(px, py);
+                else ctx.lineTo(px, py);
+            }
+            ctx.closePath();
+            ctx.fill();
+
+            // Add inner glow/refraction highlight
+            ctx.fillStyle = `rgba(255, 200, 255, ${0.3 + Math.random() * 0.3})`;
+            ctx.beginPath();
+            ctx.ellipse(x + 3, y + 2.5, 1.5, 1, 0, 0, Math.PI * 2);
+            ctx.fill();
+        }
+    }
+
+    // Add glowing crystal vein patterns
+    const veinColors = ['rgba(255, 68, 170, 0.5)', 'rgba(68, 170, 255, 0.5)', 'rgba(170, 68, 255, 0.5)'];
+    for (let i = 0; i < 15; i++) {
+        const startX = Math.random() * 256;
+        const startY = Math.random() * 256;
+        ctx.strokeStyle = veinColors[Math.floor(Math.random() * veinColors.length)];
+        ctx.lineWidth = 1.5 + Math.random() * 2;
+        ctx.beginPath();
+        ctx.moveTo(startX, startY);
+        let lx = startX, ly = startY;
+        for (let j = 0; j < 5; j++) {
+            lx += (Math.random() - 0.5) * 35;
+            ly += (Math.random() - 0.5) * 35;
+            ctx.lineTo(lx, ly);
+        }
+        ctx.stroke();
+    }
+
+    // Add bright gem-like glow spots
+    for (let i = 0; i < 20; i++) {
+        const sx = Math.random() * 256;
+        const sy = Math.random() * 256;
+        const radius = 6 + Math.random() * 12;
+        const gradient = ctx.createRadialGradient(sx, sy, 0, sx, sy, radius);
+        const glowColors = [[255, 100, 200], [100, 200, 255], [200, 100, 255]];
+        const glow = glowColors[Math.floor(Math.random() * glowColors.length)];
+        gradient.addColorStop(0, `rgba(${glow[0]}, ${glow[1]}, ${glow[2]}, 0.6)`);
+        gradient.addColorStop(0.5, `rgba(${glow[0]}, ${glow[1]}, ${glow[2]}, 0.2)`);
+        gradient.addColorStop(1, 'rgba(0, 0, 0, 0)');
+        ctx.fillStyle = gradient;
+        ctx.fillRect(sx - radius, sy - radius, radius * 2, radius * 2);
+    }
+
+    const texture = new THREE.CanvasTexture(canvas);
+    return texture;
+}
+
 // Generate dragon belly texture (golden/amber)
 function generateDragonBellyTexture(THREE) {
     const canvas = document.createElement('canvas');
@@ -2388,6 +2485,7 @@ function getTerrainTextures(THREE) {
             dragonScaleLava: generateDragonScaleTextureLava(THREE),
             dragonScaleWater: generateDragonScaleTextureWater(THREE),
             dragonScaleCandy: generateDragonScaleTextureCandy(THREE),
+            dragonScaleCrystal: generateDragonScaleTextureCrystal(THREE),
             reaperCloak: generateReaperCloakTexture(THREE),
             dragonBelly: generateDragonBellyTexture(THREE),
             fireball: generateFireballTexture(THREE, false),
@@ -2407,6 +2505,7 @@ function getTerrainTextures(THREE) {
             dragonEyeLava: generateGlowingEyeTexture(THREE, 0xFFFF00),
             dragonEyeWater: generateGlowingEyeTexture(THREE, 0x00FF88),
             dragonEyeCandy: generateGlowingEyeTexture(THREE, 0xFF69B4),
+            dragonEyeCrystal: generateGlowingEyeTexture(THREE, 0xAA44FF),
             reaperEye: generateReaperEyeTexture(THREE),
             giantEyeLava: generateGlowingEyeTexture(THREE, 0xFF4400),
             wizardRobe: generateWizardRobeTexture(THREE, false),
@@ -2453,7 +2552,7 @@ function getTerrainHeight(x, z) {
 }
 
 // Create visual hill meshes
-function createHills(scene, THREE, hillPositions, hillColor, iceTheme, desertTheme, lavaTheme, waterTheme, candyTheme, graveyardTheme, ruinsTheme, computerTheme, christmasTheme) {
+function createHills(scene, THREE, hillPositions, hillColor, iceTheme, desertTheme, lavaTheme, waterTheme, candyTheme, graveyardTheme, ruinsTheme, computerTheme, christmasTheme, crystalTheme) {
     const textures = getTerrainTextures(THREE);
     const hills = hillPositions || HILLS;
     const color = hillColor || 0x88cc88;
@@ -2475,6 +2574,8 @@ function createHills(scene, THREE, hillPositions, hillColor, iceTheme, desertThe
         textureToUse = textures.rock; // Rubble pile texture
     } else if (iceTheme || christmasTheme) {
         textureToUse = textures.grassIce;
+    } else if (crystalTheme) {
+        textureToUse = textures.rock || textures.grass; // Dark cave rock
     } else {
         textureToUse = textures.grass;
     }
@@ -2692,7 +2793,7 @@ function createHills(scene, THREE, hillPositions, hillColor, iceTheme, desertThe
 }
 
 // Create mountains (world boundaries)
-function createMountains(scene, THREE, mountainPositions, candyTheme, graveyardTheme, ruinsTheme, computerTheme, enchantedTheme, easterTheme, christmasTheme) {
+function createMountains(scene, THREE, mountainPositions, candyTheme, graveyardTheme, ruinsTheme, computerTheme, enchantedTheme, easterTheme, christmasTheme, crystalTheme) {
     const textures = getTerrainTextures(THREE);
     mountainPositions.forEach(mtn => {
         if (computerTheme) {
@@ -3173,6 +3274,129 @@ function createMountains(scene, THREE, mountainPositions, candyTheme, graveyardT
                 scene.add(sparkle);
             }
             
+        } else if (crystalTheme) {
+            // Crystal cave walls - massive crystal formations
+            const wallHeight = mtn.height;
+            const wallWidth = mtn.width;
+            const wallDepth = 8;
+            
+            const crystalColors = [0xff4488, 0x44aaff, 0x44ff88, 0xaa44ff, 0xff88ff, 0x88ffff];
+            
+            // Create wall as cluster of large crystal spires instead of stone
+            const crystalCount = Math.max(3, Math.floor(wallWidth / 3));
+            
+            for (let i = 0; i < crystalCount; i++) {
+                const crystalColor = crystalColors[Math.floor(Math.random() * crystalColors.length)];
+                const crystalHeight = wallHeight * (0.6 + Math.random() * 0.5);
+                const crystalRadius = 1.2 + Math.random() * 1.5;
+                
+                // Main large crystal pillar
+                const crystalGeometry = new THREE.ConeGeometry(crystalRadius, crystalHeight, 6);
+                const crystalMaterial = new THREE.MeshPhongMaterial({ 
+                    color: crystalColor,
+                    emissive: crystalColor,
+                    emissiveIntensity: 0.35,
+                    shininess: 120,
+                    transparent: true,
+                    opacity: 0.85
+                });
+                const crystal = new THREE.Mesh(crystalGeometry, crystalMaterial);
+                const xOffset = (i / (crystalCount - 1 || 1)) * wallWidth - wallWidth / 2;
+                crystal.position.set(
+                    mtn.x + xOffset + (Math.random() - 0.5) * 2,
+                    crystalHeight / 2,
+                    mtn.z + (Math.random() - 0.5) * wallDepth * 0.4
+                );
+                crystal.rotation.x = (Math.random() - 0.5) * 0.25;
+                crystal.rotation.z = (Math.random() - 0.5) * 0.25;
+                crystal.castShadow = true;
+                scene.add(crystal);
+                
+                // Secondary smaller crystals around the main one
+                const secondaryCount = 2 + Math.floor(Math.random() * 3);
+                for (let j = 0; j < secondaryCount; j++) {
+                    const secColor = crystalColors[Math.floor(Math.random() * crystalColors.length)];
+                    const secHeight = crystalHeight * (0.3 + Math.random() * 0.4);
+                    const secRadius = crystalRadius * (0.3 + Math.random() * 0.4);
+                    
+                    const secGeometry = new THREE.ConeGeometry(secRadius, secHeight, 6);
+                    const secMaterial = new THREE.MeshPhongMaterial({ 
+                        color: secColor,
+                        emissive: secColor,
+                        emissiveIntensity: 0.4,
+                        shininess: 100,
+                        transparent: true,
+                        opacity: 0.8
+                    });
+                    const secCrystal = new THREE.Mesh(secGeometry, secMaterial);
+                    const angle = (j / secondaryCount) * Math.PI * 2;
+                    secCrystal.position.set(
+                        crystal.position.x + Math.cos(angle) * (crystalRadius + 0.5),
+                        secHeight / 2,
+                        crystal.position.z + Math.sin(angle) * (crystalRadius * 0.5)
+                    );
+                    secCrystal.rotation.x = (Math.random() - 0.5) * 0.4;
+                    secCrystal.rotation.z = (Math.random() - 0.5) * 0.4;
+                    scene.add(secCrystal);
+                }
+                
+                // Inner glow core
+                const coreGeometry = new THREE.SphereGeometry(crystalRadius * 0.5, 8, 8);
+                const coreMaterial = new THREE.MeshBasicMaterial({ 
+                    color: 0xffffff,
+                    transparent: true,
+                    opacity: 0.25
+                });
+                const core = new THREE.Mesh(coreGeometry, coreMaterial);
+                core.position.set(crystal.position.x, crystalHeight * 0.3, crystal.position.z);
+                scene.add(core);
+                
+                // Outer glow aura
+                const glowGeometry = new THREE.SphereGeometry(crystalRadius * 2, 8, 8);
+                const glowMaterial = new THREE.MeshBasicMaterial({ 
+                    color: crystalColor,
+                    transparent: true,
+                    opacity: 0.12
+                });
+                const glow = new THREE.Mesh(glowGeometry, glowMaterial);
+                glow.position.set(crystal.position.x, crystalHeight * 0.4, crystal.position.z);
+                scene.add(glow);
+            }
+            
+            // Crystal base - faceted rock with embedded gems
+            const baseGeometry = new THREE.BoxGeometry(wallWidth * 1.1, wallHeight * 0.15, wallDepth);
+            const baseMaterial = new THREE.MeshPhongMaterial({ 
+                color: 0x3a2a5a,
+                emissive: 0x1a0a2a,
+                emissiveIntensity: 0.2,
+                shininess: 40
+            });
+            const base = new THREE.Mesh(baseGeometry, baseMaterial);
+            base.position.set(mtn.x, wallHeight * 0.075, mtn.z);
+            scene.add(base);
+            
+            // Embedded gems in base
+            const gemCount = Math.floor(wallWidth / 2);
+            for (let i = 0; i < gemCount; i++) {
+                const gemColor = crystalColors[Math.floor(Math.random() * crystalColors.length)];
+                const gemSize = 0.2 + Math.random() * 0.3;
+                const gemGeometry = new THREE.OctahedronGeometry(gemSize, 0);
+                const gemMaterial = new THREE.MeshPhongMaterial({ 
+                    color: gemColor,
+                    emissive: gemColor,
+                    emissiveIntensity: 0.6,
+                    shininess: 100
+                });
+                const gem = new THREE.Mesh(gemGeometry, gemMaterial);
+                gem.position.set(
+                    mtn.x - wallWidth/2 + Math.random() * wallWidth,
+                    wallHeight * 0.05 + Math.random() * wallHeight * 0.1,
+                    mtn.z + wallDepth/2 + 0.1
+                );
+                gem.rotation.y = Math.random() * Math.PI;
+                scene.add(gem);
+            }
+            
         } else {
             // Regular mountain (cone shape)
             const mountainGeometry = new THREE.ConeGeometry(mtn.width/2, mtn.height, 6);
@@ -3374,7 +3598,7 @@ function createComputerGround(scene, THREE) {
 }
 
 // Create ground plane
-function createGround(scene, THREE, groundColor, iceTheme, desertTheme, lavaTheme, waterTheme, candyTheme, graveyardTheme, ruinsTheme, computerTheme, christmasTheme) {
+function createGround(scene, THREE, groundColor, iceTheme, desertTheme, lavaTheme, waterTheme, candyTheme, graveyardTheme, ruinsTheme, computerTheme, christmasTheme, crystalTheme) {
     const textures = getTerrainTextures(THREE);
     const color = groundColor || 0xffffff; // Tint color applied over texture
     let textureToUse;
@@ -3435,6 +3659,8 @@ function createGround(scene, THREE, groundColor, iceTheme, desertTheme, lavaThem
         textureToUse = textures.grass; // Green grass ground for ruins // Stone floor texture for ruins
     } else if (iceTheme || christmasTheme) {
         textureToUse = textures.grassIce;
+    } else if (crystalTheme) {
+        textureToUse = textures.rock || textures.grass; // Dark cave rock floor
     } else {
         textureToUse = textures.grass;
     }

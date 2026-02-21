@@ -235,7 +235,7 @@
                 }
             }
             
-            // Guardian arrows (ink balls in water theme, mini-ghosts in graveyard, data packets in computer theme)
+            // Guardian arrows (ink balls in water theme, mini-ghosts in graveyard, data packets in computer theme, crystal shards in crystal theme)
             if (gob.isGuardian && distToTarget < 25) {
                 const now = Date.now();
                 const fireInterval = 4000 + Math.random() * 2000;
@@ -243,7 +243,56 @@
                     gob.lastFireTime = now;
                     
                     let arrowMesh;
-                    if (G.computerTheme) {
+                    if (G.crystalTheme) {
+                        // Crystal shard projectile for crystal cave guardians
+                        const shardGroup = new THREE.Group();
+                        
+                        // Main crystal shard (elongated octahedron)
+                        const shardGeometry = new THREE.OctahedronGeometry(0.25, 0);
+                        const shardColor = [0xaa44ff, 0xff4488, 0x44aaff, 0x44ff88][Math.floor(Math.random() * 4)];
+                        const shardMaterial = new THREE.MeshLambertMaterial({
+                            color: shardColor,
+                            emissive: shardColor,
+                            emissiveIntensity: 0.6,
+                            transparent: true,
+                            opacity: 0.9
+                        });
+                        const shard = new THREE.Mesh(shardGeometry, shardMaterial);
+                        shard.scale.set(0.6, 1.5, 0.6); // Elongate into shard shape
+                        shardGroup.add(shard);
+                        
+                        // Inner glow core
+                        const coreGeometry = new THREE.SphereGeometry(0.12, 8, 8);
+                        const coreMaterial = new THREE.MeshBasicMaterial({
+                            color: 0xffffff,
+                            transparent: true,
+                            opacity: 0.5
+                        });
+                        const core = new THREE.Mesh(coreGeometry, coreMaterial);
+                        shardGroup.add(core);
+                        
+                        // Trailing sparkle particles
+                        const sparkleGeometry = new THREE.SphereGeometry(0.05, 6, 6);
+                        const sparkleMaterial = new THREE.MeshBasicMaterial({
+                            color: shardColor,
+                            transparent: true,
+                            opacity: 0.7
+                        });
+                        for (let s = 0; s < 3; s++) {
+                            const sparkle = new THREE.Mesh(sparkleGeometry, sparkleMaterial);
+                            sparkle.position.set(
+                                (Math.random() - 0.5) * 0.2,
+                                -0.2 - s * 0.15,
+                                (Math.random() - 0.5) * 0.2
+                            );
+                            shardGroup.add(sparkle);
+                        }
+                        
+                        shardGroup.position.copy(gob.mesh.position);
+                        shardGroup.position.y += 1.5;
+                        G.scene.add(shardGroup);
+                        arrowMesh = shardGroup;
+                    } else if (G.computerTheme) {
                         // Data packet / malware byte projectile for Firewall Sentry
                         const packetGroup = new THREE.Group();
                         
@@ -572,7 +621,7 @@
                     G.playerGroup.scale.set(G.playerScale, G.playerScale, G.playerScale);
                     // Play a magical shrink sound and deal 1 damage
                     Audio.playStuckSound();
-                    if (!godMode) {
+                    if (!godMode && !G.playerShieldActive) {
                         G.playerHealth--;
                         G.damageFlashTime = Date.now();
                         if (G.playerHealth <= 0) {
@@ -584,7 +633,7 @@
                         }
                     }
                     hitPlayer = true;
-                } else if (!godMode && !G.enchantedTheme) {
+                } else if (!godMode && !G.enchantedTheme && !G.playerShieldActive) {
                     G.playerHealth--;
                     G.damageFlashTime = Date.now();
                     if (G.playerHealth <= 0) {
@@ -687,6 +736,35 @@
                     hitObstacle = true;
                 }
             });
+            
+            // Check collision with mountains/walls (for crystal theme and other wall-based levels)
+            if (!hitObstacle && G.levelConfig.mountains && G.levelConfig.mountains.length > 0) {
+                for (const mtn of G.levelConfig.mountains) {
+                    // Use box collision for themed walls
+                    if (G.crystalTheme || G.graveyardTheme || G.ruinsTheme || G.computerTheme || G.enchantedTheme || G.easterTheme || G.christmasTheme) {
+                        const wallWidth = mtn.width;
+                        const wallDepth = G.computerTheme ? 2 : Math.min(mtn.width * 0.15, 8);
+                        const halfW = wallWidth / 2;
+                        const halfD = wallDepth / 2;
+                        const dx = Math.abs(arrow.mesh.position.x - mtn.x);
+                        const dz = Math.abs(arrow.mesh.position.z - mtn.z);
+                        if (dx < halfW && dz < halfD && arrow.mesh.position.y < (mtn.height || 15)) {
+                            hitObstacle = true;
+                            break;
+                        }
+                    } else {
+                        // Circular collision for cone mountains
+                        const distToMtn = Math.sqrt(
+                            (arrow.mesh.position.x - mtn.x) ** 2 +
+                            (arrow.mesh.position.z - mtn.z) ** 2
+                        );
+                        if (distToMtn < mtn.width / 2 && arrow.mesh.position.y < (mtn.height || 15)) {
+                            hitObstacle = true;
+                            break;
+                        }
+                    }
+                }
+            }
             
             if (hitObstacle) {
                 G.scene.remove(arrow.mesh);
