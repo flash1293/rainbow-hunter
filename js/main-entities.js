@@ -1384,6 +1384,13 @@ function initEntities() {
                 } else if (G.christmasTheme || pos.useEvilSanta) {
                     const extraSanta = createEvilSanta(pos, bossScale, bossHealth);
                     G.extraDragons.push(extraSanta);
+                } else if (pos.useFlyingWitchHouse) {
+                    // Flying Witch House - spawns flying witches
+                    const witchHouse = createFlyingWitchHouse(pos, bossScale * 1.5, bossHealth);
+                    G.extraDragons.push(witchHouse);
+                } else if (G.rapunzelTheme || pos.useFlyingWitch) {
+                    const flyingWitch = createFlyingWitch(pos, bossScale, bossHealth);
+                    G.extraDragons.push(flyingWitch);
                 } else {
                     const extraDragon = createDragon(pos, bossScale, bossHealth);
                     G.extraDragons.push(extraDragon);

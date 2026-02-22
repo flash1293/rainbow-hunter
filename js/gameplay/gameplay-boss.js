@@ -128,6 +128,46 @@
                 return;
             }
             
+            // Flying Witch animation
+            if (d.isFlyingWitch) {
+                // Broomstick hovering animation
+                d.hoverPhase = (d.hoverPhase || 0) + 0.03;
+                const hoverOffset = Math.sin(d.hoverPhase) * 1.2;
+                const baseY = d.flyingHeight !== undefined ? d.flyingHeight : 8;
+                d.mesh.position.y = baseY + hoverOffset;
+                
+                // Broomstick tilting as it flies
+                d.mesh.rotation.z = Math.sin(d.hoverPhase * 0.8) * 0.08;
+                d.mesh.rotation.x = Math.sin(d.hoverPhase * 0.6) * 0.05;
+                
+                return;
+            }
+            
+            // Flying Witch House animation
+            if (d.isFlyingWitchHouse) {
+                // Gentle bobbing - large structure moves slowly
+                d.hoverPhase = (d.hoverPhase || 0) + 0.015;
+                const hoverOffset = Math.sin(d.hoverPhase) * 0.8;
+                const baseY = d.flyingHeight !== undefined ? d.flyingHeight : 35;
+                d.mesh.position.y = baseY + hoverOffset;
+                
+                // Very subtle sway
+                d.mesh.rotation.y += 0.001;
+                d.mesh.rotation.z = Math.sin(d.hoverPhase * 0.5) * 0.02;
+                
+                // Pulse window glow
+                d.mesh.children.forEach(child => {
+                    if (child.material && child.material.color) {
+                        const color = child.material.color.getHex();
+                        if (color === 0x88FF88) { // Window glow color
+                            child.material.opacity = 0.7 + Math.sin(now * 0.003) * 0.2;
+                        }
+                    }
+                });
+                
+                return;
+            }
+            
             // Wing flap animation (dragons only)
             d.wingFlapPhase += 0.15;
             const flapAngle = Math.sin(d.wingFlapPhase) * 0.5;
@@ -274,8 +314,8 @@
                 }
             }
             
-            // Flying behavior - randomly fly up sometimes (dragons only, not reapers, unicorns, Easter Bunny, or Evil Santa)
-            if (!d.isReaper && !d.isEasterBunny && !d.isUnicorn && !d.isEvilSanta) {
+            // Flying behavior - randomly fly up sometimes (dragons only, not reapers, unicorns, Easter Bunny, Evil Santa, Flying Witches, or Witch Houses)
+            if (!d.isReaper && !d.isEasterBunny && !d.isUnicorn && !d.isEvilSanta && !d.isFlyingWitch && !d.isFlyingWitchHouse) {
                 const flyHeight = (d.scale || 1) * 15;
                 if (!d.isFlying && Math.random() < 0.0005) {
                     d.isFlying = true;
@@ -305,8 +345,28 @@
                 }
             }
             
-            // Patrol movement - Reapers, Unicorns, Easter Bunnies, and Evil Santa chase player within range, dragons patrol
-            if (d.isReaper || d.isUnicorn || d.isEasterBunny || d.isEvilSanta) {
+            // Patrol movement - Reapers, Unicorns, Easter Bunnies, Evil Santa, and Flying Witches chase player within range, dragons patrol
+            if (d.isFlyingWitchHouse) {
+                // Witch houses do a slow circular/figure-8 patrol at high altitude
+                // They don't chase - they stay high and spawn witches
+                d.patrolAngle = (d.patrolAngle || 0) + 0.003;
+                const homeX = d.homeX || 0;
+                const homeZ = d.homeZ || 0;
+                const patrolRadius = 30;
+                
+                // Figure-8 pattern
+                d.mesh.position.x = homeX + Math.sin(d.patrolAngle) * patrolRadius;
+                d.mesh.position.z = homeZ + Math.sin(d.patrolAngle * 2) * patrolRadius * 0.5;
+                
+                // Face direction of movement
+                const moveDir = Math.atan2(
+                    Math.cos(d.patrolAngle) * patrolRadius,
+                    Math.cos(d.patrolAngle * 2) * patrolRadius * 0.5
+                );
+                // Very slow rotation toward movement direction
+                const targetRot = moveDir;
+                d.mesh.rotation.y += (targetRot - d.mesh.rotation.y) * 0.01;
+            } else if (d.isReaper || d.isUnicorn || d.isEasterBunny || d.isEvilSanta || d.isFlyingWitch) {
                 // Reaper/Unicorn/Easter Bunny/Evil Santa chases if player is within chase range
                 const chaseRange = d.chaseRange || 50;
                 const distToTarget = Math.sqrt(
@@ -396,10 +456,16 @@
                 
                 // Only fire if player is in range
                 // Reapers have shorter range (melee scythe), dragons/unicorns have longer range
-                const fireRange = d.isReaper ? 35 : 100;
+                // Witch houses spawn witches when player is somewhat near
+                const fireRange = d.isReaper ? 35 : (d.isFlyingWitchHouse ? (d.spawnRange || 80) : 100);
                 if (fireTargetDist < fireRange) {
-                    // Reapers use scythe wave attack, unicorns use rainbow bolts, Easter Bunny uses eggs, Evil Santa throws presents, dragons use fireballs
-                    if (d.isReaper) {
+                    // Different boss types have different attacks
+                    if (d.isFlyingWitchHouse) {
+                        // Witch House spawns a flying witch that descends to attack
+                        if (typeof spawnWitchFromHouse === 'function') {
+                            spawnWitchFromHouse(d, fireTargetPlayer);
+                        }
+                    } else if (d.isReaper) {
                         createScytheWave(d, fireTargetPlayer);
                     } else if (d.isUnicorn) {
                         createRainbowBolt(d, fireTargetPlayer);
@@ -408,6 +474,9 @@
                     } else if (d.isEvilSanta) {
                         // Evil Santa throws explosive presents
                         createPresentProjectile(d, fireTargetPlayer);
+                    } else if (d.isFlyingWitch) {
+                        // Flying Witch shoots green magical fireballs
+                        createWitchGreenFireball(d, fireTargetPlayer);
                     } else {
                         createDragonFireball(d, fireTargetPlayer);
                     }

@@ -31,6 +31,8 @@
             buildEasterWizard(wizardGrp);
         } else if (G.christmasTheme) {
             buildWalkingEvilSanta(wizardGrp);
+        } else if (G.rapunzelTheme) {
+            buildCrownWizard(wizardGrp);
         } else {
             buildStandardWizard(wizardGrp, textures);
         }
@@ -1007,6 +1009,171 @@
         orb.position.set(0.9, 3.2, 0.3);
         group.add(orb);
         group.staffOrb = orb; // Store for animation
+    }
+    
+    function buildCrownWizard(group) {
+        // CROWN WIZARD - huge golden crown with legs that shoots fireballs
+        const crownGold = 0xFFD700;         // Bright gold
+        const crownDarkGold = 0xDAA520;     // Darker gold
+        const gemRed = 0xFF0000;            // Ruby gems
+        const gemBlue = 0x0066FF;           // Sapphire gems
+        const gemGreen = 0x00FF00;          // Emerald gems
+        const legColor = 0x8B6914;          // Bronze legs
+        const eyeGlow = 0xFF4500;           // Orange fire eyes
+        
+        // Main crown base (large cylinder)
+        const crownBaseGeometry = new THREE.CylinderGeometry(1.2, 1.4, 0.8, 16);
+        const crownMaterial = new THREE.MeshLambertMaterial({ 
+            color: crownGold,
+            emissive: crownGold,
+            emissiveIntensity: 0.2
+        });
+        const crownBase = new THREE.Mesh(crownBaseGeometry, crownMaterial);
+        crownBase.position.y = 2.4;
+        crownBase.castShadow = true;
+        group.add(crownBase);
+        
+        // Crown rim detail
+        const rimGeometry = new THREE.TorusGeometry(1.3, 0.1, 8, 24);
+        const rimMaterial = new THREE.MeshLambertMaterial({ color: crownDarkGold });
+        const topRim = new THREE.Mesh(rimGeometry, rimMaterial);
+        topRim.position.y = 2.8;
+        topRim.rotation.x = Math.PI / 2;
+        group.add(topRim);
+        
+        const bottomRim = new THREE.Mesh(rimGeometry, rimMaterial);
+        bottomRim.position.y = 2.0;
+        bottomRim.rotation.x = Math.PI / 2;
+        group.add(bottomRim);
+        
+        // Crown points (8 large points around the top)
+        const numPoints = 8;
+        for (let i = 0; i < numPoints; i++) {
+            const angle = (i / numPoints) * Math.PI * 2;
+            
+            // Main point
+            const pointGeometry = new THREE.ConeGeometry(0.25, 1.2, 6);
+            const point = new THREE.Mesh(pointGeometry, crownMaterial);
+            point.position.set(
+                Math.cos(angle) * 1.0,
+                3.4,
+                Math.sin(angle) * 1.0
+            );
+            point.castShadow = true;
+            group.add(point);
+            
+            // Gem on each point
+            const gemColors = [gemRed, gemBlue, gemGreen];
+            const gemGeometry = new THREE.OctahedronGeometry(0.15, 0);
+            const gemMaterial = new THREE.MeshLambertMaterial({ 
+                color: gemColors[i % 3],
+                emissive: gemColors[i % 3],
+                emissiveIntensity: 0.4
+            });
+            const gem = new THREE.Mesh(gemGeometry, gemMaterial);
+            gem.position.set(
+                Math.cos(angle) * 1.0,
+                4.1,
+                Math.sin(angle) * 1.0
+            );
+            group.add(gem);
+        }
+        
+        // Front face on the crown
+        // Evil glowing eyes
+        const eyeGeometry = new THREE.SphereGeometry(0.2, 12, 12);
+        const eyeMaterial = new THREE.MeshBasicMaterial({ color: eyeGlow });
+        [-0.4, 0.4].forEach(x => {
+            const eye = new THREE.Mesh(eyeGeometry, eyeMaterial);
+            eye.position.set(x, 2.6, 1.35);
+            group.add(eye);
+            
+            // Eye glow
+            const glowGeometry = new THREE.SphereGeometry(0.3, 8, 8);
+            const glowMaterial = new THREE.MeshBasicMaterial({ 
+                color: eyeGlow,
+                transparent: true,
+                opacity: 0.3
+            });
+            const glow = new THREE.Mesh(glowGeometry, glowMaterial);
+            glow.position.set(x, 2.6, 1.35);
+            group.add(glow);
+        });
+        
+        // Angry eyebrows (gold ridges)
+        const browGeometry = new THREE.BoxGeometry(0.4, 0.08, 0.1);
+        const browMaterial = new THREE.MeshLambertMaterial({ color: crownDarkGold });
+        [-0.4, 0.4].forEach((x, i) => {
+            const brow = new THREE.Mesh(browGeometry, browMaterial);
+            brow.position.set(x, 2.85, 1.38);
+            brow.rotation.z = i === 0 ? -0.4 : 0.4;
+            group.add(brow);
+        });
+        
+        // Large center gem (forehead jewel)
+        const centerGemGeometry = new THREE.OctahedronGeometry(0.35, 0);
+        const centerGemMaterial = new THREE.MeshLambertMaterial({ 
+            color: gemRed,
+            emissive: gemRed,
+            emissiveIntensity: 0.5
+        });
+        const centerGem = new THREE.Mesh(centerGemGeometry, centerGemMaterial);
+        centerGem.position.set(0, 2.4, 1.5);
+        centerGem.rotation.y = Math.PI / 4;
+        group.add(centerGem);
+        group.staffOrb = centerGem; // For spell casting animation
+        
+        // Inner crown glow (magical energy)
+        const innerGlowGeometry = new THREE.CylinderGeometry(0.8, 0.8, 0.6, 16);
+        const innerGlowMaterial = new THREE.MeshBasicMaterial({ 
+            color: 0xFF6600,
+            transparent: true,
+            opacity: 0.3
+        });
+        const innerGlow = new THREE.Mesh(innerGlowGeometry, innerGlowMaterial);
+        innerGlow.position.y = 2.4;
+        group.add(innerGlow);
+        
+        // Mechanical/magical legs
+        const legGeometry = new THREE.CylinderGeometry(0.15, 0.2, 1.8, 8);
+        const legMaterial = new THREE.MeshLambertMaterial({ color: legColor });
+        [-0.6, 0.6].forEach(x => {
+            const leg = new THREE.Mesh(legGeometry, legMaterial);
+            leg.position.set(x, 1.0, 0);
+            leg.castShadow = true;
+            group.add(leg);
+        });
+        
+        // Ornate feet
+        const footGeometry = new THREE.BoxGeometry(0.4, 0.15, 0.5);
+        const footMaterial = new THREE.MeshLambertMaterial({ color: crownGold });
+        [-0.6, 0.6].forEach(x => {
+            const foot = new THREE.Mesh(footGeometry, footMaterial);
+            foot.position.set(x, 0.1, 0.1);
+            foot.castShadow = true;
+            group.add(foot);
+        });
+        
+        // Small decorative arms (scepter-like)
+        const armGeometry = new THREE.CylinderGeometry(0.08, 0.1, 1.2, 6);
+        [-1.3, 1.3].forEach((x, i) => {
+            const arm = new THREE.Mesh(armGeometry, legMaterial);
+            arm.position.set(x, 2.2, 0);
+            arm.rotation.z = i === 0 ? 0.6 : -0.6;
+            arm.castShadow = true;
+            group.add(arm);
+            
+            // Small orb at end
+            const orbGeometry = new THREE.SphereGeometry(0.15, 12, 12);
+            const orbMaterial = new THREE.MeshBasicMaterial({ 
+                color: 0xFF4500,
+                transparent: true,
+                opacity: 0.8
+            });
+            const orb = new THREE.Mesh(orbGeometry, orbMaterial);
+            orb.position.set(x * 1.35, 1.6, 0);
+            group.add(orb);
+        });
     }
     
     // ========================================

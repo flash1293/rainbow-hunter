@@ -643,11 +643,18 @@
             const canPassMountains = G.waterTheme && G.player.isGliding;
             if (!canPassMountains) {
                 G.levelConfig.mountains.forEach(mtn => {
-                    // For graveyard, ruins, computer, enchanted, easter, christmas, and crystal theme walls, use rectangular (box) collision
-                    if (G.graveyardTheme || G.ruinsTheme || G.computerTheme || G.enchantedTheme || G.easterTheme || G.christmasTheme || G.crystalTheme) {
+                    // For graveyard, ruins, computer, enchanted, easter, christmas, crystal, and rapunzel theme walls, use rectangular (box) collision
+                    if (G.graveyardTheme || G.ruinsTheme || G.computerTheme || G.enchantedTheme || G.easterTheme || G.christmasTheme || G.crystalTheme || G.rapunzelTheme) {
                         const wallWidth = mtn.width;
-                        // Use fixed depth of 2 for computer theme (matches visual), variable for others
-                        const wallDepth = G.computerTheme ? 2 : Math.min(mtn.width * 0.15, 8);
+                        // Match wall depth to visual rendering for each theme
+                        let wallDepth;
+                        if (G.computerTheme) {
+                            wallDepth = 2;
+                        } else if (G.rapunzelTheme) {
+                            wallDepth = Math.min(mtn.width * 0.03, 1.5); // Thin walls
+                        } else {
+                            wallDepth = Math.min(mtn.width * 0.15, 8);
+                        }
                         const halfW = wallWidth / 2 + 1.5;
                         const halfD = wallDepth / 2 + 1.5;
                         const dx = Math.abs(G.playerGroup.position.x - mtn.x);
@@ -1442,6 +1449,242 @@
             }
             if (G.player2InfiniteAmmo && now >= G.player2InfiniteAmmoEnd) {
                 G.player2InfiniteAmmo = false;
+            }
+        }
+        
+        // Mystery Tower Interaction (Rapunzel theme)
+        if (G.rapunzelTheme && G.mysteryTowers) {
+            G.mysteryTowers.forEach((tower, idx) => {
+                if (!tower.activated) {
+                    const dist = Math.sqrt(
+                        Math.pow(G.playerGroup.position.x - tower.x, 2) +
+                        Math.pow(G.playerGroup.position.z - tower.z, 2)
+                    );
+                    let activated = dist < tower.radius;
+                    let isPlayer2 = false;
+                    
+                    // Check player 2 in native splitscreen
+                    if (!activated && isNativeSplitscreen && G.player2Group) {
+                        const dist2 = Math.sqrt(
+                            Math.pow(G.player2Group.position.x - tower.x, 2) +
+                            Math.pow(G.player2Group.position.z - tower.z, 2)
+                        );
+                        if (dist2 < tower.radius) {
+                            activated = true;
+                            isPlayer2 = true;
+                        }
+                    }
+                    
+                    if (activated) {
+                        tower.activated = true;
+                        
+                        // Remove the question mark
+                        if (tower.questionMark) {
+                            tower.mesh.remove(tower.questionMark);
+                        }
+                        
+                        if (tower.containsRapunzel) {
+                            // WIN THE GAME! Rapunzel found!
+                            Audio.playCollectSound();
+                            
+                            // Create Rapunzel appearing at tower top (scaled up so visible from below)
+                            const rapunzelGroup = new THREE.Group();
+                            
+                            // Rapunzel head (larger for visibility)
+                            const headGeometry = new THREE.SphereGeometry(0.8, 12, 12);
+                            const skinMaterial = new THREE.MeshLambertMaterial({ color: 0xFFDBC4 });
+                            const head = new THREE.Mesh(headGeometry, skinMaterial);
+                            head.position.y = 1.5;
+                            rapunzelGroup.add(head);
+                            
+                            // Hair on TOP of head (golden blonde)
+                            const hairMaterial = new THREE.MeshLambertMaterial({ color: 0xFFD700 });
+                            const topHairGeometry = new THREE.SphereGeometry(0.85, 12, 8, 0, Math.PI * 2, 0, Math.PI * 0.5);
+                            const topHair = new THREE.Mesh(topHairGeometry, hairMaterial);
+                            topHair.position.y = 1.5;
+                            rapunzelGroup.add(topHair);
+                            
+                            // Hair at back of head flowing down
+                            const backHairGeometry = new THREE.SphereGeometry(0.5, 8, 8);
+                            const backHair = new THREE.Mesh(backHairGeometry, hairMaterial);
+                            backHair.position.set(0, 1.3, -0.6); // Back of head
+                            rapunzelGroup.add(backHair);
+                            
+                            // Long blonde hair flowing down the tower (from back of head)
+                            for (let h = 0; h < 20; h++) {
+                                const hairGeometry = new THREE.CylinderGeometry(0.15, 0.08, 12, 6);
+                                const hairStrand = new THREE.Mesh(hairGeometry, hairMaterial);
+                                hairStrand.position.set(
+                                    (Math.random() - 0.5) * 0.6,
+                                    -5,
+                                    -0.6 + (Math.random() - 0.5) * 0.4 // Behind head, not in front
+                                );
+                                hairStrand.rotation.x = 0.15; // Slight backward tilt
+                                rapunzelGroup.add(hairStrand);
+                            }
+                            
+                            // Eyes (bigger)
+                            const eyeMaterial = new THREE.MeshBasicMaterial({ color: 0x228B22 });
+                            for (let side = -1; side <= 1; side += 2) {
+                                const eyeGeometry = new THREE.SphereGeometry(0.15, 8, 8);
+                                const eye = new THREE.Mesh(eyeGeometry, eyeMaterial);
+                                eye.position.set(side * 0.25, 1.6, 0.7);
+                                rapunzelGroup.add(eye);
+                            }
+                            
+                            // Smile (bigger)
+                            const smileGeometry = new THREE.TorusGeometry(0.2, 0.04, 8, 12, Math.PI);
+                            const smileMaterial = new THREE.MeshBasicMaterial({ color: 0xFF6B6B });
+                            const smile = new THREE.Mesh(smileGeometry, smileMaterial);
+                            smile.position.set(0, 1.3, 0.7);
+                            smile.rotation.x = Math.PI;
+                            rapunzelGroup.add(smile);
+                            
+                            // Pink dress body (bigger cone)
+                            const dressGeometry = new THREE.ConeGeometry(1.2, 2.5, 8);
+                            const dressMaterial = new THREE.MeshLambertMaterial({ color: 0xFF69B4 });
+                            const dress = new THREE.Mesh(dressGeometry, dressMaterial);
+                            dress.position.y = -0.5;
+                            rapunzelGroup.add(dress);
+                            
+                            // Arms waving
+                            const armMaterial = new THREE.MeshLambertMaterial({ color: 0xFFDBC4 });
+                            for (let side = -1; side <= 1; side += 2) {
+                                const armGeometry = new THREE.CylinderGeometry(0.15, 0.12, 1.2, 8);
+                                const arm = new THREE.Mesh(armGeometry, armMaterial);
+                                arm.position.set(side * 1.0, 0.8, 0);
+                                arm.rotation.z = side * 0.8;
+                                rapunzelGroup.add(arm);
+                            }
+                            
+                            // Position Rapunzel at top of tower (towerHeight=12, crownHeight=1.5)
+                            const towerTopY = tower.mesh.position.y + 14; // Above battlements
+                            rapunzelGroup.position.set(tower.x, towerTopY, tower.z);
+                            G.scene.add(rapunzelGroup);
+                            
+                            // Store reference for cleanup on reset
+                            G.rapunzelMesh = rapunzelGroup;
+                            
+                            // Show victory message in console
+                            console.log('Rapunzel gefunden! Du hast gewonnen!');
+                            
+                            // Determine which player found the tower and lift them up
+                            const liftingPlayer = isPlayer2 ? G.player2Group : G.playerGroup;
+                            const startY = liftingPlayer.position.y;
+                            const targetY = towerTopY - 1; // Just below Rapunzel
+                            const liftDuration = 3000; // 3 seconds to rise
+                            const liftStartTime = Date.now();
+                            
+                            // Store tower reference for the lift animation
+                            G.rapunzelTowerLift = {
+                                player: liftingPlayer,
+                                startY: startY,
+                                targetY: targetY,
+                                startTime: liftStartTime,
+                                duration: liftDuration,
+                                towerX: tower.x,
+                                towerZ: tower.z,
+                                completed: false
+                            };
+                            
+                            // Set game won state after the lift
+                            setTimeout(() => {
+                                gameWon = true;
+                                Audio.stopBackgroundMusic();
+                                Audio.playWinSound();
+                            }, liftDuration + 500);
+                            
+                        } else {
+                            // Spawn an enemy from the tower!
+                            Audio.playExplosionSound();
+                            console.log('Eine Falle! Ein Feind erscheint!');
+                            
+                            // Create enemy at tower base using proper creation functions
+                            const enemyX = tower.x + (Math.random() - 0.5) * 6;
+                            const enemyZ = tower.z + (Math.random() - 0.5) * 6;
+                            
+                            // Spawn enemy based on tower config
+                            // 'witch' = guardian (Rapunzel witch variant)
+                            // 'giant' = giant (Tower Giant variant)
+                            // 'crown' = wizard (Crown Wizard variant)
+                            // 'princess-swarm' = multiple goblins (Little Princess variant)
+                            if (tower.enemyType === 'giant') {
+                                // Use proper createGiant function which returns full enemy object
+                                const giant = createGiant(enemyX, enemyZ, enemyX - 10, enemyX + 10, 0.018);
+                                G.goblins.push(giant);
+                            } else if (tower.enemyType === 'witch' || tower.enemyType === 'guardian') {
+                                // Use proper createGuardianGoblin which returns full enemy with isGuardian flag
+                                const guardian = createGuardianGoblin(enemyX, enemyZ, enemyX - 10, enemyX + 10, 0.014);
+                                G.goblins.push(guardian);
+                            } else if (tower.enemyType === 'crown' || tower.enemyType === 'wizard') {
+                                // Use proper createWizard which returns full enemy with isWizard flag
+                                const wizard = createWizard(enemyX, enemyZ, enemyX - 10, enemyX + 10, 0.008);
+                                G.goblins.push(wizard);
+                            } else if (tower.enemyType === 'princess-swarm') {
+                                // Spawn multiple little princess goblins
+                                for (let p = 0; p < 5; p++) {
+                                    const spawnX = tower.x + (Math.random() - 0.5) * 10;
+                                    const spawnZ = tower.z + (Math.random() - 0.5) * 10;
+                                    const goblin = createGoblin(spawnX, spawnZ, spawnX - 5, spawnX + 5, 0.02);
+                                    G.goblins.push(goblin);
+                                }
+                            } else {
+                                // Default: spawn a single goblin
+                                const goblin = createGoblin(enemyX, enemyZ, enemyX - 5, enemyX + 5, 0.02);
+                                G.goblins.push(goblin);
+                            }
+                        }
+                        
+                        // Notify other player in multiplayer
+                        if (multiplayerManager && multiplayerManager.isConnected()) {
+                            multiplayerManager.sendGameEvent('towerActivated', { index: idx });
+                        }
+                    }
+                }
+            });
+            
+            // Animate question marks (bob up and down)
+            G.mysteryTowers.forEach((tower) => {
+                if (!tower.activated && tower.questionMark) {
+                    tower.bobPhase = (tower.bobPhase || 0) + 0.05;
+                    tower.questionMark.position.y = tower.mesh.children[0].geometry.parameters.height + 5 + Math.sin(tower.bobPhase) * 0.5;
+                    tower.questionMark.rotation.y += 0.02;
+                }
+            });
+            
+            // Animate player lift to Rapunzel tower
+            if (G.rapunzelTowerLift && !G.rapunzelTowerLift.completed) {
+                const lift = G.rapunzelTowerLift;
+                const now = Date.now();
+                const elapsed = now - lift.startTime;
+                const progress = Math.min(elapsed / lift.duration, 1);
+                
+                // Smooth easing (ease out)
+                const easedProgress = 1 - Math.pow(1 - progress, 3);
+                
+                // Move player up
+                const newY = lift.startY + (lift.targetY - lift.startY) * easedProgress;
+                lift.player.position.y = newY;
+                
+                // Keep player centered on tower as they rise
+                lift.player.position.x += (lift.towerX - lift.player.position.x) * 0.05;
+                lift.player.position.z += (lift.towerZ + 2 - lift.player.position.z) * 0.05;
+                
+                // Also animate Rapunzel floating toward player (so she's visible)
+                if (G.rapunzelMesh) {
+                    // Move Rapunzel out from tower toward player
+                    const rapunzelTargetZ = lift.towerZ + 5; // Float out in front of tower
+                    G.rapunzelMesh.position.z += (rapunzelTargetZ - G.rapunzelMesh.position.z) * 0.03;
+                    // Match player Y position (slightly above)
+                    G.rapunzelMesh.position.y += (newY + 2 - G.rapunzelMesh.position.y) * 0.03;
+                    // Face the player
+                    G.rapunzelMesh.rotation.y = Math.PI;
+                }
+                
+                // Mark as completed when done
+                if (progress >= 1) {
+                    lift.completed = true;
+                }
             }
         }
         

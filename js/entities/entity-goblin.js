@@ -41,6 +41,8 @@
             buildGingerbreadMan(goblinGrp);
         } else if (G.crystalTheme) {
             buildCaveCrawler(goblinGrp);
+        } else if (G.rapunzelTheme) {
+            buildLittlePrincess(goblinGrp);
         } else {
             buildStandardGoblin(goblinGrp, textures);
         }
@@ -1003,6 +1005,127 @@
         ear2.position.set(0.5, 1.5, 0);
         ear2.castShadow = true;
         group.add(ear2);
+    }
+    
+    function buildLittlePrincess(group) {
+        // LITTLE PRINCESS - small princess with crown for Rapunzel theme
+        const dressColor = 0xFFB6C1;        // Light pink dress
+        const skinColor = 0xFFDFC4;         // Peachy skin
+        const crownGold = 0xFFD700;         // Gold crown
+        const hairColor = 0xFFE4B5;         // Blonde hair
+        const shoeColor = 0xFF69B4;         // Hot pink shoes
+        
+        // Pink dress body
+        const bodyGeometry = new THREE.ConeGeometry(0.4, 0.8, 8);
+        const bodyMaterial = new THREE.MeshLambertMaterial({ color: dressColor });
+        const body = new THREE.Mesh(bodyGeometry, bodyMaterial);
+        body.position.y = 0.6;
+        body.castShadow = true;
+        group.add(body);
+        
+        // Dress details - white lace trim
+        const laceGeometry = new THREE.TorusGeometry(0.4, 0.04, 8, 16);
+        const laceMaterial = new THREE.MeshLambertMaterial({ color: 0xFFFFFF });
+        const lace = new THREE.Mesh(laceGeometry, laceMaterial);
+        lace.position.y = 0.2;
+        lace.rotation.x = Math.PI / 2;
+        group.add(lace);
+        
+        // Head
+        const headGeometry = new THREE.SphereGeometry(0.35, 16, 16);
+        const headMaterial = new THREE.MeshLambertMaterial({ color: skinColor });
+        const head = new THREE.Mesh(headGeometry, headMaterial);
+        head.position.y = 1.35;
+        head.castShadow = true;
+        group.add(head);
+        
+        // Blonde hair buns
+        const bunGeometry = new THREE.SphereGeometry(0.15, 12, 12);
+        const hairMaterial = new THREE.MeshLambertMaterial({ color: hairColor });
+        [-0.25, 0.25].forEach(x => {
+            const bun = new THREE.Mesh(bunGeometry, hairMaterial);
+            bun.position.set(x, 1.55, -0.1);
+            group.add(bun);
+        });
+        
+        // Hair back
+        const hairBackGeometry = new THREE.SphereGeometry(0.3, 16, 8, 0, Math.PI * 2, 0, Math.PI / 2);
+        const hairBack = new THREE.Mesh(hairBackGeometry, hairMaterial);
+        hairBack.position.set(0, 1.35, -0.1);
+        hairBack.rotation.x = Math.PI;
+        group.add(hairBack);
+        
+        // Little Crown
+        const crownBaseGeometry = new THREE.CylinderGeometry(0.15, 0.18, 0.1, 8);
+        const crownMaterial = new THREE.MeshLambertMaterial({ 
+            color: crownGold,
+            emissive: crownGold,
+            emissiveIntensity: 0.3
+        });
+        const crownBase = new THREE.Mesh(crownBaseGeometry, crownMaterial);
+        crownBase.position.y = 1.75;
+        group.add(crownBase);
+        
+        // Crown points
+        for (let i = 0; i < 5; i++) {
+            const angle = (i / 5) * Math.PI * 2;
+            const pointGeometry = new THREE.ConeGeometry(0.03, 0.12, 4);
+            const point = new THREE.Mesh(pointGeometry, crownMaterial);
+            point.position.set(
+                Math.cos(angle) * 0.12,
+                1.85,
+                Math.sin(angle) * 0.12
+            );
+            group.add(point);
+        }
+        
+        // Cute eyes
+        const eyeMaterial = new THREE.MeshBasicMaterial({ color: 0x4169E1 });
+        const eyeGeometry = new THREE.SphereGeometry(0.08, 12, 12);
+        [-0.12, 0.12].forEach(x => {
+            const eye = new THREE.Mesh(eyeGeometry, eyeMaterial);
+            eye.position.set(x, 1.4, 0.3);
+            group.add(eye);
+        });
+        
+        // Angry eyebrows (she's evil!)
+        const browGeometry = new THREE.BoxGeometry(0.12, 0.02, 0.02);
+        const browMaterial = new THREE.MeshLambertMaterial({ color: hairColor });
+        [-0.12, 0.12].forEach((x, i) => {
+            const brow = new THREE.Mesh(browGeometry, browMaterial);
+            brow.position.set(x, 1.52, 0.32);
+            brow.rotation.z = i === 0 ? -0.3 : 0.3;
+            group.add(brow);
+        });
+        
+        // Small mouth
+        const mouthGeometry = new THREE.SphereGeometry(0.04, 8, 8);
+        const mouthMaterial = new THREE.MeshLambertMaterial({ color: 0xFF6B6B });
+        const mouth = new THREE.Mesh(mouthGeometry, mouthMaterial);
+        mouth.position.set(0, 1.28, 0.32);
+        mouth.scale.set(1.5, 0.5, 1);
+        group.add(mouth);
+        
+        // Little arms
+        const armGeometry = new THREE.CylinderGeometry(0.06, 0.06, 0.4, 6);
+        const armMaterial = new THREE.MeshLambertMaterial({ color: skinColor });
+        [-0.35, 0.35].forEach((x, i) => {
+            const arm = new THREE.Mesh(armGeometry, armMaterial);
+            arm.position.set(x, 0.9, 0);
+            arm.rotation.z = i === 0 ? 0.5 : -0.5;
+            arm.castShadow = true;
+            group.add(arm);
+        });
+        
+        // Pink shoes
+        const shoeGeometry = new THREE.BoxGeometry(0.12, 0.08, 0.2);
+        const shoeMaterial = new THREE.MeshLambertMaterial({ color: shoeColor });
+        [-0.15, 0.15].forEach(x => {
+            const shoe = new THREE.Mesh(shoeGeometry, shoeMaterial);
+            shoe.position.set(x, 0.04, 0.05);
+            shoe.castShadow = true;
+            group.add(shoe);
+        });
     }
     
     // ========================================

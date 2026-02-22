@@ -1,0 +1,151 @@
+{
+  "levelNumber": 14,
+  "levelName": "Rapunzel's Tower",
+  "themeName": "rapunzel",
+  "description": "A magical fairytale forest with mysterious towers. Find Rapunzel trapped in one of the towers to win!",
+  "wikiDescription": "Ein magischer Märchenwald mit geheimnisvollen Türmen! Finde Rapunzel in einem der Türme, aber pass auf - die meisten Türme sind Fallen, die böse Wesen freilassen!",
+  "mechanic": "Mystery Towers - Multiple stone towers are scattered around the level. Approach any tower to reveal what's inside: one tower contains Rapunzel (instant win!), while others release dangerous enemies like witches, giants, or other monsters. The player must choose wisely and prepare for battle while searching for the true tower!",
+
+  "colors": {
+    "skyColor": "0x7eb5d6",
+    "fogColor": "0x9ecfb7",
+    "fogDensity": "0.015",
+    "groundColor": "0x4a7c4f",
+    "hillColor": "0x5d8c5d",
+    "grassColor": "0x3d6b3d",
+    "treeColor": "0x2d5a2d",
+    "ambientLightColor": "0xffeedd",
+    "ambientLightIntensity": 0.5,
+    "directionalLightColor": "0xfffaf0",
+    "directionalLightIntensity": 0.7
+  },
+
+  "environment": {
+    "groundTexture": "grass",
+    "groundColor": "0x4a7c4f",
+    "treeType": "fairytale-pine",
+    "treeColor": "0x2d5a2d",
+    "rockType": "mossy-rock",
+    "rockColor": "0x6b7b6b",
+    "decorations": [
+      { "id": "mystery-tower", "count": 8, "note": "Stone towers that trigger mechanic when approached" },
+      { "id": "flower-patch", "colors": ["0xff69b4", "0xffd700", "0xff6347", "0x9370db"], "count": 20 },
+      { "id": "mushroom", "colors": ["0xff4444", "0xffaa00"], "spotted": true, "count": 15 },
+      { "id": "vine", "count": 12 },
+      { "id": "fairytale-lantern", "light": true, "count": 6 },
+      { "id": "cottage", "count": 2, "note": "Small fairytale cottages" }
+    ],
+    "hazards": ["thorns"],
+    "effects": {
+      "fireflies": true,
+      "fireflyCount": 50,
+      "pollen": true,
+      "pollenCount": 30
+    }
+  },
+
+  "collision": {
+    "mountainShape": "box",
+    "useWallCollision": true
+  },
+
+  "newEntities": [
+    {
+      "id": "tower-giant",
+      "name": "Turm-Riese",
+      "role": "giant",
+      "description": "Ein lebendiger Steinturm mit einem Gesicht in der Mauer und Zinnen auf dem Kopf. Seine mächtigen Steinbeine lassen den Boden erbeben.",
+      "hp": 20,
+      "damage": 2,
+      "tags": ["Boden", "Schwer", "Nahkampf"],
+      "note": "Tower with face, battlements on top, stone legs"
+    },
+    {
+      "id": "rapunzel-witch",
+      "name": "Märchen-Hexe",
+      "role": "guardian",
+      "description": "Eine böse Hexe im dunklen Umhang mit spitzem Hut, die magische Tannenzapfen-Projektile schleudert.",
+      "hp": 5,
+      "damage": 1,
+      "tags": ["Magie", "Fernkampf"],
+      "projectile": "pine-cone",
+      "note": "Witch that shoots pine tree/cone projectiles"
+    },
+    {
+      "id": "little-princess",
+      "name": "Kleine Prinzessin",
+      "role": "critter",
+      "description": "Eine kleine, böse Prinzessin mit einem funkelnden Krönchen. Klein aber gemein!",
+      "hp": 3,
+      "damage": 1,
+      "tags": ["Boden", "Nahkampf"],
+      "note": "Small princess with little crown, the critter enemy"
+    },
+    {
+      "id": "crown-wizard",
+      "name": "Kronen-Magier",
+      "role": "wizard",
+      "description": "Eine riesige goldene Krone mit magischen Beinen, die Feuerbälle verschießt. Ein mächtiger Zauberer in ungewöhnlicher Gestalt.",
+      "hp": 7,
+      "damage": 1,
+      "tags": ["Magie", "Fernkampf"],
+      "note": "Huge crown with legs, shoots fireballs"
+    },
+    {
+      "id": "rapunzel",
+      "name": "Rapunzel",
+      "role": "npc",
+      "description": "Die gefangene Prinzessin mit langem goldenem Haar. Finde sie in einem der Türme, um zu gewinnen!",
+      "hp": 0,
+      "damage": 0,
+      "tags": ["NPC", "Ziel"],
+      "note": "Win condition - spawns from correct tower"
+    }
+  ],
+
+  "existingEntities": {
+    "goblin": { "reskin": true, "variant": "little-princess", "note": "Little princess with crown" },
+    "guardian": { "reskin": true, "variant": "rapunzel-witch", "note": "Witch shooting pine cones" },
+    "giant": { "reskin": true, "variant": "tower-giant", "note": "Tower with face and battlements" },
+    "wizard": { "reskin": true, "variant": "crown-wizard", "note": "Huge crown with legs" }
+  },
+
+  "features": {
+    "hasRiver": false,
+    "hasMountains": true,
+    "hasTreasure": true,
+    "hasMaterials": false
+  },
+
+  "specialMechanic": {
+    "name": "Mystery Towers",
+    "description": "Find Rapunzel's true tower among the decoys. Approach any tower to reveal its contents - one has Rapunzel (instant win!), others spawn enemies.",
+    "towers": {
+      "totalCount": 8,
+      "rapunzelTowerCount": 1,
+      "enemyTowerTypes": ["witch", "giant", "crown-wizard", "princess-swarm"],
+      "triggerRadius": 5,
+      "appearance": "Tall stone tower with ivy, closed wooden door, barred window at top"
+    },
+    "winCondition": {
+      "trigger": "rapunzelTowerOpened",
+      "description": "When player approaches the correct tower, Rapunzel appears and the level is instantly won"
+    }
+  },
+
+  "positions": {
+    "playerStart": { "x": 0, "z": 180 },
+    "portal": { "x": 0, "z": -220, "destinationLevel": 1 },
+    "boss": { "x": 0, "z": -175, "scale": 0.8 },
+    "treasure": { "x": 0, "z": -200 },
+    "rainbow": { "x": 0, "z": -195 },
+    "worldKite": { "x": 5, "z": 175 }
+  },
+
+  "enemies": {
+    "critterCount": 16,
+    "rangedCount": 10,
+    "tankCount": 3,
+    "miniBossCount": 2
+  }
+}

@@ -455,7 +455,8 @@
             Audio.stopBikeSound();
         }
         
-        if (!godMode) {
+        // Skip terrain height adjustment if player is being lifted by or at top of rapunzel tower
+        if (!godMode && !G.rapunzelTowerLift) {
             const terrainHeight = getTerrainHeight(G.playerGroup.position.x, G.playerGroup.position.z);
             if (G.player.isGliding) {
                 const groundHeight = 0.1;
@@ -612,11 +613,18 @@
             // Check mountains/walls
             if (!collided && G.levelConfig.mountains && G.levelConfig.mountains.length > 0) {
                 for (const mtn of G.levelConfig.mountains) {
-                    if (G.graveyardTheme || G.ruinsTheme || G.computerTheme || G.enchantedTheme || G.easterTheme || G.christmasTheme || G.crystalTheme) {
-                        // Box collision for graveyard, ruins, computer, enchanted, easter, christmas, and crystal walls
+                    if (G.graveyardTheme || G.ruinsTheme || G.computerTheme || G.enchantedTheme || G.easterTheme || G.christmasTheme || G.crystalTheme || G.rapunzelTheme) {
+                        // Box collision for graveyard, ruins, computer, enchanted, easter, christmas, crystal, and rapunzel walls
                         const wallWidth = mtn.width;
-                        // Use fixed depth of 2 for computer theme (matches visual), variable for others
-                        const wallDepth = G.computerTheme ? 2 : Math.min(mtn.width * 0.15, 8);
+                        // Match wall depth to visual rendering for each theme
+                        let wallDepth;
+                        if (G.computerTheme) {
+                            wallDepth = 2;
+                        } else if (G.rapunzelTheme) {
+                            wallDepth = Math.min(mtn.width * 0.03, 1.5); // Thin walls
+                        } else {
+                            wallDepth = Math.min(mtn.width * 0.15, 8);
+                        }
                         const halfW = wallWidth / 2 + 1.5;
                         const halfD = wallDepth / 2 + 1.5;
                         const dx = Math.abs(newX - mtn.x);

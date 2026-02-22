@@ -307,6 +307,26 @@ function initLoop() {
             G.sizePotions.forEach(potion => G.scene.remove(potion.mesh));
             G.sizePotions.length = 0;
         }
+        
+        // Reset Rapunzel tower lift animation
+        G.rapunzelTowerLift = null;
+        
+        // Remove Rapunzel mesh if it exists
+        if (G.rapunzelMesh) {
+            G.scene.remove(G.rapunzelMesh);
+            G.rapunzelMesh = null;
+        }
+        
+        // Reset mystery towers (Rapunzel theme)
+        if (G.mysteryTowers) {
+            G.mysteryTowers.forEach(tower => {
+                tower.activated = false;
+                // Re-add question mark if it was removed
+                if (tower.questionMark && !tower.mesh.children.includes(tower.questionMark)) {
+                    tower.mesh.add(tower.questionMark);
+                }
+            });
+        }
     }
 
     // HUD
@@ -1658,6 +1678,9 @@ function initLoop() {
                     updateGoblins();
                     updateZombieSpawns();
                     updateOvenSpawns();
+                    if (typeof updateDescendingWitches === 'function') {
+                        updateDescendingWitches();
+                    }
                     updateGuardianArrows();
                     updateMummyTornados();
                     updateLavaTrails();

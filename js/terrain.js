@@ -2552,7 +2552,7 @@ function getTerrainHeight(x, z) {
 }
 
 // Create visual hill meshes
-function createHills(scene, THREE, hillPositions, hillColor, iceTheme, desertTheme, lavaTheme, waterTheme, candyTheme, graveyardTheme, ruinsTheme, computerTheme, christmasTheme, crystalTheme) {
+function createHills(scene, THREE, hillPositions, hillColor, iceTheme, desertTheme, lavaTheme, waterTheme, candyTheme, graveyardTheme, ruinsTheme, computerTheme, christmasTheme, crystalTheme, rapunzelTheme) {
     const textures = getTerrainTextures(THREE);
     const hills = hillPositions || HILLS;
     const color = hillColor || 0x88cc88;
@@ -2793,7 +2793,7 @@ function createHills(scene, THREE, hillPositions, hillColor, iceTheme, desertThe
 }
 
 // Create mountains (world boundaries)
-function createMountains(scene, THREE, mountainPositions, candyTheme, graveyardTheme, ruinsTheme, computerTheme, enchantedTheme, easterTheme, christmasTheme, crystalTheme) {
+function createMountains(scene, THREE, mountainPositions, candyTheme, graveyardTheme, ruinsTheme, computerTheme, enchantedTheme, easterTheme, christmasTheme, crystalTheme, rapunzelTheme) {
     const textures = getTerrainTextures(THREE);
     mountainPositions.forEach(mtn => {
         if (computerTheme) {
@@ -3397,6 +3397,230 @@ function createMountains(scene, THREE, mountainPositions, candyTheme, graveyardT
                 scene.add(gem);
             }
             
+        } else if (rapunzelTheme) {
+            // Mix of stone walls and rocky cliffs for fairytale forest
+            const wallHeight = mtn.height;
+            const wallWidth = mtn.width;
+            const wallDepth = Math.min(mtn.width * 0.03, 1.5); // Much thinner walls
+            
+            // Randomly choose wall (40%) or rocky cliff (60%)
+            const isRockyCliff = Math.random() > 0.4;
+            
+            if (isRockyCliff) {
+                // Rocky cliff - mountain range with multiple varied peaks
+                const cliffGroup = new THREE.Group();
+                
+                // Main peaks spread along the width
+                const numPeaks = Math.max(3, Math.floor(wallWidth / 6));
+                const peakSpacing = wallWidth / numPeaks;
+                
+                // Create main peaks with varied heights
+                for (let p = 0; p < numPeaks; p++) {
+                    // Alternate between tall and medium peaks for visual interest
+                    const heightVariation = p % 2 === 0 ? 1.0 + Math.random() * 0.3 : 0.6 + Math.random() * 0.3;
+                    const peakHeight = wallHeight * heightVariation;
+                    const peakRadius = peakHeight * 0.5; // Sharper, more dramatic peaks
+                    const peakGeometry = new THREE.ConeGeometry(peakRadius, peakHeight, 8);
+                    
+                    // Varied rock colors
+                    const rockColors = [0x7A7A6A, 0x6A6A5A, 0x8A8A7A, 0x5A5A4A];
+                    const peakMaterial = new THREE.MeshLambertMaterial({ 
+                        map: textures.rock,
+                        color: rockColors[p % rockColors.length]
+                    });
+                    const peak = new THREE.Mesh(peakGeometry, peakMaterial);
+                    peak.position.set(
+                        -wallWidth/2 + peakSpacing * (p + 0.5) + (Math.random() - 0.5) * 1.5,
+                        peakHeight / 2,
+                        (Math.random() - 0.5) * 2
+                    );
+                    peak.castShadow = true;
+                    cliffGroup.add(peak);
+                    
+                    // Snow cap on taller peaks
+                    if (peakHeight > wallHeight * 0.8) {
+                        const snowCapGeometry = new THREE.ConeGeometry(peakRadius * 0.4, peakHeight * 0.25, 8);
+                        const snowCapMaterial = new THREE.MeshLambertMaterial({ color: 0xF5F5F5 });
+                        const snowCap = new THREE.Mesh(snowCapGeometry, snowCapMaterial);
+                        snowCap.position.set(peak.position.x, peakHeight * 0.88, peak.position.z);
+                        cliffGroup.add(snowCap);
+                    } else {
+                        // Mossy/grassy cap on shorter peaks
+                        const capGeometry = new THREE.ConeGeometry(peakRadius * 0.35, peakHeight * 0.2, 8);
+                        const capMaterial = new THREE.MeshLambertMaterial({ color: 0x5A6B4A });
+                        const cap = new THREE.Mesh(capGeometry, capMaterial);
+                        cap.position.set(peak.position.x, peakHeight * 0.9, peak.position.z);
+                        cliffGroup.add(cap);
+                    }
+                    
+                    // Add smaller secondary peak beside main ones
+                    if (Math.random() > 0.4) {
+                        const secondaryHeight = peakHeight * (0.4 + Math.random() * 0.3);
+                        const secondaryRadius = secondaryHeight * 0.5;
+                        const secondaryGeometry = new THREE.ConeGeometry(secondaryRadius, secondaryHeight, 6);
+                        const secondaryMaterial = new THREE.MeshLambertMaterial({ 
+                            map: textures.rock,
+                            color: 0x6A6A5A
+                        });
+                        const secondaryPeak = new THREE.Mesh(secondaryGeometry, secondaryMaterial);
+                        const sideOffset = (Math.random() > 0.5 ? 1 : -1) * (peakRadius * 0.8 + secondaryRadius * 0.6);
+                        secondaryPeak.position.set(
+                            peak.position.x + sideOffset,
+                            secondaryHeight / 2,
+                            peak.position.z + (Math.random() - 0.5) * 1.5
+                        );
+                        secondaryPeak.castShadow = true;
+                        cliffGroup.add(secondaryPeak);
+                    }
+                }
+                
+                // Add ridge lines connecting peaks
+                const ridgeCount = Math.max(2, Math.floor(wallWidth / 15));
+                for (let r = 0; r < ridgeCount; r++) {
+                    const ridgeWidth = 3 + Math.random() * 4;
+                    const ridgeHeight = wallHeight * (0.2 + Math.random() * 0.2);
+                    const ridgeGeometry = new THREE.BoxGeometry(ridgeWidth, ridgeHeight, 1.5);
+                    const ridgeMaterial = new THREE.MeshLambertMaterial({ 
+                        map: textures.rock,
+                        color: 0x6A6A5A 
+                    });
+                    const ridge = new THREE.Mesh(ridgeGeometry, ridgeMaterial);
+                    ridge.position.set(
+                        -wallWidth/2 + Math.random() * wallWidth,
+                        ridgeHeight / 2,
+                        (Math.random() - 0.5) * 3
+                    );
+                    ridge.rotation.y = (Math.random() - 0.5) * 0.5;
+                    ridge.castShadow = true;
+                    cliffGroup.add(ridge);
+                }
+                
+                // Boulder rocks scattered along base of range
+                const numBoulders = Math.max(5, Math.floor(wallWidth / 8));
+                for (let b = 0; b < numBoulders; b++) {
+                    const boulderSize = 0.5 + Math.random() * 1.0;
+                    const boulderGeometry = new THREE.DodecahedronGeometry(boulderSize, 0);
+                    const boulderMaterial = new THREE.MeshLambertMaterial({ 
+                        map: textures.rock,
+                        color: 0x5A5A4A 
+                    });
+                    const boulder = new THREE.Mesh(boulderGeometry, boulderMaterial);
+                    boulder.position.set(
+                        -wallWidth/2 + Math.random() * wallWidth,
+                        boulderSize * 0.4,
+                        (Math.random() - 0.5) * 5
+                    );
+                    boulder.rotation.set(Math.random() * Math.PI, Math.random() * Math.PI, Math.random() * Math.PI);
+                    boulder.castShadow = true;
+                    cliffGroup.add(boulder);
+                }
+                
+                // Add some small rock outcroppings
+                const outcroppingCount = Math.floor(wallWidth / 10);
+                for (let o = 0; o < outcroppingCount; o++) {
+                    const outHeight = 1 + Math.random() * 2;
+                    const outGeometry = new THREE.ConeGeometry(outHeight * 0.6, outHeight, 5);
+                    const outMaterial = new THREE.MeshLambertMaterial({ 
+                        map: textures.rock,
+                        color: 0x7A7A6A
+                    });
+                    const outcropping = new THREE.Mesh(outGeometry, outMaterial);
+                    outcropping.position.set(
+                        -wallWidth/2 + Math.random() * wallWidth,
+                        outHeight * 0.5,
+                        2 + Math.random() * 3
+                    );
+                    outcropping.rotation.x = (Math.random() - 0.5) * 0.3;
+                    outcropping.castShadow = true;
+                    cliffGroup.add(outcropping);
+                }
+                
+                cliffGroup.position.set(mtn.x, 0, mtn.z);
+                scene.add(cliffGroup);
+                
+            } else {
+                // Stone wall section with ivy and moss
+                // Stone wall base
+                const wallGeometry = new THREE.BoxGeometry(wallWidth, wallHeight, wallDepth);
+                const wallMaterial = new THREE.MeshLambertMaterial({ 
+                    color: 0x7A7A7A,
+                    map: textures.rock
+                });
+                const wall = new THREE.Mesh(wallGeometry, wallMaterial);
+                wall.position.set(mtn.x, wallHeight/2, mtn.z);
+                wall.castShadow = true;
+                scene.add(wall);
+                
+                // Stone cap on top
+                const capHeight = Math.min(0.4, wallHeight * 0.1);
+                const capGeometry = new THREE.BoxGeometry(wallWidth + 0.6, capHeight, wallDepth + 0.6);
+                const capMaterial = new THREE.MeshLambertMaterial({ color: 0x5A5A5A });
+                const cap = new THREE.Mesh(capGeometry, capMaterial);
+                cap.position.set(mtn.x, wallHeight + capHeight/2, mtn.z);
+                scene.add(cap);
+                
+                // Ivy vines climbing walls
+                const ivyColor = 0x2D5A2D;
+                const ivyCount = Math.max(3, Math.floor(wallWidth / 5));
+                for (let i = 0; i < ivyCount; i++) {
+                    const ivyX = mtn.x - wallWidth/2 + (i + 0.5) * (wallWidth / ivyCount) + (Math.random() - 0.5) * 2;
+                    const vineHeight = wallHeight * (0.5 + Math.random() * 0.5);
+                    
+                    // Vine stem
+                    const stemGeometry = new THREE.CylinderGeometry(0.08, 0.12, vineHeight, 6);
+                    const stemMaterial = new THREE.MeshLambertMaterial({ color: 0x3D4A3D });
+                    const stem = new THREE.Mesh(stemGeometry, stemMaterial);
+                    stem.position.set(ivyX, vineHeight/2, mtn.z + wallDepth/2 + 0.15);
+                    scene.add(stem);
+                    
+                    // Ivy leaves along the vine
+                    const leafCount = Math.floor(vineHeight / 0.8);
+                    for (let j = 0; j < leafCount; j++) {
+                        const leafGeometry = new THREE.SphereGeometry(0.25 + Math.random() * 0.15, 6, 6);
+                        const leafMaterial = new THREE.MeshLambertMaterial({ color: ivyColor });
+                        const leaf = new THREE.Mesh(leafGeometry, leafMaterial);
+                        leaf.position.set(
+                            ivyX + (Math.random() - 0.5) * 0.6,
+                            0.4 + j * (vineHeight / leafCount),
+                            mtn.z + wallDepth/2 + 0.2 + Math.random() * 0.2
+                        );
+                        leaf.scale.set(1.3, 0.6, 1);
+                        scene.add(leaf);
+                    }
+                }
+                
+                // Moss patches on wall
+                const mossCount = Math.floor(wallWidth / 4);
+                for (let i = 0; i < mossCount; i++) {
+                    const mossGeometry = new THREE.SphereGeometry(0.4 + Math.random() * 0.3, 8, 8);
+                    const mossMaterial = new THREE.MeshLambertMaterial({ color: 0x4A5D3A });
+                    const moss = new THREE.Mesh(mossGeometry, mossMaterial);
+                    moss.position.set(
+                        mtn.x - wallWidth/2 + Math.random() * wallWidth,
+                        Math.random() * wallHeight * 0.7,
+                        mtn.z + wallDepth/2 + 0.1
+                    );
+                    moss.scale.set(1.5, 0.5, 0.8);
+                    scene.add(moss);
+                }
+                
+                // Small flowers growing on wall
+                const flowerColors = [0xFF69B4, 0xFFD700, 0xFF6347, 0x9370DB];
+                const flowerCount = Math.floor(wallWidth / 3);
+                for (let i = 0; i < flowerCount; i++) {
+                    const flowerColor = flowerColors[Math.floor(Math.random() * flowerColors.length)];
+                    const flowerGeometry = new THREE.SphereGeometry(0.15, 8, 8);
+                    const flowerMaterial = new THREE.MeshLambertMaterial({ color: flowerColor });
+                    const flower = new THREE.Mesh(flowerGeometry, flowerMaterial);
+                    flower.position.set(
+                        mtn.x - wallWidth/2 + Math.random() * wallWidth,
+                        wallHeight * 0.1 + Math.random() * wallHeight * 0.5,
+                        mtn.z + wallDepth/2 + 0.25
+                    );
+                    scene.add(flower);
+                }
+            }
+            
         } else {
             // Regular mountain (cone shape)
             const mountainGeometry = new THREE.ConeGeometry(mtn.width/2, mtn.height, 6);
@@ -3598,7 +3822,7 @@ function createComputerGround(scene, THREE) {
 }
 
 // Create ground plane
-function createGround(scene, THREE, groundColor, iceTheme, desertTheme, lavaTheme, waterTheme, candyTheme, graveyardTheme, ruinsTheme, computerTheme, christmasTheme, crystalTheme) {
+function createGround(scene, THREE, groundColor, iceTheme, desertTheme, lavaTheme, waterTheme, candyTheme, graveyardTheme, ruinsTheme, computerTheme, christmasTheme, crystalTheme, rapunzelTheme) {
     const textures = getTerrainTextures(THREE);
     const color = groundColor || 0xffffff; // Tint color applied over texture
     let textureToUse;

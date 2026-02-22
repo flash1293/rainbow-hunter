@@ -33,6 +33,8 @@
             buildEvilSnowman(giantGrp);
         } else if (G.crystalTheme) {
             buildCrystalGiant(giantGrp);
+        } else if (G.rapunzelTheme) {
+            buildTowerGiant(giantGrp);
         } else {
             buildStandardGiant(giantGrp, textures);
         }
@@ -1307,6 +1309,172 @@
             );
             group.add(spike);
         }
+    }
+    
+    function buildTowerGiant(group) {
+        // TOWER GIANT - living stone tower with face and battlements
+        const stoneColor = 0x7A7A7A;        // Gray stone
+        const stoneDark = 0x5A5A5A;         // Darker stone
+        const mossColor = 0x4A5D3A;         // Green moss
+        const windowColor = 0x2A1A1A;       // Dark window
+        const eyeGlow = 0xFF6600;           // Glowing orange eyes
+        const doorColor = 0x4A3A2A;         // Wooden door brown
+        
+        // Main tower body (tall cylinder with slight taper)
+        const towerGeometry = new THREE.CylinderGeometry(1.8, 2.2, 5.0, 12);
+        const towerMaterial = new THREE.MeshLambertMaterial({ color: stoneColor });
+        const tower = new THREE.Mesh(towerGeometry, towerMaterial);
+        tower.position.y = 3.0;
+        tower.castShadow = true;
+        tower.receiveShadow = true;
+        group.add(tower);
+        
+        // Stone block texture lines (horizontal)
+        for (let i = 0; i < 8; i++) {
+            const lineGeometry = new THREE.TorusGeometry(1.85 - i * 0.03, 0.03, 4, 24);
+            const lineMaterial = new THREE.MeshLambertMaterial({ color: stoneDark });
+            const line = new THREE.Mesh(lineGeometry, lineMaterial);
+            line.position.y = 0.8 + i * 0.6;
+            line.rotation.x = Math.PI / 2;
+            group.add(line);
+        }
+        
+        // Battlements on top (crown of the tower)
+        const numBattlements = 8;
+        for (let i = 0; i < numBattlements; i++) {
+            const angle = (i / numBattlements) * Math.PI * 2;
+            const battlementGeometry = new THREE.BoxGeometry(0.8, 1.0, 0.5);
+            const battlementMaterial = new THREE.MeshLambertMaterial({ color: stoneDark });
+            const battlement = new THREE.Mesh(battlementGeometry, battlementMaterial);
+            battlement.position.set(
+                Math.cos(angle) * 1.6,
+                6.0,
+                Math.sin(angle) * 1.6
+            );
+            battlement.rotation.y = -angle;
+            battlement.castShadow = true;
+            group.add(battlement);
+        }
+        
+        // Face - carved into the tower
+        // Glowing eyes (windows that look like eyes)
+        const eyeGeometry = new THREE.BoxGeometry(0.5, 0.7, 0.2);
+        const eyeMaterial = new THREE.MeshBasicMaterial({ color: eyeGlow });
+        [-0.7, 0.7].forEach(x => {
+            const eye = new THREE.Mesh(eyeGeometry, eyeMaterial);
+            eye.position.set(x, 4.5, 1.9);
+            group.add(eye);
+            
+            // Eye glow effect
+            const glowGeometry = new THREE.SphereGeometry(0.4, 8, 8);
+            const glowMaterial = new THREE.MeshBasicMaterial({ 
+                color: eyeGlow,
+                transparent: true,
+                opacity: 0.3
+            });
+            const glow = new THREE.Mesh(glowGeometry, glowMaterial);
+            glow.position.set(x, 4.5, 2.0);
+            group.add(glow);
+        });
+        
+        // Angry stone eyebrows
+        const browGeometry = new THREE.BoxGeometry(0.7, 0.15, 0.2);
+        const browMaterial = new THREE.MeshLambertMaterial({ color: stoneDark });
+        [-0.7, 0.7].forEach((x, i) => {
+            const brow = new THREE.Mesh(browGeometry, browMaterial);
+            brow.position.set(x, 5.0, 1.9);
+            brow.rotation.z = i === 0 ? -0.3 : 0.3;
+            group.add(brow);
+        });
+        
+        // Mouth (door that looks like a grimacing mouth)
+        const mouthGeometry = new THREE.BoxGeometry(1.2, 0.8, 0.2);
+        const mouthMaterial = new THREE.MeshLambertMaterial({ color: doorColor });
+        const mouth = new THREE.Mesh(mouthGeometry, mouthMaterial);
+        mouth.position.set(0, 3.0, 2.0);
+        group.add(mouth);
+        
+        // Teeth (stone blocks in mouth)
+        for (let i = 0; i < 4; i++) {
+            const toothGeometry = new THREE.BoxGeometry(0.2, 0.3, 0.15);
+            const toothMaterial = new THREE.MeshLambertMaterial({ color: 0xE8E8E8 });
+            const tooth = new THREE.Mesh(toothGeometry, toothMaterial);
+            tooth.position.set(-0.45 + i * 0.3, 3.4, 2.05);
+            group.add(tooth);
+        }
+        
+        // Nose (protruding stone block)
+        const noseGeometry = new THREE.BoxGeometry(0.5, 0.5, 0.4);
+        const nose = new THREE.Mesh(noseGeometry, towerMaterial);
+        nose.position.set(0, 3.8, 2.1);
+        nose.castShadow = true;
+        group.add(nose);
+        
+        // Moss patches
+        const mossGeometry = new THREE.SphereGeometry(0.3, 8, 8);
+        const mossMaterial = new THREE.MeshLambertMaterial({ color: mossColor });
+        [[1.5, 2.0, 1.0], [-1.6, 3.5, 0.8], [1.2, 5.0, -1.2], [-1.0, 1.5, -1.5]].forEach(pos => {
+            const moss = new THREE.Mesh(mossGeometry, mossMaterial);
+            moss.position.set(pos[0], pos[1], pos[2]);
+            moss.scale.set(1 + Math.random() * 0.5, 0.5, 1 + Math.random() * 0.5);
+            group.add(moss);
+        });
+        
+        // Ivy vines climbing up
+        for (let i = 0; i < 3; i++) {
+            const vineAngle = Math.random() * Math.PI * 2;
+            for (let j = 0; j < 6; j++) {
+                const vineLeafGeometry = new THREE.SphereGeometry(0.15, 6, 6);
+                const vineLeaf = new THREE.Mesh(vineLeafGeometry, mossMaterial);
+                vineLeaf.position.set(
+                    Math.cos(vineAngle + j * 0.2) * 2.0,
+                    1.0 + j * 0.8,
+                    Math.sin(vineAngle + j * 0.2) * 2.0
+                );
+                vineLeaf.scale.set(1.2, 0.6, 1);
+                group.add(vineLeaf);
+            }
+        }
+        
+        // Stone legs (thick pillars)
+        const legGeometry = new THREE.CylinderGeometry(0.6, 0.8, 2.0, 8);
+        const legMaterial = new THREE.MeshLambertMaterial({ color: stoneDark });
+        [-1.0, 1.0].forEach(x => {
+            const leg = new THREE.Mesh(legGeometry, legMaterial);
+            leg.position.set(x, 0.5, 0);
+            leg.castShadow = true;
+            group.add(leg);
+        });
+        
+        // Stone feet
+        const footGeometry = new THREE.BoxGeometry(1.0, 0.4, 1.2);
+        [-1.0, 1.0].forEach(x => {
+            const foot = new THREE.Mesh(footGeometry, legMaterial);
+            foot.position.set(x, 0.2, 0.2);
+            foot.castShadow = true;
+            group.add(foot);
+        });
+        
+        // Stone arms (smaller towers as arms)
+        const armGeometry = new THREE.CylinderGeometry(0.35, 0.45, 2.5, 8);
+        [-2.3, 2.3].forEach((x, i) => {
+            const arm = new THREE.Mesh(armGeometry, towerMaterial);
+            arm.position.set(x, 3.5, 0);
+            arm.rotation.z = i === 0 ? 0.4 : -0.4;
+            arm.castShadow = true;
+            group.add(arm);
+            if (i === 0) group.leftArm = arm;
+            else group.rightArm = arm;
+            
+            // Stone fist
+            const fistGeometry = new THREE.BoxGeometry(0.7, 0.7, 0.7);
+            const fist = new THREE.Mesh(fistGeometry, stoneDark);
+            fist.position.set(x * 1.35, 2.2, 0);
+            fist.castShadow = true;
+            group.add(fist);
+            if (i === 0) group.leftFist = fist;
+            else group.rightFist = fist;
+        });
     }
     
     // ========================================

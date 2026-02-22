@@ -34,6 +34,7 @@
                 <option value="11">🐰 Level 11 - Easter Meadow</option>
                 <option value="12">🎨 Level 12 - Christmas Village</option>
                 <option value="13">💎 Level 13 - Crystal Cove</option>
+                <option value="14">🏰 Level 14 - Rapunzel's Tower</option>
             </select>
         </div>
         <div id="multiplayer-setup">
@@ -48,9 +49,6 @@
     </div>
     <div id="game-container" style="display: none;">
         <div id="gameCanvas"></div>
-        <div id="controls">
-            <p>Steuerung: Pfeiltasten/WASD zum Bewegen | Maus zum Zielen | LEERTASTE zum Schießen</p>
-        </div>
     </div>
     
     <!-- Registries (must load first to define registry objects) -->
@@ -75,6 +73,7 @@
     <script src="js/levels/level-11-easter.js"></script>
     <script src="js/levels/level-12-christmas.js"></script>
     <script src="js/levels/level-13-crystal.js"></script>
+    <script src="js/levels/level-14-rapunzel.js"></script>
     
     <!-- Theme Definitions (visual configurations) -->
     <script src="js/themes/theme-forest.js"></script>
@@ -90,6 +89,7 @@
     <script src="js/themes/theme-easter.js"></script>
     <script src="js/themes/theme-christmas.js"></script>
     <script src="js/themes/theme-crystal.js"></script>
+    <script src="js/themes/theme-rapunzel.js"></script>
     
     <!-- Entity Definitions (self-register with ENTITY_REGISTRY) -->
     <script src="js/entities/entity-goblin.js"></script>
@@ -115,6 +115,8 @@
     <script src="js/entities/entity-easter-bunny.js"></script>
     <script src="js/entities/entity-evil-elf.js"></script>
     <script src="js/entities/entity-evil-santa.js"></script>
+    <script src="js/entities/entity-flying-witch.js"></script>
+    <script src="js/entities/entity-flying-witch-house.js"></script>
     <script src="js/entities/entity-crystal-golem.js"></script>
     <script src="js/entities/entity-gem-specter.js"></script>
     <script src="js/entities/entity-crystal-giant.js"></script>

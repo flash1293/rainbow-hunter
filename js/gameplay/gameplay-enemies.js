@@ -143,6 +143,16 @@
                         sparkle.position.y = sparkle.userData.baseY + Math.sin(time * 0.003 + sparkle.userData.floatOffset) * 0.1;
                     });
                 }
+            } else if (gob.isGroundWitch) {
+                // Ground witches hover above ground on broomsticks
+                const time = Date.now();
+                gob.hoverPhase = (gob.hoverPhase || 0) + 0.04;
+                const bobAmount = Math.sin(gob.hoverPhase) * 0.3;
+                const hoverHeight = gob.hoverHeight || 1.5;
+                gob.mesh.position.y = terrainHeight + hoverHeight + bobAmount;
+                
+                // Broomstick tilting
+                gob.mesh.rotation.z = Math.sin(gob.hoverPhase * 0.7) * 0.05;
             } else {
                 gob.mesh.position.y = terrainHeight + 0.1;
             }
@@ -376,6 +386,51 @@
                         ghostGroup.position.y += 1.5;
                         G.scene.add(ghostGroup);
                         arrowMesh = ghostGroup;
+                    } else if (G.rapunzelTheme) {
+                        // Pine cone projectile for rapunzel witch guardians
+                        const pineGroup = new THREE.Group();
+                        
+                        // Pine cone body (oval shape made from cone)
+                        const coneGeometry = new THREE.ConeGeometry(0.2, 0.5, 8);
+                        const coneMaterial = new THREE.MeshLambertMaterial({ color: 0x5D4037 }); // Brown
+                        const coneBody = new THREE.Mesh(coneGeometry, coneMaterial);
+                        coneBody.rotation.x = Math.PI; // Point down
+                        pineGroup.add(coneBody);
+                        
+                        // Pine cone scales (small overlapping pieces)
+                        const scaleGeometry = new THREE.ConeGeometry(0.08, 0.12, 6);
+                        const scaleMaterial = new THREE.MeshLambertMaterial({ color: 0x795548 });
+                        for (let ring = 0; ring < 3; ring++) {
+                            const scalesInRing = 6;
+                            for (let s = 0; s < scalesInRing; s++) {
+                                const angle = (s / scalesInRing) * Math.PI * 2 + ring * 0.3;
+                                const scale = new THREE.Mesh(scaleGeometry, scaleMaterial);
+                                scale.position.set(
+                                    Math.cos(angle) * 0.15,
+                                    -0.1 - ring * 0.12,
+                                    Math.sin(angle) * 0.15
+                                );
+                                scale.rotation.x = Math.PI * 0.8;
+                                scale.rotation.y = angle;
+                                pineGroup.add(scale);
+                            }
+                        }
+                        
+                        // Green magic glow trail
+                        const glowGeometry = new THREE.SphereGeometry(0.15, 8, 8);
+                        const glowMaterial = new THREE.MeshBasicMaterial({ 
+                            color: 0x228B22,
+                            transparent: true,
+                            opacity: 0.4
+                        });
+                        const glow = new THREE.Mesh(glowGeometry, glowMaterial);
+                        glow.position.y = 0.3;
+                        pineGroup.add(glow);
+                        
+                        pineGroup.position.copy(gob.mesh.position);
+                        pineGroup.position.y += 1.5;
+                        G.scene.add(pineGroup);
+                        arrowMesh = pineGroup;
                     } else {
                         // Regular arrow
                         const arrowGeometry = new THREE.CylinderGeometry(0.05, 0.05, 0.8, 8);
@@ -399,7 +454,7 @@
                     const arrowTargetPlayer = arrowTargetInfo.target;
                     
                     const dirX = arrowTargetPlayer.position.x - gob.mesh.position.x;
-                    const dirZ = targetPlayer.position.z - gob.mesh.position.z;
+                    const dirZ = arrowTargetPlayer.position.z - gob.mesh.position.z;
                     const length = Math.sqrt(dirX * dirX + dirZ * dirZ);
                     
                     const direction = new THREE.Vector3(
@@ -597,6 +652,24 @@
                     gob.mesh.rightLeg.rotation.x = -legSwing;
                 }
             }
+            
+            // Ground witch fireballs (spawned by witch houses)
+            if (gob.isGroundWitch && !gob.frozen) {
+                const now = Date.now();
+                const groundWitchFireInterval = gob.fireInterval || 3000;
+                
+                if (distToTarget < 20 && now - gob.lastFireTime > groundWitchFireInterval) {
+                    gob.lastFireTime = now;
+                    // Create a fake dragon-like object to pass to createWitchGreenFireball
+                    if (typeof createWitchGreenFireball === 'function') {
+                        const witchAsSource = {
+                            mesh: gob.mesh,
+                            scale: 0.5
+                        };
+                        createWitchGreenFireball(witchAsSource, targetPlayer);
+                    }
+                }
+            }
         });
     }
 
@@ -741,9 +814,17 @@
             if (!hitObstacle && G.levelConfig.mountains && G.levelConfig.mountains.length > 0) {
                 for (const mtn of G.levelConfig.mountains) {
                     // Use box collision for themed walls
-                    if (G.crystalTheme || G.graveyardTheme || G.ruinsTheme || G.computerTheme || G.enchantedTheme || G.easterTheme || G.christmasTheme) {
+                    if (G.crystalTheme || G.graveyardTheme || G.ruinsTheme || G.computerTheme || G.enchantedTheme || G.easterTheme || G.christmasTheme || G.rapunzelTheme) {
                         const wallWidth = mtn.width;
-                        const wallDepth = G.computerTheme ? 2 : Math.min(mtn.width * 0.15, 8);
+                        // Match wall depth to visual rendering for each theme
+                        let wallDepth;
+                        if (G.computerTheme) {
+                            wallDepth = 2;
+                        } else if (G.rapunzelTheme) {
+                            wallDepth = Math.min(mtn.width * 0.03, 1.5); // Thin walls to match visuals
+                        } else {
+                            wallDepth = Math.min(mtn.width * 0.15, 8);
+                        }
                         const halfW = wallWidth / 2;
                         const halfD = wallDepth / 2;
                         const dx = Math.abs(arrow.mesh.position.x - mtn.x);

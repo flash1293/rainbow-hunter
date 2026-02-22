@@ -4346,6 +4346,326 @@ function initSetup() {
         }
     }
 
+    // Rapunzel Mystery Towers - approaching them reveals contents
+    G.mysteryTowers = [];
+    if (G.rapunzelTheme && G.levelConfig.mysteryTowers) {
+        // Randomly select which tower contains Rapunzel
+        const rapunzelTowerIndex = Math.floor(Math.random() * G.levelConfig.mysteryTowers.length);
+        console.log('Rapunzel is in tower', rapunzelTowerIndex + 1, 'of', G.levelConfig.mysteryTowers.length);
+        
+        G.levelConfig.mysteryTowers.forEach((towerConfig, idx) => {
+            const towerGroup = new THREE.Group();
+            
+            // Stone tower base
+            const towerRadius = 3;
+            const towerHeight = 12;
+            const stoneColors = [0x7A7A7A, 0x6A6A6A, 0x5A5A5A];
+            
+            // Main tower body - cylinder
+            const towerGeometry = new THREE.CylinderGeometry(towerRadius, towerRadius * 1.1, towerHeight, 12);
+            const towerMaterial = new THREE.MeshLambertMaterial({ color: stoneColors[0] });
+            const tower = new THREE.Mesh(towerGeometry, towerMaterial);
+            tower.position.y = towerHeight / 2;
+            tower.castShadow = true;
+            towerGroup.add(tower);
+            
+            // Crown with battlements on top
+            const crownHeight = 1.5;
+            for (let b = 0; b < 8; b++) {
+                const angle = (b / 8) * Math.PI * 2;
+                const battlementGeometry = new THREE.BoxGeometry(1.2, crownHeight, 0.6);
+                const battlementMaterial = new THREE.MeshLambertMaterial({ color: 0x5A5A5A });
+                const battlement = new THREE.Mesh(battlementGeometry, battlementMaterial);
+                battlement.position.set(
+                    Math.cos(angle) * (towerRadius + 0.1),
+                    towerHeight + crownHeight / 2,
+                    Math.sin(angle) * (towerRadius + 0.1)
+                );
+                battlement.rotation.y = angle;
+                battlement.castShadow = true;
+                towerGroup.add(battlement);
+            }
+            
+            // Conical roof
+            const roofGeometry = new THREE.ConeGeometry(towerRadius + 0.5, 4, 12);
+            const roofMaterial = new THREE.MeshLambertMaterial({ color: 0x8B4513 });
+            const roof = new THREE.Mesh(roofGeometry, roofMaterial);
+            roof.position.y = towerHeight + crownHeight + 2;
+            roof.castShadow = true;
+            towerGroup.add(roof);
+            
+            // Small window (dark opening)
+            const windowGeometry = new THREE.PlaneGeometry(1, 1.8);
+            const windowMaterial = new THREE.MeshBasicMaterial({ color: 0x1a1a2a, side: THREE.DoubleSide });
+            const windowMesh = new THREE.Mesh(windowGeometry, windowMaterial);
+            windowMesh.position.set(0, towerHeight * 0.7, towerRadius + 0.05);
+            towerGroup.add(windowMesh);
+            
+            // Window frame
+            const frameGeometry = new THREE.BoxGeometry(1.4, 0.15, 0.3);
+            const frameMaterial = new THREE.MeshLambertMaterial({ color: 0x4A4A4A });
+            const frameTop = new THREE.Mesh(frameGeometry, frameMaterial);
+            frameTop.position.set(0, towerHeight * 0.7 + 0.95, towerRadius + 0.1);
+            towerGroup.add(frameTop);
+            frameTop.castShadow = true;
+            
+            // Ivy on tower
+            for (let i = 0; i < 6; i++) {
+                const ivyAngle = Math.random() * Math.PI * 2;
+                const ivyHeight = 2 + Math.random() * (towerHeight - 4);
+                
+                for (let j = 0; j < 8; j++) {
+                    const leafGeometry = new THREE.SphereGeometry(0.25, 6, 6);
+                    const leafMaterial = new THREE.MeshLambertMaterial({ color: 0x2D5A2D });
+                    const leaf = new THREE.Mesh(leafGeometry, leafMaterial);
+                    leaf.position.set(
+                        Math.cos(ivyAngle) * (towerRadius + 0.1 + Math.random() * 0.2),
+                        ivyHeight - j * 0.5 + (Math.random() - 0.5) * 0.3,
+                        Math.sin(ivyAngle) * (towerRadius + 0.1 + Math.random() * 0.2)
+                    );
+                    leaf.scale.set(1.2, 0.5, 1);
+                    towerGroup.add(leaf);
+                }
+            }
+            
+            // Golden glow if contains Rapunzel (hint)
+            if (towerConfig.containsRapunzel) {
+                const glowGeometry = new THREE.SphereGeometry(towerRadius + 2, 16, 16);
+                const glowMaterial = new THREE.MeshBasicMaterial({ 
+                    color: 0xFFD700, 
+                    transparent: true, 
+                    opacity: 0.1 
+                });
+                const glow = new THREE.Mesh(glowGeometry, glowMaterial);
+                glow.position.y = towerHeight / 2;
+                towerGroup.add(glow);
+            }
+            
+            // Question mark floating above tower
+            const questionGroup = new THREE.Group();
+            const questionColor = towerConfig.containsRapunzel ? 0xFFD700 : 0xAA88FF;
+            
+            // Question mark body
+            const qCurveGeometry = new THREE.TorusGeometry(0.6, 0.15, 8, 12, Math.PI * 1.5);
+            const qMaterial = new THREE.MeshBasicMaterial({ color: questionColor });
+            const qCurve = new THREE.Mesh(qCurveGeometry, qMaterial);
+            qCurve.rotation.z = Math.PI * 0.25;
+            qCurve.position.y = 0.6;
+            questionGroup.add(qCurve);
+            
+            // Question mark dot
+            const qDotGeometry = new THREE.SphereGeometry(0.2, 8, 8);
+            const qDot = new THREE.Mesh(qDotGeometry, qMaterial);
+            qDot.position.y = -0.3;
+            questionGroup.add(qDot);
+            
+            questionGroup.position.y = towerHeight + crownHeight + 7;
+            towerGroup.add(questionGroup);
+            
+            // Position the tower
+            const terrainHeight = getTerrainHeight(towerConfig.x, towerConfig.z);
+            towerGroup.position.set(towerConfig.x, terrainHeight, towerConfig.z);
+            G.scene.add(towerGroup);
+            
+            G.mysteryTowers.push({
+                mesh: towerGroup,
+                questionMark: questionGroup,
+                x: towerConfig.x,
+                z: towerConfig.z,
+                radius: towerRadius + 2, // Interaction radius
+                containsRapunzel: idx === rapunzelTowerIndex, // Randomly assigned
+                enemyType: towerConfig.enemyType || 'witch',
+                activated: false,
+                bobPhase: Math.random() * Math.PI * 2
+            });
+        });
+    }
+
+    // Rapunzel Theme Decorations - fairytale elements
+    G.rapunzelDecorations = [];
+    if (G.rapunzelTheme) {
+        // Flower patches around the meadow
+        for (let i = 0; i < 30; i++) {
+            const flowerPatchGroup = new THREE.Group();
+            const flowerColors = [0xFF69B4, 0xFFD700, 0xFF6347, 0x9370DB, 0xFFFFFF, 0xFF1493];
+            
+            for (let f = 0; f < 5 + Math.floor(Math.random() * 5); f++) {
+                const flowerColor = flowerColors[Math.floor(Math.random() * flowerColors.length)];
+                
+                // Stem
+                const stemGeometry = new THREE.CylinderGeometry(0.03, 0.04, 0.4, 6);
+                const stemMaterial = new THREE.MeshLambertMaterial({ color: 0x228B22 });
+                const stem = new THREE.Mesh(stemGeometry, stemMaterial);
+                stem.position.set((Math.random() - 0.5) * 0.8, 0.2, (Math.random() - 0.5) * 0.8);
+                flowerPatchGroup.add(stem);
+                
+                // Flower head
+                const flowerGeometry = new THREE.SphereGeometry(0.12, 6, 6);
+                const flowerMaterial = new THREE.MeshLambertMaterial({ color: flowerColor });
+                const flower = new THREE.Mesh(flowerGeometry, flowerMaterial);
+                flower.position.set(stem.position.x, 0.45, stem.position.z);
+                flowerPatchGroup.add(flower);
+            }
+            
+            const patchX = (Math.random() - 0.5) * 180;
+            const patchZ = 170 - Math.random() * 340;
+            const terrainHeight = getTerrainHeight(patchX, patchZ);
+            flowerPatchGroup.position.set(patchX, terrainHeight, patchZ);
+            G.scene.add(flowerPatchGroup);
+            
+            G.rapunzelDecorations.push({ mesh: flowerPatchGroup, type: 'flowers', x: patchX, z: patchZ });
+        }
+        
+        // Butterflies (static decorations)
+        for (let i = 0; i < 15; i++) {
+            const butterflyGroup = new THREE.Group();
+            const butterflyColors = [0xFF69B4, 0xFFD700, 0x87CEEB, 0xDDA0DD, 0xFFA07A];
+            const bflyColor = butterflyColors[Math.floor(Math.random() * butterflyColors.length)];
+            
+            // Body
+            const bodyGeometry = new THREE.CylinderGeometry(0.03, 0.04, 0.3, 6);
+            const bodyMaterial = new THREE.MeshLambertMaterial({ color: 0x333333 });
+            const body = new THREE.Mesh(bodyGeometry, bodyMaterial);
+            body.rotation.x = Math.PI / 2;
+            butterflyGroup.add(body);
+            
+            // Wings
+            for (let side = -1; side <= 1; side += 2) {
+                const wingGeometry = new THREE.CircleGeometry(0.2, 8);
+                const wingMaterial = new THREE.MeshLambertMaterial({ 
+                    color: bflyColor, 
+                    side: THREE.DoubleSide,
+                    transparent: true,
+                    opacity: 0.8
+                });
+                const wing = new THREE.Mesh(wingGeometry, wingMaterial);
+                wing.position.set(side * 0.15, 0, 0);
+                wing.rotation.y = side * 0.5;
+                butterflyGroup.add(wing);
+            }
+            
+            const bflyX = (Math.random() - 0.5) * 180;
+            const bflyZ = 170 - Math.random() * 340;
+            const bflyY = 1 + Math.random() * 3;
+            butterflyGroup.position.set(bflyX, bflyY, bflyZ);
+            butterflyGroup.rotation.y = Math.random() * Math.PI * 2;
+            G.scene.add(butterflyGroup);
+            
+            G.rapunzelDecorations.push({ mesh: butterflyGroup, type: 'butterfly', x: bflyX, z: bflyZ });
+        }
+        
+        // Stone path markers
+        for (let i = 0; i < 20; i++) {
+            const stoneGroup = new THREE.Group();
+            
+            // Flat stepping stone
+            const stoneGeometry = new THREE.CylinderGeometry(0.6 + Math.random() * 0.3, 0.7 + Math.random() * 0.3, 0.15, 8);
+            const stoneMaterial = new THREE.MeshLambertMaterial({ color: 0x8B8B7A });
+            const stone = new THREE.Mesh(stoneGeometry, stoneMaterial);
+            stone.position.y = 0.08;
+            stone.castShadow = true;
+            stone.receiveShadow = true;
+            stoneGroup.add(stone);
+            
+            const stoneX = (Math.random() - 0.5) * 160;
+            const stoneZ = 160 - Math.random() * 320;
+            const terrainHeight = getTerrainHeight(stoneX, stoneZ);
+            stoneGroup.position.set(stoneX, terrainHeight, stoneZ);
+            stoneGroup.rotation.y = Math.random() * Math.PI;
+            G.scene.add(stoneGroup);
+            
+            G.rapunzelDecorations.push({ mesh: stoneGroup, type: 'stone', x: stoneX, z: stoneZ });
+        }
+        
+        // LOTS of pine trees scattered around the fairytale forest
+        for (let i = 0; i < 80; i++) {
+            const pineGroup = new THREE.Group();
+            const treeScale = 1.5 + Math.random() * 2.0; // Varied sizes
+            
+            // Tree trunk
+            const trunkGeometry = new THREE.CylinderGeometry(0.15 * treeScale, 0.25 * treeScale, 1.5 * treeScale, 8);
+            const trunkMaterial = new THREE.MeshLambertMaterial({ color: 0x5D4037 }); // Brown bark
+            const trunk = new THREE.Mesh(trunkGeometry, trunkMaterial);
+            trunk.position.y = 0.75 * treeScale;
+            trunk.castShadow = true;
+            pineGroup.add(trunk);
+            
+            // Pine tree layers (3-4 cone layers)
+            const pineMaterial = new THREE.MeshLambertMaterial({ color: 0x1E5631 }); // Deep forest green
+            const layers = 3 + Math.floor(Math.random() * 2);
+            for (let layer = 0; layer < layers; layer++) {
+                const layerRadius = (1.0 - layer * 0.2) * treeScale;
+                const layerHeight = 1.2 * treeScale;
+                const layerGeometry = new THREE.ConeGeometry(layerRadius, layerHeight, 8);
+                const layerMesh = new THREE.Mesh(layerGeometry, pineMaterial);
+                layerMesh.position.y = (1.2 + layer * 0.8) * treeScale;
+                layerMesh.castShadow = true;
+                pineGroup.add(layerMesh);
+            }
+            
+            // Random position across the map
+            const pineX = (Math.random() - 0.5) * 180;
+            const pineZ = 170 - Math.random() * 350;
+            
+            const terrainHeight = getTerrainHeight(pineX, pineZ);
+            pineGroup.position.set(pineX, terrainHeight, pineZ);
+            pineGroup.rotation.y = Math.random() * Math.PI * 2;
+            G.scene.add(pineGroup);
+            
+            G.rapunzelDecorations.push({ 
+                mesh: pineGroup, 
+                type: 'pine-tree',
+                x: pineX, 
+                z: pineZ 
+            });
+        }
+        
+        // Additional smaller pine tree clusters near edges
+        for (let cluster = 0; cluster < 12; cluster++) {
+            // Cluster center position near edges
+            let clusterX, clusterZ;
+            const edge = Math.floor(Math.random() * 4);
+            if (edge === 0) { clusterX = -70 - Math.random() * 20; clusterZ = (Math.random() - 0.5) * 300; }
+            else if (edge === 1) { clusterX = 70 + Math.random() * 20; clusterZ = (Math.random() - 0.5) * 300; }
+            else if (edge === 2) { clusterX = (Math.random() - 0.5) * 150; clusterZ = 160 + Math.random() * 20; }
+            else { clusterX = (Math.random() - 0.5) * 150; clusterZ = -170 - Math.random() * 20; }
+            
+            // Add 3-6 trees in cluster
+            const treesInCluster = 3 + Math.floor(Math.random() * 4);
+            for (let t = 0; t < treesInCluster; t++) {
+                const pineGroup = new THREE.Group();
+                const treeScale = 1.2 + Math.random() * 1.5;
+                
+                // Trunk
+                const trunkGeometry = new THREE.CylinderGeometry(0.12 * treeScale, 0.2 * treeScale, 1.2 * treeScale, 6);
+                const trunkMaterial = new THREE.MeshLambertMaterial({ color: 0x4E342E });
+                const trunk = new THREE.Mesh(trunkGeometry, trunkMaterial);
+                trunk.position.y = 0.6 * treeScale;
+                trunk.castShadow = true;
+                pineGroup.add(trunk);
+                
+                // Pine layers
+                const pineMaterial = new THREE.MeshLambertMaterial({ color: 0x2E7D32 });
+                for (let layer = 0; layer < 3; layer++) {
+                    const layerRadius = (0.8 - layer * 0.18) * treeScale;
+                    const layerGeometry = new THREE.ConeGeometry(layerRadius, 1.0 * treeScale, 7);
+                    const layerMesh = new THREE.Mesh(layerGeometry, pineMaterial);
+                    layerMesh.position.y = (1.0 + layer * 0.7) * treeScale;
+                    layerMesh.castShadow = true;
+                    pineGroup.add(layerMesh);
+                }
+                
+                const pineX = clusterX + (Math.random() - 0.5) * 15;
+                const pineZ = clusterZ + (Math.random() - 0.5) * 15;
+                const terrainHeight = getTerrainHeight(pineX, pineZ);
+                pineGroup.position.set(pineX, terrainHeight, pineZ);
+                G.scene.add(pineGroup);
+                
+                G.rapunzelDecorations.push({ mesh: pineGroup, type: 'pine-tree', x: pineX, z: pineZ });
+            }
+        }
+    }
+
     // Rocks - use level config if available, otherwise use default positions
     G.rocks = [];
     G.rockPositions = G.levelConfig.rockPositions || [

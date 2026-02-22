@@ -649,6 +649,235 @@
         state.spawnInterval = Math.max(6000, state.spawnInterval - 100);
     }
 
+    // ==========================================
+    // SPAWNED FLYING WITCH SYSTEM
+    // Witch houses spawn these - they descend to player then become ground enemies
+    // ==========================================
+    
+    function createSpawnedFlyingWitch(startX, startY, startZ, targetPlayer) {
+        const group = new THREE.Group();
+        const cloakColor = 0x2D1B4E;        // Dark purple cloak
+        const skinColor = 0x98FB98;         // Pale green witch skin
+        const hatColor = 0x1A0F2E;          // Very dark purple hat
+        const hairColor = 0x1C1C1C;         // Black stringy hair
+        const broomColor = 0x5D4037;        // Brown wood
+        const bristleColor = 0x8B7355;      // Tan bristles
+        const eyeGlow = 0x00FF00;           // Green glowing eyes
+        const magicGlow = 0x00FF7F;         // Green magic aura
+        const scale = 0.5;                  // Smaller spawned witches
+        
+        // === BROOMSTICK ===
+        const handleGeometry = new THREE.CylinderGeometry(0.08, 0.1, 4, 8);
+        const handleMaterial = new THREE.MeshLambertMaterial({ color: broomColor });
+        const handle = new THREE.Mesh(handleGeometry, handleMaterial);
+        handle.rotation.x = Math.PI / 2;
+        handle.castShadow = true;
+        group.add(handle);
+        
+        // Broom bristles
+        const bristleGeometry = new THREE.ConeGeometry(0.4, 1.2, 8);
+        const bristleMaterial = new THREE.MeshLambertMaterial({ color: bristleColor });
+        const bristles = new THREE.Mesh(bristleGeometry, bristleMaterial);
+        bristles.rotation.x = -Math.PI / 2;
+        bristles.position.z = -2.5;
+        bristles.castShadow = true;
+        group.add(bristles);
+        
+        // === WITCH BODY ===
+        const cloakGeometry = new THREE.ConeGeometry(0.5, 1.2, 8);
+        const cloakMaterial = new THREE.MeshLambertMaterial({ color: cloakColor });
+        const cloak = new THREE.Mesh(cloakGeometry, cloakMaterial);
+        cloak.position.y = 0.8;
+        cloak.position.z = 0.5;
+        cloak.castShadow = true;
+        group.add(cloak);
+        
+        // Witch head
+        const headGeometry = new THREE.SphereGeometry(0.35, 16, 16);
+        const headMaterial = new THREE.MeshLambertMaterial({ color: skinColor });
+        const head = new THREE.Mesh(headGeometry, headMaterial);
+        head.position.y = 1.6;
+        head.position.z = 0.5;
+        head.castShadow = true;
+        group.add(head);
+        
+        // Big warty nose
+        const noseGeometry = new THREE.ConeGeometry(0.08, 0.2, 6);
+        const nose = new THREE.Mesh(noseGeometry, headMaterial);
+        nose.position.set(0, 1.55, 0.88);
+        nose.rotation.x = Math.PI / 2;
+        group.add(nose);
+        
+        // Evil glowing green eyes
+        const eyeGeometry = new THREE.SphereGeometry(0.08, 12, 12);
+        const eyeMaterial = new THREE.MeshBasicMaterial({ color: eyeGlow });
+        [-0.12, 0.12].forEach(x => {
+            const eye = new THREE.Mesh(eyeGeometry, eyeMaterial);
+            eye.position.set(x, 1.65, 0.82);
+            group.add(eye);
+        });
+        
+        // Pointed witch hat
+        const hatBrimGeometry = new THREE.CylinderGeometry(0.45, 0.45, 0.06, 16);
+        const hatMaterial = new THREE.MeshLambertMaterial({ color: hatColor });
+        const hatBrim = new THREE.Mesh(hatBrimGeometry, hatMaterial);
+        hatBrim.position.y = 1.9;
+        hatBrim.position.z = 0.5;
+        group.add(hatBrim);
+        
+        const hatConeGeometry = new THREE.ConeGeometry(0.28, 0.8, 12);
+        const hatCone = new THREE.Mesh(hatConeGeometry, hatMaterial);
+        hatCone.position.y = 2.35;
+        hatCone.position.z = 0.5;
+        hatCone.rotation.z = 0.15;
+        group.add(hatCone);
+        
+        // Magical trail
+        for (let i = 0; i < 6; i++) {
+            const sparkleGeometry = new THREE.SphereGeometry(0.05, 6, 6);
+            const sparkleMaterial = new THREE.MeshBasicMaterial({ 
+                color: magicGlow,
+                transparent: true,
+                opacity: 0.4 + Math.random() * 0.3
+            });
+            const sparkle = new THREE.Mesh(sparkleGeometry, sparkleMaterial);
+            sparkle.position.set(
+                (Math.random() - 0.5) * 0.8,
+                (Math.random() - 0.5) * 0.5,
+                -2.5 - Math.random() * 1.5
+            );
+            group.add(sparkle);
+        }
+
+        // Apply scale
+        group.scale.set(scale, scale, scale);
+
+        // Position at start point (high in sky above witch house)
+        group.position.set(startX, startY, startZ);
+        
+        // Add to scene
+        G.scene.add(group);
+        
+        // Calculate target on ground near player
+        const targetX = targetPlayer.position.x + (Math.random() - 0.5) * 10;
+        const targetZ = targetPlayer.position.z + (Math.random() - 0.5) * 10;
+        const targetY = getTerrainHeight(targetX, targetZ) + 1.5; // Hover height above ground
+
+        return {
+            mesh: group,
+            startX: startX,
+            startY: startY,
+            startZ: startZ,
+            targetX: targetX,
+            targetY: targetY,
+            targetZ: targetZ,
+            descendSpeed: 0.15,
+            state: 'descending', // 'descending' -> 'grounded'
+            spawnTime: Date.now(),
+            alive: true
+        };
+    }
+    
+    // Convert a descending witch to a ground enemy (goblin-like)
+    function convertWitchToGroundEnemy(witch) {
+        const x = witch.mesh.position.x;
+        const z = witch.mesh.position.z;
+        const terrainY = getTerrainHeight(x, z);
+        
+        // Create ground witch enemy object
+        return {
+            mesh: witch.mesh,
+            speed: 0.05 * speedMultiplier,
+            direction: Math.random() > 0.5 ? 1 : -1,
+            patrolLeft: x - 15,
+            patrolRight: x + 15,
+            alive: true,
+            radius: 1.5,
+            health: 2,
+            maxHealth: 2,
+            isChasing: true,
+            isGroundWitch: true, // Special flag for witch enemy
+            hoverHeight: 1.5,    // Hovers above ground
+            hoverPhase: Math.random() * Math.PI * 2,
+            initialX: x,
+            initialZ: z,
+            initialPatrolLeft: x - 15,
+            initialPatrolRight: x + 15,
+            velocity: { x: 0, z: 0 },
+            lastFireTime: Date.now(),
+            fireInterval: 3000, // Can shoot fireballs
+            spawnId: 'witch_' + Date.now() + '_' + Math.random()
+        };
+    }
+    
+    // Update descending witches - move them down, convert to ground enemies when landed
+    function updateDescendingWitches() {
+        if (!G.descendingWitches) {
+            G.descendingWitches = [];
+        }
+        
+        for (let i = G.descendingWitches.length - 1; i >= 0; i--) {
+            const witch = G.descendingWitches[i];
+            if (!witch.alive) {
+                G.scene.remove(witch.mesh);
+                G.descendingWitches.splice(i, 1);
+                continue;
+            }
+            
+            if (witch.state === 'descending') {
+                // Move toward target
+                const dx = witch.targetX - witch.mesh.position.x;
+                const dy = witch.targetY - witch.mesh.position.y;
+                const dz = witch.targetZ - witch.mesh.position.z;
+                const dist = Math.sqrt(dx * dx + dy * dy + dz * dz);
+                
+                if (dist > 1) {
+                    // Move toward target
+                    const speed = witch.descendSpeed;
+                    witch.mesh.position.x += (dx / dist) * speed;
+                    witch.mesh.position.y += (dy / dist) * speed;
+                    witch.mesh.position.z += (dz / dist) * speed;
+                    
+                    // Face direction of movement (horizontal only)
+                    witch.mesh.rotation.y = Math.atan2(dx, dz);
+                    
+                    // Tilt down while descending
+                    witch.mesh.rotation.x = Math.min(0.3, dy / dist * 0.5);
+                } else {
+                    // Reached target - convert to ground enemy
+                    witch.state = 'grounded';
+                    const groundWitch = convertWitchToGroundEnemy(witch);
+                    G.goblins.push(groundWitch);
+                    
+                    // Remove from descending array
+                    G.descendingWitches.splice(i, 1);
+                    
+                    // Play landing sound
+                    if (typeof Audio !== 'undefined' && Audio.playExplosionSound) {
+                        Audio.playExplosionSound();
+                    }
+                }
+            }
+        }
+    }
+    
+    // Spawn a flying witch from a witch house
+    function spawnWitchFromHouse(house, targetPlayer) {
+        if (!G.descendingWitches) {
+            G.descendingWitches = [];
+        }
+        
+        // Spawn position is at the house
+        const startX = house.mesh.position.x;
+        const startY = house.mesh.position.y - 5; // Below the house
+        const startZ = house.mesh.position.z;
+        
+        const witch = createSpawnedFlyingWitch(startX, startY, startZ, targetPlayer);
+        G.descendingWitches.push(witch);
+        
+        return witch;
+    }
+
     // Export functions to global scope
     window.spawnDragonCandyDrops = spawnDragonCandyDrops;
     window.createSpawnedZombie = createSpawnedZombie;
@@ -656,4 +885,7 @@
     window.createSpawnedGingerbread = createSpawnedGingerbread;
     window.createSmokeParticle = createSmokeParticle;
     window.updateOvenSpawns = updateOvenSpawns;
+    window.createSpawnedFlyingWitch = createSpawnedFlyingWitch;
+    window.updateDescendingWitches = updateDescendingWitches;
+    window.spawnWitchFromHouse = spawnWitchFromHouse;
 })();

@@ -37,6 +37,8 @@
             buildNutcracker(goblinGrp);
         } else if (G.crystalTheme) {
             buildCrystalSentinel(goblinGrp);
+        } else if (G.rapunzelTheme) {
+            buildRapunzelWitch(goblinGrp);
         } else {
             buildStandardGuardian(goblinGrp, textures);
         }
@@ -1133,6 +1135,152 @@
         er2.position.set(0.6, 1.8, 0);
         er2.castShadow = true;
         group.add(er2);
+    }
+    
+    function buildRapunzelWitch(group) {
+        // RAPUNZEL WITCH - evil witch that shoots pine cone projectiles
+        const cloakColor = 0x2D1B4E;        // Dark purple cloak
+        const skinColor = 0x98FB98;         // Pale green witch skin
+        const hatColor = 0x1A0F2E;          // Very dark purple hat
+        const hairColor = 0x1C1C1C;         // Black stringy hair
+        const staffColor = 0x3D2817;        // Dark wood staff
+        const gemColor = 0x00FF7F;          // Green magic gem
+        
+        // Witch cloak body (cone shape)
+        const cloakGeometry = new THREE.ConeGeometry(0.6, 1.6, 8);
+        const cloakMaterial = new THREE.MeshLambertMaterial({ color: cloakColor });
+        const cloak = new THREE.Mesh(cloakGeometry, cloakMaterial);
+        cloak.position.y = 1.0;
+        cloak.castShadow = true;
+        group.add(cloak);
+        
+        // Tattered cloak edge
+        for (let i = 0; i < 8; i++) {
+            const angle = (i / 8) * Math.PI * 2;
+            const tatterGeometry = new THREE.ConeGeometry(0.08, 0.3, 3);
+            const tatter = new THREE.Mesh(tatterGeometry, cloakMaterial);
+            tatter.position.set(
+                Math.cos(angle) * 0.55,
+                0.35,
+                Math.sin(angle) * 0.55
+            );
+            group.add(tatter);
+        }
+        
+        // Witch head
+        const headGeometry = new THREE.SphereGeometry(0.4, 16, 16);
+        const headMaterial = new THREE.MeshLambertMaterial({ color: skinColor });
+        const head = new THREE.Mesh(headGeometry, headMaterial);
+        head.position.y = 2.0;
+        head.castShadow = true;
+        group.add(head);
+        
+        // Big warty nose
+        const noseGeometry = new THREE.ConeGeometry(0.1, 0.25, 6);
+        const nose = new THREE.Mesh(noseGeometry, headMaterial);
+        nose.position.set(0, 1.95, 0.42);
+        nose.rotation.x = Math.PI / 2; // Point forward
+        group.add(nose);
+        
+        // Wart on nose
+        const wartGeometry = new THREE.SphereGeometry(0.04, 8, 8);
+        const wartMaterial = new THREE.MeshLambertMaterial({ color: 0x556B2F });
+        const wart = new THREE.Mesh(wartGeometry, wartMaterial);
+        wart.position.set(0.05, 1.98, 0.55);
+        group.add(wart);
+        
+        // Glowing evil eyes
+        const eyeMaterial = new THREE.MeshBasicMaterial({ color: 0xFF4500 });
+        const eyeGeometry = new THREE.SphereGeometry(0.1, 12, 12);
+        [-0.15, 0.15].forEach(x => {
+            const eye = new THREE.Mesh(eyeGeometry, eyeMaterial);
+            eye.position.set(x, 2.1, 0.35);
+            group.add(eye);
+        });
+        
+        // Angry eyebrows
+        const browGeometry = new THREE.BoxGeometry(0.18, 0.04, 0.02);
+        const browMaterial = new THREE.MeshLambertMaterial({ color: hairColor });
+        [-0.15, 0.15].forEach((x, i) => {
+            const brow = new THREE.Mesh(browGeometry, browMaterial);
+            brow.position.set(x, 2.2, 0.38);
+            brow.rotation.z = i === 0 ? -0.4 : 0.4;
+            group.add(brow);
+        });
+        
+        // Pointed witch hat
+        const hatBrimGeometry = new THREE.CylinderGeometry(0.55, 0.55, 0.08, 16);
+        const hatMaterial = new THREE.MeshLambertMaterial({ color: hatColor });
+        const hatBrim = new THREE.Mesh(hatBrimGeometry, hatMaterial);
+        hatBrim.position.y = 2.35;
+        hatBrim.castShadow = true;
+        group.add(hatBrim);
+        
+        const hatConeGeometry = new THREE.ConeGeometry(0.35, 0.9, 12);
+        const hatCone = new THREE.Mesh(hatConeGeometry, hatMaterial);
+        hatCone.position.y = 2.85;
+        hatCone.castShadow = true;
+        group.add(hatCone);
+        
+        // Hat buckle
+        const buckleGeometry = new THREE.BoxGeometry(0.15, 0.1, 0.05);
+        const buckleMaterial = new THREE.MeshLambertMaterial({ color: 0xFFD700 });
+        const buckle = new THREE.Mesh(buckleGeometry, buckleMaterial);
+        buckle.position.set(0, 2.5, 0.32);
+        group.add(buckle);
+        
+        // Stringy black hair
+        for (let i = 0; i < 6; i++) {
+            const hairGeometry = new THREE.CylinderGeometry(0.025, 0.015, 0.5 + Math.random() * 0.3, 4);
+            const hair = new THREE.Mesh(hairGeometry, new THREE.MeshLambertMaterial({ color: hairColor }));
+            hair.position.set(
+                (Math.random() - 0.5) * 0.6,
+                1.8,
+                -0.2 - Math.random() * 0.15
+            );
+            hair.rotation.x = 0.3 + Math.random() * 0.2;
+            hair.rotation.z = (Math.random() - 0.5) * 0.5;
+            group.add(hair);
+        }
+        
+        // Gnarled wooden staff
+        const staffGeometry = new THREE.CylinderGeometry(0.04, 0.06, 2.2, 6);
+        const staffMaterial = new THREE.MeshLambertMaterial({ color: staffColor });
+        const staff = new THREE.Mesh(staffGeometry, staffMaterial);
+        staff.position.set(0.65, 1.1, 0.2);
+        staff.rotation.z = -0.15;
+        staff.castShadow = true;
+        group.add(staff);
+        
+        // Pine cone on top of staff (for projectile theme)
+        const pineConeGeometry = new THREE.ConeGeometry(0.12, 0.25, 8);
+        const pineConeMaterial = new THREE.MeshLambertMaterial({ 
+            color: gemColor,
+            emissive: gemColor,
+            emissiveIntensity: 0.5
+        });
+        const pineCone = new THREE.Mesh(pineConeGeometry, pineConeMaterial);
+        pineCone.position.set(0.72, 2.3, 0.2);
+        group.add(pineCone);
+        group.staffOrb = pineCone; // For animation
+        
+        // Magic glow around staff top
+        const glowGeometry = new THREE.SphereGeometry(0.18, 12, 12);
+        const glowMaterial = new THREE.MeshBasicMaterial({ 
+            color: gemColor,
+            transparent: true,
+            opacity: 0.3
+        });
+        const glow = new THREE.Mesh(glowGeometry, glowMaterial);
+        glow.position.set(0.72, 2.3, 0.2);
+        group.add(glow);
+        
+        // Bony witch hands
+        const handGeometry = new THREE.SphereGeometry(0.1, 8, 8);
+        const handMaterial = new THREE.MeshLambertMaterial({ color: skinColor });
+        const rightHand = new THREE.Mesh(handGeometry, handMaterial);
+        rightHand.position.set(0.6, 1.3, 0.2);
+        group.add(rightHand);
     }
     
     // ========================================

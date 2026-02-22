@@ -342,7 +342,57 @@
         const fireballGroup = new THREE.Group();
         const fbScale = 0.4;
         
-        if (G.computerTheme) {
+        if (G.rapunzelTheme) {
+            // Rapunzel theme: Mini golden crown projectile
+            const crownGold = 0xFFD700;
+            const gemColors = [0xFF0000, 0x0066FF, 0x00FF00]; // Ruby, sapphire, emerald
+            
+            // Crown base ring
+            const baseGeometry = new THREE.CylinderGeometry(0.25, 0.3, 0.2, 8);
+            const crownMaterial = new THREE.MeshLambertMaterial({ 
+                color: crownGold,
+                emissive: crownGold,
+                emissiveIntensity: 0.3
+            });
+            const crownBase = new THREE.Mesh(baseGeometry, crownMaterial);
+            fireballGroup.add(crownBase);
+            
+            // Crown points (5 small points)
+            for (let i = 0; i < 5; i++) {
+                const angle = (i / 5) * Math.PI * 2;
+                const pointGeometry = new THREE.ConeGeometry(0.06, 0.25, 4);
+                const point = new THREE.Mesh(pointGeometry, crownMaterial);
+                point.position.set(
+                    Math.cos(angle) * 0.22,
+                    0.22,
+                    Math.sin(angle) * 0.22
+                );
+                fireballGroup.add(point);
+                
+                // Tiny gem on each point
+                const gemGeometry = new THREE.OctahedronGeometry(0.04, 0);
+                const gemMaterial = new THREE.MeshBasicMaterial({ 
+                    color: gemColors[i % 3]
+                });
+                const gem = new THREE.Mesh(gemGeometry, gemMaterial);
+                gem.position.set(
+                    Math.cos(angle) * 0.22,
+                    0.38,
+                    Math.sin(angle) * 0.22
+                );
+                fireballGroup.add(gem);
+            }
+            
+            // Golden glow aura
+            const glowGeometry = new THREE.SphereGeometry(0.4, 8, 8);
+            const glowMaterial = new THREE.MeshBasicMaterial({ 
+                color: 0xFFD700,
+                transparent: true,
+                opacity: 0.3
+            });
+            const glow = new THREE.Mesh(glowGeometry, glowMaterial);
+            fireballGroup.add(glow);
+        } else if (G.computerTheme) {
             // Computer theme: Malware virus orb / corrupted data sphere
             // Core virus geometry - icosahedron for digital look
             const virusCore = new THREE.IcosahedronGeometry(0.5 * fbScale, 1);
@@ -1200,10 +1250,17 @@
             const skipWallCollision = !G.crystalTheme && (fireball.isWizardFireball || fireball.isScytheWave || fireball.isDragonFireball);
             if (!inGracePeriod && !skipWallCollision && G.levelConfig.mountains && G.levelConfig.mountains.length > 0) {
                 for (const mtn of G.levelConfig.mountains) {
-                    // Use box collision for themed levels (crystal, graveyard, etc)
-                    if (G.crystalTheme || G.graveyardTheme || G.easterTheme || G.christmasTheme) {
+                    // Use box collision for themed levels with walls
+                    if (G.crystalTheme || G.graveyardTheme || G.easterTheme || G.christmasTheme || G.rapunzelTheme || G.ruinsTheme || G.computerTheme || G.enchantedTheme) {
                         const halfWidth = mtn.width / 2;
-                        const halfDepth = (mtn.depth || 8) / 2;
+                        // Calculate wall depth to match visual rendering
+                        let wallDepth;
+                        if (G.rapunzelTheme) {
+                            wallDepth = Math.min(mtn.width * 0.03, 1.5); // Thin walls
+                        } else {
+                            wallDepth = mtn.depth || 8;
+                        }
+                        const halfDepth = wallDepth / 2;
                         const dx = Math.abs(fireball.mesh.position.x - mtn.x);
                         const dz = Math.abs(fireball.mesh.position.z - mtn.z);
                         const mtnHeight = mtn.height || 25;
@@ -1461,10 +1518,101 @@
         });
     }
 
+    // Create green magical fireball from flying witch
+    function createWitchGreenFireball(witch, targetPlayer) {
+        const fireballGroup = new THREE.Group();
+        const scale = witch.scale || 1;
+        
+        // Green magical core
+        const coreGeometry = new THREE.SphereGeometry(0.4 * scale, 12, 12);
+        const coreMaterial = new THREE.MeshBasicMaterial({ 
+            color: 0x00FF00,
+            transparent: true,
+            opacity: 0.9
+        });
+        const core = new THREE.Mesh(coreGeometry, coreMaterial);
+        fireballGroup.add(core);
+        
+        // Inner bright green glow
+        const innerGlowGeometry = new THREE.SphereGeometry(0.5 * scale, 12, 12);
+        const innerGlowMaterial = new THREE.MeshBasicMaterial({ 
+            color: 0x7FFF00,
+            transparent: true,
+            opacity: 0.5
+        });
+        const innerGlow = new THREE.Mesh(innerGlowGeometry, innerGlowMaterial);
+        fireballGroup.add(innerGlow);
+        
+        // Outer magical aura
+        const outerGlowGeometry = new THREE.SphereGeometry(0.7 * scale, 12, 12);
+        const outerGlowMaterial = new THREE.MeshBasicMaterial({ 
+            color: 0x00FF7F,
+            transparent: true,
+            opacity: 0.25
+        });
+        const outerGlow = new THREE.Mesh(outerGlowGeometry, outerGlowMaterial);
+        fireballGroup.add(outerGlow);
+        
+        // Magical sparkles swirling around
+        for (let i = 0; i < 6; i++) {
+            const angle = (i / 6) * Math.PI * 2;
+            const sparkleGeometry = new THREE.OctahedronGeometry(0.1 * scale, 0);
+            const sparkleMaterial = new THREE.MeshBasicMaterial({ 
+                color: [0x00FF00, 0x7FFF00, 0x00FF7F][i % 3],
+                transparent: true,
+                opacity: 0.8
+            });
+            const sparkle = new THREE.Mesh(sparkleGeometry, sparkleMaterial);
+            sparkle.position.set(
+                Math.cos(angle) * 0.5 * scale,
+                Math.sin(angle * 2) * 0.2 * scale,
+                Math.sin(angle) * 0.5 * scale
+            );
+            fireballGroup.add(sparkle);
+        }
+        
+        // Position at witch (drop from broomstick)
+        fireballGroup.position.set(
+            witch.mesh.position.x,
+            witch.mesh.position.y - 0.5,
+            witch.mesh.position.z
+        );
+        
+        // Calculate direction to target
+        const dirX = targetPlayer.position.x - fireballGroup.position.x;
+        const dirY = (targetPlayer.position.y + 1) - fireballGroup.position.y;
+        const dirZ = targetPlayer.position.z - fireballGroup.position.z;
+        const length = Math.sqrt(dirX * dirX + dirY * dirY + dirZ * dirZ);
+        
+        G.scene.add(fireballGroup);
+        
+        // Medium speed, slightly slower than presents
+        const speed = 0.20;
+        
+        G.fireballs.push({
+            mesh: fireballGroup,
+            velocity: new THREE.Vector3(
+                (dirX / length) * speed,
+                (dirY / length) * speed,
+                (dirZ / length) * speed
+            ),
+            radius: 1.5,
+            damage: 1,
+            trail: [],
+            lastTrailTime: 0,
+            scale: scale,
+            isWitchFireball: true,
+            rotationSpeed: 0.08,
+            spawnTime: Date.now(),
+            maxLifetime: 6000
+        });
+    }
+
     // Export functions to global scope
     window.createDragonFireball = createDragonFireball;
     window.createEasterEggProjectile = createEasterEggProjectile;
     window.createPresentProjectile = createPresentProjectile;
+    window.createWitchGreenFireball = createWitchGreenFireball;
     window.createScytheWave = createScytheWave;
     window.createRainbowBolt = createRainbowBolt;
     window.createWizardFireball = createWizardFireball;

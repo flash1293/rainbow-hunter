@@ -350,6 +350,9 @@ function initGame() {
     // Check if this is a Crystal-themed level
     G.crystalTheme = G.levelConfig.crystalTheme || false;
     
+    // Check if this is a Rapunzel/fairytale-themed level
+    G.rapunzelTheme = G.levelConfig.rapunzelTheme || false;
+    
     // Crystal gem power-up state
     G.playerSpeedBoost = 1;
     G.playerSpeedBoostEnd = 0;
@@ -545,12 +548,12 @@ function initGame() {
     G.grassColor = G.levelConfig.grassColor || 0x228B22;
 
     // Create terrain (use level-specific ground color and theme)
-    createGround(G.scene, THREE, G.levelConfig.groundColor, G.iceTheme, G.desertTheme, G.lavaTheme, G.waterTheme, G.candyTheme, G.graveyardTheme, G.ruinsTheme, G.computerTheme, G.christmasTheme, G.crystalTheme);
-    createHills(G.scene, THREE, G.levelConfig.hills, G.hillColor, G.iceTheme, G.desertTheme, G.lavaTheme, G.waterTheme, G.candyTheme, G.graveyardTheme, G.ruinsTheme, G.computerTheme, G.christmasTheme, G.crystalTheme);
+    createGround(G.scene, THREE, G.levelConfig.groundColor, G.iceTheme, G.desertTheme, G.lavaTheme, G.waterTheme, G.candyTheme, G.graveyardTheme, G.ruinsTheme, G.computerTheme, G.christmasTheme, G.crystalTheme, G.rapunzelTheme);
+    createHills(G.scene, THREE, G.levelConfig.hills, G.hillColor, G.iceTheme, G.desertTheme, G.lavaTheme, G.waterTheme, G.candyTheme, G.graveyardTheme, G.ruinsTheme, G.computerTheme, G.christmasTheme, G.crystalTheme, G.rapunzelTheme);
     
     // Mountains are optional (disabled in desert)
     if (G.levelConfig.hasMountains !== false && G.levelConfig.mountains && G.levelConfig.mountains.length > 0) {
-        createMountains(G.scene, THREE, G.levelConfig.mountains, G.candyTheme, G.graveyardTheme, G.ruinsTheme, G.computerTheme, G.enchantedTheme, G.easterTheme, G.christmasTheme, G.crystalTheme);
+        createMountains(G.scene, THREE, G.levelConfig.mountains, G.candyTheme, G.graveyardTheme, G.ruinsTheme, G.computerTheme, G.enchantedTheme, G.easterTheme, G.christmasTheme, G.crystalTheme, G.rapunzelTheme);
     }
     
     // Natural scenic mountains (backdrop around perimeter)
