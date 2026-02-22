@@ -80,7 +80,7 @@
             
             const freezeRadius = 20;
             const circleGeometry = new THREE.RingGeometry(0.1, freezeRadius, 32);
-            const circleMaterial = new THREE.MeshBasicMaterial({
+            const circleMaterial = getMaterial('basic', {
                 color: 0x00BFFF,
                 transparent: true,
                 opacity: 0.6,
@@ -215,8 +215,8 @@
         } else if (eventType === 'bananaPlaced') {
             // Other player placed a banana
             const bananaGroup = new THREE.Group();
-            const bananaGeometry = new THREE.CylinderGeometry(0.3, 0.3, 1.5, 8);
-            const bananaMaterial = new THREE.MeshLambertMaterial({ 
+            const bananaGeometry = getGeometry('cylinder', 0.3, 0.3, 1.5, 8);
+            const bananaMaterial = getMaterial('lambert', { 
                 color: 0xFFFF00,
                 emissive: 0xFFFF00,
                 emissiveIntensity: 0.3
@@ -226,8 +226,8 @@
             bananaMesh.castShadow = true;
             bananaGroup.add(bananaMesh);
             
-            const endMaterial = new THREE.MeshLambertMaterial({ color: 0x8B7500 });
-            const endGeometry = new THREE.SphereGeometry(0.35, 8, 8);
+            const endMaterial = getMaterial('lambert', { color: 0x8B7500 });
+            const endGeometry = getGeometry('sphere', 0.35, 8, 8);
             const end1 = new THREE.Mesh(endGeometry, endMaterial);
             end1.position.y = 0.7;
             end1.scale.set(0.8, 1, 0.8);
@@ -260,20 +260,20 @@
             // Other player placed a bomb
             const bombGroup = new THREE.Group();
             
-            const sphereGeometry = new THREE.SphereGeometry(0.4, 16, 16);
-            const sphereMaterial = new THREE.MeshLambertMaterial({ color: 0x1a1a1a });
+            const sphereGeometry = getGeometry('sphere', 0.4, 16, 16);
+            const sphereMaterial = getMaterial('lambert', { color: 0x1a1a1a });
             const sphere = new THREE.Mesh(sphereGeometry, sphereMaterial);
             sphere.castShadow = true;
             bombGroup.add(sphere);
             
-            const fuseGeometry = new THREE.CylinderGeometry(0.05, 0.05, 0.3, 8);
-            const fuseMaterial = new THREE.MeshLambertMaterial({ color: 0x8B4513 });
+            const fuseGeometry = getGeometry('cylinder', 0.05, 0.05, 0.3, 8);
+            const fuseMaterial = getMaterial('lambert', { color: 0x8B4513 });
             const fuse = new THREE.Mesh(fuseGeometry, fuseMaterial);
             fuse.position.y = 0.4;
             bombGroup.add(fuse);
             
-            const sparkGeometry = new THREE.SphereGeometry(0.1, 8, 8);
-            const sparkMaterial = new THREE.MeshBasicMaterial({ 
+            const sparkGeometry = getGeometry('sphere', 0.1, 8, 8);
+            const sparkMaterial = getMaterial('basic', { 
                 color: 0xFF4500,
                 emissive: 0xFF4500,
                 emissiveIntensity: 1.0
@@ -370,8 +370,8 @@
             G.scene.add(warningLight);
             
             // Create glowing ground circle effect - larger and brighter
-            const glowGeometry = new THREE.CircleGeometry(2.0, 32);
-            const glowMaterial = new THREE.MeshBasicMaterial({
+            const glowGeometry = getGeometry('circle', 2.0, 32);
+            const glowMaterial = getMaterial('basic', {
                 color: 0xff0000,
                 transparent: true,
                 opacity: 0.7,
@@ -383,8 +383,8 @@
             G.scene.add(glowMesh);
             
             // Create vertical beam for visibility
-            const beamGeometry = new THREE.CylinderGeometry(0.3, 0.8, 6, 8);
-            const beamMaterial = new THREE.MeshBasicMaterial({
+            const beamGeometry = getGeometry('cylinder', 0.3, 0.8, 6, 8);
+            const beamMaterial = getMaterial('basic', {
                 color: 0xff0000,
                 transparent: true,
                 opacity: 0.4
@@ -432,7 +432,7 @@
             const trailGroup = new THREE.Group();
             
             const poolGeometry = new THREE.CircleGeometry(GAME_CONFIG.LAVA_TRAIL_RADIUS, 16);
-            const poolMaterial = new THREE.MeshBasicMaterial({ 
+            const poolMaterial = getMaterial('basic', { 
                 color: 0xff4400,
                 transparent: true,
                 opacity: 0.9,
@@ -445,7 +445,7 @@
             trailGroup.add(pool);
             
             const crustGeometry = new THREE.RingGeometry(GAME_CONFIG.LAVA_TRAIL_RADIUS * 0.7, GAME_CONFIG.LAVA_TRAIL_RADIUS, 16);
-            const crustMaterial = new THREE.MeshBasicMaterial({ 
+            const crustMaterial = getMaterial('basic', { 
                 color: 0x4a2010,
                 transparent: true,
                 opacity: 0.6,
@@ -456,8 +456,8 @@
             crust.position.y = 0.16;
             trailGroup.add(crust);
             
-            const bubbleGeometry = new THREE.SphereGeometry(0.15, 8, 8);
-            const bubbleMaterial = new THREE.MeshBasicMaterial({ 
+            const bubbleGeometry = getGeometry('sphere', 0.15, 8, 8);
+            const bubbleMaterial = getMaterial('basic', { 
                 color: 0xffaa00,
                 transparent: true,
                 opacity: 0.8,
@@ -657,9 +657,17 @@
                         }
                         const halfW = wallWidth / 2 + 1.5;
                         const halfD = wallDepth / 2 + 1.5;
-                        const dx = Math.abs(G.playerGroup.position.x - mtn.x);
-                        const dz = Math.abs(G.playerGroup.position.z - mtn.z);
-                        if (dx < halfW && dz < halfD) {
+                        let dx = G.playerGroup.position.x - mtn.x;
+                        let dz = G.playerGroup.position.z - mtn.z;
+                        if (mtn.rotation) {
+                            const cos = Math.cos(-mtn.rotation);
+                            const sin = Math.sin(-mtn.rotation);
+                            const lx = dx * cos - dz * sin;
+                            const lz = dx * sin + dz * cos;
+                            dx = lx;
+                            dz = lz;
+                        }
+                        if (Math.abs(dx) < halfW && Math.abs(dz) < halfD) {
                             G.playerGroup.position.copy(prevPos);
                             isStuck = true;
                         }
@@ -1491,28 +1499,28 @@
                             const rapunzelGroup = new THREE.Group();
                             
                             // Rapunzel head (larger for visibility)
-                            const headGeometry = new THREE.SphereGeometry(0.8, 12, 12);
-                            const skinMaterial = new THREE.MeshLambertMaterial({ color: 0xFFDBC4 });
+                            const headGeometry = getGeometry('sphere', 0.8, 12, 12);
+                            const skinMaterial = getMaterial('lambert', { color: 0xFFDBC4 });
                             const head = new THREE.Mesh(headGeometry, skinMaterial);
                             head.position.y = 1.5;
                             rapunzelGroup.add(head);
                             
                             // Hair on TOP of head (golden blonde)
-                            const hairMaterial = new THREE.MeshLambertMaterial({ color: 0xFFD700 });
-                            const topHairGeometry = new THREE.SphereGeometry(0.85, 12, 8, 0, Math.PI * 2, 0, Math.PI * 0.5);
+                            const hairMaterial = getMaterial('lambert', { color: 0xFFD700 });
+                            const topHairGeometry = getGeometry('sphere', 0.85, 12, 8, 0, Math.PI * 2, 0, Math.PI * 0.5);
                             const topHair = new THREE.Mesh(topHairGeometry, hairMaterial);
                             topHair.position.y = 1.5;
                             rapunzelGroup.add(topHair);
                             
                             // Hair at back of head flowing down
-                            const backHairGeometry = new THREE.SphereGeometry(0.5, 8, 8);
+                            const backHairGeometry = getGeometry('sphere', 0.5, 8, 8);
                             const backHair = new THREE.Mesh(backHairGeometry, hairMaterial);
                             backHair.position.set(0, 1.3, -0.6); // Back of head
                             rapunzelGroup.add(backHair);
                             
                             // Long blonde hair flowing down the tower (from back of head)
                             for (let h = 0; h < 20; h++) {
-                                const hairGeometry = new THREE.CylinderGeometry(0.15, 0.08, 12, 6);
+                                const hairGeometry = getGeometry('cylinder', 0.15, 0.08, 12, 6);
                                 const hairStrand = new THREE.Mesh(hairGeometry, hairMaterial);
                                 hairStrand.position.set(
                                     (Math.random() - 0.5) * 0.6,
@@ -1524,33 +1532,33 @@
                             }
                             
                             // Eyes (bigger)
-                            const eyeMaterial = new THREE.MeshBasicMaterial({ color: 0x228B22 });
+                            const eyeMaterial = getMaterial('basic', { color: 0x228B22 });
                             for (let side = -1; side <= 1; side += 2) {
-                                const eyeGeometry = new THREE.SphereGeometry(0.15, 8, 8);
+                                const eyeGeometry = getGeometry('sphere', 0.15, 8, 8);
                                 const eye = new THREE.Mesh(eyeGeometry, eyeMaterial);
                                 eye.position.set(side * 0.25, 1.6, 0.7);
                                 rapunzelGroup.add(eye);
                             }
                             
                             // Smile (bigger)
-                            const smileGeometry = new THREE.TorusGeometry(0.2, 0.04, 8, 12, Math.PI);
-                            const smileMaterial = new THREE.MeshBasicMaterial({ color: 0xFF6B6B });
+                            const smileGeometry = getGeometry('torus', 0.2, 0.04, 8, 12, Math.PI);
+                            const smileMaterial = getMaterial('basic', { color: 0xFF6B6B });
                             const smile = new THREE.Mesh(smileGeometry, smileMaterial);
                             smile.position.set(0, 1.3, 0.7);
                             smile.rotation.x = Math.PI;
                             rapunzelGroup.add(smile);
                             
                             // Pink dress body (bigger cone)
-                            const dressGeometry = new THREE.ConeGeometry(1.2, 2.5, 8);
-                            const dressMaterial = new THREE.MeshLambertMaterial({ color: 0xFF69B4 });
+                            const dressGeometry = getGeometry('cone', 1.2, 2.5, 8);
+                            const dressMaterial = getMaterial('lambert', { color: 0xFF69B4 });
                             const dress = new THREE.Mesh(dressGeometry, dressMaterial);
                             dress.position.y = -0.5;
                             rapunzelGroup.add(dress);
                             
                             // Arms waving
-                            const armMaterial = new THREE.MeshLambertMaterial({ color: 0xFFDBC4 });
+                            const armMaterial = getMaterial('lambert', { color: 0xFFDBC4 });
                             for (let side = -1; side <= 1; side += 2) {
-                                const armGeometry = new THREE.CylinderGeometry(0.15, 0.12, 1.2, 8);
+                                const armGeometry = getGeometry('cylinder', 0.15, 0.12, 1.2, 8);
                                 const arm = new THREE.Mesh(armGeometry, armMaterial);
                                 arm.position.set(side * 1.0, 0.8, 0);
                                 arm.rotation.z = side * 0.8;

@@ -35,15 +35,15 @@
     function createLagOverlay() {
         // The lag effect will be a screen-space overlay
         // We'll use a plane attached to the camera
-        const overlayGeometry = new THREE.PlaneGeometry(100, 100);
-        const overlayMaterial = new THREE.MeshBasicMaterial({
+        const overlayGeometry = getGeometry('plane', 100, 100);
+        const overlayMaterial = getMaterial('basic', {
             color: 0x00FFFF,
             transparent: true,
             opacity: 0,
             side: THREE.DoubleSide,
             blending: THREE.AdditiveBlending,
             depthTest: false
-        });
+        }).clone();
         lagState.visualOverlay = new THREE.Mesh(overlayGeometry, overlayMaterial);
         lagState.visualOverlay.renderOrder = 999;
         // Will be positioned in front of camera during updates
@@ -390,7 +390,7 @@
         
         // Gate frame (always visible)
         const frameGeometry = new THREE.BoxGeometry(config.width, 6, 0.3);
-        const frameMaterial = new THREE.MeshPhongMaterial({
+        const frameMaterial = getMaterial('phong', {
             color: 0x333355,
             emissive: 0x001122,
             emissiveIntensity: 0.3
@@ -401,13 +401,13 @@
         
         // Energy barrier (toggles on/off)
         const barrierGeometry = new THREE.PlaneGeometry(config.width - 0.5, 5.5);
-        const barrierMaterial = new THREE.MeshBasicMaterial({
+        const barrierMaterial = getMaterial('basic', {
             color: 0x00FFFF,
             transparent: true,
             opacity: 0.6,
             side: THREE.DoubleSide,
             blending: THREE.AdditiveBlending
-        });
+        }).clone();
         const barrier = new THREE.Mesh(barrierGeometry, barrierMaterial);
         barrier.position.y = 3;
         barrier.position.z = 0.2;
@@ -416,8 +416,8 @@
         // Hexagonal grid pattern on barrier
         for (let row = 0; row < 3; row++) {
             for (let col = 0; col < Math.floor(config.width / 2); col++) {
-                const hexGeometry = new THREE.CircleGeometry(0.4, 6);
-                const hexMaterial = new THREE.MeshBasicMaterial({
+                const hexGeometry = getGeometry('circle', 0.4, 6);
+                const hexMaterial = getMaterial('basic', {
                     color: 0x00FFFF,
                     transparent: true,
                     opacity: 0.3,
@@ -434,17 +434,17 @@
         }
         
         // Warning lights on frame
-        const warningGeometry = new THREE.SphereGeometry(0.2, 8, 8);
-        const warningMaterial = new THREE.MeshBasicMaterial({
+        const warningGeometry = getGeometry('sphere', 0.2, 8, 8);
+        const warningMaterial = getMaterial('basic', {
             color: 0xFF6600,
             transparent: true,
             opacity: 0.8
         });
-        const leftWarning = new THREE.Mesh(warningGeometry, warningMaterial);
+        const leftWarning = new THREE.Mesh(warningGeometry, warningMaterial.clone());
         leftWarning.position.set(-config.width/2 + 0.3, 5.5, 0.3);
         gateGroup.add(leftWarning);
         
-        const rightWarning = new THREE.Mesh(warningGeometry, warningMaterial);
+        const rightWarning = new THREE.Mesh(warningGeometry, warningMaterial.clone());
         rightWarning.position.set(config.width/2 - 0.3, 5.5, 0.3);
         gateGroup.add(rightWarning);
         
@@ -560,8 +560,8 @@
         const zoneGroup = new THREE.Group();
         
         // Core warning marker (always visible)
-        const coreGeometry = new THREE.CylinderGeometry(0.5, 0.5, 0.2, 8);
-        const coreMaterial = new THREE.MeshBasicMaterial({
+        const coreGeometry = getGeometry('cylinder', 0.5, 0.5, 0.2, 8);
+        const coreMaterial = getMaterial('basic', {
             color: 0xFF0000,
             transparent: true,
             opacity: 0.8
@@ -571,8 +571,8 @@
         zoneGroup.add(core);
         
         // Warning symbol
-        const symbolGeometry = new THREE.RingGeometry(0.3, 0.45, 3);
-        const symbolMaterial = new THREE.MeshBasicMaterial({
+        const symbolGeometry = getGeometry('ring', 0.3, 0.45, 3);
+        const symbolMaterial = getMaterial('basic', {
             color: 0xFFFF00,
             transparent: true,
             opacity: 0.9,
@@ -585,7 +585,7 @@
         
         // Expanding damage zone (visual ring)
         const zoneGeometry = new THREE.RingGeometry(config.minRadius - 0.5, config.minRadius, 32);
-        const zoneMaterial = new THREE.MeshBasicMaterial({
+        const zoneMaterial = getMaterial('basic', {
             color: 0xFF0066,
             transparent: true,
             opacity: 0.4,
@@ -598,12 +598,12 @@
         
         // Inner fill (semi-transparent danger area)
         const fillGeometry = new THREE.CircleGeometry(config.minRadius, 32);
-        const fillMaterial = new THREE.MeshBasicMaterial({
+        const fillMaterial = getMaterial('basic', {
             color: 0xFF0066,
             transparent: true,
             opacity: 0.15,
             side: THREE.DoubleSide
-        });
+        }).clone();
         const fill = new THREE.Mesh(fillGeometry, fillMaterial);
         fill.rotation.x = -Math.PI / 2;
         fill.position.y = 0.12;
@@ -612,8 +612,8 @@
         // Glitch particles floating up
         const particles = [];
         for (let i = 0; i < 8; i++) {
-            const particleGeometry = new THREE.BoxGeometry(0.15, 0.15, 0.15);
-            const particleMaterial = new THREE.MeshBasicMaterial({
+            const particleGeometry = getGeometry('box', 0.15, 0.15, 0.15);
+            const particleMaterial = getMaterial('basic', {
                 color: Math.random() > 0.5 ? 0xFF0066 : 0x00FFFF,
                 transparent: true,
                 opacity: 0.6
@@ -746,7 +746,7 @@
         
         // Base flow plane
         const baseGeometry = new THREE.PlaneGeometry(config.length, config.width);
-        const baseMaterial = new THREE.MeshBasicMaterial({
+        const baseMaterial = getMaterial('basic', {
             color: 0x003300,
             transparent: true,
             opacity: 0.6,
@@ -762,8 +762,8 @@
         const particleCount = Math.floor(config.length / 3);
         
         for (let i = 0; i < particleCount; i++) {
-            const particleGeometry = new THREE.BoxGeometry(0.3, 0.1, 0.8);
-            const particleMaterial = new THREE.MeshBasicMaterial({
+            const particleGeometry = getGeometry('box', 0.3, 0.1, 0.8);
+            const particleMaterial = getMaterial('basic', {
                 color: 0x00FF00,
                 transparent: true,
                 opacity: 0.7
@@ -782,7 +782,7 @@
         
         // Edge glow lines
         const edgeGeometry = new THREE.BoxGeometry(config.length, 0.1, 0.2);
-        const edgeMaterial = new THREE.MeshBasicMaterial({
+        const edgeMaterial = getMaterial('basic', {
             color: 0x00FFFF,
             transparent: true,
             opacity: 0.5
@@ -797,8 +797,8 @@
         
         // Direction arrows
         for (let i = 0; i < 3; i++) {
-            const arrowGeometry = new THREE.ConeGeometry(0.3, 0.6, 3);
-            const arrowMaterial = new THREE.MeshBasicMaterial({
+            const arrowGeometry = getGeometry('cone', 0.3, 0.6, 3);
+            const arrowMaterial = getMaterial('basic', {
                 color: 0x00FF00,
                 transparent: true,
                 opacity: 0.4
@@ -926,12 +926,12 @@
         
         // Outer ring (warning indicator)
         const ringGeometry = new THREE.RingGeometry(virusStrikeState.zoneRadius - 0.5, virusStrikeState.zoneRadius, 48);
-        const ringMaterial = new THREE.MeshBasicMaterial({
+        const ringMaterial = getMaterial('basic', {
             color: 0xFFFF00,
             transparent: true,
             opacity: 0.8,
             side: THREE.DoubleSide
-        });
+        }).clone();
         const ring = new THREE.Mesh(ringGeometry, ringMaterial);
         ring.rotation.x = -Math.PI / 2;
         ring.position.y = 0.15;
@@ -939,12 +939,12 @@
         
         // Inner fill (pulsing warning)
         const fillGeometry = new THREE.CircleGeometry(virusStrikeState.zoneRadius - 0.5, 48);
-        const fillMaterial = new THREE.MeshBasicMaterial({
+        const fillMaterial = getMaterial('basic', {
             color: 0xFFFF00,
             transparent: true,
             opacity: 0.2,
             side: THREE.DoubleSide
-        });
+        }).clone();
         const fill = new THREE.Mesh(fillGeometry, fillMaterial);
         fill.rotation.x = -Math.PI / 2;
         fill.position.y = 0.12;
@@ -953,7 +953,7 @@
         // Crosshair lines
         const createCrosshairLine = (length, rotation) => {
             const lineGeometry = new THREE.PlaneGeometry(length, 0.3);
-            const lineMaterial = new THREE.MeshBasicMaterial({
+            const lineMaterial = getMaterial('basic', {
                 color: 0xFFFF00,
                 transparent: true,
                 opacity: 0.9
@@ -971,8 +971,8 @@
         // Animated segments around the edge
         for (let i = 0; i < 8; i++) {
             const angle = (i / 8) * Math.PI * 2;
-            const segGeometry = new THREE.BoxGeometry(1.5, 0.3, 0.3);
-            const segMaterial = new THREE.MeshBasicMaterial({
+            const segGeometry = getGeometry('box', 1.5, 0.3, 0.3);
+            const segMaterial = getMaterial('basic', {
                 color: 0xFFFF00,
                 transparent: true,
                 opacity: 0.9
@@ -1196,7 +1196,7 @@
         
         // Left wall - big server rack barrier
         const leftWallGeometry = new THREE.BoxGeometry(3, wallHeight, wallDepth);
-        const wallMaterial = new THREE.MeshPhongMaterial({
+        const wallMaterial = getMaterial('phong', {
             color: 0x0A0A15,
             emissive: 0xFF0000,
             emissiveIntensity: 0,
@@ -1218,7 +1218,7 @@
         for (let side = -1; side <= 1; side += 2) {
             for (let i = 0; i < 5; i++) {
                 const stripGeometry = new THREE.BoxGeometry(0.2, wallHeight * 0.9, 0.3);
-                const stripMaterial = new THREE.MeshBasicMaterial({
+                const stripMaterial = getMaterial('basic', {
                     color: stripColors[i % 3],
                     transparent: true,
                     opacity: 0.8
@@ -1236,12 +1236,12 @@
         
         // Warning floor markers
         const floorGeometry = new THREE.PlaneGeometry(config.maxWidth, wallDepth);
-        const floorMaterial = new THREE.MeshBasicMaterial({
+        const floorMaterial = getMaterial('basic', {
             color: 0xFF0000,
             transparent: true,
             opacity: 0,
             side: THREE.DoubleSide
-        });
+        }).clone();
         const floor = new THREE.Mesh(floorGeometry, floorMaterial);
         floor.rotation.x = -Math.PI / 2;
         floor.position.y = 0.15;
@@ -1610,7 +1610,7 @@
         group.add(wireframe);
         
         // Inner glow cube
-        const glowMat = new THREE.MeshBasicMaterial({
+        const glowMat = getMaterial('basic', {
             color: wireMat.color,
             transparent: true,
             opacity: 0.2
@@ -1638,8 +1638,8 @@
         const group = new THREE.Group();
         
         // Frame
-        const frameGeom = new THREE.BoxGeometry(6, 4, 0.1);
-        const frameMat = new THREE.MeshPhongMaterial({
+        const frameGeom = getGeometry('box', 6, 4, 0.1);
+        const frameMat = getMaterial('phong', {
             color: 0x333355,
             emissive: 0x111133,
             emissiveIntensity: 0.5
@@ -1649,8 +1649,8 @@
         group.add(frame);
         
         // Holographic screen
-        const screenGeom = new THREE.PlaneGeometry(5.5, 3.5);
-        const screenMat = new THREE.MeshBasicMaterial({
+        const screenGeom = getGeometry('plane', 5.5, 3.5);
+        const screenMat = getMaterial('basic', {
             color: 0x00FFFF,
             transparent: true,
             opacity: 0.3,
@@ -1664,7 +1664,7 @@
         // Data lines on screen
         for (let i = 0; i < 5; i++) {
             const lineGeom = new THREE.PlaneGeometry(4 + Math.random() * 1.5, 0.1);
-            const lineMat = new THREE.MeshBasicMaterial({
+            const lineMat = getMaterial('basic', {
                 color: Math.random() > 0.5 ? 0x00FF88 : 0x00FFFF,
                 transparent: true,
                 opacity: 0.7
@@ -1692,8 +1692,8 @@
         const group = new THREE.Group();
         
         // Base
-        const baseGeom = new THREE.CylinderGeometry(1.5, 2, 0.5, 6);
-        const baseMat = new THREE.MeshPhongMaterial({
+        const baseGeom = getGeometry('cylinder', 1.5, 2, 0.5, 6);
+        const baseMat = getMaterial('phong', {
             color: 0x222244,
             emissive: 0x000022,
             emissiveIntensity: 0.3
@@ -1703,8 +1703,8 @@
         group.add(base);
         
         // Energy core
-        const coreGeom = new THREE.CylinderGeometry(0.5, 0.5, 8, 8);
-        const coreMat = new THREE.MeshBasicMaterial({
+        const coreGeom = getGeometry('cylinder', 0.5, 0.5, 8, 8);
+        const coreMat = getMaterial('basic', {
             color: index % 2 === 0 ? 0x00FFFF : 0xFF0066,
             transparent: true,
             opacity: 0.6
@@ -1714,8 +1714,8 @@
         group.add(core);
         
         // Outer ring effects
-        const ringGeom = new THREE.TorusGeometry(1, 0.1, 8, 16);
-        const ringMat = new THREE.MeshBasicMaterial({
+        const ringGeom = getGeometry('torus', 1, 0.1, 8, 16);
+        const ringMat = getMaterial('basic', {
             color: coreMat.color,
             transparent: true,
             opacity: 0.5

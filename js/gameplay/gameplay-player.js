@@ -84,8 +84,8 @@
         const particles = [];
         
         for (let i = 0; i < particleCount; i++) {
-            const geometry = new THREE.SphereGeometry(0.1, 4, 4);
-            const material = new THREE.MeshBasicMaterial({
+            const geometry = getGeometry('sphere', 0.1, 4, 4);
+            const material = getMaterial('basic', {
                 color: 0xAAFFFF,
                 transparent: true,
                 opacity: 0.8
@@ -149,7 +149,7 @@
         
         // Create visual effect - expanding blue circle
         const circleGeometry = new THREE.RingGeometry(0.1, freezeRadius, 32);
-        const circleMaterial = new THREE.MeshBasicMaterial({
+        const circleMaterial = getMaterial('basic', {
             color: 0x00BFFF,
             transparent: true,
             opacity: 0.6,
@@ -627,9 +627,17 @@
                         }
                         const halfW = wallWidth / 2 + 1.5;
                         const halfD = wallDepth / 2 + 1.5;
-                        const dx = Math.abs(newX - mtn.x);
-                        const dz = Math.abs(newZ - mtn.z);
-                        if (dx < halfW && dz < halfD) {
+                        let dx = newX - mtn.x;
+                        let dz = newZ - mtn.z;
+                        if (mtn.rotation) {
+                            const cos = Math.cos(-mtn.rotation);
+                            const sin = Math.sin(-mtn.rotation);
+                            const lx = dx * cos - dz * sin;
+                            const lz = dx * sin + dz * cos;
+                            dx = lx;
+                            dz = lz;
+                        }
+                        if (Math.abs(dx) < halfW && Math.abs(dz) < halfD) {
                             G.player2Group.position.copy(prevPos);
                             collided = true;
                             break;

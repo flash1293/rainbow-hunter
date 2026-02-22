@@ -29,8 +29,8 @@
             
             if (candyType === 0) {
                 // Wrapped candy
-                const bodyGeometry = new THREE.SphereGeometry(0.4, 8, 8);
-                const bodyMaterial = new THREE.MeshPhongMaterial({
+                const bodyGeometry = getGeometry('sphere', 0.4, 8, 8);
+                const bodyMaterial = getMaterial('phong', {
                     color: candyColor,
                     emissive: candyColor,
                     emissiveIntensity: 0.2,
@@ -40,8 +40,8 @@
                 candyGroup.add(body);
                 
                 // Wrapper ends
-                const wrapperGeometry = new THREE.ConeGeometry(0.15, 0.4, 8);
-                const wrapperMaterial = new THREE.MeshPhongMaterial({ color: 0xFFFFFF, shininess: 80 });
+                const wrapperGeometry = getGeometry('cone', 0.15, 0.4, 8);
+                const wrapperMaterial = getMaterial('phong', { color: 0xFFFFFF, shininess: 80 });
                 const wrapper1 = new THREE.Mesh(wrapperGeometry, wrapperMaterial);
                 wrapper1.position.set(-0.5, 0, 0);
                 wrapper1.rotation.z = Math.PI / 2;
@@ -52,8 +52,8 @@
                 candyGroup.add(wrapper2);
             } else if (candyType === 1) {
                 // Lollipop
-                const candyGeometry = new THREE.SphereGeometry(0.35, 8, 8);
-                const candyMaterial = new THREE.MeshPhongMaterial({
+                const candyGeometry = getGeometry('sphere', 0.35, 8, 8);
+                const candyMaterial = getMaterial('phong', {
                     color: candyColor,
                     emissive: candyColor,
                     emissiveIntensity: 0.2,
@@ -63,14 +63,14 @@
                 candy.position.y = 0.3;
                 candyGroup.add(candy);
                 
-                const stickGeometry = new THREE.CylinderGeometry(0.05, 0.05, 0.6, 8);
-                const stickMaterial = new THREE.MeshPhongMaterial({ color: 0xFFFFFF });
+                const stickGeometry = getGeometry('cylinder', 0.05, 0.05, 0.6, 8);
+                const stickMaterial = getMaterial('phong', { color: 0xFFFFFF });
                 const stick = new THREE.Mesh(stickGeometry, stickMaterial);
                 candyGroup.add(stick);
             } else if (candyType === 2) {
                 // Gumdrop
-                const gumdropGeometry = new THREE.SphereGeometry(0.35, 8, 6, 0, Math.PI * 2, 0, Math.PI / 2);
-                const gumdropMaterial = new THREE.MeshPhongMaterial({
+                const gumdropGeometry = getGeometry('sphere', 0.35, 8, 6, 0, Math.PI * 2, 0, Math.PI / 2);
+                const gumdropMaterial = getMaterial('phong', {
                     color: candyColor,
                     emissive: candyColor,
                     emissiveIntensity: 0.2,
@@ -88,7 +88,7 @@
                 heartShape.bezierCurveTo(0.2, 0.35, 0, 0.35, 0, 0.2);
                 
                 const heartGeometry = new THREE.ExtrudeGeometry(heartShape, { depth: 0.15, bevelEnabled: false });
-                const heartMaterial = new THREE.MeshPhongMaterial({
+                const heartMaterial = getMaterial('phong', {
                     color: candyColor,
                     emissive: candyColor,
                     emissiveIntensity: 0.2,
@@ -100,8 +100,8 @@
             }
             
             // Glowing aura
-            const auraGeometry = new THREE.RingGeometry(0.5, 0.8, 16);
-            const auraMaterial = new THREE.MeshBasicMaterial({
+            const auraGeometry = getGeometry('ring', 0.5, 0.8, 16);
+            const auraMaterial = getMaterial('basic', {
                 color: candyColor,
                 transparent: true,
                 opacity: 0.5,
@@ -145,8 +145,8 @@
         const rotColor = 0x3a4030;
 
         // Zombie body - hunched torso
-        const bodyGeometry = new THREE.BoxGeometry(0.6, 0.9, 0.4);
-        const bodyMaterial = new THREE.MeshLambertMaterial({ color: zombieGreen });
+        const bodyGeometry = getGeometry('box', 0.6, 0.9, 0.4);
+        const bodyMaterial = getMaterial('lambert', { color: zombieGreen });
         const body = new THREE.Mesh(bodyGeometry, bodyMaterial);
         body.position.y = 0.75;
         body.rotation.x = 0.2;
@@ -154,8 +154,8 @@
         zombieGrp.add(body);
 
         // Zombie head
-        const headGeometry = new THREE.SphereGeometry(0.38, 16, 16);
-        const headMaterial = new THREE.MeshLambertMaterial({ color: zombieGreen });
+        const headGeometry = getGeometry('sphere', 0.38, 16, 16);
+        const headMaterial = getMaterial('lambert', { color: zombieGreen });
         const head = new THREE.Mesh(headGeometry, headMaterial);
         head.position.set(0.05, 1.45, 0.1);
         head.rotation.z = 0.15;
@@ -163,8 +163,8 @@
         zombieGrp.add(head);
 
         // Glowing eyes
-        const eyeGeometry = new THREE.SphereGeometry(0.08, 12, 12);
-        const eyeMaterial = new THREE.MeshBasicMaterial({
+        const eyeGeometry = getGeometry('sphere', 0.08, 12, 12);
+        const eyeMaterial = getMaterial('basic', {
             color: 0xFFFF00,
             transparent: true,
             opacity: 0.8
@@ -178,16 +178,16 @@
         zombieGrp.add(eye2);
 
         // Gaping mouth
-        const mouthGeometry = new THREE.BoxGeometry(0.2, 0.15, 0.1);
-        const mouthMaterial = new THREE.MeshBasicMaterial({ color: 0x1a1010 });
+        const mouthGeometry = getGeometry('box', 0.2, 0.15, 0.1);
+        const mouthMaterial = getMaterial('basic', { color: 0x1a1010 });
         const mouth = new THREE.Mesh(mouthGeometry, mouthMaterial);
         mouth.position.set(0.02, 1.32, 0.35);
         zombieGrp.add(mouth);
 
         // Exposed ribs
-        const ribMaterial = new THREE.MeshLambertMaterial({ color: 0xd0c8b0 });
+        const ribMaterial = getMaterial('lambert', { color: 0xd0c8b0 });
         for (let i = 0; i < 3; i++) {
-            const ribGeometry = new THREE.CylinderGeometry(0.03, 0.03, 0.25, 6);
+            const ribGeometry = getGeometry('cylinder', 0.03, 0.03, 0.25, 6);
             const rib = new THREE.Mesh(ribGeometry, ribMaterial);
             rib.position.set(0, 0.6 + i * 0.12, 0.22);
             rib.rotation.z = Math.PI / 2;
@@ -195,8 +195,8 @@
         }
 
         // Arms reaching up
-        const armGeometry = new THREE.CylinderGeometry(0.08, 0.06, 0.6, 6);
-        const armMaterial = new THREE.MeshLambertMaterial({ color: rotColor });
+        const armGeometry = getGeometry('cylinder', 0.08, 0.06, 0.6, 6);
+        const armMaterial = getMaterial('lambert', { color: rotColor });
         const arm1 = new THREE.Mesh(armGeometry, armMaterial);
         arm1.position.set(-0.4, 0.6, 0.15);
         arm1.rotation.z = 0.8;
@@ -210,7 +210,7 @@
         zombieGrp.add(arm2);
 
         // Legs
-        const legGeometry = new THREE.CylinderGeometry(0.1, 0.08, 0.5, 6);
+        const legGeometry = getGeometry('cylinder', 0.1, 0.08, 0.5, 6);
         const leg1 = new THREE.Mesh(legGeometry, armMaterial);
         leg1.position.set(-0.15, 0.25, 0);
         zombieGrp.add(leg1);
@@ -221,9 +221,9 @@
         zombieGrp.add(leg2);
 
         // Add dirt particles around the zombie
-        const dirtMaterial = new THREE.MeshLambertMaterial({ color: 0x3a3025 });
+        const dirtMaterial = getMaterial('lambert', { color: 0x3a3025 });
         for (let i = 0; i < 8; i++) {
-            const dirtGeometry = new THREE.BoxGeometry(0.15, 0.1, 0.15);
+            const dirtGeometry = getGeometry('box', 0.15, 0.1, 0.15);
             const dirt = new THREE.Mesh(dirtGeometry, dirtMaterial);
             const angle = (i / 8) * Math.PI * 2;
             dirt.position.set(
@@ -348,8 +348,8 @@
         G.scene.add(warningLight);
         
         // Create glowing ground circle effect - larger and brighter
-        const glowGeometry = new THREE.CircleGeometry(2.0, 32);
-        const glowMaterial = new THREE.MeshBasicMaterial({
+        const glowGeometry = getGeometry('circle', 2.0, 32);
+        const glowMaterial = getMaterial('basic', {
             color: 0xff0000,
             transparent: true,
             opacity: 0.7,
@@ -361,8 +361,8 @@
         G.scene.add(glowMesh);
         
         // Create vertical beam for visibility from distance
-        const beamGeometry = new THREE.CylinderGeometry(0.3, 0.8, 6, 8);
-        const beamMaterial = new THREE.MeshBasicMaterial({
+        const beamGeometry = getGeometry('cylinder', 0.3, 0.8, 6, 8);
+        const beamMaterial = getMaterial('basic', {
             color: 0xff0000,
             transparent: true,
             opacity: 0.4
@@ -410,8 +410,8 @@
         const icingPink = 0xFF69B4;
 
         // Gingerbread body
-        const bodyGeometry = new THREE.CylinderGeometry(0.5, 0.5, 0.25, 16);
-        const bodyMaterial = new THREE.MeshLambertMaterial({ color: cookieColor });
+        const bodyGeometry = getGeometry('cylinder', 0.5, 0.5, 0.25, 16);
+        const bodyMaterial = getMaterial('lambert', { color: cookieColor });
         const body = new THREE.Mesh(bodyGeometry, bodyMaterial);
         body.rotation.x = Math.PI / 2;
         body.position.y = 1.0;
@@ -419,7 +419,7 @@
         gingerbreadGrp.add(body);
 
         // Gingerbread head
-        const headGeometry = new THREE.CylinderGeometry(0.35, 0.35, 0.2, 16);
+        const headGeometry = getGeometry('cylinder', 0.35, 0.35, 0.2, 16);
         const head = new THREE.Mesh(headGeometry, bodyMaterial);
         head.rotation.x = Math.PI / 2;
         head.position.y = 1.6;
@@ -427,8 +427,8 @@
         gingerbreadGrp.add(head);
 
         // Icing buttons
-        const buttonGeometry = new THREE.CylinderGeometry(0.06, 0.06, 0.04, 8);
-        const icingMaterial = new THREE.MeshBasicMaterial({ color: icingWhite });
+        const buttonGeometry = getGeometry('cylinder', 0.06, 0.06, 0.04, 8);
+        const icingMaterial = getMaterial('basic', { color: icingWhite });
         for (let i = 0; i < 2; i++) {
             const button = new THREE.Mesh(buttonGeometry, icingMaterial);
             button.rotation.x = Math.PI / 2;
@@ -437,16 +437,16 @@
         }
 
         // Icing smile
-        const smileGeometry = new THREE.TorusGeometry(0.1, 0.02, 8, 12, Math.PI);
-        const smileMaterial = new THREE.MeshBasicMaterial({ color: icingPink });
+        const smileGeometry = getGeometry('torus', 0.1, 0.02, 8, 12, Math.PI);
+        const smileMaterial = getMaterial('basic', { color: icingPink });
         const smile = new THREE.Mesh(smileGeometry, smileMaterial);
         smile.position.set(0, 1.5, 0.12);
         smile.rotation.x = -0.2;
         gingerbreadGrp.add(smile);
 
         // Eyes
-        const eyeGeometry = new THREE.SphereGeometry(0.06, 8, 8);
-        const eyeMaterial = new THREE.MeshBasicMaterial({ color: 0x000000 });
+        const eyeGeometry = getGeometry('sphere', 0.06, 8, 8);
+        const eyeMaterial = getMaterial('basic', { color: 0x000000 });
         const eye1 = new THREE.Mesh(eyeGeometry, eyeMaterial);
         eye1.position.set(-0.1, 1.65, 0.15);
         gingerbreadGrp.add(eye1);
@@ -455,7 +455,7 @@
         gingerbreadGrp.add(eye2);
 
         // Arms
-        const armGeometry = new THREE.CylinderGeometry(0.08, 0.1, 0.5, 6);
+        const armGeometry = getGeometry('cylinder', 0.08, 0.1, 0.5, 6);
         const arm1 = new THREE.Mesh(armGeometry, bodyMaterial);
         arm1.position.set(-0.45, 1.1, 0);
         arm1.rotation.z = 0.6;
@@ -466,7 +466,7 @@
         gingerbreadGrp.add(arm2);
 
         // Legs
-        const legGeometry = new THREE.CylinderGeometry(0.1, 0.12, 0.6, 6);
+        const legGeometry = getGeometry('cylinder', 0.1, 0.12, 0.6, 6);
         const leg1 = new THREE.Mesh(legGeometry, bodyMaterial);
         leg1.position.set(-0.18, 0.4, 0);
         gingerbreadGrp.add(leg1);
@@ -512,7 +512,7 @@
     
     function createSmokeParticle(oven) {
         const smokeGeometry = new THREE.SphereGeometry(0.3 + Math.random() * 0.2, 8, 8);
-        const smokeMaterial = new THREE.MeshBasicMaterial({
+        const smokeMaterial = getMaterial('basic', {
             color: 0x888888,
             transparent: true,
             opacity: 0.6
@@ -608,7 +608,7 @@
             
             // Animate fire glow
             if (oven.fireLight) {
-                oven.fireLight.intensity = 0.6 + Math.sin(now * 0.005) * 0.3;
+                oven.fireLight.material.opacity = 0.3 + Math.sin(now * 0.005) * 0.15;
             }
         });
         
@@ -667,16 +667,16 @@
         const scale = 0.5;                  // Smaller spawned witches
         
         // === BROOMSTICK ===
-        const handleGeometry = new THREE.CylinderGeometry(0.08, 0.1, 4, 8);
-        const handleMaterial = new THREE.MeshLambertMaterial({ color: broomColor });
+        const handleGeometry = getGeometry('cylinder', 0.08, 0.1, 4, 8);
+        const handleMaterial = getMaterial('lambert', { color: broomColor });
         const handle = new THREE.Mesh(handleGeometry, handleMaterial);
         handle.rotation.x = Math.PI / 2;
         handle.castShadow = true;
         group.add(handle);
         
         // Broom bristles
-        const bristleGeometry = new THREE.ConeGeometry(0.4, 1.2, 8);
-        const bristleMaterial = new THREE.MeshLambertMaterial({ color: bristleColor });
+        const bristleGeometry = getGeometry('cone', 0.4, 1.2, 8);
+        const bristleMaterial = getMaterial('lambert', { color: bristleColor });
         const bristles = new THREE.Mesh(bristleGeometry, bristleMaterial);
         bristles.rotation.x = -Math.PI / 2;
         bristles.position.z = -2.5;
@@ -684,8 +684,8 @@
         group.add(bristles);
         
         // === WITCH BODY ===
-        const cloakGeometry = new THREE.ConeGeometry(0.5, 1.2, 8);
-        const cloakMaterial = new THREE.MeshLambertMaterial({ color: cloakColor });
+        const cloakGeometry = getGeometry('cone', 0.5, 1.2, 8);
+        const cloakMaterial = getMaterial('lambert', { color: cloakColor });
         const cloak = new THREE.Mesh(cloakGeometry, cloakMaterial);
         cloak.position.y = 0.8;
         cloak.position.z = 0.5;
@@ -693,8 +693,8 @@
         group.add(cloak);
         
         // Witch head
-        const headGeometry = new THREE.SphereGeometry(0.35, 16, 16);
-        const headMaterial = new THREE.MeshLambertMaterial({ color: skinColor });
+        const headGeometry = getGeometry('sphere', 0.35, 16, 16);
+        const headMaterial = getMaterial('lambert', { color: skinColor });
         const head = new THREE.Mesh(headGeometry, headMaterial);
         head.position.y = 1.6;
         head.position.z = 0.5;
@@ -702,15 +702,15 @@
         group.add(head);
         
         // Big warty nose
-        const noseGeometry = new THREE.ConeGeometry(0.08, 0.2, 6);
+        const noseGeometry = getGeometry('cone', 0.08, 0.2, 6);
         const nose = new THREE.Mesh(noseGeometry, headMaterial);
         nose.position.set(0, 1.55, 0.88);
         nose.rotation.x = Math.PI / 2;
         group.add(nose);
         
         // Evil glowing green eyes
-        const eyeGeometry = new THREE.SphereGeometry(0.08, 12, 12);
-        const eyeMaterial = new THREE.MeshBasicMaterial({ color: eyeGlow });
+        const eyeGeometry = getGeometry('sphere', 0.08, 12, 12);
+        const eyeMaterial = getMaterial('basic', { color: eyeGlow });
         [-0.12, 0.12].forEach(x => {
             const eye = new THREE.Mesh(eyeGeometry, eyeMaterial);
             eye.position.set(x, 1.65, 0.82);
@@ -718,14 +718,14 @@
         });
         
         // Pointed witch hat
-        const hatBrimGeometry = new THREE.CylinderGeometry(0.45, 0.45, 0.06, 16);
-        const hatMaterial = new THREE.MeshLambertMaterial({ color: hatColor });
+        const hatBrimGeometry = getGeometry('cylinder', 0.45, 0.45, 0.06, 16);
+        const hatMaterial = getMaterial('lambert', { color: hatColor });
         const hatBrim = new THREE.Mesh(hatBrimGeometry, hatMaterial);
         hatBrim.position.y = 1.9;
         hatBrim.position.z = 0.5;
         group.add(hatBrim);
         
-        const hatConeGeometry = new THREE.ConeGeometry(0.28, 0.8, 12);
+        const hatConeGeometry = getGeometry('cone', 0.28, 0.8, 12);
         const hatCone = new THREE.Mesh(hatConeGeometry, hatMaterial);
         hatCone.position.y = 2.35;
         hatCone.position.z = 0.5;
@@ -734,8 +734,8 @@
         
         // Magical trail
         for (let i = 0; i < 6; i++) {
-            const sparkleGeometry = new THREE.SphereGeometry(0.05, 6, 6);
-            const sparkleMaterial = new THREE.MeshBasicMaterial({ 
+            const sparkleGeometry = getGeometry('sphere', 0.05, 6, 6);
+            const sparkleMaterial = getMaterial('basic', { 
                 color: magicGlow,
                 transparent: true,
                 opacity: 0.4 + Math.random() * 0.3

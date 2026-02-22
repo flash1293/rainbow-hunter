@@ -497,8 +497,7 @@
 
     // Projectile systems moved to js/gameplay/gameplay-projectiles.js:
     // createDragonFireball, createScytheWave, createWizardFireball, createLavaMonsterFireball,
-    // createLavaTrail, createMummyTornado, spawnWildTornado, checkAndSpawnWildTornados,
-    // updateMummyTornados, updateLavaTrails, updateFireballs
+    // createLavaTrail, createMummyTornado, updateMummyTornados, updateLavaTrails, updateFireballs
     
 
     // Export functions

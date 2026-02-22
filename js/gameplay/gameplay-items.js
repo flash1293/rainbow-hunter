@@ -15,8 +15,8 @@
         const bananaGroup = new THREE.Group();
         
         // Banana body (curved cylinder)
-        const bananaGeometry = new THREE.CylinderGeometry(0.3, 0.3, 1.5, 8);
-        const bananaMaterial = new THREE.MeshLambertMaterial({ 
+        const bananaGeometry = getGeometry('cylinder', 0.3, 0.3, 1.5, 8);
+        const bananaMaterial = getMaterial('lambert', { 
             color: 0xFFFF00,
             emissive: 0xFFFF00,
             emissiveIntensity: 0.3
@@ -27,8 +27,8 @@
         bananaGroup.add(bananaMesh);
         
         // Banana ends (darker)
-        const endMaterial = new THREE.MeshLambertMaterial({ color: 0x8B7500 });
-        const endGeometry = new THREE.SphereGeometry(0.35, 8, 8);
+        const endMaterial = getMaterial('lambert', { color: 0x8B7500 });
+        const endGeometry = getGeometry('sphere', 0.35, 8, 8);
         const end1 = new THREE.Mesh(endGeometry, endMaterial);
         end1.position.y = 0.7;
         end1.scale.set(0.8, 1, 0.8);
@@ -79,22 +79,22 @@
         const bombGroup = new THREE.Group();
         
         // Main sphere (black bomb)
-        const sphereGeometry = new THREE.SphereGeometry(0.4, 16, 16);
-        const sphereMaterial = new THREE.MeshLambertMaterial({ color: 0x1a1a1a });
+        const sphereGeometry = getGeometry('sphere', 0.4, 16, 16);
+        const sphereMaterial = getMaterial('lambert', { color: 0x1a1a1a });
         const sphere = new THREE.Mesh(sphereGeometry, sphereMaterial);
         sphere.castShadow = true;
         bombGroup.add(sphere);
         
         // Fuse
-        const fuseGeometry = new THREE.CylinderGeometry(0.05, 0.05, 0.3, 8);
-        const fuseMaterial = new THREE.MeshLambertMaterial({ color: 0x8B4513 });
+        const fuseGeometry = getGeometry('cylinder', 0.05, 0.05, 0.3, 8);
+        const fuseMaterial = getMaterial('lambert', { color: 0x8B4513 });
         const fuse = new THREE.Mesh(fuseGeometry, fuseMaterial);
         fuse.position.y = 0.4;
         bombGroup.add(fuse);
         
         // Animated spark
-        const sparkGeometry = new THREE.SphereGeometry(0.1, 8, 8);
-        const sparkMaterial = new THREE.MeshBasicMaterial({ 
+        const sparkGeometry = getGeometry('sphere', 0.1, 8, 8);
+        const sparkMaterial = getMaterial('basic', { 
             color: 0xFF4500,
             emissive: 0xFF4500,
             emissiveIntensity: 1.0
@@ -215,8 +215,8 @@
     function placeBananaAt(bananaX, bananaZ) {
         const bananaGroup = new THREE.Group();
         
-        const bananaGeometry = new THREE.CylinderGeometry(0.3, 0.3, 1.5, 8);
-        const bananaMaterial = new THREE.MeshLambertMaterial({ 
+        const bananaGeometry = getGeometry('cylinder', 0.3, 0.3, 1.5, 8);
+        const bananaMaterial = getMaterial('lambert', { 
             color: 0xFFFF00,
             emissive: 0xFFFF00,
             emissiveIntensity: 0.3
@@ -226,8 +226,8 @@
         bananaMesh.castShadow = true;
         bananaGroup.add(bananaMesh);
         
-        const endMaterial = new THREE.MeshLambertMaterial({ color: 0x8B7500 });
-        const endGeometry = new THREE.SphereGeometry(0.35, 8, 8);
+        const endMaterial = getMaterial('lambert', { color: 0x8B7500 });
+        const endGeometry = getGeometry('sphere', 0.35, 8, 8);
         const end1 = new THREE.Mesh(endGeometry, endMaterial);
         end1.position.y = 0.7;
         end1.scale.set(0.8, 1, 0.8);
@@ -260,20 +260,20 @@
         
         const bombGroup = new THREE.Group();
         
-        const sphereGeometry = new THREE.SphereGeometry(0.4, 16, 16);
-        const sphereMaterial = new THREE.MeshLambertMaterial({ color: 0x1a1a1a });
+        const sphereGeometry = getGeometry('sphere', 0.4, 16, 16);
+        const sphereMaterial = getMaterial('lambert', { color: 0x1a1a1a });
         const sphere = new THREE.Mesh(sphereGeometry, sphereMaterial);
         sphere.castShadow = true;
         bombGroup.add(sphere);
         
-        const fuseGeometry = new THREE.CylinderGeometry(0.05, 0.05, 0.3, 8);
-        const fuseMaterial = new THREE.MeshLambertMaterial({ color: 0x8B4513 });
+        const fuseGeometry = getGeometry('cylinder', 0.05, 0.05, 0.3, 8);
+        const fuseMaterial = getMaterial('lambert', { color: 0x8B4513 });
         const fuse = new THREE.Mesh(fuseGeometry, fuseMaterial);
         fuse.position.y = 0.4;
         bombGroup.add(fuse);
         
-        const sparkGeometry = new THREE.SphereGeometry(0.1, 8, 8);
-        const sparkMaterial = new THREE.MeshBasicMaterial({ 
+        const sparkGeometry = getGeometry('sphere', 0.1, 8, 8);
+        const sparkMaterial = getMaterial('basic', { 
             color: 0xFF4500,
             emissive: 0xFF4500,
             emissiveIntensity: 1.0

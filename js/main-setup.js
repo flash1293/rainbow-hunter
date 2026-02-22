@@ -17,7 +17,7 @@ function initSetup() {
         const cloudGroup = new THREE.Group();
         
         // Create fluffy cloud from multiple spheres
-        const cloudMaterial = new THREE.MeshLambertMaterial({
+        const cloudMaterial = getMaterial('lambert', {
             color: 0xffffff,
             transparent: true,
             opacity: 0.85
@@ -128,24 +128,24 @@ function initSetup() {
 
     if (G.waterTheme) {
         // Boat hull
-        const hullGeometry = new THREE.BoxGeometry(1.2, 0.4, 2.5);
-        const hullMaterial = new THREE.MeshLambertMaterial({ color: 0x8B4513 });
+        const hullGeometry = getGeometry('box', 1.2, 0.4, 2.5);
+        const hullMaterial = getMaterial('lambert', { color: 0x8B4513 });
         const hull = new THREE.Mesh(hullGeometry, hullMaterial);
         hull.position.y = 0.2;
         hull.castShadow = true;
         G.playerGroup.add(hull);
         
         // Boat deck
-        const deckGeometry = new THREE.BoxGeometry(1.0, 0.1, 2.3);
-        const deckMaterial = new THREE.MeshLambertMaterial({ color: 0xD2691E });
+        const deckGeometry = getGeometry('box', 1.0, 0.1, 2.3);
+        const deckMaterial = getMaterial('lambert', { color: 0xD2691E });
         const deck = new THREE.Mesh(deckGeometry, deckMaterial);
         deck.position.y = 0.45;
         deck.castShadow = true;
         G.playerGroup.add(deck);
         
         // Mast
-        const mastGeometry = new THREE.CylinderGeometry(0.08, 0.08, 2.5, 8);
-        const mastMaterial = new THREE.MeshLambertMaterial({ color: 0x654321 });
+        const mastGeometry = getGeometry('cylinder', 0.08, 0.08, 2.5, 8);
+        const mastMaterial = getMaterial('lambert', { color: 0x654321 });
         const mast = new THREE.Mesh(mastGeometry, mastMaterial);
         mast.position.set(0, 1.75, 0);
         mast.castShadow = true;
@@ -160,7 +160,7 @@ function initSetup() {
         ]);
         sailGeometry.setAttribute('position', new THREE.BufferAttribute(sailVertices, 3));
         sailGeometry.computeVertexNormals();
-        const sailMaterial = new THREE.MeshLambertMaterial({ 
+        const sailMaterial = getMaterial('lambert', { 
             color: 0xFFFFFF,
             side: THREE.DoubleSide
         });
@@ -170,15 +170,15 @@ function initSetup() {
         G.playerGroup.add(sail);
         
         // Rudder
-        const rudderGeometry = new THREE.BoxGeometry(0.15, 0.6, 0.3);
+        const rudderGeometry = getGeometry('box', 0.15, 0.6, 0.3);
         const rudder = new THREE.Mesh(rudderGeometry, hullMaterial);
         rudder.position.set(0, 0.2, 1.3);
         rudder.castShadow = true;
         G.playerGroup.add(rudder);
     } else {
         // Bicycle wheels
-        const wheelGeometry = new THREE.TorusGeometry(0.3, 0.1, 8, 16);
-        const wheelMaterial = new THREE.MeshLambertMaterial({ color: 0x333333 });
+        const wheelGeometry = getGeometry('torus', 0.3, 0.1, 8, 16);
+        const wheelMaterial = getMaterial('lambert', { color: 0x333333 });
 
         const frontWheel = new THREE.Mesh(wheelGeometry, wheelMaterial);
         frontWheel.rotation.y = Math.PI / 2;
@@ -193,8 +193,8 @@ function initSetup() {
         G.playerGroup.add(backWheel);
 
     // Bicycle frame
-    const frameGeometry = new THREE.CylinderGeometry(0.05, 0.05, 1.3, 8);
-    const frameMaterial = new THREE.MeshLambertMaterial({ color: 0xFF6B9D });
+    const frameGeometry = getGeometry('cylinder', 0.05, 0.05, 1.3, 8);
+    const frameMaterial = getMaterial('lambert', { color: 0xFF6B9D });
     const frame1 = new THREE.Mesh(frameGeometry, frameMaterial);
     frame1.rotation.x = Math.PI / 2;
     frame1.position.set(0, 0.5, -0.1);
@@ -202,21 +202,21 @@ function initSetup() {
     G.playerGroup.add(frame1);
 
         // Seat post
-        const seatPostGeometry = new THREE.CylinderGeometry(0.04, 0.04, 0.5, 8);
+        const seatPostGeometry = getGeometry('cylinder', 0.04, 0.04, 0.5, 8);
         const seatPost = new THREE.Mesh(seatPostGeometry, frameMaterial);
         seatPost.position.set(0, 0.75, 0.2);
         seatPost.castShadow = true;
         G.playerGroup.add(seatPost);
 
         // Handlebar post
-        const handlebarPostGeometry = new THREE.CylinderGeometry(0.04, 0.04, 0.4, 8);
+        const handlebarPostGeometry = getGeometry('cylinder', 0.04, 0.04, 0.4, 8);
         const handlebarPost = new THREE.Mesh(handlebarPostGeometry, frameMaterial);
         handlebarPost.position.set(0, 0.7, -0.5);
         handlebarPost.castShadow = true;
         G.playerGroup.add(handlebarPost);
 
         // Handlebar
-        const handlebarGeometry = new THREE.CylinderGeometry(0.03, 0.03, 0.5, 8);
+        const handlebarGeometry = getGeometry('cylinder', 0.03, 0.03, 0.5, 8);
         const handlebar = new THREE.Mesh(handlebarGeometry, frameMaterial);
         handlebar.rotation.z = Math.PI / 2;
         handlebar.position.set(0, 0.9, -0.5);
@@ -227,7 +227,7 @@ function initSetup() {
     // Player body - Girl for host, Boy for client
     G.isHost = !multiplayerManager || multiplayerManager.isHost;
     
-    const bodyGeometry = new THREE.BoxGeometry(0.35, 0.6, 0.25);
+    const bodyGeometry = getGeometry('box', 0.35, 0.6, 0.25);
     const bodyMaterial = new THREE.MeshLambertMaterial({ 
         map: G.isHost ? G.playerTextures.playerClothingPink : G.playerTextures.playerClothingBlue 
     });
@@ -237,7 +237,7 @@ function initSetup() {
     G.playerGroup.add(body);
 
     // Head
-    const headGeometry = new THREE.SphereGeometry(0.25, 16, 16);
+    const headGeometry = getGeometry('sphere', 0.25, 16, 16);
     const headMaterial = new THREE.MeshLambertMaterial({ map: G.playerTextures.playerSkin });
     const head = new THREE.Mesh(headGeometry, headMaterial);
     head.position.set(0, 1.85, 0);
@@ -270,8 +270,8 @@ function initSetup() {
     helmetGroup.add(helmetShell);
     
     // Helmet visor/brim
-    const visorGeometry = new THREE.BoxGeometry(0.35, 0.05, 0.15);
-    const visorMaterial = new THREE.MeshLambertMaterial({ color: 0x333333 });
+    const visorGeometry = getGeometry('box', 0.35, 0.05, 0.15);
+    const visorMaterial = getMaterial('lambert', { color: 0x333333 });
     const visor = new THREE.Mesh(visorGeometry, visorMaterial);
     visor.position.set(0, 0.05, 0.28);
     visor.rotation.x = -0.3;
@@ -279,9 +279,9 @@ function initSetup() {
     helmetGroup.add(visor);
     
     // Helmet straps (simple lines under chin)
-    const strapMaterial = new THREE.MeshLambertMaterial({ color: 0x111111 });
+    const strapMaterial = getMaterial('lambert', { color: 0x111111 });
     const leftStrap = new THREE.Mesh(
-        new THREE.CylinderGeometry(0.015, 0.015, 0.25, 6),
+        getGeometry('cylinder', 0.015, 0.015, 0.25, 6),
         strapMaterial
     );
     leftStrap.position.set(-0.22, -0.1, 0.1);
@@ -289,7 +289,7 @@ function initSetup() {
     helmetGroup.add(leftStrap);
     
     const rightStrap = new THREE.Mesh(
-        new THREE.CylinderGeometry(0.015, 0.015, 0.25, 6),
+        getGeometry('cylinder', 0.015, 0.015, 0.25, 6),
         strapMaterial
     );
     rightStrap.position.set(0.22, -0.1, 0.1);
@@ -300,8 +300,8 @@ function initSetup() {
     G.playerGroup.add(helmetGroup);
 
     // Direction indicator
-    const coneGeometry = new THREE.ConeGeometry(0.15, 0.4, 8);
-    const coneMaterial = new THREE.MeshLambertMaterial({ color: 0xFFFF00 });
+    const coneGeometry = getGeometry('cone', 0.15, 0.4, 8);
+    const coneMaterial = getMaterial('lambert', { color: 0xFFFF00 });
     const directionCone = new THREE.Mesh(coneGeometry, coneMaterial);
     directionCone.rotation.x = Math.PI / 2;
     directionCone.position.set(0, 0.5, -1.0);
@@ -346,16 +346,16 @@ function initSetup() {
     G.kiteGroup.add(kite);
     
     // Kite cross-sticks
-    const stickMaterial = new THREE.MeshLambertMaterial({ color: 0x8B4513 });
+    const stickMaterial = getMaterial('lambert', { color: 0x8B4513 });
     const vertStick = new THREE.Mesh(
-        new THREE.CylinderGeometry(0.02, 0.02, 1.3, 4),
+        getGeometry('cylinder', 0.02, 0.02, 1.3, 4),
         stickMaterial
     );
     vertStick.position.y = 0.15;
     G.kiteGroup.add(vertStick);
     
     const horizStick = new THREE.Mesh(
-        new THREE.CylinderGeometry(0.02, 0.02, 1.2, 4),
+        getGeometry('cylinder', 0.02, 0.02, 1.2, 4),
         stickMaterial
     );
     horizStick.rotation.z = Math.PI / 2;
@@ -363,8 +363,8 @@ function initSetup() {
     
     // Kite tail with ribbons
     const tailGroup = new THREE.Group();
-    const tailStringGeometry = new THREE.CylinderGeometry(0.01, 0.01, 2, 4);
-    const tailStringMaterial = new THREE.MeshLambertMaterial({ color: 0x333333 });
+    const tailStringGeometry = getGeometry('cylinder', 0.01, 0.01, 2, 4);
+    const tailStringMaterial = getMaterial('lambert', { color: 0x333333 });
     const tailString = new THREE.Mesh(tailStringGeometry, tailStringMaterial);
     tailString.position.y = -1.5;
     tailGroup.add(tailString);
@@ -373,8 +373,8 @@ function initSetup() {
     const ribbonColors = [0xFF0000, 0xFFFF00, 0x00FF00, 0x00FFFF];
     for (let i = 0; i < 4; i++) {
         const ribbon = new THREE.Mesh(
-            new THREE.BoxGeometry(0.15, 0.25, 0.02),
-            new THREE.MeshLambertMaterial({ color: ribbonColors[i] })
+            getGeometry('box', 0.15, 0.25, 0.02),
+            getMaterial('lambert', { color: ribbonColors[i] })
         );
         ribbon.position.y = -0.8 - i * 0.5;
         ribbon.position.x = (Math.random() - 0.5) * 0.2;
@@ -407,24 +407,24 @@ function initSetup() {
         
         if (G.waterTheme) {
             // Boat hull
-            const hullGeometry = new THREE.BoxGeometry(1.2, 0.4, 2.5);
-            const hullMaterial = new THREE.MeshLambertMaterial({ color: 0x654321 });
+            const hullGeometry = getGeometry('box', 1.2, 0.4, 2.5);
+            const hullMaterial = getMaterial('lambert', { color: 0x654321 });
             const hull = new THREE.Mesh(hullGeometry, hullMaterial);
             hull.position.y = 0.2;
             hull.castShadow = true;
             otherPlayerGroup.add(hull);
             
             // Boat deck
-            const deckGeometry = new THREE.BoxGeometry(1.0, 0.1, 2.3);
-            const deckMaterial = new THREE.MeshLambertMaterial({ color: 0x8B4513 });
+            const deckGeometry = getGeometry('box', 1.0, 0.1, 2.3);
+            const deckMaterial = getMaterial('lambert', { color: 0x8B4513 });
             const deck = new THREE.Mesh(deckGeometry, deckMaterial);
             deck.position.y = 0.45;
             deck.castShadow = true;
             otherPlayerGroup.add(deck);
             
             // Mast
-            const mastGeometry = new THREE.CylinderGeometry(0.08, 0.08, 2.5, 8);
-            const mastMaterial = new THREE.MeshLambertMaterial({ color: 0x3E2723 });
+            const mastGeometry = getGeometry('cylinder', 0.08, 0.08, 2.5, 8);
+            const mastMaterial = getMaterial('lambert', { color: 0x3E2723 });
             const mast = new THREE.Mesh(mastGeometry, mastMaterial);
             mast.position.set(0, 1.75, 0);
             mast.castShadow = true;
@@ -439,7 +439,7 @@ function initSetup() {
             ]);
             sailGeometry.setAttribute('position', new THREE.BufferAttribute(sailVertices, 3));
             sailGeometry.computeVertexNormals();
-            const sailMaterial = new THREE.MeshLambertMaterial({ 
+            const sailMaterial = getMaterial('lambert', { 
                 color: otherIsGirl ? 0xFFB6C1 : 0x87CEEB,
                 side: THREE.DoubleSide
             });
@@ -449,8 +449,8 @@ function initSetup() {
             otherPlayerGroup.add(sail);
         } else {
             // Bicycle wheels (same as main player but different color)
-            const wheelGeometry = new THREE.TorusGeometry(0.3, 0.1, 8, 16);
-            const wheelMaterial = new THREE.MeshLambertMaterial({ color: 0x333333 });
+            const wheelGeometry = getGeometry('torus', 0.3, 0.1, 8, 16);
+            const wheelMaterial = getMaterial('lambert', { color: 0x333333 });
 
             const frontWheel = new THREE.Mesh(wheelGeometry, wheelMaterial);
             frontWheel.rotation.y = Math.PI / 2;
@@ -465,27 +465,27 @@ function initSetup() {
             otherPlayerGroup.add(backWheel);
 
             // Frame (different color)
-            const frameGeometry = new THREE.CylinderGeometry(0.05, 0.05, 1.3, 8);
-            const frameMaterial = new THREE.MeshLambertMaterial({ color: otherIsGirl ? 0xFF6B9D : 0x4169E1 });
+            const frameGeometry = getGeometry('cylinder', 0.05, 0.05, 1.3, 8);
+            const frameMaterial = getMaterial('lambert', { color: otherIsGirl ? 0xFF6B9D : 0x4169E1 });
             const frame1 = new THREE.Mesh(frameGeometry, frameMaterial);
             frame1.rotation.x = Math.PI / 2;
             frame1.position.set(0, 0.5, -0.1);
             frame1.castShadow = true;
             otherPlayerGroup.add(frame1);
 
-            const seatPostGeometry = new THREE.CylinderGeometry(0.04, 0.04, 0.5, 8);
+            const seatPostGeometry = getGeometry('cylinder', 0.04, 0.04, 0.5, 8);
             const seatPost = new THREE.Mesh(seatPostGeometry, frameMaterial);
             seatPost.position.set(0, 0.75, 0.2);
             seatPost.castShadow = true;
             otherPlayerGroup.add(seatPost);
 
-            const handlebarPostGeometry = new THREE.CylinderGeometry(0.04, 0.04, 0.4, 8);
+            const handlebarPostGeometry = getGeometry('cylinder', 0.04, 0.04, 0.4, 8);
             const handlebarPost = new THREE.Mesh(handlebarPostGeometry, frameMaterial);
             handlebarPost.position.set(0, 0.7, -0.5);
             handlebarPost.castShadow = true;
             otherPlayerGroup.add(handlebarPost);
 
-            const handlebarGeometry = new THREE.CylinderGeometry(0.03, 0.03, 0.5, 8);
+            const handlebarGeometry = getGeometry('cylinder', 0.03, 0.03, 0.5, 8);
             const handlebar = new THREE.Mesh(handlebarGeometry, frameMaterial);
             handlebar.rotation.z = Math.PI / 2;
             handlebar.position.set(0, 0.9, -0.5);
@@ -494,7 +494,7 @@ function initSetup() {
         }
 
         // Body (opposite gender color) with texture
-        const bodyGeometry = new THREE.BoxGeometry(0.35, 0.6, 0.25);
+        const bodyGeometry = getGeometry('box', 0.35, 0.6, 0.25);
         const bodyMaterial = new THREE.MeshLambertMaterial({ 
             map: otherIsGirl ? G.playerTextures.playerClothingPink : G.playerTextures.playerClothingBlue 
         });
@@ -504,7 +504,7 @@ function initSetup() {
         otherPlayerGroup.add(body);
 
         // Head with skin texture
-        const headGeometry = new THREE.SphereGeometry(0.25, 16, 16);
+        const headGeometry = getGeometry('sphere', 0.25, 16, 16);
         const headMaterial = new THREE.MeshLambertMaterial({ map: G.playerTextures.playerSkin });
         const head = new THREE.Mesh(headGeometry, headMaterial);
         head.position.set(0, 1.85, 0);
@@ -537,8 +537,8 @@ function initSetup() {
         otherHelmetGroup.add(otherHelmetShell);
         
         // Helmet visor/brim
-        const otherVisorGeometry = new THREE.BoxGeometry(0.35, 0.05, 0.15);
-        const otherVisorMaterial = new THREE.MeshLambertMaterial({ color: 0x333333 });
+        const otherVisorGeometry = getGeometry('box', 0.35, 0.05, 0.15);
+        const otherVisorMaterial = getMaterial('lambert', { color: 0x333333 });
         const otherVisor = new THREE.Mesh(otherVisorGeometry, otherVisorMaterial);
         otherVisor.position.set(0, 0.05, 0.28);
         otherVisor.rotation.x = -0.3;
@@ -546,9 +546,9 @@ function initSetup() {
         otherHelmetGroup.add(otherVisor);
         
         // Helmet straps (simple lines under chin)
-        const otherStrapMaterial = new THREE.MeshLambertMaterial({ color: 0x111111 });
+        const otherStrapMaterial = getMaterial('lambert', { color: 0x111111 });
         const otherLeftStrap = new THREE.Mesh(
-            new THREE.CylinderGeometry(0.015, 0.015, 0.25, 6),
+            getGeometry('cylinder', 0.015, 0.015, 0.25, 6),
             otherStrapMaterial
         );
         otherLeftStrap.position.set(-0.22, -0.1, 0.1);
@@ -556,7 +556,7 @@ function initSetup() {
         otherHelmetGroup.add(otherLeftStrap);
         
         const otherRightStrap = new THREE.Mesh(
-            new THREE.CylinderGeometry(0.015, 0.015, 0.25, 6),
+            getGeometry('cylinder', 0.015, 0.015, 0.25, 6),
             otherStrapMaterial
         );
         otherRightStrap.position.set(0.22, -0.1, 0.1);
@@ -567,8 +567,8 @@ function initSetup() {
         otherPlayerGroup.add(otherHelmetGroup);
 
         // Direction indicator
-        const coneGeometry = new THREE.ConeGeometry(0.15, 0.4, 8);
-        const coneMaterial = new THREE.MeshLambertMaterial({ color: otherIsGirl ? 0xFFFF00 : 0x00FFFF });
+        const coneGeometry = getGeometry('cone', 0.15, 0.4, 8);
+        const coneMaterial = getMaterial('lambert', { color: otherIsGirl ? 0xFFFF00 : 0x00FFFF });
         const directionCone = new THREE.Mesh(coneGeometry, coneMaterial);
         directionCone.rotation.x = Math.PI / 2;
         directionCone.position.set(0, 0.5, -1.0);
@@ -603,16 +603,16 @@ function initSetup() {
         otherKiteGroup.add(otherKite);
         
         // Kite cross-sticks
-        const otherStickMaterial = new THREE.MeshLambertMaterial({ color: 0x8B4513 });
+        const otherStickMaterial = getMaterial('lambert', { color: 0x8B4513 });
         const otherVertStick = new THREE.Mesh(
-            new THREE.CylinderGeometry(0.02, 0.02, 1.3, 4),
+            getGeometry('cylinder', 0.02, 0.02, 1.3, 4),
             otherStickMaterial
         );
         otherVertStick.position.y = 0.15;
         otherKiteGroup.add(otherVertStick);
         
         const otherHorizStick = new THREE.Mesh(
-            new THREE.CylinderGeometry(0.02, 0.02, 1.2, 4),
+            getGeometry('cylinder', 0.02, 0.02, 1.2, 4),
             otherStickMaterial
         );
         otherHorizStick.rotation.z = Math.PI / 2;
@@ -621,8 +621,8 @@ function initSetup() {
         // Kite tail with ribbons
         const otherTailGroup = new THREE.Group();
         const otherTailString = new THREE.Mesh(
-            new THREE.CylinderGeometry(0.01, 0.01, 2, 4),
-            new THREE.MeshLambertMaterial({ color: 0x333333 })
+            getGeometry('cylinder', 0.01, 0.01, 2, 4),
+            getMaterial('lambert', { color: 0x333333 })
         );
         otherTailString.position.y = -1.5;
         otherTailGroup.add(otherTailString);
@@ -630,8 +630,8 @@ function initSetup() {
         const otherRibbonColors = [0xFF0000, 0xFFFF00, 0x00FF00, 0x00FFFF];
         for (let i = 0; i < 4; i++) {
             const ribbon = new THREE.Mesh(
-                new THREE.BoxGeometry(0.15, 0.25, 0.02),
-                new THREE.MeshLambertMaterial({ color: otherRibbonColors[i] })
+                getGeometry('box', 0.15, 0.25, 0.02),
+                getMaterial('lambert', { color: otherRibbonColors[i] })
             );
             ribbon.position.y = -0.8 - i * 0.5;
             ribbon.position.x = (Math.random() - 0.5) * 0.2;
@@ -957,16 +957,16 @@ function initSetup() {
                     if (G.computerTheme) {
                         // Data packet for Firewall Sentry
                         const packetGroup = new THREE.Group();
-                        const cubeGeometry = new THREE.BoxGeometry(0.35, 0.35, 0.35);
-                        const cubeMaterial = new THREE.MeshBasicMaterial({ 
+                        const cubeGeometry = getGeometry('box', 0.35, 0.35, 0.35);
+                        const cubeMaterial = getMaterial('basic', { 
                             color: 0xFF0066,
                             transparent: true,
                             opacity: 0.9
                         });
                         const cube = new THREE.Mesh(cubeGeometry, cubeMaterial);
                         packetGroup.add(cube);
-                        const wireGeometry = new THREE.BoxGeometry(0.4, 0.4, 0.4);
-                        const wireMaterial = new THREE.MeshBasicMaterial({ 
+                        const wireGeometry = getGeometry('box', 0.4, 0.4, 0.4);
+                        const wireMaterial = getMaterial('basic', { 
                             color: 0x00FFFF,
                             wireframe: true,
                             transparent: true,
@@ -978,23 +978,23 @@ function initSetup() {
                         arrowMesh = packetGroup;
                     } else if (G.waterTheme) {
                         // Ink ball for octopus guardians
-                        const inkGeometry = new THREE.SphereGeometry(0.3, 12, 12);
-                        const inkMaterial = new THREE.MeshLambertMaterial({ color: 0x000000 });
+                        const inkGeometry = getGeometry('sphere', 0.3, 12, 12);
+                        const inkMaterial = getMaterial('lambert', { color: 0x000000 });
                         arrowMesh = new THREE.Mesh(inkGeometry, inkMaterial);
                         arrowMesh.castShadow = true;
                         arrowMesh.position.set(arrowData.x, arrowData.y, arrowData.z);
                         G.scene.add(arrowMesh);
                     } else {
                         // Regular arrow
-                        const arrowGeometry = new THREE.CylinderGeometry(0.05, 0.05, 1, 8);
-                        const arrowMaterial = new THREE.MeshLambertMaterial({ color: 0x8B4513 });
+                        const arrowGeometry = getGeometry('cylinder', 0.05, 0.05, 1, 8);
+                        const arrowMaterial = getMaterial('lambert', { color: 0x8B4513 });
                         arrowMesh = new THREE.Mesh(arrowGeometry, arrowMaterial);
                         arrowMesh.castShadow = true;
                         arrowMesh.position.set(arrowData.x, arrowData.y, arrowData.z);
                         G.scene.add(arrowMesh);
 
-                        const tipGeometry = new THREE.ConeGeometry(0.1, 0.2, 8);
-                        const tipMaterial = new THREE.MeshLambertMaterial({ color: 0x696969 });
+                        const tipGeometry = getGeometry('cone', 0.1, 0.2, 8);
+                        const tipMaterial = getMaterial('lambert', { color: 0x696969 });
                         const tipMesh = new THREE.Mesh(tipGeometry, tipMaterial);
                         tipMesh.position.y = 0.5;
                         arrowMesh.add(tipMesh);
@@ -1045,8 +1045,8 @@ function initSetup() {
                     G.bombs[i].velocity.y = bombData.vy;
                 } else {
                     // Create new bomb
-                    const bombGeometry = new THREE.SphereGeometry(0.3, 8, 8);
-                    const bombMaterial = new THREE.MeshLambertMaterial({ color: 0x000000 });
+                    const bombGeometry = getGeometry('sphere', 0.3, 8, 8);
+                    const bombMaterial = getMaterial('lambert', { color: 0x000000 });
                     const bombMesh = new THREE.Mesh(bombGeometry, bombMaterial);
                     bombMesh.position.set(bombData.x, bombData.y, bombData.z);
                     bombMesh.castShadow = true;
@@ -1218,7 +1218,7 @@ function initSetup() {
                     const fireballGroup = new THREE.Group();
                     
                     // Core sphere
-                    G.coreGeometry = new THREE.SphereGeometry(0.6, 12, 12);
+                    G.coreGeometry = getGeometry('sphere', 0.6, 12, 12);
                     G.coreMaterial = new THREE.MeshBasicMaterial({ 
                         map: fireballTexture,
                         transparent: true
@@ -1282,7 +1282,7 @@ function initSetup() {
                     const tornadoGroup = new THREE.Group();
                     
                     const coneGeometry = new THREE.ConeGeometry(0.8, 3.0, 12, 4, true);
-                    const coneMaterial = new THREE.MeshBasicMaterial({ 
+                    const coneMaterial = getMaterial('basic', { 
                         color: 0xc4a14a,
                         transparent: true,
                         opacity: 0.7,
@@ -1294,7 +1294,7 @@ function initSetup() {
                     tornadoGroup.add(cone);
                     
                     const innerConeGeometry = new THREE.ConeGeometry(0.5, 2.5, 12, 4, true);
-                    const innerConeMaterial = new THREE.MeshBasicMaterial({ 
+                    const innerConeMaterial = getMaterial('basic', { 
                         color: 0xe8c36a,
                         transparent: true,
                         opacity: 0.8,
@@ -1308,7 +1308,7 @@ function initSetup() {
                     const dustGroup = new THREE.Group();
                     for (let d = 0; d < 25; d++) {
                         const dustGeometry = new THREE.SphereGeometry(0.1 + Math.random() * 0.1, 4, 4);
-                        const dustMaterial = new THREE.MeshBasicMaterial({ 
+                        const dustMaterial = getMaterial('basic', { 
                             color: 0xc4a14a,
                             transparent: true,
                             opacity: 0.6 + Math.random() * 0.3
@@ -1360,7 +1360,7 @@ function initSetup() {
                     const trailGroup = new THREE.Group();
                     
                     const poolGeometry = new THREE.CircleGeometry(GAME_CONFIG.LAVA_TRAIL_RADIUS, 16);
-                    const poolMaterial = new THREE.MeshBasicMaterial({ 
+                    const poolMaterial = getMaterial('basic', { 
                         color: 0xff4400,
                         transparent: true,
                         opacity: 0.9,
@@ -1373,7 +1373,7 @@ function initSetup() {
                     trailGroup.add(pool);
                     
                     const crustGeometry = new THREE.RingGeometry(GAME_CONFIG.LAVA_TRAIL_RADIUS * 0.7, GAME_CONFIG.LAVA_TRAIL_RADIUS, 16);
-                    const crustMaterial = new THREE.MeshBasicMaterial({ 
+                    const crustMaterial = getMaterial('basic', { 
                         color: 0x4a2010,
                         transparent: true,
                         opacity: 0.6,
@@ -1384,8 +1384,8 @@ function initSetup() {
                     crust.position.y = 0.16;
                     trailGroup.add(crust);
                     
-                    const bubbleGeometry = new THREE.SphereGeometry(0.15, 8, 8);
-                    const bubbleMaterial = new THREE.MeshBasicMaterial({ 
+                    const bubbleGeometry = getGeometry('sphere', 0.15, 8, 8);
+                    const bubbleMaterial = getMaterial('basic', { 
                         color: 0xffaa00,
                         transparent: true,
                         opacity: 0.8,
@@ -1947,8 +1947,8 @@ function initSetup() {
             const accentColor = towerColors[Math.floor(Math.random() * towerColors.length)];
             
             // Main tower body - dark metallic
-            const towerGeometry = new THREE.BoxGeometry(0.6, 3.5, 0.6);
-            const towerMaterial = new THREE.MeshPhongMaterial({ 
+            const towerGeometry = getGeometry('box', 0.6, 3.5, 0.6);
+            const towerMaterial = getMaterial('phong', { 
                 color: 0x0A0A15,
                 emissive: 0x001122,
                 emissiveIntensity: 0.3,
@@ -1960,8 +1960,8 @@ function initSetup() {
             treeGroup.add(tower);
             
             // LED strips on sides
-            const stripGeometry = new THREE.BoxGeometry(0.08, 3.2, 0.08);
-            const stripMaterial = new THREE.MeshBasicMaterial({ 
+            const stripGeometry = getGeometry('box', 0.08, 3.2, 0.08);
+            const stripMaterial = getMaterial('basic', { 
                 color: accentColor,
                 transparent: true,
                 opacity: 0.9
@@ -1974,8 +1974,8 @@ function initSetup() {
             treeGroup.add(strip2);
             
             // Antenna dish on top
-            const dishGeometry = new THREE.ConeGeometry(0.4, 0.3, 16);
-            const dishMaterial = new THREE.MeshPhongMaterial({ 
+            const dishGeometry = getGeometry('cone', 0.4, 0.3, 16);
+            const dishMaterial = getMaterial('phong', { 
                 color: 0x333344,
                 shininess: 60
             });
@@ -1985,17 +1985,17 @@ function initSetup() {
             treeGroup.add(dish);
             
             // Antenna spike
-            const spikeGeometry = new THREE.CylinderGeometry(0.03, 0.03, 0.8, 6);
-            const spikeMaterial = new THREE.MeshBasicMaterial({ color: accentColor });
+            const spikeGeometry = getGeometry('cylinder', 0.03, 0.03, 0.8, 6);
+            const spikeMaterial = getMaterial('basic', { color: accentColor });
             const spike = new THREE.Mesh(spikeGeometry, spikeMaterial);
             spike.position.y = 4.1;
             treeGroup.add(spike);
             
             // Blinking status lights
-            const lightGeometry = new THREE.SphereGeometry(0.08, 8, 8);
+            const lightGeometry = getGeometry('sphere', 0.08, 8, 8);
             for (let i = 0; i < 4; i++) {
                 const lightColor = [0xFF0000, 0x00FF00, 0xFFFF00, 0x00FFFF][i];
-                const lightMaterial = new THREE.MeshBasicMaterial({ 
+                const lightMaterial = getMaterial('basic', { 
                     color: lightColor,
                     transparent: true,
                     opacity: 0.9
@@ -2006,8 +2006,8 @@ function initSetup() {
             }
             
             // Data cable at base
-            const cableGeometry = new THREE.TorusGeometry(0.5, 0.04, 8, 16);
-            const cableMaterial = new THREE.MeshBasicMaterial({ 
+            const cableGeometry = getGeometry('torus', 0.5, 0.04, 8, 16);
+            const cableMaterial = getMaterial('basic', { 
                 color: 0x222233
             });
             const cable = new THREE.Mesh(cableGeometry, cableMaterial);
@@ -2023,7 +2023,7 @@ function initSetup() {
             
             // Main crystal spire
             const mainGeometry = new THREE.ConeGeometry(0.4, height, 6);
-            const mainMaterial = new THREE.MeshLambertMaterial({ 
+            const mainMaterial = getMaterial('lambert', { 
                 color: mainColor,
                 emissive: mainColor,
                 emissiveIntensity: 0.3,
@@ -2040,7 +2040,7 @@ function initSetup() {
                 const subColor = crystalColors[Math.floor(Math.random() * crystalColors.length)];
                 const subHeight = 0.5 + Math.random() * 1.5;
                 const subGeometry = new THREE.ConeGeometry(0.15, subHeight, 5);
-                const subMaterial = new THREE.MeshLambertMaterial({ 
+                const subMaterial = getMaterial('lambert', { 
                     color: subColor,
                     emissive: subColor,
                     emissiveIntensity: 0.4,
@@ -2061,8 +2061,8 @@ function initSetup() {
             }
             
             // Glow effect at base
-            const glowGeometry = new THREE.SphereGeometry(0.6, 8, 8);
-            const glowMaterial = new THREE.MeshBasicMaterial({ 
+            const glowGeometry = getGeometry('sphere', 0.6, 8, 8);
+            const glowMaterial = getMaterial('basic', { 
                 color: mainColor,
                 transparent: true,
                 opacity: 0.15
@@ -2076,15 +2076,15 @@ function initSetup() {
             const cactusColor = 0x2d5a27;
             
             // Main cactus body
-            const bodyGeometry = new THREE.CylinderGeometry(0.25, 0.3, 2.5, 8);
-            const cactusMaterial = new THREE.MeshLambertMaterial({ color: cactusColor });
+            const bodyGeometry = getGeometry('cylinder', 0.25, 0.3, 2.5, 8);
+            const cactusMaterial = getMaterial('lambert', { color: cactusColor });
             const body = new THREE.Mesh(bodyGeometry, cactusMaterial);
             body.position.y = 1.25;
             body.castShadow = true;
             treeGroup.add(body);
             
             // Left arm
-            const armGeometry = new THREE.CylinderGeometry(0.15, 0.18, 1.2, 6);
+            const armGeometry = getGeometry('cylinder', 0.15, 0.18, 1.2, 6);
             const leftArm = new THREE.Mesh(armGeometry, cactusMaterial);
             leftArm.position.set(-0.5, 1.8, 0);
             leftArm.rotation.z = Math.PI / 3;
@@ -2100,8 +2100,8 @@ function initSetup() {
             
         } else if (treeType === 'palm') {
             // Palm tree
-            const trunkGeometry = new THREE.CylinderGeometry(0.15, 0.25, 3.5, 8);
-            const trunkMaterial = new THREE.MeshLambertMaterial({ color: 0x8B5A2B });
+            const trunkGeometry = getGeometry('cylinder', 0.15, 0.25, 3.5, 8);
+            const trunkMaterial = getMaterial('lambert', { color: 0x8B5A2B });
             const trunk = new THREE.Mesh(trunkGeometry, trunkMaterial);
             trunk.position.y = 1.75;
             trunk.rotation.z = 0.1; // Slight lean
@@ -2109,9 +2109,9 @@ function initSetup() {
             treeGroup.add(trunk);
             
             // Palm fronds
-            const frondMaterial = new THREE.MeshLambertMaterial({ color: 0x228B22 });
+            const frondMaterial = getMaterial('lambert', { color: 0x228B22 });
             for (let i = 0; i < 7; i++) {
-                const frondGeometry = new THREE.ConeGeometry(0.15, 2, 4);
+                const frondGeometry = getGeometry('cone', 0.15, 2, 4);
                 const frond = new THREE.Mesh(frondGeometry, frondMaterial);
                 const angle = (i / 7) * Math.PI * 2;
                 frond.position.set(
@@ -2126,10 +2126,10 @@ function initSetup() {
             }
             
             // Add coconuts
-            const coconutMaterial = new THREE.MeshLambertMaterial({ color: 0x8B4513 });
+            const coconutMaterial = getMaterial('lambert', { color: 0x8B4513 });
             for (let i = 0; i < 3; i++) {
                 const coconut = new THREE.Mesh(
-                    new THREE.SphereGeometry(0.12, 6, 6),
+                    getGeometry('sphere', 0.12, 6, 6),
                     coconutMaterial
                 );
                 const angle = (i / 3) * Math.PI * 2;
@@ -2144,8 +2144,8 @@ function initSetup() {
             
         } else if (treeType === 'lollipop') {
             // Giant lollipop
-            const stickGeometry = new THREE.CylinderGeometry(0.15, 0.15, 3.5, 8);
-            const stickMaterial = new THREE.MeshLambertMaterial({ color: 0xFFFFFF });
+            const stickGeometry = getGeometry('cylinder', 0.15, 0.15, 3.5, 8);
+            const stickMaterial = getMaterial('lambert', { color: 0xFFFFFF });
             const stick = new THREE.Mesh(stickGeometry, stickMaterial);
             stick.position.y = 1.75;
             stick.castShadow = true;
@@ -2154,8 +2154,8 @@ function initSetup() {
             // Swirly candy top
             const candyColors = [0xFF69B4, 0x87CEEB, 0xFFD700, 0x98FB98, 0xFF6347, 0xDDA0DD];
             const candyColor = candyColors[Math.floor(Math.random() * candyColors.length)];
-            const candyGeometry = new THREE.SphereGeometry(1.2, 16, 16);
-            const candyMaterial = new THREE.MeshPhongMaterial({ 
+            const candyGeometry = getGeometry('sphere', 1.2, 16, 16);
+            const candyMaterial = getMaterial('phong', { 
                 color: candyColor,
                 shininess: 80
             });
@@ -2166,7 +2166,7 @@ function initSetup() {
             
             // Add swirl pattern
             const swirlGeometry = new THREE.TorusGeometry(0.8, 0.15, 8, 32, Math.PI * 4);
-            const swirlMaterial = new THREE.MeshPhongMaterial({ color: 0xFFFFFF, shininess: 80 });
+            const swirlMaterial = getMaterial('phong', { color: 0xFFFFFF, shininess: 80 });
             const swirl = new THREE.Mesh(swirlGeometry, swirlMaterial);
             swirl.position.y = 4.0;
             swirl.rotation.x = Math.PI / 2;
@@ -2179,7 +2179,7 @@ function initSetup() {
             
             // Main candy cane body (white with red stripes effect via material)
             const caneGeometry = new THREE.CylinderGeometry(caneRadius, caneRadius, caneHeight, 12);
-            const caneMaterial = new THREE.MeshPhongMaterial({ color: 0xFFFFFF, shininess: 60 });
+            const caneMaterial = getMaterial('phong', { color: 0xFFFFFF, shininess: 60 });
             const cane = new THREE.Mesh(caneGeometry, caneMaterial);
             cane.position.y = caneHeight / 2;
             cane.castShadow = true;
@@ -2188,7 +2188,7 @@ function initSetup() {
             // Red stripes wrapped around
             for (let i = 0; i < 8; i++) {
                 const stripeGeometry = new THREE.TorusGeometry(caneRadius + 0.02, 0.08, 8, 16);
-                const stripeMaterial = new THREE.MeshPhongMaterial({ color: 0xFF0000, shininess: 60 });
+                const stripeMaterial = getMaterial('phong', { color: 0xFF0000, shininess: 60 });
                 const stripe = new THREE.Mesh(stripeGeometry, stripeMaterial);
                 stripe.position.y = 0.3 + i * 0.5;
                 stripe.rotation.x = Math.PI / 2;
@@ -2198,7 +2198,7 @@ function initSetup() {
             
             // Curved top (hook)
             const hookGeometry = new THREE.TorusGeometry(0.5, caneRadius, 12, 16, Math.PI);
-            const hookMaterial = new THREE.MeshPhongMaterial({ color: 0xFFFFFF, shininess: 60 });
+            const hookMaterial = getMaterial('phong', { color: 0xFFFFFF, shininess: 60 });
             const hook = new THREE.Mesh(hookGeometry, hookMaterial);
             hook.position.set(0.5, caneHeight, 0);
             hook.rotation.z = Math.PI / 2;
@@ -2207,7 +2207,7 @@ function initSetup() {
             
             // Red stripe on hook
             const hookStripeGeometry = new THREE.TorusGeometry(0.5, caneRadius * 0.6, 8, 16, Math.PI * 0.5);
-            const hookStripeMaterial = new THREE.MeshPhongMaterial({ color: 0xFF0000, shininess: 60 });
+            const hookStripeMaterial = getMaterial('phong', { color: 0xFF0000, shininess: 60 });
             const hookStripe = new THREE.Mesh(hookStripeGeometry, hookStripeMaterial);
             hookStripe.position.set(0.5, caneHeight, 0);
             hookStripe.rotation.z = Math.PI / 2;
@@ -2219,8 +2219,8 @@ function initSetup() {
             const snowWhite = 0xffffff;
             
             // Pine trunk - brown
-            const trunkGeometry = new THREE.CylinderGeometry(0.2, 0.3, 1.5, 8);
-            const trunkMaterial = new THREE.MeshLambertMaterial({ color: 0x4a3020 });
+            const trunkGeometry = getGeometry('cylinder', 0.2, 0.3, 1.5, 8);
+            const trunkMaterial = getMaterial('lambert', { color: 0x4a3020 });
             const trunk = new THREE.Mesh(trunkGeometry, trunkMaterial);
             trunk.position.y = 0.75;
             trunk.castShadow = true;
@@ -2234,7 +2234,7 @@ function initSetup() {
                 
                 // Green pine layer
                 const pineGeometry = new THREE.ConeGeometry(tierRadius, tierHeight, 8);
-                const pineMaterial = new THREE.MeshLambertMaterial({ color: pineGreen });
+                const pineMaterial = getMaterial('lambert', { color: pineGreen });
                 const pineTier = new THREE.Mesh(pineGeometry, pineMaterial);
                 pineTier.position.y = tierY;
                 pineTier.castShadow = true;
@@ -2242,7 +2242,7 @@ function initSetup() {
                 
                 // Snow on top of each tier
                 const snowGeometry = new THREE.ConeGeometry(tierRadius * 0.95, tierHeight * 0.3, 8);
-                const snowMaterial = new THREE.MeshLambertMaterial({ color: snowWhite });
+                const snowMaterial = getMaterial('lambert', { color: snowWhite });
                 const snowCap = new THREE.Mesh(snowGeometry, snowMaterial);
                 snowCap.position.y = tierY + tierHeight * 0.4;
                 snowCap.castShadow = true;
@@ -2250,8 +2250,8 @@ function initSetup() {
             }
             
             // Star on top
-            const starGeometry = new THREE.SphereGeometry(0.15, 6, 6);
-            const starMaterial = new THREE.MeshBasicMaterial({ color: 0xffd700 });
+            const starGeometry = getGeometry('sphere', 0.15, 6, 6);
+            const starMaterial = getMaterial('basic', { color: 0xffd700 });
             const star = new THREE.Mesh(starGeometry, starMaterial);
             star.position.y = 4.5;
             treeGroup.add(star);
@@ -2262,8 +2262,8 @@ function initSetup() {
             const mossColor = 0x2a3a2a;
             
             // Main tombstone slab
-            const slabGeometry = new THREE.BoxGeometry(0.8, 1.5, 0.2);
-            const slabMaterial = new THREE.MeshLambertMaterial({ color: stoneColor });
+            const slabGeometry = getGeometry('box', 0.8, 1.5, 0.2);
+            const slabMaterial = getMaterial('lambert', { color: stoneColor });
             const slab = new THREE.Mesh(slabGeometry, slabMaterial);
             slab.position.y = 0.75;
             slab.castShadow = true;
@@ -2279,13 +2279,13 @@ function initSetup() {
             treeGroup.add(top);
             
             // Base
-            const baseGeometry = new THREE.BoxGeometry(1.0, 0.2, 0.3);
+            const baseGeometry = getGeometry('box', 1.0, 0.2, 0.3);
             const base = new THREE.Mesh(baseGeometry, slabMaterial);
             base.position.y = 0.1;
             treeGroup.add(base);
             
             // Moss patches
-            const mossMaterial = new THREE.MeshLambertMaterial({ color: mossColor });
+            const mossMaterial = getMaterial('lambert', { color: mossColor });
             for (let i = 0; i < 3; i++) {
                 const mossGeometry = new THREE.SphereGeometry(0.1 + Math.random() * 0.1, 6, 6);
                 const moss = new THREE.Mesh(mossGeometry, mossMaterial);
@@ -2305,10 +2305,10 @@ function initSetup() {
         } else if (treeType === 'deadtree') {
             // Dead/bare tree for graveyard
             const deadWoodColor = 0x2a2018;
-            const deadMaterial = new THREE.MeshLambertMaterial({ color: deadWoodColor });
+            const deadMaterial = getMaterial('lambert', { color: deadWoodColor });
             
             // Gnarled trunk
-            const trunkGeometry = new THREE.CylinderGeometry(0.2, 0.4, 3, 8);
+            const trunkGeometry = getGeometry('cylinder', 0.2, 0.4, 3, 8);
             const trunk = new THREE.Mesh(trunkGeometry, deadMaterial);
             trunk.position.y = 1.5;
             trunk.rotation.z = (Math.random() - 0.5) * 0.2;
@@ -2334,7 +2334,7 @@ function initSetup() {
             }
             
             // Twisted top
-            const topGeometry = new THREE.ConeGeometry(0.15, 1, 6);
+            const topGeometry = getGeometry('cone', 0.15, 1, 6);
             const topBranch = new THREE.Mesh(topGeometry, deadMaterial);
             topBranch.position.y = 3.2;
             topBranch.rotation.z = (Math.random() - 0.5) * 0.4;
@@ -2349,8 +2349,8 @@ function initSetup() {
             const glowYellow = 0xFFDD00;
             
             // Main pumpkin body - slightly squashed sphere with ridges
-            const pumpkinGeometry = new THREE.SphereGeometry(0.6, 12, 12);
-            const pumpkinMaterial = new THREE.MeshLambertMaterial({ color: pumpkinOrange });
+            const pumpkinGeometry = getGeometry('sphere', 0.6, 12, 12);
+            const pumpkinMaterial = getMaterial('lambert', { color: pumpkinOrange });
             const pumpkin = new THREE.Mesh(pumpkinGeometry, pumpkinMaterial);
             pumpkin.scale.set(1, 0.8, 1);
             pumpkin.position.y = 0.5;
@@ -2359,8 +2359,8 @@ function initSetup() {
             
             // Pumpkin ridges (vertical darker segments)
             for (let i = 0; i < 8; i++) {
-                const ridgeGeometry = new THREE.CylinderGeometry(0.05, 0.05, 0.9, 6);
-                const ridgeMaterial = new THREE.MeshLambertMaterial({ color: pumpkinDark });
+                const ridgeGeometry = getGeometry('cylinder', 0.05, 0.05, 0.9, 6);
+                const ridgeMaterial = getMaterial('lambert', { color: pumpkinDark });
                 const ridge = new THREE.Mesh(ridgeGeometry, ridgeMaterial);
                 const angle = (i / 8) * Math.PI * 2;
                 ridge.position.set(
@@ -2373,8 +2373,8 @@ function initSetup() {
             }
             
             // Stem on top
-            const stemGeometry = new THREE.CylinderGeometry(0.08, 0.12, 0.3, 8);
-            const stemMaterial = new THREE.MeshLambertMaterial({ color: stemBrown });
+            const stemGeometry = getGeometry('cylinder', 0.08, 0.12, 0.3, 8);
+            const stemMaterial = getMaterial('lambert', { color: stemBrown });
             const stem = new THREE.Mesh(stemGeometry, stemMaterial);
             stem.position.set(0, 1.0, 0);
             stem.rotation.z = (Math.random() - 0.5) * 0.3;
@@ -2382,14 +2382,14 @@ function initSetup() {
             treeGroup.add(stem);
             
             // Glowing face - triangular eyes
-            const glowMaterial = new THREE.MeshBasicMaterial({ 
+            const glowMaterial = getMaterial('basic', { 
                 color: glowYellow,
                 transparent: true,
                 opacity: 0.95
             });
             
             // Left eye (triangle)
-            const eyeGeometry = new THREE.ConeGeometry(0.12, 0.15, 3);
+            const eyeGeometry = getGeometry('cone', 0.12, 0.15, 3);
             const leftEye = new THREE.Mesh(eyeGeometry, glowMaterial);
             leftEye.position.set(-0.2, 0.6, 0.5);
             leftEye.rotation.x = Math.PI;
@@ -2402,23 +2402,23 @@ function initSetup() {
             treeGroup.add(rightEye);
             
             // Nose (small triangle)
-            const noseGeometry = new THREE.ConeGeometry(0.08, 0.1, 3);
+            const noseGeometry = getGeometry('cone', 0.08, 0.1, 3);
             const nose = new THREE.Mesh(noseGeometry, glowMaterial);
             nose.position.set(0, 0.45, 0.52);
             nose.rotation.x = Math.PI;
             treeGroup.add(nose);
             
             // Mouth - jagged smile
-            const mouthGeometry = new THREE.BoxGeometry(0.4, 0.1, 0.15);
+            const mouthGeometry = getGeometry('box', 0.4, 0.1, 0.15);
             const mouth = new THREE.Mesh(mouthGeometry, glowMaterial);
             mouth.position.set(0, 0.3, 0.48);
             treeGroup.add(mouth);
             
             // Teeth gaps in mouth
-            const toothGapMaterial = new THREE.MeshLambertMaterial({ color: pumpkinOrange });
+            const toothGapMaterial = getMaterial('lambert', { color: pumpkinOrange });
             for (let i = 0; i < 3; i++) {
                 const toothGap = new THREE.Mesh(
-                    new THREE.BoxGeometry(0.06, 0.12, 0.16),
+                    getGeometry('box', 0.06, 0.12, 0.16),
                     toothGapMaterial
                 );
                 toothGap.position.set(-0.12 + i * 0.12, 0.3, 0.48);
@@ -2437,11 +2437,11 @@ function initSetup() {
             // Broken stone column for ruins
             const stoneColor = 0x8B8378;
             const stoneDark = 0x6B635B;
-            const stoneMaterial = new THREE.MeshLambertMaterial({ color: stoneColor });
+            const stoneMaterial = getMaterial('lambert', { color: stoneColor });
             
             // Column base (wider)
-            const baseGeometry = new THREE.CylinderGeometry(0.7, 0.8, 0.4, 12);
-            const baseMaterial = new THREE.MeshLambertMaterial({ color: stoneDark });
+            const baseGeometry = getGeometry('cylinder', 0.7, 0.8, 0.4, 12);
+            const baseMaterial = getMaterial('lambert', { color: stoneDark });
             const base = new THREE.Mesh(baseGeometry, baseMaterial);
             base.position.y = 0.2;
             base.castShadow = true;
@@ -2456,7 +2456,7 @@ function initSetup() {
             treeGroup.add(column);
             
             // Broken top (jagged)
-            const brokenTopGeometry = new THREE.ConeGeometry(0.5, 0.4, 6);
+            const brokenTopGeometry = getGeometry('cone', 0.5, 0.4, 6);
             const brokenTop = new THREE.Mesh(brokenTopGeometry, stoneMaterial);
             brokenTop.position.y = 0.4 + columnHeight + 0.1;
             brokenTop.rotation.x = Math.PI;
@@ -2479,7 +2479,7 @@ function initSetup() {
             
             // Ivy climbing column
             if (Math.random() > 0.5) {
-                const ivyMaterial = new THREE.MeshLambertMaterial({ 
+                const ivyMaterial = getMaterial('lambert', { 
                     color: 0x3A5F3A,
                     transparent: true,
                     opacity: 0.7
@@ -2494,10 +2494,10 @@ function initSetup() {
         } else if (treeType === 'stonearch') {
             // Stone archway for ruins
             const stoneColor = 0x7A7268;
-            const stoneMaterial = new THREE.MeshLambertMaterial({ color: stoneColor });
+            const stoneMaterial = getMaterial('lambert', { color: stoneColor });
             
             // Left pillar
-            const pillarGeometry = new THREE.BoxGeometry(0.6, 2.5, 0.6);
+            const pillarGeometry = getGeometry('box', 0.6, 2.5, 0.6);
             const leftPillar = new THREE.Mesh(pillarGeometry, stoneMaterial);
             leftPillar.position.set(-1, 1.25, 0);
             leftPillar.castShadow = true;
@@ -2511,7 +2511,7 @@ function initSetup() {
             
             // Arch top (if not broken)
             if (Math.random() > 0.3) {
-                const archGeometry = new THREE.BoxGeometry(2.6, 0.5, 0.6);
+                const archGeometry = getGeometry('box', 2.6, 0.5, 0.6);
                 const arch = new THREE.Mesh(archGeometry, stoneMaterial);
                 arch.position.y = 2.75;
                 arch.rotation.z = (Math.random() - 0.5) * 0.1; // Slight tilt
@@ -2545,7 +2545,7 @@ function initSetup() {
                 const size = 0.2 + Math.random() * 0.4;
                 const chunkGeometry = new THREE.DodecahedronGeometry(size, 0);
                 const chunkColor = stoneColors[Math.floor(Math.random() * stoneColors.length)];
-                const chunkMaterial = new THREE.MeshLambertMaterial({ color: chunkColor });
+                const chunkMaterial = getMaterial('lambert', { color: chunkColor });
                 const chunk = new THREE.Mesh(chunkGeometry, chunkMaterial);
                 
                 // Stack chunks in a rough pile shape
@@ -2563,8 +2563,8 @@ function initSetup() {
             
             // Occasional larger slab
             if (Math.random() > 0.5) {
-                const slabGeometry = new THREE.BoxGeometry(0.8, 0.2, 0.5);
-                const slabMaterial = new THREE.MeshLambertMaterial({ color: 0x7A7268 });
+                const slabGeometry = getGeometry('box', 0.8, 0.2, 0.5);
+                const slabMaterial = getMaterial('lambert', { color: 0x7A7268 });
                 const slab = new THREE.Mesh(slabGeometry, slabMaterial);
                 slab.position.set(
                     (Math.random() - 0.5) * 0.5,
@@ -2584,25 +2584,25 @@ function initSetup() {
             // Stone knight statue for ruins
             const stoneColor = 0x6B6B6B;
             const stoneDark = 0x4A4A4A;
-            const stoneMaterial = new THREE.MeshLambertMaterial({ color: stoneColor });
-            const darkMaterial = new THREE.MeshLambertMaterial({ color: stoneDark });
+            const stoneMaterial = getMaterial('lambert', { color: stoneColor });
+            const darkMaterial = getMaterial('lambert', { color: stoneDark });
             
             // Pedestal base
-            const pedestalGeometry = new THREE.BoxGeometry(1.2, 0.4, 1.2);
+            const pedestalGeometry = getGeometry('box', 1.2, 0.4, 1.2);
             const pedestal = new THREE.Mesh(pedestalGeometry, darkMaterial);
             pedestal.position.y = 0.2;
             pedestal.castShadow = true;
             treeGroup.add(pedestal);
             
             // Body (simplified knight shape)
-            const bodyGeometry = new THREE.CylinderGeometry(0.35, 0.45, 1.5, 8);
+            const bodyGeometry = getGeometry('cylinder', 0.35, 0.45, 1.5, 8);
             const body = new THREE.Mesh(bodyGeometry, stoneMaterial);
             body.position.y = 1.15;
             body.castShadow = true;
             treeGroup.add(body);
             
             // Head (helmet)
-            const headGeometry = new THREE.SphereGeometry(0.3, 8, 8);
+            const headGeometry = getGeometry('sphere', 0.3, 8, 8);
             const head = new THREE.Mesh(headGeometry, stoneMaterial);
             head.position.y = 2.1;
             head.scale.y = 1.2;
@@ -2610,13 +2610,13 @@ function initSetup() {
             treeGroup.add(head);
             
             // Helmet visor/slit
-            const visorGeometry = new THREE.BoxGeometry(0.25, 0.05, 0.35);
+            const visorGeometry = getGeometry('box', 0.25, 0.05, 0.35);
             const visor = new THREE.Mesh(visorGeometry, darkMaterial);
             visor.position.set(0, 2.1, 0.25);
             treeGroup.add(visor);
             
             // Shield (on side)
-            const shieldGeometry = new THREE.BoxGeometry(0.1, 0.6, 0.4);
+            const shieldGeometry = getGeometry('box', 0.1, 0.6, 0.4);
             const shield = new THREE.Mesh(shieldGeometry, stoneMaterial);
             shield.position.set(-0.45, 1.2, 0);
             shield.rotation.z = 0.2;
@@ -2624,14 +2624,14 @@ function initSetup() {
             treeGroup.add(shield);
             
             // Sword (in front)
-            const swordGeometry = new THREE.BoxGeometry(0.08, 1.2, 0.08);
+            const swordGeometry = getGeometry('box', 0.08, 1.2, 0.08);
             const sword = new THREE.Mesh(swordGeometry, darkMaterial);
             sword.position.set(0.3, 0.8, 0.2);
             sword.castShadow = true;
             treeGroup.add(sword);
             
             // Sword guard
-            const guardGeometry = new THREE.BoxGeometry(0.3, 0.08, 0.08);
+            const guardGeometry = getGeometry('box', 0.3, 0.08, 0.08);
             const guard = new THREE.Mesh(guardGeometry, darkMaterial);
             guard.position.set(0.3, 1.4, 0.2);
             treeGroup.add(guard);
@@ -2643,13 +2643,13 @@ function initSetup() {
             }
             
             // Moss on base
-            const mossMaterial = new THREE.MeshLambertMaterial({ 
+            const mossMaterial = getMaterial('lambert', { 
                 color: 0x3A5F3A,
                 transparent: true,
                 opacity: 0.6
             });
             for (let i = 0; i < 2; i++) {
-                const mossGeometry = new THREE.SphereGeometry(0.15, 6, 6);
+                const mossGeometry = getGeometry('sphere', 0.15, 6, 6);
                 const moss = new THREE.Mesh(mossGeometry, mossMaterial);
                 moss.position.set(
                     (Math.random() - 0.5) * 0.8,
@@ -2664,7 +2664,7 @@ function initSetup() {
             
         } else {
             // Regular tree
-            const trunkGeometry = new THREE.CylinderGeometry(0.3, 0.4, 2, 8);
+            const trunkGeometry = getGeometry('cylinder', 0.3, 0.4, 2, 8);
             const trunkMaterial = new THREE.MeshLambertMaterial({ 
                 map: textures.bark,
                 color: G.iceTheme ? 0x889999 : 0xccbbaa
@@ -2674,7 +2674,7 @@ function initSetup() {
             trunk.castShadow = true;
             treeGroup.add(trunk);
             
-            const foliageGeometry = new THREE.SphereGeometry(1.5, 8, 8);
+            const foliageGeometry = getGeometry('sphere', 1.5, 8, 8);
             const foliageMaterial = new THREE.MeshLambertMaterial({ 
                 map: G.iceTheme ? textures.foliageIce : textures.foliage,
                 color: G.treeColor
@@ -2770,7 +2770,7 @@ function initSetup() {
             }
             
             // Glowing fairy lights in canopy (enchanted effect)
-            const lightMaterial = new THREE.MeshBasicMaterial({ 
+            const lightMaterial = getMaterial('basic', { 
                 color: 0xFFFF88,
                 transparent: true,
                 opacity: 0.8
@@ -2789,7 +2789,7 @@ function initSetup() {
             }
             
             // Hanging vines/moss
-            const vineMaterial = new THREE.MeshLambertMaterial({ color: 0x4A7A42 });
+            const vineMaterial = getMaterial('lambert', { color: 0x4A7A42 });
             for (let i = 0; i < 3; i++) {
                 const vineGeometry = new THREE.CylinderGeometry(0.03 * scale, 0.05 * scale, 2 * scale, 4);
                 const vine = new THREE.Mesh(vineGeometry, vineMaterial);
@@ -2834,15 +2834,15 @@ function initSetup() {
                 
                 // Mushroom cap - red with white spots
                 const capGeometry = new THREE.SphereGeometry(0.3, 8, 8, 0, Math.PI * 2, 0, Math.PI / 2);
-                const capMaterial = new THREE.MeshLambertMaterial({ color: 0xFF4444 });
+                const capMaterial = getMaterial('lambert', { color: 0xFF4444 });
                 const cap = new THREE.Mesh(capGeometry, capMaterial);
                 cap.position.set(x, 0.4, z);
                 cap.castShadow = true;
                 ringGroup.add(cap);
                 
                 // Stem
-                const stemGeometry = new THREE.CylinderGeometry(0.08, 0.12, 0.35, 6);
-                const stemMaterial = new THREE.MeshLambertMaterial({ color: 0xFFF8DC });
+                const stemGeometry = getGeometry('cylinder', 0.08, 0.12, 0.35, 6);
+                const stemMaterial = getMaterial('lambert', { color: 0xFFF8DC });
                 const stem = new THREE.Mesh(stemGeometry, stemMaterial);
                 stem.position.set(x, 0.18, z);
                 stem.castShadow = true;
@@ -2850,8 +2850,8 @@ function initSetup() {
                 
                 // White spots on cap
                 for (let j = 0; j < 3; j++) {
-                    const spotGeometry = new THREE.SphereGeometry(0.06, 6, 6);
-                    const spotMaterial = new THREE.MeshBasicMaterial({ color: 0xFFFFFF });
+                    const spotGeometry = getGeometry('sphere', 0.06, 6, 6);
+                    const spotMaterial = getMaterial('basic', { color: 0xFFFFFF });
                     const spot = new THREE.Mesh(spotGeometry, spotMaterial);
                     const spotAngle = (j / 3) * Math.PI * 2 + Math.random();
                     spot.position.set(
@@ -2865,7 +2865,7 @@ function initSetup() {
             
             // Glowing green center circle
             const glowGeometry = new THREE.CircleGeometry(ringRadius * 0.8, 24);
-            const glowMaterial = new THREE.MeshBasicMaterial({ 
+            const glowMaterial = getMaterial('basic', { 
                 color: 0x98FB98, 
                 transparent: true, 
                 opacity: 0.25,
@@ -2878,9 +2878,9 @@ function initSetup() {
             
             // Floating sparkles in center
             for (let i = 0; i < 8; i++) {
-                const sparkleGeometry = new THREE.SphereGeometry(0.08, 6, 6);
+                const sparkleGeometry = getGeometry('sphere', 0.08, 6, 6);
                 const sparkleColors = [0xFFD700, 0xFFFFFF, 0xFF69B4, 0x98FB98];
-                const sparkleMaterial = new THREE.MeshBasicMaterial({ 
+                const sparkleMaterial = getMaterial('basic', { 
                     color: sparkleColors[i % sparkleColors.length],
                     transparent: true,
                     opacity: 0.8
@@ -2919,7 +2919,7 @@ function initSetup() {
             
             // Large stem
             const stemGeometry = new THREE.CylinderGeometry(0.4 * scale, 0.6 * scale, 2 * scale, 8);
-            const stemMaterial = new THREE.MeshLambertMaterial({ color: 0xFFF8DC });
+            const stemMaterial = getMaterial('lambert', { color: 0xFFF8DC });
             const stem = new THREE.Mesh(stemGeometry, stemMaterial);
             stem.position.y = 1 * scale;
             stem.castShadow = true;
@@ -2927,7 +2927,7 @@ function initSetup() {
             
             // Big pink dome cap
             const capGeometry = new THREE.SphereGeometry(1.2 * scale, 12, 12, 0, Math.PI * 2, 0, Math.PI / 2);
-            const capMaterial = new THREE.MeshLambertMaterial({ color: 0xFF1493 });
+            const capMaterial = getMaterial('lambert', { color: 0xFF1493 });
             const cap = new THREE.Mesh(capGeometry, capMaterial);
             cap.position.y = 2 * scale;
             cap.castShadow = true;
@@ -2936,7 +2936,7 @@ function initSetup() {
             // White spots on cap
             for (let i = 0; i < 8; i++) {
                 const spotGeometry = new THREE.SphereGeometry(0.15 * scale + Math.random() * 0.1 * scale, 8, 8);
-                const spotMaterial = new THREE.MeshBasicMaterial({ color: 0xFFFFFF });
+                const spotMaterial = getMaterial('basic', { color: 0xFFFFFF });
                 const spot = new THREE.Mesh(spotGeometry, spotMaterial);
                 const angle = (i / 8) * Math.PI * 2;
                 const r = 0.6 * scale + Math.random() * 0.4 * scale;
@@ -2951,7 +2951,7 @@ function initSetup() {
             
             // Turquoise glow underneath cap
             const glowGeometry = new THREE.CircleGeometry(1.0 * scale, 12);
-            const glowMaterial = new THREE.MeshBasicMaterial({ 
+            const glowMaterial = getMaterial('basic', { 
                 color: 0x00FFAA, 
                 transparent: true, 
                 opacity: 0.4,
@@ -2985,8 +2985,8 @@ function initSetup() {
             const flowerGroup = new THREE.Group();
             
             // Green stem
-            const stemGeometry = new THREE.CylinderGeometry(0.06, 0.1, 1.2, 6);
-            const stemMaterial = new THREE.MeshLambertMaterial({ color: 0x228B22 });
+            const stemGeometry = getGeometry('cylinder', 0.06, 0.1, 1.2, 6);
+            const stemMaterial = getMaterial('lambert', { color: 0x228B22 });
             const stem = new THREE.Mesh(stemGeometry, stemMaterial);
             stem.position.y = 0.6;
             stem.castShadow = true;
@@ -2994,8 +2994,8 @@ function initSetup() {
             
             // Crystal petals as elongated octahedrons
             for (let i = 0; i < 6; i++) {
-                const petalGeometry = new THREE.OctahedronGeometry(0.25, 0);
-                const petalMaterial = new THREE.MeshBasicMaterial({ 
+                const petalGeometry = getGeometry('octahedron', 0.25, 0);
+                const petalMaterial = getMaterial('basic', { 
                     color: petalColors[i],
                     transparent: true,
                     opacity: 0.75
@@ -3013,15 +3013,15 @@ function initSetup() {
             }
             
             // Center glowing gem
-            const centerGeometry = new THREE.IcosahedronGeometry(0.18, 0);
-            const centerMaterial = new THREE.MeshBasicMaterial({ color: 0xFFFFFF });
+            const centerGeometry = getGeometry('icosahedron', 0.18, 0);
+            const centerMaterial = getMaterial('basic', { color: 0xFFFFFF });
             const center = new THREE.Mesh(centerGeometry, centerMaterial);
             center.position.y = 1.35;
             flowerGroup.add(center);
             
             // Small leaves
-            const leafGeometry = new THREE.PlaneGeometry(0.25, 0.4);
-            const leafMaterial = new THREE.MeshLambertMaterial({ 
+            const leafGeometry = getGeometry('plane', 0.25, 0.4);
+            const leafMaterial = getMaterial('lambert', { 
                 color: 0x228B22, 
                 side: THREE.DoubleSide 
             });
@@ -3056,7 +3056,7 @@ function initSetup() {
             // Rainbow bands
             rainbowColors.forEach((color, i) => {
                 const arcGeometry = new THREE.TorusGeometry(2.5 - i * 0.15, 0.1, 8, 32, Math.PI);
-                const arcMaterial = new THREE.MeshBasicMaterial({ 
+                const arcMaterial = getMaterial('basic', { 
                     color: color,
                     transparent: true,
                     opacity: 0.7
@@ -3068,8 +3068,8 @@ function initSetup() {
             
             // Golden/white sparkles along the arc
             for (let i = 0; i < 5; i++) {
-                const sparkleGeometry = new THREE.SphereGeometry(0.1, 6, 6);
-                const sparkleMaterial = new THREE.MeshBasicMaterial({ 
+                const sparkleGeometry = getGeometry('sphere', 0.1, 6, 6);
+                const sparkleMaterial = getMaterial('basic', { 
                     color: i % 2 === 0 ? 0xFFD700 : 0xFFFFFF 
                 });
                 const sparkle = new THREE.Mesh(sparkleGeometry, sparkleMaterial);
@@ -3108,7 +3108,7 @@ function initSetup() {
             
             // Tree trunk - brown bark
             const trunkGeometry = new THREE.CylinderGeometry(0.2 * scale, 0.35 * scale, 2.5 * scale, 8);
-            const trunkMaterial = new THREE.MeshLambertMaterial({ color: 0x8B4513 });
+            const trunkMaterial = getMaterial('lambert', { color: 0x8B4513 });
             const trunk = new THREE.Mesh(trunkGeometry, trunkMaterial);
             trunk.position.y = 1.25 * scale;
             trunk.castShadow = true;
@@ -3118,7 +3118,7 @@ function initSetup() {
             const blossomColors = [0xFFB6C1, 0xFF69B4, 0xFFC0CB]; // Various pinks
             for (let i = 0; i < 5; i++) {
                 const canopyGeometry = new THREE.SphereGeometry(0.8 * scale + Math.random() * 0.3 * scale, 8, 8);
-                const canopyMaterial = new THREE.MeshLambertMaterial({ 
+                const canopyMaterial = getMaterial('lambert', { 
                     color: blossomColors[i % blossomColors.length] 
                 });
                 const canopy = new THREE.Mesh(canopyGeometry, canopyMaterial);
@@ -3134,7 +3134,7 @@ function initSetup() {
             
             // Center canopy
             const centerCanopyGeometry = new THREE.SphereGeometry(1.0 * scale, 8, 8);
-            const centerCanopyMaterial = new THREE.MeshLambertMaterial({ color: 0xFFB6C1 });
+            const centerCanopyMaterial = getMaterial('lambert', { color: 0xFFB6C1 });
             const centerCanopy = new THREE.Mesh(centerCanopyGeometry, centerCanopyMaterial);
             centerCanopy.position.y = 3.2 * scale;
             centerCanopy.castShadow = true;
@@ -3143,7 +3143,7 @@ function initSetup() {
             // Falling petals (small spheres)
             for (let i = 0; i < 8; i++) {
                 const petalGeometry = new THREE.SphereGeometry(0.08 * scale, 6, 6);
-                const petalMaterial = new THREE.MeshBasicMaterial({ 
+                const petalMaterial = getMaterial('basic', { 
                     color: 0xFFB6C1, 
                     transparent: true, 
                     opacity: 0.8 
@@ -3184,7 +3184,7 @@ function initSetup() {
             
             // Basket body - woven look
             const basketGeometry = new THREE.CylinderGeometry(0.5 * scale, 0.3 * scale, 0.4 * scale, 12);
-            const basketMaterial = new THREE.MeshLambertMaterial({ color: 0xD2691E });
+            const basketMaterial = getMaterial('lambert', { color: 0xD2691E });
             const basket = new THREE.Mesh(basketGeometry, basketMaterial);
             basket.position.y = 0.2 * scale;
             basket.castShadow = true;
@@ -3192,7 +3192,7 @@ function initSetup() {
             
             // Basket rim
             const rimGeometry = new THREE.TorusGeometry(0.5 * scale, 0.05 * scale, 8, 16);
-            const rimMaterial = new THREE.MeshLambertMaterial({ color: 0x8B4513 });
+            const rimMaterial = getMaterial('lambert', { color: 0x8B4513 });
             const rim = new THREE.Mesh(rimGeometry, rimMaterial);
             rim.position.y = 0.4 * scale;
             rim.rotation.x = Math.PI / 2;
@@ -3206,7 +3206,7 @@ function initSetup() {
             
             // Grass/straw in basket
             const strawGeometry = new THREE.BoxGeometry(0.8 * scale, 0.15 * scale, 0.8 * scale);
-            const strawMaterial = new THREE.MeshLambertMaterial({ color: 0x9ACD32 });
+            const strawMaterial = getMaterial('lambert', { color: 0x9ACD32 });
             const straw = new THREE.Mesh(strawGeometry, strawMaterial);
             straw.position.y = 0.35 * scale;
             basketGroup.add(straw);
@@ -3214,7 +3214,7 @@ function initSetup() {
             // Eggs in basket
             for (let i = 0; i < 5; i++) {
                 const eggGeometry = new THREE.SphereGeometry(0.12 * scale, 8, 8);
-                const eggMaterial = new THREE.MeshPhongMaterial({ 
+                const eggMaterial = getMaterial('phong', { 
                     color: basketEggColors[i],
                     shininess: 60
                 });
@@ -3232,7 +3232,7 @@ function initSetup() {
             
             // Pink ribbon bow
             const ribbonGeometry = new THREE.SphereGeometry(0.1 * scale, 6, 6);
-            const ribbonMaterial = new THREE.MeshLambertMaterial({ color: 0xFF69B4 });
+            const ribbonMaterial = getMaterial('lambert', { color: 0xFF69B4 });
             const bow = new THREE.Mesh(ribbonGeometry, ribbonMaterial);
             bow.position.set(0, 0.6 * scale, 0.4 * scale);
             bow.scale.set(1.5, 0.5, 1);
@@ -3269,7 +3269,7 @@ function initSetup() {
                 
                 // Stem
                 const stemGeometry = new THREE.CylinderGeometry(0.02, 0.03, 0.3 + Math.random() * 0.2, 4);
-                const stemMaterial = new THREE.MeshLambertMaterial({ color: 0x228B22 });
+                const stemMaterial = getMaterial('lambert', { color: 0x228B22 });
                 const stem = new THREE.Mesh(stemGeometry, stemMaterial);
                 stem.position.y = 0.15;
                 flowerGroup.add(stem);
@@ -3277,8 +3277,8 @@ function initSetup() {
                 // Flower head - petals
                 const flowerColor = flowerColors[Math.floor(Math.random() * flowerColors.length)];
                 for (let p = 0; p < 5; p++) {
-                    const petalGeometry = new THREE.SphereGeometry(0.08, 6, 6);
-                    const petalMaterial = new THREE.MeshLambertMaterial({ color: flowerColor });
+                    const petalGeometry = getGeometry('sphere', 0.08, 6, 6);
+                    const petalMaterial = getMaterial('lambert', { color: flowerColor });
                     const petal = new THREE.Mesh(petalGeometry, petalMaterial);
                     const petalAngle = (p / 5) * Math.PI * 2;
                     petal.position.set(
@@ -3291,8 +3291,8 @@ function initSetup() {
                 }
                 
                 // Yellow center
-                const centerGeometry = new THREE.SphereGeometry(0.05, 6, 6);
-                const centerMaterial = new THREE.MeshBasicMaterial({ color: 0xFFD700 });
+                const centerGeometry = getGeometry('sphere', 0.05, 6, 6);
+                const centerMaterial = getMaterial('basic', { color: 0xFFD700 });
                 const center = new THREE.Mesh(centerGeometry, centerMaterial);
                 center.position.y = 0.35;
                 flowerGroup.add(center);
@@ -3324,8 +3324,8 @@ function initSetup() {
             const eggColor = decorEggColors[i % decorEggColors.length];
             
             // Egg shape
-            const eggGeometry = new THREE.SphereGeometry(0.25, 8, 8);
-            const eggMaterial = new THREE.MeshPhongMaterial({ 
+            const eggGeometry = getGeometry('sphere', 0.25, 8, 8);
+            const eggMaterial = getMaterial('phong', { 
                 color: eggColor,
                 shininess: 60
             });
@@ -3336,9 +3336,9 @@ function initSetup() {
             
             // Random stripe
             if (Math.random() > 0.5) {
-                const stripeGeometry = new THREE.TorusGeometry(0.18, 0.03, 6, 12);
+                const stripeGeometry = getGeometry('torus', 0.18, 0.03, 6, 12);
                 const stripeColor = decorEggColors[(i + 2) % decorEggColors.length];
-                const stripeMaterial = new THREE.MeshLambertMaterial({ color: stripeColor });
+                const stripeMaterial = getMaterial('lambert', { color: stripeColor });
                 const stripe = new THREE.Mesh(stripeGeometry, stripeMaterial);
                 stripe.position.y = 0.25;
                 stripe.rotation.x = Math.PI / 2;
@@ -3373,14 +3373,14 @@ function initSetup() {
             const pileGroup = new THREE.Group();
             
             // Nest base - straw/grass circle
-            const nestGeometry = new THREE.CylinderGeometry(1.5, 2, 0.4, 16);
-            const nestMaterial = new THREE.MeshLambertMaterial({ color: 0x8B7355 }); // Tan straw
+            const nestGeometry = getGeometry('cylinder', 1.5, 2, 0.4, 16);
+            const nestMaterial = getMaterial('lambert', { color: 0x8B7355 }); // Tan straw
             const nest = new THREE.Mesh(nestGeometry, nestMaterial);
             nest.position.y = 0.2;
             pileGroup.add(nest);
             
             // Straw rim
-            const rimGeometry = new THREE.TorusGeometry(1.7, 0.2, 8, 16);
+            const rimGeometry = getGeometry('torus', 1.7, 0.2, 8, 16);
             const rim = new THREE.Mesh(rimGeometry, nestMaterial);
             rim.position.y = 0.35;
             rim.rotation.x = Math.PI / 2;
@@ -3389,9 +3389,9 @@ function initSetup() {
             // 5-8 eggs per pile
             const numEggs = 5 + Math.floor(Math.random() * 4);
             for (let i = 0; i < numEggs; i++) {
-                const eggGeometry = new THREE.SphereGeometry(0.35, 8, 8);
+                const eggGeometry = getGeometry('sphere', 0.35, 8, 8);
                 const eggColor = decorEggColors[Math.floor(Math.random() * decorEggColors.length)];
-                const eggMaterial = new THREE.MeshPhongMaterial({ 
+                const eggMaterial = getMaterial('phong', { 
                     color: eggColor,
                     shininess: 80
                 });
@@ -3426,8 +3426,8 @@ function initSetup() {
             const eggColor = decorEggColors[idx % decorEggColors.length];
             
             // Giant egg shape
-            const eggGeometry = new THREE.SphereGeometry(2.5, 16, 16);
-            const eggMaterial = new THREE.MeshPhongMaterial({ 
+            const eggGeometry = getGeometry('sphere', 2.5, 16, 16);
+            const eggMaterial = getMaterial('phong', { 
                 color: eggColor,
                 shininess: 100,
                 emissive: eggColor,
@@ -3442,7 +3442,7 @@ function initSetup() {
             for (let s = 0; s < 3; s++) {
                 const stripeGeometry = new THREE.TorusGeometry(1.8 - s * 0.3, 0.15, 8, 24);
                 const stripeColor = decorEggColors[(idx + s + 1) % decorEggColors.length];
-                const stripeMaterial = new THREE.MeshPhongMaterial({ 
+                const stripeMaterial = getMaterial('phong', { 
                     color: stripeColor,
                     shininess: 80
                 });
@@ -3454,9 +3454,9 @@ function initSetup() {
             }
             
             // Star pattern on egg
-            const starMaterial = new THREE.MeshBasicMaterial({ color: 0xFFFFFF });
+            const starMaterial = getMaterial('basic', { color: 0xFFFFFF });
             for (let i = 0; i < 5; i++) {
-                const starGeometry = new THREE.CircleGeometry(0.2, 5);
+                const starGeometry = getGeometry('circle', 0.2, 5);
                 const star = new THREE.Mesh(starGeometry, starMaterial);
                 const angle = (i / 5) * Math.PI * 2;
                 star.position.set(
@@ -3480,24 +3480,24 @@ function initSetup() {
         
         bunnyStatuePositions.forEach((pos) => {
             const statueGroup = new THREE.Group();
-            const stoneMaterial = new THREE.MeshLambertMaterial({ color: 0xD4C4B0 }); // Cream stone
+            const stoneMaterial = getMaterial('lambert', { color: 0xD4C4B0 }); // Cream stone
             
             // Body
-            const bodyGeometry = new THREE.SphereGeometry(1.5, 12, 12);
+            const bodyGeometry = getGeometry('sphere', 1.5, 12, 12);
             const body = new THREE.Mesh(bodyGeometry, stoneMaterial);
             body.scale.y = 1.1;
             body.position.y = 2;
             statueGroup.add(body);
             
             // Head  
-            const headGeometry = new THREE.SphereGeometry(1, 12, 12);
+            const headGeometry = getGeometry('sphere', 1, 12, 12);
             const head = new THREE.Mesh(headGeometry, stoneMaterial);
             head.position.y = 4;
             statueGroup.add(head);
             
             // Ears
             for (let side = -1; side <= 1; side += 2) {
-                const earGeometry = new THREE.CylinderGeometry(0.2, 0.3, 2, 8);
+                const earGeometry = getGeometry('cylinder', 0.2, 0.3, 2, 8);
                 const ear = new THREE.Mesh(earGeometry, stoneMaterial);
                 ear.position.set(side * 0.5, 5.5, 0);
                 ear.rotation.z = side * 0.15;
@@ -3505,7 +3505,7 @@ function initSetup() {
             }
             
             // Pedestal
-            const pedestalGeometry = new THREE.CylinderGeometry(1.8, 2, 1, 12);
+            const pedestalGeometry = getGeometry('cylinder', 1.8, 2, 1, 12);
             const pedestal = new THREE.Mesh(pedestalGeometry, stoneMaterial);
             pedestal.position.y = 0.5;
             statueGroup.add(pedestal);
@@ -3524,39 +3524,39 @@ function initSetup() {
             const snowmanGroup = new THREE.Group();
             
             // Bottom snowball
-            const bottomGeometry = new THREE.SphereGeometry(0.6, 12, 12);
-            const snowMaterial = new THREE.MeshLambertMaterial({ color: 0xffffff });
+            const bottomGeometry = getGeometry('sphere', 0.6, 12, 12);
+            const snowMaterial = getMaterial('lambert', { color: 0xffffff });
             const bottom = new THREE.Mesh(bottomGeometry, snowMaterial);
             bottom.position.y = 0.6;
             bottom.castShadow = true;
             snowmanGroup.add(bottom);
             
             // Middle snowball
-            const middleGeometry = new THREE.SphereGeometry(0.45, 10, 10);
+            const middleGeometry = getGeometry('sphere', 0.45, 10, 10);
             const middle = new THREE.Mesh(middleGeometry, snowMaterial);
             middle.position.y = 1.4;
             middle.castShadow = true;
             snowmanGroup.add(middle);
             
             // Top snowball (head)
-            const headGeometry = new THREE.SphereGeometry(0.3, 10, 10);
+            const headGeometry = getGeometry('sphere', 0.3, 10, 10);
             const head = new THREE.Mesh(headGeometry, snowMaterial);
             head.position.y = 2.05;
             head.castShadow = true;
             snowmanGroup.add(head);
             
             // Carrot nose
-            const noseGeometry = new THREE.ConeGeometry(0.05, 0.25, 8);
-            const noseMaterial = new THREE.MeshLambertMaterial({ color: 0xff8800 });
+            const noseGeometry = getGeometry('cone', 0.05, 0.25, 8);
+            const noseMaterial = getMaterial('lambert', { color: 0xff8800 });
             const nose = new THREE.Mesh(noseGeometry, noseMaterial);
             nose.position.set(0, 2.05, 0.3);
             nose.rotation.x = Math.PI / 2;
             snowmanGroup.add(nose);
             
             // Coal eyes
-            const eyeMaterial = new THREE.MeshBasicMaterial({ color: 0x000000 });
+            const eyeMaterial = getMaterial('basic', { color: 0x000000 });
             for (let side = -1; side <= 1; side += 2) {
-                const eyeGeometry = new THREE.SphereGeometry(0.05, 6, 6);
+                const eyeGeometry = getGeometry('sphere', 0.05, 6, 6);
                 const eye = new THREE.Mesh(eyeGeometry, eyeMaterial);
                 eye.position.set(side * 0.1, 2.15, 0.25);
                 snowmanGroup.add(eye);
@@ -3564,7 +3564,7 @@ function initSetup() {
             
             // Coal buttons
             for (let b = 0; b < 3; b++) {
-                const buttonGeometry = new THREE.SphereGeometry(0.06, 6, 6);
+                const buttonGeometry = getGeometry('sphere', 0.06, 6, 6);
                 const button = new THREE.Mesh(buttonGeometry, eyeMaterial);
                 button.position.set(0, 1.6 - b * 0.2, 0.42);
                 snowmanGroup.add(button);
@@ -3591,8 +3591,8 @@ function initSetup() {
             const candyCaneGroup = new THREE.Group();
             
             // Main cane stick
-            const stickGeometry = new THREE.CylinderGeometry(0.08, 0.08, 1.5, 8);
-            const whiteMaterial = new THREE.MeshPhongMaterial({ color: 0xffffff, shininess: 60 });
+            const stickGeometry = getGeometry('cylinder', 0.08, 0.08, 1.5, 8);
+            const whiteMaterial = getMaterial('phong', { color: 0xffffff, shininess: 60 });
             const stick = new THREE.Mesh(stickGeometry, whiteMaterial);
             stick.position.y = 0.75;
             stick.castShadow = true;
@@ -3600,8 +3600,8 @@ function initSetup() {
             
             // Red stripes
             for (let s = 0; s < 5; s++) {
-                const stripeGeometry = new THREE.TorusGeometry(0.085, 0.03, 6, 12);
-                const redMaterial = new THREE.MeshPhongMaterial({ color: 0xff0000, shininess: 60 });
+                const stripeGeometry = getGeometry('torus', 0.085, 0.03, 6, 12);
+                const redMaterial = getMaterial('phong', { color: 0xff0000, shininess: 60 });
                 const stripe = new THREE.Mesh(stripeGeometry, redMaterial);
                 stripe.position.y = 0.2 + s * 0.3;
                 stripe.rotation.x = Math.PI / 2;
@@ -3637,8 +3637,8 @@ function initSetup() {
             const treeGroup = new THREE.Group();
             
             // Trunk
-            const trunkGeometry = new THREE.CylinderGeometry(0.1, 0.15, 0.5, 8);
-            const trunkMaterial = new THREE.MeshLambertMaterial({ color: 0x4a3020 });
+            const trunkGeometry = getGeometry('cylinder', 0.1, 0.15, 0.5, 8);
+            const trunkMaterial = getMaterial('lambert', { color: 0x4a3020 });
             const trunk = new THREE.Mesh(trunkGeometry, trunkMaterial);
             trunk.position.y = 0.25;
             trunk.castShadow = true;
@@ -3646,7 +3646,7 @@ function initSetup() {
             
             // Pine layers
             const pineGreen = 0x1e5631;
-            const pineMaterial = new THREE.MeshLambertMaterial({ color: pineGreen });
+            const pineMaterial = getMaterial('lambert', { color: pineGreen });
             for (let layer = 0; layer < 3; layer++) {
                 const layerRadius = 0.8 - layer * 0.2;
                 const layerGeometry = new THREE.ConeGeometry(layerRadius, 1.0, 8);
@@ -3659,9 +3659,9 @@ function initSetup() {
             // Ornaments - colorful baubles
             const ornamentColors = [0xff0000, 0xffd700, 0x0000ff, 0xff00ff];
             for (let o = 0; o < 6; o++) {
-                const ornamentGeometry = new THREE.SphereGeometry(0.08, 6, 6);
+                const ornamentGeometry = getGeometry('sphere', 0.08, 6, 6);
                 const ornamentColor = ornamentColors[o % ornamentColors.length];
-                const ornamentMaterial = new THREE.MeshPhongMaterial({ 
+                const ornamentMaterial = getMaterial('phong', { 
                     color: ornamentColor,
                     shininess: 100
                 });
@@ -3678,8 +3678,8 @@ function initSetup() {
             }
             
             // Star on top
-            const starGeometry = new THREE.SphereGeometry(0.12, 5, 5);
-            const starMaterial = new THREE.MeshBasicMaterial({ color: 0xffd700 });
+            const starGeometry = getGeometry('sphere', 0.12, 5, 5);
+            const starMaterial = getMaterial('basic', { color: 0xffd700 });
             const star = new THREE.Mesh(starGeometry, starMaterial);
             star.position.y = 2.6;
             treeGroup.add(star);
@@ -3705,24 +3705,24 @@ function initSetup() {
             const lamppostGroup = new THREE.Group();
             
             // Post
-            const postGeometry = new THREE.CylinderGeometry(0.08, 0.1, 3.5, 8);
-            const postMaterial = new THREE.MeshLambertMaterial({ color: 0x2a2a2a });
+            const postGeometry = getGeometry('cylinder', 0.08, 0.1, 3.5, 8);
+            const postMaterial = getMaterial('lambert', { color: 0x2a2a2a });
             const post = new THREE.Mesh(postGeometry, postMaterial);
             post.position.y = 1.75;
             post.castShadow = true;
             lamppostGroup.add(post);
             
             // Lamp housing
-            const lampGeometry = new THREE.CylinderGeometry(0.35, 0.25, 0.6, 8);
-            const lampMaterial = new THREE.MeshLambertMaterial({ color: 0x1a1a1a });
+            const lampGeometry = getGeometry('cylinder', 0.35, 0.25, 0.6, 8);
+            const lampMaterial = getMaterial('lambert', { color: 0x1a1a1a });
             const lamp = new THREE.Mesh(lampGeometry, lampMaterial);
             lamp.position.y = 3.7;
             lamp.castShadow = true;
             lamppostGroup.add(lamp);
             
             // Glowing light
-            const lightGeometry = new THREE.SphereGeometry(0.2, 8, 8);
-            const lightMaterial = new THREE.MeshBasicMaterial({ 
+            const lightGeometry = getGeometry('sphere', 0.2, 8, 8);
+            const lightMaterial = getMaterial('basic', { 
                 color: 0xffffaa,
                 transparent: true,
                 opacity: 0.9
@@ -3752,8 +3752,8 @@ function initSetup() {
             const wreathGroup = new THREE.Group();
             
             // Wreath ring
-            const wreathGeometry = new THREE.TorusGeometry(0.5, 0.15, 12, 16);
-            const wreathMaterial = new THREE.MeshLambertMaterial({ color: 0x2d5a27 });
+            const wreathGeometry = getGeometry('torus', 0.5, 0.15, 12, 16);
+            const wreathMaterial = getMaterial('lambert', { color: 0x2d5a27 });
             const wreath = new THREE.Mesh(wreathGeometry, wreathMaterial);
             wreath.rotation.x = Math.PI / 2;
             wreath.position.y = 0.15;
@@ -3761,16 +3761,16 @@ function initSetup() {
             wreathGroup.add(wreath);
             
             // Red bow
-            const bowGeometry = new THREE.BoxGeometry(0.3, 0.15, 0.1);
-            const bowMaterial = new THREE.MeshLambertMaterial({ color: 0xff0000 });
+            const bowGeometry = getGeometry('box', 0.3, 0.15, 0.1);
+            const bowMaterial = getMaterial('lambert', { color: 0xff0000 });
             const bow = new THREE.Mesh(bowGeometry, bowMaterial);
             bow.position.set(0, 0.15, 0.5);
             wreathGroup.add(bow);
             
             // Berries
-            const berryMaterial = new THREE.MeshBasicMaterial({ color: 0xff0000 });
+            const berryMaterial = getMaterial('basic', { color: 0xff0000 });
             for (let b = 0; b < 6; b++) {
-                const berryGeometry = new THREE.SphereGeometry(0.05, 6, 6);
+                const berryGeometry = getGeometry('sphere', 0.05, 6, 6);
                 const berry = new THREE.Mesh(berryGeometry, berryMaterial);
                 const angle = (b / 6) * Math.PI * 2;
                 berry.position.set(
@@ -3802,16 +3802,16 @@ function initSetup() {
             const houseGroup = new THREE.Group();
             
             // House walls
-            const wallGeometry = new THREE.BoxGeometry(3, 2, 2.5);
-            const wallMaterial = new THREE.MeshLambertMaterial({ color: 0x8B4513 });
+            const wallGeometry = getGeometry('box', 3, 2, 2.5);
+            const wallMaterial = getMaterial('lambert', { color: 0x8B4513 });
             const walls = new THREE.Mesh(wallGeometry, wallMaterial);
             walls.position.y = 1;
             walls.castShadow = true;
             houseGroup.add(walls);
             
             // Roof
-            const roofGeometry = new THREE.ConeGeometry(2.2, 1.5, 4);
-            const roofMaterial = new THREE.MeshLambertMaterial({ color: 0xffffff });
+            const roofGeometry = getGeometry('cone', 2.2, 1.5, 4);
+            const roofMaterial = getMaterial('lambert', { color: 0xffffff });
             const roof = new THREE.Mesh(roofGeometry, roofMaterial);
             roof.position.y = 2.75;
             roof.rotation.y = Math.PI / 4;
@@ -3819,16 +3819,16 @@ function initSetup() {
             houseGroup.add(roof);
             
             // Door
-            const doorGeometry = new THREE.BoxGeometry(0.6, 1, 0.1);
-            const doorMaterial = new THREE.MeshLambertMaterial({ color: 0x4a3020 });
+            const doorGeometry = getGeometry('box', 0.6, 1, 0.1);
+            const doorMaterial = getMaterial('lambert', { color: 0x4a3020 });
             const door = new THREE.Mesh(doorGeometry, doorMaterial);
             door.position.set(0, 0.5, 1.3);
             houseGroup.add(door);
             
             // Windows
-            const windowMaterial = new THREE.MeshBasicMaterial({ color: 0xffffaa });
+            const windowMaterial = getMaterial('basic', { color: 0xffffaa });
             for (let side = -1; side <= 1; side += 2) {
-                const windowGeometry = new THREE.PlaneGeometry(0.4, 0.4);
+                const windowGeometry = getGeometry('plane', 0.4, 0.4);
                 const window = new THREE.Mesh(windowGeometry, windowMaterial);
                 window.position.set(side * 0.8, 1.2, 1.26);
                 houseGroup.add(window);
@@ -3836,10 +3836,10 @@ function initSetup() {
             
             // Candy decorations on walls
             for (let c = 0; c < 8; c++) {
-                const candyGeometry = new THREE.SphereGeometry(0.08, 6, 6);
+                const candyGeometry = getGeometry('sphere', 0.08, 6, 6);
                 const candyColors = [0xff0000, 0x00ff00, 0xffffff];
                 const candyColor = candyColors[c % candyColors.length];
-                const candyMaterial = new THREE.MeshBasicMaterial({ color: candyColor });
+                const candyMaterial = getMaterial('basic', { color: candyColor });
                 const candy = new THREE.Mesh(candyGeometry, candyMaterial);
                 candy.position.set(
                     (Math.random() - 0.5) * 2.5,
@@ -3872,7 +3872,7 @@ function initSetup() {
             
             // Trunk
             const trunkGeometry = new THREE.CylinderGeometry(0.15 * treeScale, 0.25 * treeScale, 1.2 * treeScale, 8);
-            const trunkMaterial = new THREE.MeshLambertMaterial({ color: 0x3d2914 });
+            const trunkMaterial = getMaterial('lambert', { color: 0x3d2914 });
             const trunk = new THREE.Mesh(trunkGeometry, trunkMaterial);
             trunk.position.y = 0.6 * treeScale;
             trunk.castShadow = true;
@@ -3880,7 +3880,7 @@ function initSetup() {
             
             // Multiple layers of pine branches
             const pineGreen = 0x1e5631;
-            const pineMaterial = new THREE.MeshLambertMaterial({ color: pineGreen });
+            const pineMaterial = getMaterial('lambert', { color: pineGreen });
             for (let layer = 0; layer < 4; layer++) {
                 const layerRadius = (1.0 - layer * 0.2) * treeScale;
                 const layerHeight = 1.2 * treeScale;
@@ -3892,7 +3892,7 @@ function initSetup() {
             }
             
             // Snow on branches
-            const snowCapMaterial = new THREE.MeshLambertMaterial({ color: 0xffffff });
+            const snowCapMaterial = getMaterial('lambert', { color: 0xffffff });
             for (let layer = 0; layer < 3; layer++) {
                 const snowRadius = (0.6 - layer * 0.15) * treeScale;
                 const snowGeometry = new THREE.ConeGeometry(snowRadius, 0.2 * treeScale, 8);
@@ -3923,8 +3923,8 @@ function initSetup() {
             const driftScale = 1 + Math.random() * 2;
             
             // Main drift body - elongated sphere
-            const driftGeometry = new THREE.SphereGeometry(1, 10, 8);
-            const driftMaterial = new THREE.MeshLambertMaterial({ color: 0xFAFAFA });
+            const driftGeometry = getGeometry('sphere', 1, 10, 8);
+            const driftMaterial = getMaterial('lambert', { color: 0xFAFAFA });
             const drift = new THREE.Mesh(driftGeometry, driftMaterial);
             drift.scale.set(driftScale * 1.5, driftScale * 0.4, driftScale);
             drift.position.y = driftScale * 0.2;
@@ -3935,7 +3935,7 @@ function initSetup() {
             
             // Additional smaller mounds for natural look
             for (let m = 0; m < 2; m++) {
-                const moundGeometry = new THREE.SphereGeometry(0.6, 8, 6);
+                const moundGeometry = getGeometry('sphere', 0.6, 8, 6);
                 const mound = new THREE.Mesh(moundGeometry, driftMaterial);
                 const offset = (Math.random() - 0.5) * driftScale;
                 mound.scale.set(driftScale * 0.8, driftScale * 0.3, driftScale * 0.6);
@@ -3971,14 +3971,14 @@ function initSetup() {
             const boxSize = 1.5 + Math.random() * 0.5;
             
             const boxGeometry = new THREE.BoxGeometry(boxSize, boxSize, boxSize);
-            const boxMaterial = new THREE.MeshLambertMaterial({ color: wrapColor });
+            const boxMaterial = getMaterial('lambert', { color: wrapColor });
             const box = new THREE.Mesh(boxGeometry, boxMaterial);
             box.position.y = boxSize / 2;
             box.castShadow = true;
             presentGroup.add(box);
             
             // Golden ribbon
-            const ribbonMaterial = new THREE.MeshLambertMaterial({ 
+            const ribbonMaterial = getMaterial('lambert', { 
                 color: 0xFFD700,
                 emissive: 0xFFAA00,
                 emissiveIntensity: 0.3
@@ -3998,7 +3998,7 @@ function initSetup() {
             presentGroup.add(ribbonV);
             
             // Bow on top
-            const bowGeometry = new THREE.SphereGeometry(0.12, 8, 8);
+            const bowGeometry = getGeometry('sphere', 0.12, 8, 8);
             const bow = new THREE.Mesh(bowGeometry, ribbonMaterial);
             bow.position.y = boxSize + 0.1;
             bow.scale.set(1.5, 0.7, 1.5);
@@ -4006,7 +4006,7 @@ function initSetup() {
             
             // Sparkle glow effect
             const glowGeometry = new THREE.SphereGeometry(boxSize * 0.8, 8, 8);
-            const glowMaterial = new THREE.MeshBasicMaterial({ 
+            const glowMaterial = getMaterial('basic', { 
                 color: 0xFFFFAA, 
                 transparent: true, 
                 opacity: 0.2 
@@ -4048,14 +4048,14 @@ function initSetup() {
             const boxSize = 1.5 + Math.random() * 0.5;
             
             const boxGeometry = new THREE.BoxGeometry(boxSize, boxSize, boxSize);
-            const boxMaterial = new THREE.MeshLambertMaterial({ color: wrapColor });
+            const boxMaterial = getMaterial('lambert', { color: wrapColor });
             const box = new THREE.Mesh(boxGeometry, boxMaterial);
             box.position.y = boxSize / 2;
             box.castShadow = true;
             decoyGroup.add(box);
             
             // Golden ribbon (same as good presents)
-            const ribbonMaterial = new THREE.MeshLambertMaterial({ 
+            const ribbonMaterial = getMaterial('lambert', { 
                 color: 0xFFD700,
                 emissive: 0xFFAA00,
                 emissiveIntensity: 0.3
@@ -4075,7 +4075,7 @@ function initSetup() {
             decoyGroup.add(ribbonV);
             
             // Bow on top (same as good presents)
-            const bowGeometry = new THREE.SphereGeometry(0.12, 8, 8);
+            const bowGeometry = getGeometry('sphere', 0.12, 8, 8);
             const bow = new THREE.Mesh(bowGeometry, ribbonMaterial);
             bow.position.y = boxSize + 0.1;
             bow.scale.set(1.5, 0.7, 1.5);
@@ -4083,7 +4083,7 @@ function initSetup() {
             
             // Sparkle glow effect (same as good presents)
             const glowGeometry = new THREE.SphereGeometry(boxSize * 0.8, 8, 8);
-            const glowMaterial = new THREE.MeshBasicMaterial({ 
+            const glowMaterial = getMaterial('basic', { 
                 color: 0xFFFFAA, 
                 transparent: true, 
                 opacity: 0.2 
@@ -4128,8 +4128,8 @@ function initSetup() {
             const gemData = gemColors[gemType] || gemColors['amethyst'];
             
             // Main gem - large octahedron
-            const gemGeometry = new THREE.OctahedronGeometry(0.8, 0);
-            const gemMaterial = new THREE.MeshLambertMaterial({
+            const gemGeometry = getGeometry('octahedron', 0.8, 0);
+            const gemMaterial = getMaterial('lambert', {
                 color: gemData.color,
                 emissive: gemData.color,
                 emissiveIntensity: 0.5,
@@ -4142,8 +4142,8 @@ function initSetup() {
             gemGroup.add(gem);
             
             // Inner glow core
-            const coreGeometry = new THREE.OctahedronGeometry(0.4, 0);
-            const coreMaterial = new THREE.MeshBasicMaterial({
+            const coreGeometry = getGeometry('octahedron', 0.4, 0);
+            const coreMaterial = getMaterial('basic', {
                 color: 0xffffff,
                 transparent: true,
                 opacity: 0.4
@@ -4153,8 +4153,8 @@ function initSetup() {
             gemGroup.add(core);
             
             // Outer glow aura
-            const auraGeometry = new THREE.SphereGeometry(1.2, 16, 16);
-            const auraMaterial = new THREE.MeshBasicMaterial({
+            const auraGeometry = getGeometry('sphere', 1.2, 16, 16);
+            const auraMaterial = getMaterial('basic', {
                 color: gemData.color,
                 transparent: true,
                 opacity: 0.15,
@@ -4165,8 +4165,8 @@ function initSetup() {
             gemGroup.add(aura);
             
             // Pedestal crystal base
-            const baseGeometry = new THREE.ConeGeometry(0.3, 0.5, 6);
-            const baseMaterial = new THREE.MeshLambertMaterial({
+            const baseGeometry = getGeometry('cone', 0.3, 0.5, 6);
+            const baseMaterial = getMaterial('lambert', {
                 color: 0x4a4a6a,
                 emissive: gemData.color,
                 emissiveIntensity: 0.2
@@ -4210,7 +4210,7 @@ function initSetup() {
             
             // Main crystal pillar
             const pillarGeometry = new THREE.ConeGeometry(0.5 + Math.random() * 0.5, pillarHeight, 6);
-            const pillarMaterial = new THREE.MeshLambertMaterial({ 
+            const pillarMaterial = getMaterial('lambert', { 
                 color: pillarColor,
                 emissive: pillarColor,
                 emissiveIntensity: 0.35,
@@ -4223,8 +4223,8 @@ function initSetup() {
             pillarGroup.add(pillar);
             
             // Glow sphere at base
-            const glowGeometry = new THREE.SphereGeometry(1, 8, 8);
-            const glowMaterial = new THREE.MeshBasicMaterial({ 
+            const glowGeometry = getGeometry('sphere', 1, 8, 8);
+            const glowMaterial = getMaterial('basic', { 
                 color: pillarColor,
                 transparent: true,
                 opacity: 0.15
@@ -4249,15 +4249,15 @@ function initSetup() {
             const mushColor = mushColors[Math.floor(Math.random() * mushColors.length)];
             
             // Stem
-            const stemGeometry = new THREE.CylinderGeometry(0.05, 0.08, 0.3, 8);
-            const stemMaterial = new THREE.MeshLambertMaterial({ color: 0x6a5a8a });
+            const stemGeometry = getGeometry('cylinder', 0.05, 0.08, 0.3, 8);
+            const stemMaterial = getMaterial('lambert', { color: 0x6a5a8a });
             const stem = new THREE.Mesh(stemGeometry, stemMaterial);
             stem.position.y = 0.15;
             mushroomGroup.add(stem);
             
             // Cap (glowing)
             const capGeometry = new THREE.SphereGeometry(0.15, 8, 8, 0, Math.PI * 2, 0, Math.PI * 0.6);
-            const capMaterial = new THREE.MeshLambertMaterial({ 
+            const capMaterial = getMaterial('lambert', { 
                 color: mushColor,
                 emissive: mushColor,
                 emissiveIntensity: 0.6
@@ -4284,7 +4284,7 @@ function initSetup() {
                 const gemColor = crystalColors[Math.floor(Math.random() * crystalColors.length)];
                 const gemSize = 0.15 + Math.random() * 0.2;
                 const gemGeometry = new THREE.OctahedronGeometry(gemSize, 0);
-                const gemMaterial = new THREE.MeshLambertMaterial({ 
+                const gemMaterial = getMaterial('lambert', { 
                     color: gemColor,
                     emissive: gemColor,
                     emissiveIntensity: 0.6,
@@ -4318,7 +4318,7 @@ function initSetup() {
             const height = 0.5 + Math.random() * 1.5;
             
             const formGeometry = new THREE.ConeGeometry(0.1 + Math.random() * 0.1, height, 6);
-            const formMaterial = new THREE.MeshLambertMaterial({ color: formColor });
+            const formMaterial = getMaterial('lambert', { color: formColor });
             const formation = new THREE.Mesh(formGeometry, formMaterial);
             
             if (isStalactite) {
@@ -4363,7 +4363,7 @@ function initSetup() {
             
             // Main tower body - cylinder
             const towerGeometry = new THREE.CylinderGeometry(towerRadius, towerRadius * 1.1, towerHeight, 12);
-            const towerMaterial = new THREE.MeshLambertMaterial({ color: stoneColors[0] });
+            const towerMaterial = getMaterial('lambert', { color: stoneColors[0] });
             const tower = new THREE.Mesh(towerGeometry, towerMaterial);
             tower.position.y = towerHeight / 2;
             tower.castShadow = true;
@@ -4374,7 +4374,7 @@ function initSetup() {
             for (let b = 0; b < 8; b++) {
                 const angle = (b / 8) * Math.PI * 2;
                 const battlementGeometry = new THREE.BoxGeometry(1.2, crownHeight, 0.6);
-                const battlementMaterial = new THREE.MeshLambertMaterial({ color: 0x5A5A5A });
+                const battlementMaterial = getMaterial('lambert', { color: 0x5A5A5A });
                 const battlement = new THREE.Mesh(battlementGeometry, battlementMaterial);
                 battlement.position.set(
                     Math.cos(angle) * (towerRadius + 0.1),
@@ -4388,22 +4388,22 @@ function initSetup() {
             
             // Conical roof
             const roofGeometry = new THREE.ConeGeometry(towerRadius + 0.5, 4, 12);
-            const roofMaterial = new THREE.MeshLambertMaterial({ color: 0x8B4513 });
+            const roofMaterial = getMaterial('lambert', { color: 0x8B4513 });
             const roof = new THREE.Mesh(roofGeometry, roofMaterial);
             roof.position.y = towerHeight + crownHeight + 2;
             roof.castShadow = true;
             towerGroup.add(roof);
             
             // Small window (dark opening)
-            const windowGeometry = new THREE.PlaneGeometry(1, 1.8);
-            const windowMaterial = new THREE.MeshBasicMaterial({ color: 0x1a1a2a, side: THREE.DoubleSide });
+            const windowGeometry = getGeometry('plane', 1, 1.8);
+            const windowMaterial = getMaterial('basic', { color: 0x1a1a2a, side: THREE.DoubleSide });
             const windowMesh = new THREE.Mesh(windowGeometry, windowMaterial);
             windowMesh.position.set(0, towerHeight * 0.7, towerRadius + 0.05);
             towerGroup.add(windowMesh);
             
             // Window frame
-            const frameGeometry = new THREE.BoxGeometry(1.4, 0.15, 0.3);
-            const frameMaterial = new THREE.MeshLambertMaterial({ color: 0x4A4A4A });
+            const frameGeometry = getGeometry('box', 1.4, 0.15, 0.3);
+            const frameMaterial = getMaterial('lambert', { color: 0x4A4A4A });
             const frameTop = new THREE.Mesh(frameGeometry, frameMaterial);
             frameTop.position.set(0, towerHeight * 0.7 + 0.95, towerRadius + 0.1);
             towerGroup.add(frameTop);
@@ -4415,8 +4415,8 @@ function initSetup() {
                 const ivyHeight = 2 + Math.random() * (towerHeight - 4);
                 
                 for (let j = 0; j < 8; j++) {
-                    const leafGeometry = new THREE.SphereGeometry(0.25, 6, 6);
-                    const leafMaterial = new THREE.MeshLambertMaterial({ color: 0x2D5A2D });
+                    const leafGeometry = getGeometry('sphere', 0.25, 6, 6);
+                    const leafMaterial = getMaterial('lambert', { color: 0x2D5A2D });
                     const leaf = new THREE.Mesh(leafGeometry, leafMaterial);
                     leaf.position.set(
                         Math.cos(ivyAngle) * (towerRadius + 0.1 + Math.random() * 0.2),
@@ -4431,7 +4431,7 @@ function initSetup() {
             // Golden glow if contains Rapunzel (hint)
             if (towerConfig.containsRapunzel) {
                 const glowGeometry = new THREE.SphereGeometry(towerRadius + 2, 16, 16);
-                const glowMaterial = new THREE.MeshBasicMaterial({ 
+                const glowMaterial = getMaterial('basic', { 
                     color: 0xFFD700, 
                     transparent: true, 
                     opacity: 0.1 
@@ -4447,14 +4447,14 @@ function initSetup() {
             
             // Question mark body
             const qCurveGeometry = new THREE.TorusGeometry(0.6, 0.15, 8, 12, Math.PI * 1.5);
-            const qMaterial = new THREE.MeshBasicMaterial({ color: questionColor });
+            const qMaterial = getMaterial('basic', { color: questionColor });
             const qCurve = new THREE.Mesh(qCurveGeometry, qMaterial);
             qCurve.rotation.z = Math.PI * 0.25;
             qCurve.position.y = 0.6;
             questionGroup.add(qCurve);
             
             // Question mark dot
-            const qDotGeometry = new THREE.SphereGeometry(0.2, 8, 8);
+            const qDotGeometry = getGeometry('sphere', 0.2, 8, 8);
             const qDot = new THREE.Mesh(qDotGeometry, qMaterial);
             qDot.position.y = -0.3;
             questionGroup.add(qDot);
@@ -4493,15 +4493,15 @@ function initSetup() {
                 const flowerColor = flowerColors[Math.floor(Math.random() * flowerColors.length)];
                 
                 // Stem
-                const stemGeometry = new THREE.CylinderGeometry(0.03, 0.04, 0.4, 6);
-                const stemMaterial = new THREE.MeshLambertMaterial({ color: 0x228B22 });
+                const stemGeometry = getGeometry('cylinder', 0.03, 0.04, 0.4, 6);
+                const stemMaterial = getMaterial('lambert', { color: 0x228B22 });
                 const stem = new THREE.Mesh(stemGeometry, stemMaterial);
                 stem.position.set((Math.random() - 0.5) * 0.8, 0.2, (Math.random() - 0.5) * 0.8);
                 flowerPatchGroup.add(stem);
                 
                 // Flower head
-                const flowerGeometry = new THREE.SphereGeometry(0.12, 6, 6);
-                const flowerMaterial = new THREE.MeshLambertMaterial({ color: flowerColor });
+                const flowerGeometry = getGeometry('sphere', 0.12, 6, 6);
+                const flowerMaterial = getMaterial('lambert', { color: flowerColor });
                 const flower = new THREE.Mesh(flowerGeometry, flowerMaterial);
                 flower.position.set(stem.position.x, 0.45, stem.position.z);
                 flowerPatchGroup.add(flower);
@@ -4523,16 +4523,16 @@ function initSetup() {
             const bflyColor = butterflyColors[Math.floor(Math.random() * butterflyColors.length)];
             
             // Body
-            const bodyGeometry = new THREE.CylinderGeometry(0.03, 0.04, 0.3, 6);
-            const bodyMaterial = new THREE.MeshLambertMaterial({ color: 0x333333 });
+            const bodyGeometry = getGeometry('cylinder', 0.03, 0.04, 0.3, 6);
+            const bodyMaterial = getMaterial('lambert', { color: 0x333333 });
             const body = new THREE.Mesh(bodyGeometry, bodyMaterial);
             body.rotation.x = Math.PI / 2;
             butterflyGroup.add(body);
             
             // Wings
             for (let side = -1; side <= 1; side += 2) {
-                const wingGeometry = new THREE.CircleGeometry(0.2, 8);
-                const wingMaterial = new THREE.MeshLambertMaterial({ 
+                const wingGeometry = getGeometry('circle', 0.2, 8);
+                const wingMaterial = getMaterial('lambert', { 
                     color: bflyColor, 
                     side: THREE.DoubleSide,
                     transparent: true,
@@ -4560,7 +4560,7 @@ function initSetup() {
             
             // Flat stepping stone
             const stoneGeometry = new THREE.CylinderGeometry(0.6 + Math.random() * 0.3, 0.7 + Math.random() * 0.3, 0.15, 8);
-            const stoneMaterial = new THREE.MeshLambertMaterial({ color: 0x8B8B7A });
+            const stoneMaterial = getMaterial('lambert', { color: 0x8B8B7A });
             const stone = new THREE.Mesh(stoneGeometry, stoneMaterial);
             stone.position.y = 0.08;
             stone.castShadow = true;
@@ -4584,14 +4584,14 @@ function initSetup() {
             
             // Tree trunk
             const trunkGeometry = new THREE.CylinderGeometry(0.15 * treeScale, 0.25 * treeScale, 1.5 * treeScale, 8);
-            const trunkMaterial = new THREE.MeshLambertMaterial({ color: 0x5D4037 }); // Brown bark
+            const trunkMaterial = getMaterial('lambert', { color: 0x5D4037 }); // Brown bark
             const trunk = new THREE.Mesh(trunkGeometry, trunkMaterial);
             trunk.position.y = 0.75 * treeScale;
             trunk.castShadow = true;
             pineGroup.add(trunk);
             
             // Pine tree layers (3-4 cone layers)
-            const pineMaterial = new THREE.MeshLambertMaterial({ color: 0x1E5631 }); // Deep forest green
+            const pineMaterial = getMaterial('lambert', { color: 0x1E5631 }); // Deep forest green
             const layers = 3 + Math.floor(Math.random() * 2);
             for (let layer = 0; layer < layers; layer++) {
                 const layerRadius = (1.0 - layer * 0.2) * treeScale;
@@ -4638,14 +4638,14 @@ function initSetup() {
                 
                 // Trunk
                 const trunkGeometry = new THREE.CylinderGeometry(0.12 * treeScale, 0.2 * treeScale, 1.2 * treeScale, 6);
-                const trunkMaterial = new THREE.MeshLambertMaterial({ color: 0x4E342E });
+                const trunkMaterial = getMaterial('lambert', { color: 0x4E342E });
                 const trunk = new THREE.Mesh(trunkGeometry, trunkMaterial);
                 trunk.position.y = 0.6 * treeScale;
                 trunk.castShadow = true;
                 pineGroup.add(trunk);
                 
                 // Pine layers
-                const pineMaterial = new THREE.MeshLambertMaterial({ color: 0x2E7D32 });
+                const pineMaterial = getMaterial('lambert', { color: 0x2E7D32 });
                 for (let layer = 0; layer < 3; layer++) {
                     const layerRadius = (0.8 - layer * 0.18) * treeScale;
                     const layerGeometry = new THREE.ConeGeometry(layerRadius, 1.0 * treeScale, 7);
@@ -4685,7 +4685,7 @@ function initSetup() {
             
             // Geode shell base - dark rock
             const shellGeometry = new THREE.SphereGeometry(0.5, 8, 8, 0, Math.PI * 2, 0, Math.PI * 0.7);
-            const shellMaterial = new THREE.MeshLambertMaterial({ color: 0x2a2a4a });
+            const shellMaterial = getMaterial('lambert', { color: 0x2a2a4a });
             const shell = new THREE.Mesh(shellGeometry, shellMaterial);
             shell.castShadow = true;
             crystalGroup.add(shell);
@@ -4695,7 +4695,7 @@ function initSetup() {
                 const gemColor = crystalColors[Math.floor(Math.random() * crystalColors.length)];
                 const gemHeight = 0.2 + Math.random() * 0.4;
                 const gemGeometry = new THREE.ConeGeometry(0.08, gemHeight, 5);
-                const gemMaterial = new THREE.MeshLambertMaterial({ 
+                const gemMaterial = getMaterial('lambert', { 
                     color: gemColor,
                     emissive: gemColor,
                     emissiveIntensity: 0.5
@@ -4713,8 +4713,8 @@ function initSetup() {
             }
             
             // Center large gem
-            const centerGemGeometry = new THREE.OctahedronGeometry(0.2, 0);
-            const centerGemMaterial = new THREE.MeshLambertMaterial({ 
+            const centerGemGeometry = getGeometry('octahedron', 0.2, 0);
+            const centerGemMaterial = getMaterial('lambert', { 
                 color: mainColor,
                 emissive: mainColor,
                 emissiveIntensity: 0.6,
@@ -4737,8 +4737,8 @@ function initSetup() {
             const mainColor = crystalColors[Math.floor(Math.random() * crystalColors.length)];
             
             // Main crystal - elongated octahedron
-            const crystalGeometry = new THREE.OctahedronGeometry(0.5, 0);
-            const crystalMaterial = new THREE.MeshBasicMaterial({ 
+            const crystalGeometry = getGeometry('octahedron', 0.5, 0);
+            const crystalMaterial = getMaterial('basic', { 
                 color: mainColor,
                 transparent: true,
                 opacity: 0.85
@@ -4749,8 +4749,8 @@ function initSetup() {
             crystalGroup.add(crystal);
             
             // Wireframe shell
-            const wireGeometry = new THREE.OctahedronGeometry(0.55, 0);
-            const wireMaterial = new THREE.MeshBasicMaterial({ 
+            const wireGeometry = getGeometry('octahedron', 0.55, 0);
+            const wireMaterial = getMaterial('basic', { 
                 color: 0xFFFFFF,
                 wireframe: true,
                 transparent: true,
@@ -4763,8 +4763,8 @@ function initSetup() {
             
             // Smaller orbiting data fragments
             for (let i = 0; i < 3; i++) {
-                const fragGeometry = new THREE.OctahedronGeometry(0.15, 0);
-                const fragMaterial = new THREE.MeshBasicMaterial({ 
+                const fragGeometry = getGeometry('octahedron', 0.15, 0);
+                const fragMaterial = getMaterial('basic', { 
                     color: crystalColors[(Math.floor(Math.random() * crystalColors.length))],
                     transparent: true,
                     opacity: 0.7
@@ -4780,7 +4780,7 @@ function initSetup() {
             G.scene.add(crystalGroup);
             rockMesh = crystalGroup;
         } else {
-            const rockGeometry = new THREE.DodecahedronGeometry(0.6, 0);
+            const rockGeometry = getGeometry('dodecahedron', 0.6, 0);
             // Theme-appropriate rock colors
             let rockColor;
             if (G.christmasTheme) {
@@ -4795,7 +4795,7 @@ function initSetup() {
             } else {
                 rockColor = 0x808080; // Gray
             }
-            const rockMaterial = new THREE.MeshPhongMaterial({ 
+            const rockMaterial = getMaterial('phong', { 
                 color: rockColor,
                 shininess: G.candyTheme ? 80 : 10
             });
@@ -4818,9 +4818,9 @@ function initSetup() {
         const boulderGroup = new THREE.Group();
         
         // Main boulder - large irregular rock
-        const mainBoulderGeometry = new THREE.DodecahedronGeometry(2.5, 1);
+        const mainBoulderGeometry = getGeometry('dodecahedron', 2.5, 1);
         const boulderColor = 0xb08050; // Sandy brown
-        const boulderMaterial = new THREE.MeshLambertMaterial({ color: boulderColor });
+        const boulderMaterial = getMaterial('lambert', { color: boulderColor });
         const mainBoulder = new THREE.Mesh(mainBoulderGeometry, boulderMaterial);
         mainBoulder.scale.set(1, 0.7, 1.2); // Flatten and stretch
         mainBoulder.rotation.y = Math.random() * Math.PI;
@@ -4917,7 +4917,7 @@ function initSetup() {
         // Add some fallen stones at base
         for (let i = 0; i < 8; i++) {
             const stoneGeometry = new THREE.DodecahedronGeometry(1 + Math.random() * 2, 0);
-            const stoneMaterial = new THREE.MeshLambertMaterial({ color: 0xc49a3b });
+            const stoneMaterial = getMaterial('lambert', { color: 0xc49a3b });
             const stone = new THREE.Mesh(stoneGeometry, stoneMaterial);
             const angle = (i / 8) * Math.PI * 2 + Math.random() * 0.5;
             const dist = size * 0.7 + Math.random() * 3;
@@ -4952,22 +4952,17 @@ function initSetup() {
 
     // Canyon walls - create impassable rock walls for chokepoints
     G.canyonWallPositions = G.levelConfig.canyonWalls || [];
-    G.canyonWallPositions.forEach(wall => {
-        const wallGroup = new THREE.Group();
-        
-        // Main wall - rocky cliff face
-        const wallWidth = wall.width || 40;
-        const wallDepth = wall.depth || 8;
-        const wallHeight = wall.height || 12;
-        
-        // Generate a procedural texture for canyon walls
+    
+    // Generate ONE shared procedural texture per theme (instead of per-wall)
+    // This prevents duplicate WebGL shader programs that cause massive freezes
+    let _canyonRockTexture = null;
+    if (G.canyonWallPositions.length > 0) {
         const rockCanvas = document.createElement('canvas');
         rockCanvas.width = 128;
         rockCanvas.height = 128;
         const rockCtx = rockCanvas.getContext('2d');
         
         if (G.candyTheme) {
-            // Candy theme - striped candy cane / wafer cookie wall
             const candyColors = ['#FF69B4', '#FFB6C1', '#FF1493', '#FFFFFF', '#87CEEB', '#DDA0DD'];
             const stripeHeight = 12;
             for (let y = 0; y < 128; y += stripeHeight) {
@@ -4975,8 +4970,6 @@ function initSetup() {
                 rockCtx.fillStyle = candyColors[colorIndex];
                 rockCtx.fillRect(0, y, 128, stripeHeight);
             }
-            
-            // Add wafer texture pattern
             rockCtx.strokeStyle = 'rgba(255, 200, 200, 0.5)';
             rockCtx.lineWidth = 1;
             for (let i = 0; i < 16; i++) {
@@ -4985,8 +4978,6 @@ function initSetup() {
                 rockCtx.lineTo(i * 8, 128);
                 rockCtx.stroke();
             }
-            
-            // Add sprinkles
             for (let i = 0; i < 40; i++) {
                 const sprinkleColors = ['#FF0000', '#00FF00', '#0000FF', '#FFFF00', '#FF00FF', '#00FFFF'];
                 rockCtx.fillStyle = sprinkleColors[Math.floor(Math.random() * sprinkleColors.length)];
@@ -4995,11 +4986,8 @@ function initSetup() {
                 rockCtx.fillRect(x, y, 3, 1);
             }
         } else if (G.graveyardTheme) {
-            // Graveyard theme - dark weathered brick wall texture
             rockCtx.fillStyle = '#2a2520';
             rockCtx.fillRect(0, 0, 128, 128);
-            
-            // Draw brick pattern
             const brickHeight = 8;
             const brickWidth = 20;
             for (let row = 0; row < 16; row++) {
@@ -5007,7 +4995,6 @@ function initSetup() {
                 for (let col = -1; col < 8; col++) {
                     const x = col * brickWidth + offset;
                     const y = row * brickHeight;
-                    // Randomize brick color (dark grays/browns)
                     const shade = 0.7 + Math.random() * 0.3;
                     const r = Math.floor(50 * shade);
                     const g = Math.floor(45 * shade);
@@ -5016,8 +5003,6 @@ function initSetup() {
                     rockCtx.fillRect(x + 1, y + 1, brickWidth - 2, brickHeight - 2);
                 }
             }
-            
-            // Mortar lines
             rockCtx.strokeStyle = '#1a1515';
             rockCtx.lineWidth = 1;
             for (let row = 0; row <= 16; row++) {
@@ -5026,8 +5011,6 @@ function initSetup() {
                 rockCtx.lineTo(128, row * brickHeight);
                 rockCtx.stroke();
             }
-            
-            // Add weathering and moss
             for (let i = 0; i < 20; i++) {
                 const x = Math.random() * 128;
                 const y = Math.random() * 128;
@@ -5037,11 +5020,8 @@ function initSetup() {
                 rockCtx.fill();
             }
         } else if (G.ruinsTheme) {
-            // Ruins theme - warm cream/sandstone block wall texture (lighter, friendly)
             rockCtx.fillStyle = '#C8BEA8';
             rockCtx.fillRect(0, 0, 128, 128);
-            
-            // Draw irregular stone block pattern
             const blockHeight = 16;
             const blockWidth = 24;
             for (let row = 0; row < 8; row++) {
@@ -5049,7 +5029,6 @@ function initSetup() {
                 for (let col = -1; col < 6; col++) {
                     const x = col * blockWidth + offset + (Math.random() - 0.5) * 4;
                     const y = row * blockHeight + (Math.random() - 0.5) * 2;
-                    // Randomize stone color (warm cream/sandstone)
                     const shade = 0.85 + Math.random() * 0.15;
                     const r = Math.floor(195 * shade);
                     const g = Math.floor(185 * shade);
@@ -5058,8 +5037,6 @@ function initSetup() {
                     rockCtx.fillRect(x + 2, y + 2, blockWidth - 4 + Math.random() * 4, blockHeight - 4);
                 }
             }
-            
-            // Mortar lines (irregular, aged but visible)
             rockCtx.strokeStyle = '#7A7268';
             rockCtx.lineWidth = 2;
             for (let row = 0; row <= 8; row++) {
@@ -5070,8 +5047,6 @@ function initSetup() {
                 }
                 rockCtx.stroke();
             }
-            
-            // Add subtle weathering (lighter)
             rockCtx.strokeStyle = 'rgba(100, 90, 80, 0.3)';
             rockCtx.lineWidth = 1;
             for (let i = 0; i < 8; i++) {
@@ -5080,8 +5055,6 @@ function initSetup() {
                 rockCtx.lineTo(Math.random() * 128, Math.random() * 128);
                 rockCtx.stroke();
             }
-            
-            // Add moss/ivy patches (friendly green)
             for (let i = 0; i < 12; i++) {
                 const x = Math.random() * 128;
                 const y = Math.random() * 128;
@@ -5091,11 +5064,8 @@ function initSetup() {
                 rockCtx.fill();
             }
         } else {
-            // Base sandy rock color
             rockCtx.fillStyle = '#a08060';
             rockCtx.fillRect(0, 0, 128, 128);
-            
-            // Add layered striations (like real canyon walls)
             for (let y = 0; y < 128; y += 4) {
                 const shade = 0.85 + Math.random() * 0.3;
                 const r = Math.floor(160 * shade);
@@ -5104,8 +5074,6 @@ function initSetup() {
                 rockCtx.fillStyle = `rgb(${r},${g},${b})`;
                 rockCtx.fillRect(0, y, 128, 2 + Math.random() * 3);
             }
-            
-            // Add cracks and texture
             rockCtx.strokeStyle = 'rgba(80, 60, 40, 0.4)';
             rockCtx.lineWidth = 1;
             for (let i = 0; i < 15; i++) {
@@ -5114,8 +5082,6 @@ function initSetup() {
                 rockCtx.lineTo(Math.random() * 128, Math.random() * 128);
                 rockCtx.stroke();
             }
-            
-            // Add some darker spots
             for (let i = 0; i < 30; i++) {
                 const x = Math.random() * 128;
                 const y = Math.random() * 128;
@@ -5127,10 +5093,37 @@ function initSetup() {
             }
         }
         
-        const rockTexture = new THREE.CanvasTexture(rockCanvas);
-        rockTexture.wrapS = THREE.RepeatWrapping;
-        rockTexture.wrapT = THREE.RepeatWrapping;
-        rockTexture.repeat.set(2, 2);
+        _canyonRockTexture = new THREE.CanvasTexture(rockCanvas);
+        _canyonRockTexture.wrapS = THREE.RepeatWrapping;
+        _canyonRockTexture.wrapT = THREE.RepeatWrapping;
+        _canyonRockTexture.repeat.set(2, 2);
+        
+        // Pre-create shared textured materials for canyon walls (one per color variant)
+        // This prevents creating duplicate materials per-wall that trigger shader recompilation
+    }
+    
+    // Cache textured canyon wall materials (shared texture, keyed by color)
+    const _canyonMaterialCache = {};
+    function getCanyonMaterial(color) {
+        const key = color.toString(16);
+        if (!_canyonMaterialCache[key]) {
+            _canyonMaterialCache[key] = new THREE.MeshLambertMaterial({
+                map: _canyonRockTexture,
+                color: color
+            });
+        }
+        return _canyonMaterialCache[key];
+    }
+    
+    G.canyonWallPositions.forEach(wall => {
+        const wallGroup = new THREE.Group();
+        
+        // Main wall - rocky cliff face
+        const wallWidth = wall.width || 40;
+        const wallDepth = wall.depth || 8;
+        const wallHeight = wall.height || 12;
+        
+        const rockTexture = _canyonRockTexture;
         
         // Create wall segments
         const segmentCount = Math.floor(wallWidth / 3);
@@ -5139,10 +5132,7 @@ function initSetup() {
             // Graveyard - solid brick wall with iron fence on top
             // Main brick wall body
             const mainWallGeometry = new THREE.BoxGeometry(wallWidth, wallHeight * 0.7, wallDepth);
-            const mainWallMaterial = new THREE.MeshLambertMaterial({
-                map: rockTexture,
-                color: 0x3a3530
-            });
+            const mainWallMaterial = getCanyonMaterial(0x3a3530);
             const mainWall = new THREE.Mesh(mainWallGeometry, mainWallMaterial);
             mainWall.position.y = wallHeight * 0.35;
             mainWall.castShadow = true;
@@ -5155,7 +5145,7 @@ function initSetup() {
             for (let f = 0; f < fenceCount; f++) {
                 // Vertical bar
                 const barGeometry = new THREE.CylinderGeometry(0.08, 0.08, wallHeight * 0.4, 6);
-                const barMaterial = new THREE.MeshLambertMaterial({ color: 0x1a1a1a });
+                const barMaterial = getMaterial('lambert', { color: 0x1a1a1a });
                 const bar = new THREE.Mesh(barGeometry, barMaterial);
                 bar.position.set(
                     (f - fenceCount / 2) * fenceSpacing,
@@ -5166,8 +5156,8 @@ function initSetup() {
                 wallGroup.add(bar);
                 
                 // Spear point on top
-                const pointGeometry = new THREE.ConeGeometry(0.12, 0.3, 6);
-                const pointMaterial = new THREE.MeshLambertMaterial({ color: 0x2a2a2a });
+                const pointGeometry = getGeometry('cone', 0.12, 0.3, 6);
+                const pointMaterial = getMaterial('lambert', { color: 0x2a2a2a });
                 const point = new THREE.Mesh(pointGeometry, pointMaterial);
                 point.position.set(
                     (f - fenceCount / 2) * fenceSpacing,
@@ -5179,7 +5169,7 @@ function initSetup() {
             
             // Horizontal fence rails
             const railGeometry = new THREE.BoxGeometry(wallWidth, 0.1, 0.1);
-            const railMaterial = new THREE.MeshLambertMaterial({ color: 0x1a1a1a });
+            const railMaterial = getMaterial('lambert', { color: 0x1a1a1a });
             const topRail = new THREE.Mesh(railGeometry, railMaterial);
             topRail.position.y = wallHeight * 0.7 + wallHeight * 0.35;
             wallGroup.add(topRail);
@@ -5190,10 +5180,7 @@ function initSetup() {
             // Ruins - detailed warm sandstone castle walls
             // Main stone wall body
             const mainWallGeometry = new THREE.BoxGeometry(wallWidth, wallHeight * 0.75, wallDepth);
-            const mainWallMaterial = new THREE.MeshLambertMaterial({
-                map: rockTexture,
-                color: 0xC8BEA8  // Light warm sandstone
-            });
+            const mainWallMaterial = getCanyonMaterial(0xC8BEA8);
             const mainWall = new THREE.Mesh(mainWallGeometry, mainWallMaterial);
             mainWall.position.y = wallHeight * 0.375;
             mainWall.castShadow = true;
@@ -5202,10 +5189,7 @@ function initSetup() {
             
             // Stone base/foundation (darker, weathered)
             const baseGeometry = new THREE.BoxGeometry(wallWidth + 0.4, wallHeight * 0.15, wallDepth + 0.3);
-            const baseMaterial = new THREE.MeshLambertMaterial({
-                map: rockTexture,
-                color: 0x9A9080
-            });
+            const baseMaterial = getCanyonMaterial(0x9A9080);
             const base = new THREE.Mesh(baseGeometry, baseMaterial);
             base.position.y = wallHeight * 0.075;
             base.castShadow = true;
@@ -5213,7 +5197,7 @@ function initSetup() {
             
             // Decorative horizontal band/cornice
             const bandGeometry = new THREE.BoxGeometry(wallWidth + 0.2, wallHeight * 0.08, wallDepth + 0.15);
-            const bandMaterial = new THREE.MeshLambertMaterial({
+            const bandMaterial = getMaterial('lambert', {
                 color: 0xD5CAB8
             });
             const band = new THREE.Mesh(bandGeometry, bandMaterial);
@@ -5222,15 +5206,12 @@ function initSetup() {
             
             // Add battlements/crenellations on top (heavily decayed ruins)
             const merlonCount = Math.floor(wallWidth / 3);
+            const merlonMaterial = getCanyonMaterial(0xBFB5A0);
             for (let m = 0; m < merlonCount; m++) {
                 if (Math.random() > 0.55) { // Only ~45% of merlons remain (ruined look)
                     const merlonHeight = wallHeight * (0.15 + Math.random() * 0.12);
                     const merlonWidth = 1.0 + Math.random() * 0.6;
                     const merlonGeometry = new THREE.BoxGeometry(merlonWidth, merlonHeight, wallDepth);
-                    const merlonMaterial = new THREE.MeshLambertMaterial({
-                        map: rockTexture,
-                        color: 0xBFB5A0
-                    });
                     const merlon = new THREE.Mesh(merlonGeometry, merlonMaterial);
                     merlon.position.set(
                         (m - merlonCount / 2) * 3 + (Math.random() - 0.5) * 1.2,
@@ -5253,7 +5234,7 @@ function initSetup() {
             const slitCount = Math.floor(wallWidth / 8);
             for (let s = 0; s < slitCount; s++) {
                 const slitGeometry = new THREE.BoxGeometry(0.15, wallHeight * 0.25, wallDepth + 0.1);
-                const slitMaterial = new THREE.MeshBasicMaterial({ color: 0x2A2520 });
+                const slitMaterial = getMaterial('basic', { color: 0x2A2520 });
                 const slit = new THREE.Mesh(slitGeometry, slitMaterial);
                 slit.position.set(
                     (s - slitCount / 2) * 8 + (Math.random() - 0.5) * 2,
@@ -5266,7 +5247,7 @@ function initSetup() {
             // Heavy rubble at base (ruins are crumbling)
             for (let r = 0; r < wallWidth / 4; r++) {
                 const rubbleGeometry = new THREE.DodecahedronGeometry(0.4 + Math.random() * 0.6, 0);
-                const rubbleMaterial = new THREE.MeshLambertMaterial({
+                const rubbleMaterial = getMaterial('lambert', {
                     color: 0xA09888
                 });
                 const rubble = new THREE.Mesh(rubbleGeometry, rubbleMaterial);
@@ -5283,7 +5264,7 @@ function initSetup() {
             // Additional rubble on the other side too
             for (let r = 0; r < wallWidth / 6; r++) {
                 const rubbleGeometry = new THREE.DodecahedronGeometry(0.3 + Math.random() * 0.5, 0);
-                const rubbleMaterial = new THREE.MeshLambertMaterial({
+                const rubbleMaterial = getMaterial('lambert', {
                     color: 0x9A9080
                 });
                 const rubble = new THREE.Mesh(rubbleGeometry, rubbleMaterial);
@@ -5300,7 +5281,7 @@ function initSetup() {
             // Ivy patches on wall (friendly green touch)
             if (Math.random() > 0.3) {
                 const ivyGeometry = new THREE.PlaneGeometry(wallWidth * 0.15, wallHeight * 0.25);
-                const ivyMaterial = new THREE.MeshLambertMaterial({
+                const ivyMaterial = getMaterial('lambert', {
                     color: 0x5A8F5A,
                     transparent: true,
                     opacity: 0.65,
@@ -5317,8 +5298,8 @@ function initSetup() {
             
             // Add occasional torch bracket (decorative)
             if (wallWidth > 15 && Math.random() > 0.5) {
-                const bracketGeometry = new THREE.BoxGeometry(0.15, 0.4, 0.3);
-                const bracketMaterial = new THREE.MeshLambertMaterial({ color: 0x3A3025 });
+                const bracketGeometry = getGeometry('box', 0.15, 0.4, 0.3);
+                const bracketMaterial = getMaterial('lambert', { color: 0x3A3025 });
                 const bracket = new THREE.Mesh(bracketGeometry, bracketMaterial);
                 bracket.position.set(
                     (Math.random() - 0.5) * wallWidth * 0.4,
@@ -5329,6 +5310,7 @@ function initSetup() {
             }
         } else {
             // Original rocky/candy wall segments
+            const segMaterial = getCanyonMaterial(G.candyTheme ? 0xFFB6C1 : 0xc0a080);
             for (let s = 0; s < segmentCount; s++) {
                 const segWidth = 3 + Math.random() * 2;
                 const segHeight = wallHeight * (0.6 + Math.random() * 0.5);
@@ -5339,10 +5321,6 @@ function initSetup() {
                     ? (G.candyTheme ? new THREE.SphereGeometry(segWidth * 0.8, 8, 8) : new THREE.DodecahedronGeometry(segWidth * 0.8, 0))
                     : new THREE.BoxGeometry(segWidth, segHeight, segDepth);
             
-            const segMaterial = new THREE.MeshLambertMaterial({ 
-                map: rockTexture,
-                color: G.candyTheme ? 0xFFB6C1 : 0xc0a080  // Pink for candy, sandy for regular
-            });
             const segment = new THREE.Mesh(segGeometry, segMaterial);
             
             segment.position.x = (s - segmentCount / 2) * 3 + (Math.random() - 0.5) * 2;
@@ -5367,19 +5345,19 @@ function initSetup() {
                     // Gumdrop
                     const gumdropGeometry = new THREE.SphereGeometry(1 + Math.random() * 0.8, 8, 6, 0, Math.PI * 2, 0, Math.PI / 2);
                     const gumdropColors = [0xFF69B4, 0x00FF00, 0xFF4500, 0xFFD700, 0x9400D3, 0x00CED1];
-                    const gumdropMaterial = new THREE.MeshLambertMaterial({ 
+                    const gumdropMaterial = getMaterial('lambert', { 
                         color: gumdropColors[Math.floor(Math.random() * gumdropColors.length)]
                     });
                     topDecor = new THREE.Mesh(gumdropGeometry, gumdropMaterial);
                 } else if (decorType === 1) {
                     // Mini lollipop
                     const lollipopGroup = new THREE.Group();
-                    const candyGeometry = new THREE.SphereGeometry(0.8, 8, 8);
-                    const candyMaterial = new THREE.MeshLambertMaterial({ color: Math.random() > 0.5 ? 0xFF69B4 : 0x00FF00 });
+                    const candyGeometry = getGeometry('sphere', 0.8, 8, 8);
+                    const candyMaterial = getMaterial('lambert', { color: Math.random() > 0.5 ? 0xFF69B4 : 0x00FF00 });
                     const candy = new THREE.Mesh(candyGeometry, candyMaterial);
                     candy.position.y = 1.5;
-                    const stickGeometry = new THREE.CylinderGeometry(0.1, 0.1, 1.5, 8);
-                    const stickMaterial = new THREE.MeshLambertMaterial({ color: 0xFFFFFF });
+                    const stickGeometry = getGeometry('cylinder', 0.1, 0.1, 1.5, 8);
+                    const stickMaterial = getMaterial('lambert', { color: 0xFFFFFF });
                     const stick = new THREE.Mesh(stickGeometry, stickMaterial);
                     stick.position.y = 0.75;
                     lollipopGroup.add(stick);
@@ -5388,7 +5366,7 @@ function initSetup() {
                 } else {
                     // Frosting swirl
                     const frostingGeometry = new THREE.ConeGeometry(0.8 + Math.random() * 0.5, 1.5 + Math.random() * 1, 8);
-                    const frostingMaterial = new THREE.MeshLambertMaterial({ color: 0xFFFFFF });
+                    const frostingMaterial = getMaterial('lambert', { color: 0xFFFFFF });
                     topDecor = new THREE.Mesh(frostingGeometry, frostingMaterial);
                 }
                 
@@ -5410,7 +5388,7 @@ function initSetup() {
             for (let r = 0; r < wallWidth / 4; r++) {
                 const candyGeometry = new THREE.SphereGeometry(0.5 + Math.random() * 0.6, 6, 6);
                 const candyColors = [0xFF69B4, 0x00FF00, 0xFF4500, 0xFFD700, 0x9400D3, 0x00CED1, 0xFF0000];
-                const candyMaterial = new THREE.MeshLambertMaterial({ 
+                const candyMaterial = getMaterial('lambert', { 
                     color: candyColors[Math.floor(Math.random() * candyColors.length)]
                 });
                 const candyPiece = new THREE.Mesh(candyGeometry, candyMaterial);
@@ -5425,12 +5403,9 @@ function initSetup() {
             }
         } else if (!G.graveyardTheme && !G.ruinsTheme) {
             // Add jagged rocks on top for rugged silhouette (not for graveyard/ruins - they have their own tops)
+            const topRockMaterial = getCanyonMaterial(0xb09070);
             for (let t = 0; t < wallWidth / 5; t++) {
                 const topRockGeometry = new THREE.ConeGeometry(1 + Math.random() * 1.5, 2 + Math.random() * 3, 5);
-                const topRockMaterial = new THREE.MeshLambertMaterial({ 
-                    map: rockTexture,
-                    color: 0xb09070
-                });
                 const topRock = new THREE.Mesh(topRockGeometry, topRockMaterial);
                 topRock.position.set(
                     (t - wallWidth / 10) * 5 + (Math.random() - 0.5) * 3,
@@ -5447,13 +5422,10 @@ function initSetup() {
             }
             
             // Add fallen rocks at the base
+            const fallenRockMaterial = getCanyonMaterial(0xa08060);
             for (let r = 0; r < wallWidth / 4; r++) {
                 const rockGeometry = new THREE.DodecahedronGeometry(0.8 + Math.random() * 1.2, 0);
-                const rockMaterial = new THREE.MeshLambertMaterial({ 
-                    map: rockTexture,
-                    color: 0xa08060
-                });
-                const rock = new THREE.Mesh(rockGeometry, rockMaterial);
+                const rock = new THREE.Mesh(rockGeometry, fallenRockMaterial);
                 rock.position.set(
                     (r - wallWidth / 8) * 4 + (Math.random() - 0.5) * 3,
                     0.4 + Math.random() * 0.4,
@@ -5499,8 +5471,8 @@ function initSetup() {
             const stripeColors = [0xFF69B4, 0x98FB98, 0x87CEEB]; // Pink, Green, Blue stripes
             
             // Main egg shape - much bigger
-            const eggGeometry = new THREE.SphereGeometry(1.5, 16, 16);
-            const eggMaterial = new THREE.MeshPhongMaterial({
+            const eggGeometry = getGeometry('sphere', 1.5, 16, 16);
+            const eggMaterial = getMaterial('phong', {
                 color: eggColor,
                 emissive: eggColor,
                 emissiveIntensity: 0.2,
@@ -5514,8 +5486,8 @@ function initSetup() {
             
             // Decorative stripes
             stripeColors.forEach((color, i) => {
-                const stripeGeometry = new THREE.TorusGeometry(1.0, 0.1, 8, 16);
-                const stripeMaterial = new THREE.MeshPhongMaterial({
+                const stripeGeometry = getGeometry('torus', 1.0, 0.1, 8, 16);
+                const stripeMaterial = getMaterial('phong', {
                     color: color,
                     emissive: color,
                     emissiveIntensity: 0.3,
@@ -5530,8 +5502,8 @@ function initSetup() {
             
             // Golden sparkle dots
             for (let i = 0; i < 6; i++) {
-                const dotGeometry = new THREE.SphereGeometry(0.12, 6, 6);
-                const dotMaterial = new THREE.MeshBasicMaterial({ color: 0xFFD700 });
+                const dotGeometry = getGeometry('sphere', 0.12, 6, 6);
+                const dotMaterial = getMaterial('basic', { color: 0xFFD700 });
                 const dot = new THREE.Mesh(dotGeometry, dotMaterial);
                 const angle = (i / 6) * Math.PI * 2;
                 dot.position.set(
@@ -5543,8 +5515,8 @@ function initSetup() {
             }
             
             // Glowing aura (Easter colored) - larger
-            const auraGeometry = new THREE.RingGeometry(2.0, 2.8, 16);
-            const auraMaterial = new THREE.MeshBasicMaterial({
+            const auraGeometry = getGeometry('ring', 2.0, 2.8, 16);
+            const auraMaterial = getMaterial('basic', {
                 color: eggColor,
                 transparent: true,
                 opacity: 0.4,
@@ -5557,8 +5529,8 @@ function initSetup() {
             collectibleGroup.aura = aura;
         } else {
             // SCARAB rendering (original)
-            const bodyGeometry = new THREE.SphereGeometry(0.5, 8, 6);
-            const bodyMaterial = new THREE.MeshPhongMaterial({
+            const bodyGeometry = getGeometry('sphere', 0.5, 8, 6);
+            const bodyMaterial = getMaterial('phong', {
                 color: 0x00cc88,
                 emissive: 0x004422,
                 shininess: 100,
@@ -5570,14 +5542,14 @@ function initSetup() {
             collectibleGroup.add(body);
             
             // Head
-            const headGeometry = new THREE.SphereGeometry(0.25, 6, 6);
+            const headGeometry = getGeometry('sphere', 0.25, 6, 6);
             const head = new THREE.Mesh(headGeometry, bodyMaterial);
             head.position.set(0, 0.3, 0.6);
             collectibleGroup.add(head);
             
             // Wings (shell)
-            const wingGeometry = new THREE.SphereGeometry(0.45, 8, 6);
-            const wingMaterial = new THREE.MeshPhongMaterial({
+            const wingGeometry = getGeometry('sphere', 0.45, 8, 6);
+            const wingMaterial = getMaterial('phong', {
                 color: 0x00ffaa,
                 emissive: 0x005533,
                 shininess: 150,
@@ -5591,8 +5563,8 @@ function initSetup() {
             collectibleGroup.add(wings);
             
             // Glowing aura
-            const auraGeometry = new THREE.RingGeometry(0.8, 1.2, 16);
-            const auraMaterial = new THREE.MeshBasicMaterial({
+            const auraGeometry = getGeometry('ring', 0.8, 1.2, 16);
+            const auraMaterial = getMaterial('basic', {
                 color: 0x00ffcc,
                 transparent: true,
                 opacity: 0.5,
@@ -5635,7 +5607,7 @@ function initSetup() {
         for (let j = 0; j < bladeCount; j++) {
             const bladeHeight = G.desertTheme ? 0.2 + Math.random() * 0.15 : 0.4 + Math.random() * 0.3;
             const bladeGeometry = new THREE.ConeGeometry(0.05, bladeHeight, 3);
-            const bladeMaterial = new THREE.MeshLambertMaterial({ 
+            const bladeMaterial = getMaterial('lambert', { 
                 color: G.desertTheme ? 0x8B7355 : G.grassColor // Brown-ish dead grass in desert
             });
             const blade = new THREE.Mesh(bladeGeometry, bladeMaterial);
@@ -5667,7 +5639,7 @@ function initSetup() {
             const bladeCount = 5 + Math.floor(Math.random() * 4);
             for (let j = 0; j < bladeCount; j++) {
                 const bladeGeometry = new THREE.ConeGeometry(0.05, 0.4 + Math.random() * 0.3, 3);
-                const bladeMaterial = new THREE.MeshLambertMaterial({ 
+                const bladeMaterial = getMaterial('lambert', { 
                     color: G.grassColor
                 });
                 const blade = new THREE.Mesh(bladeGeometry, bladeMaterial);
@@ -5696,15 +5668,15 @@ function initSetup() {
     G.ammoPositions.forEach(pos => {
         const ammoGroup = new THREE.Group();
         
-        const boxGeometry = new THREE.BoxGeometry(0.6, 0.4, 0.4);
-        const boxMaterial = new THREE.MeshLambertMaterial({ color: 0x8B4513 });
+        const boxGeometry = getGeometry('box', 0.6, 0.4, 0.4);
+        const boxMaterial = getMaterial('lambert', { color: 0x8B4513 });
         const ammoBox = new THREE.Mesh(boxGeometry, boxMaterial);
         ammoBox.position.y = 0.3;
         ammoBox.castShadow = true;
         ammoGroup.add(ammoBox);
         
-        const markGeometry = new THREE.BoxGeometry(0.61, 0.15, 0.41);
-        const markMaterial = new THREE.MeshLambertMaterial({ 
+        const markGeometry = getGeometry('box', 0.61, 0.15, 0.41);
+        const markMaterial = getMaterial('lambert', { 
             color: 0xFFFF00,
             emissive: 0xFFAA00
         });
@@ -5712,8 +5684,8 @@ function initSetup() {
         mark.position.y = 0.3;
         ammoGroup.add(mark);
         
-        const glowGeometry = new THREE.SphereGeometry(0.4, 8, 8);
-        const glowMaterial = new THREE.MeshBasicMaterial({ 
+        const glowGeometry = getGeometry('sphere', 0.4, 8, 8);
+        const glowMaterial = getMaterial('basic', { 
             color: 0xFFFF00, 
             transparent: true, 
             opacity: 0.25 
@@ -5736,23 +5708,23 @@ function initSetup() {
         const bombGroup = new THREE.Group();
         
         // Main sphere (black bomb)
-        const sphereGeometry = new THREE.SphereGeometry(0.4, 16, 16);
-        const sphereMaterial = new THREE.MeshLambertMaterial({ color: 0x1a1a1a });
+        const sphereGeometry = getGeometry('sphere', 0.4, 16, 16);
+        const sphereMaterial = getMaterial('lambert', { color: 0x1a1a1a });
         const sphere = new THREE.Mesh(sphereGeometry, sphereMaterial);
         sphere.position.y = 0.5;
         sphere.castShadow = true;
         bombGroup.add(sphere);
         
         // Fuse (small cylinder on top)
-        const fuseGeometry = new THREE.CylinderGeometry(0.05, 0.05, 0.3, 8);
-        const fuseMaterial = new THREE.MeshLambertMaterial({ color: 0x8B4513 });
+        const fuseGeometry = getGeometry('cylinder', 0.05, 0.05, 0.3, 8);
+        const fuseMaterial = getMaterial('lambert', { color: 0x8B4513 });
         const fuse = new THREE.Mesh(fuseGeometry, fuseMaterial);
         fuse.position.y = 0.85;
         bombGroup.add(fuse);
         
         // Spark at top of fuse
-        const sparkGeometry = new THREE.SphereGeometry(0.1, 8, 8);
-        const sparkMaterial = new THREE.MeshBasicMaterial({ 
+        const sparkGeometry = getGeometry('sphere', 0.1, 8, 8);
+        const sparkMaterial = getMaterial('basic', { 
             color: 0xFF4500
         });
         const spark = new THREE.Mesh(sparkGeometry, sparkMaterial);
@@ -5760,8 +5732,8 @@ function initSetup() {
         bombGroup.add(spark);
         
         // Glow effect
-        const glowGeometry = new THREE.SphereGeometry(0.5, 8, 8);
-        const glowMaterial = new THREE.MeshBasicMaterial({ 
+        const glowGeometry = getGeometry('sphere', 0.5, 8, 8);
+        const glowMaterial = getMaterial('basic', { 
             color: 0xFF4500, 
             transparent: true, 
             opacity: 0.3 
@@ -5784,8 +5756,8 @@ function initSetup() {
         const heartGroup = new THREE.Group();
         
         // Create heart shape using two spheres and a rotated box
-        const sphereGeometry = new THREE.SphereGeometry(0.3, 16, 16);
-        const heartMaterial = new THREE.MeshLambertMaterial({ 
+        const sphereGeometry = getGeometry('sphere', 0.3, 16, 16);
+        const heartMaterial = getMaterial('lambert', { 
             color: 0xFF0000,
             emissive: 0xFF0000
         });
@@ -5802,7 +5774,7 @@ function initSetup() {
         rightSphere.castShadow = true;
         heartGroup.add(rightSphere);
         
-        const bottomGeometry = new THREE.BoxGeometry(0.42, 0.42, 0.48);
+        const bottomGeometry = getGeometry('box', 0.42, 0.42, 0.48);
         const bottom = new THREE.Mesh(bottomGeometry, heartMaterial);
         bottom.position.set(0, 0.28, 0);
         bottom.rotation.z = Math.PI / 4;
@@ -5810,8 +5782,8 @@ function initSetup() {
         heartGroup.add(bottom);
         
         // Glow effect
-        const glowGeometry = new THREE.SphereGeometry(0.5, 8, 8);
-        const glowMaterial = new THREE.MeshBasicMaterial({ 
+        const glowGeometry = getGeometry('sphere', 0.5, 8, 8);
+        const glowMaterial = getMaterial('basic', { 
             color: 0xFF6666, 
             transparent: true, 
             opacity: 0.3 
@@ -5834,8 +5806,8 @@ function initSetup() {
         const presentGroup = new THREE.Group();
         
         // Present box (gift box base)
-        const boxGeometry = new THREE.BoxGeometry(0.8, 0.7, 0.8);
-        const boxMaterial = new THREE.MeshLambertMaterial({ 
+        const boxGeometry = getGeometry('box', 0.8, 0.7, 0.8);
+        const boxMaterial = getMaterial('lambert', { 
             color: 0xFF69B4, // Hot pink
             emissive: 0xFF1493
         });
@@ -5845,25 +5817,25 @@ function initSetup() {
         presentGroup.add(box);
         
         // Ribbon horizontal strips (Schleife bands)
-        const ribbonMaterial = new THREE.MeshLambertMaterial({ 
+        const ribbonMaterial = getMaterial('lambert', { 
             color: 0xFFD700, // Gold
             emissive: 0xFFD700
         });
         
         // Vertical ribbon
-        const ribbonVGeometry = new THREE.BoxGeometry(0.15, 0.72, 0.82);
+        const ribbonVGeometry = getGeometry('box', 0.15, 0.72, 0.82);
         const ribbonV = new THREE.Mesh(ribbonVGeometry, ribbonMaterial);
         ribbonV.position.y = 0.4;
         presentGroup.add(ribbonV);
         
         // Horizontal ribbon
-        const ribbonHGeometry = new THREE.BoxGeometry(0.82, 0.72, 0.15);
+        const ribbonHGeometry = getGeometry('box', 0.82, 0.72, 0.15);
         const ribbonH = new THREE.Mesh(ribbonHGeometry, ribbonMaterial);
         ribbonH.position.y = 0.4;
         presentGroup.add(ribbonH);
         
         // Bow on top (Schleife) - two loops
-        const bowLoopGeometry = new THREE.TorusGeometry(0.15, 0.05, 8, 16);
+        const bowLoopGeometry = getGeometry('torus', 0.15, 0.05, 8, 16);
         
         // Left bow loop
         const bowLeft = new THREE.Mesh(bowLoopGeometry, ribbonMaterial);
@@ -5880,13 +5852,13 @@ function initSetup() {
         presentGroup.add(bowRight);
         
         // Center knot of bow
-        const knotGeometry = new THREE.SphereGeometry(0.1, 8, 8);
+        const knotGeometry = getGeometry('sphere', 0.1, 8, 8);
         const knot = new THREE.Mesh(knotGeometry, ribbonMaterial);
         knot.position.set(0, 0.82, 0);
         presentGroup.add(knot);
         
         // Bow tails (hanging ribbons)
-        const tailGeometry = new THREE.BoxGeometry(0.08, 0.25, 0.02);
+        const tailGeometry = getGeometry('box', 0.08, 0.25, 0.02);
         const tailLeft = new THREE.Mesh(tailGeometry, ribbonMaterial);
         tailLeft.position.set(-0.08, 0.65, 0.1);
         tailLeft.rotation.z = -0.3;
@@ -5909,7 +5881,7 @@ function initSetup() {
         
         const heartExtrudeSettings = { depth: 0.02, bevelEnabled: false };
         const heartGeometry = new THREE.ExtrudeGeometry(heartShape, heartExtrudeSettings);
-        const heartMaterial = new THREE.MeshBasicMaterial({ color: 0xFF1493 });
+        const heartMaterial = getMaterial('basic', { color: 0xFF1493 });
         const heart = new THREE.Mesh(heartGeometry, heartMaterial);
         heart.position.set(0.25, 0.35, 0.42);
         heart.rotation.y = 0.3;
@@ -5917,8 +5889,8 @@ function initSetup() {
         presentGroup.add(heart);
         
         // Glow effect
-        const glowGeometry = new THREE.SphereGeometry(0.7, 8, 8);
-        const glowMaterial = new THREE.MeshBasicMaterial({ 
+        const glowGeometry = getGeometry('sphere', 0.7, 8, 8);
+        const glowMaterial = getMaterial('basic', { 
             color: 0xFF69B4, 
             transparent: true, 
             opacity: 0.25 
@@ -5941,8 +5913,8 @@ function initSetup() {
         const potionGroup = new THREE.Group();
         
         // Potion bottle body
-        const bottleGeometry = new THREE.CylinderGeometry(0.25, 0.35, 0.7, 12);
-        const bottleMaterial = new THREE.MeshPhongMaterial({ 
+        const bottleGeometry = getGeometry('cylinder', 0.25, 0.35, 0.7, 12);
+        const bottleMaterial = getMaterial('phong', { 
             color: 0xFF69B4, // Hot pink
             transparent: true,
             opacity: 0.7,
@@ -5954,21 +5926,21 @@ function initSetup() {
         potionGroup.add(bottle);
         
         // Bottle neck
-        const neckGeometry = new THREE.CylinderGeometry(0.12, 0.18, 0.25, 10);
+        const neckGeometry = getGeometry('cylinder', 0.12, 0.18, 0.25, 10);
         const neck = new THREE.Mesh(neckGeometry, bottleMaterial);
         neck.position.y = 0.95;
         potionGroup.add(neck);
         
         // Cork stopper
-        const corkGeometry = new THREE.CylinderGeometry(0.1, 0.12, 0.15, 8);
-        const corkMaterial = new THREE.MeshLambertMaterial({ color: 0x8B4513 }); // Brown
+        const corkGeometry = getGeometry('cylinder', 0.1, 0.12, 0.15, 8);
+        const corkMaterial = getMaterial('lambert', { color: 0x8B4513 }); // Brown
         const cork = new THREE.Mesh(corkGeometry, corkMaterial);
         cork.position.y = 1.15;
         potionGroup.add(cork);
         
         // Glowing potion liquid inside
-        const liquidGeometry = new THREE.CylinderGeometry(0.2, 0.3, 0.55, 10);
-        const liquidMaterial = new THREE.MeshBasicMaterial({ 
+        const liquidGeometry = getGeometry('cylinder', 0.2, 0.3, 0.55, 10);
+        const liquidMaterial = getMaterial('basic', { 
             color: 0xFF1493, // Deep pink glow
             transparent: true,
             opacity: 0.8
@@ -5979,8 +5951,8 @@ function initSetup() {
         
         // Sparkle particles inside
         for (let i = 0; i < 5; i++) {
-            const sparkleGeometry = new THREE.SphereGeometry(0.03, 6, 6);
-            const sparkleMaterial = new THREE.MeshBasicMaterial({ 
+            const sparkleGeometry = getGeometry('sphere', 0.03, 6, 6);
+            const sparkleMaterial = getMaterial('basic', { 
                 color: 0xFFFFFF,
                 transparent: true,
                 opacity: 0.8
@@ -5996,8 +5968,8 @@ function initSetup() {
         }
         
         // Outer glow effect
-        const glowGeometry = new THREE.SphereGeometry(0.6, 8, 8);
-        const glowMaterial = new THREE.MeshBasicMaterial({ 
+        const glowGeometry = getGeometry('sphere', 0.6, 8, 8);
+        const glowMaterial = getMaterial('basic', { 
             color: 0xFF69B4, 
             transparent: true, 
             opacity: 0.3 
@@ -6024,12 +5996,12 @@ function initSetup() {
             let materialMesh;
             
             if (config.type === 'wood') {
-                const plankGeometry = new THREE.BoxGeometry(1.2, 0.3, 0.5);
-                const plankMaterial = new THREE.MeshLambertMaterial({ color: config.color });
+                const plankGeometry = getGeometry('box', 1.2, 0.3, 0.5);
+                const plankMaterial = getMaterial('lambert', { color: config.color });
                 materialMesh = new THREE.Mesh(plankGeometry, plankMaterial);
             } else if (config.type === 'glass') {
-                const glassGeometry = new THREE.BoxGeometry(0.9, 0.9, 0.15);
-                const glassMaterial = new THREE.MeshLambertMaterial({ 
+                const glassGeometry = getGeometry('box', 0.9, 0.9, 0.15);
+                const glassMaterial = getMaterial('lambert', { 
                     color: config.color,
                     transparent: true,
                     opacity: 0.6,
@@ -6037,8 +6009,8 @@ function initSetup() {
             });
             materialMesh = new THREE.Mesh(glassGeometry, glassMaterial);
         } else if (config.type === 'metal') {
-            const metalGeometry = new THREE.CylinderGeometry(0.15, 0.15, 1.2, 8);
-            const metalMaterial = new THREE.MeshLambertMaterial({ 
+            const metalGeometry = getGeometry('cylinder', 0.15, 0.15, 1.2, 8);
+            const metalMaterial = getMaterial('lambert', { 
                 color: config.color,
                 emissive: 0x444444
             });
@@ -6050,8 +6022,8 @@ function initSetup() {
         materialMesh.castShadow = true;
         materialGroup.add(materialMesh);
         
-        const glowGeometry = new THREE.SphereGeometry(0.5, 8, 8);
-        const glowMaterial = new THREE.MeshBasicMaterial({ 
+        const glowGeometry = getGeometry('sphere', 0.5, 8, 8);
+        const glowMaterial = getMaterial('basic', { 
             color: config.glowColor, 
             transparent: true, 
             opacity: 0.3 
@@ -6075,24 +6047,24 @@ function initSetup() {
             
             if (G.waterTheme) {
                 // Boat hull
-                const hullGeometry = new THREE.BoxGeometry(1.2, 0.4, 2.5);
-                const hullMaterial = new THREE.MeshLambertMaterial({ color: 0x654321 });
+                const hullGeometry = getGeometry('box', 1.2, 0.4, 2.5);
+                const hullMaterial = getMaterial('lambert', { color: 0x654321 });
                 const hull = new THREE.Mesh(hullGeometry, hullMaterial);
                 hull.position.y = 0.2;
                 hull.castShadow = true;
                 player2Group.add(hull);
                 
                 // Boat deck
-                const deckGeometry = new THREE.BoxGeometry(1.0, 0.1, 2.3);
-                const deckMaterial = new THREE.MeshLambertMaterial({ color: 0x8B4513 });
+                const deckGeometry = getGeometry('box', 1.0, 0.1, 2.3);
+                const deckMaterial = getMaterial('lambert', { color: 0x8B4513 });
                 const deck = new THREE.Mesh(deckGeometry, deckMaterial);
                 deck.position.y = 0.45;
                 deck.castShadow = true;
                 player2Group.add(deck);
                 
                 // Mast
-                const mastGeometry = new THREE.CylinderGeometry(0.08, 0.08, 2.5, 8);
-                const mastMaterial = new THREE.MeshLambertMaterial({ color: 0x3E2723 });
+                const mastGeometry = getGeometry('cylinder', 0.08, 0.08, 2.5, 8);
+                const mastMaterial = getMaterial('lambert', { color: 0x3E2723 });
                 const mast = new THREE.Mesh(mastGeometry, mastMaterial);
                 mast.position.set(0, 1.75, 0);
                 mast.castShadow = true;
@@ -6107,7 +6079,7 @@ function initSetup() {
                 ]);
                 sailGeometry.setAttribute('position', new THREE.BufferAttribute(sailVertices, 3));
                 sailGeometry.computeVertexNormals();
-                const sailMaterial = new THREE.MeshLambertMaterial({ 
+                const sailMaterial = getMaterial('lambert', { 
                     color: 0x87CEEB,
                     side: THREE.DoubleSide
                 });
@@ -6117,8 +6089,8 @@ function initSetup() {
                 player2Group.add(sail);
             } else {
                 // Bicycle wheels
-                const wheelGeometry = new THREE.TorusGeometry(0.3, 0.1, 8, 16);
-                const wheelMaterial = new THREE.MeshLambertMaterial({ color: 0x333333 });
+                const wheelGeometry = getGeometry('torus', 0.3, 0.1, 8, 16);
+                const wheelMaterial = getMaterial('lambert', { color: 0x333333 });
 
                 const frontWheel = new THREE.Mesh(wheelGeometry, wheelMaterial);
                 frontWheel.rotation.y = Math.PI / 2;
@@ -6133,8 +6105,8 @@ function initSetup() {
                 player2Group.add(backWheel);
 
                 // Frame (blue for player 2)
-                const frameGeometry = new THREE.CylinderGeometry(0.05, 0.05, 1.3, 8);
-                const frameMaterial = new THREE.MeshLambertMaterial({ color: 0x4488FF });
+                const frameGeometry = getGeometry('cylinder', 0.05, 0.05, 1.3, 8);
+                const frameMaterial = getMaterial('lambert', { color: 0x4488FF });
                 const frame1 = new THREE.Mesh(frameGeometry, frameMaterial);
                 frame1.rotation.x = Math.PI / 2;
                 frame1.position.set(0, 0.5, -0.1);
@@ -6142,21 +6114,21 @@ function initSetup() {
                 player2Group.add(frame1);
 
                 // Seat post
-                const seatPostGeometry = new THREE.CylinderGeometry(0.04, 0.04, 0.5, 8);
+                const seatPostGeometry = getGeometry('cylinder', 0.04, 0.04, 0.5, 8);
                 const seatPost = new THREE.Mesh(seatPostGeometry, frameMaterial);
                 seatPost.position.set(0, 0.75, 0.2);
                 seatPost.castShadow = true;
                 player2Group.add(seatPost);
 
                 // Handlebar post
-                const handlebarPostGeometry = new THREE.CylinderGeometry(0.04, 0.04, 0.4, 8);
+                const handlebarPostGeometry = getGeometry('cylinder', 0.04, 0.04, 0.4, 8);
                 const handlebarPost = new THREE.Mesh(handlebarPostGeometry, frameMaterial);
                 handlebarPost.position.set(0, 0.7, -0.5);
                 handlebarPost.castShadow = true;
                 player2Group.add(handlebarPost);
 
                 // Handlebar
-                const handlebarGeometry = new THREE.CylinderGeometry(0.03, 0.03, 0.5, 8);
+                const handlebarGeometry = getGeometry('cylinder', 0.03, 0.03, 0.5, 8);
                 const handlebar = new THREE.Mesh(handlebarGeometry, frameMaterial);
                 handlebar.rotation.z = Math.PI / 2;
                 handlebar.position.set(0, 0.9, -0.5);
@@ -6165,7 +6137,7 @@ function initSetup() {
             }
 
             // Player body - Boy (blue)
-            const bodyGeometry = new THREE.BoxGeometry(0.35, 0.6, 0.25);
+            const bodyGeometry = getGeometry('box', 0.35, 0.6, 0.25);
             const bodyMaterial = new THREE.MeshLambertMaterial({ 
                 map: G.playerTextures.playerClothingBlue 
             });
@@ -6175,7 +6147,7 @@ function initSetup() {
             player2Group.add(body);
 
             // Head
-            const headGeometry = new THREE.SphereGeometry(0.25, 16, 16);
+            const headGeometry = getGeometry('sphere', 0.25, 16, 16);
             const headMaterial = new THREE.MeshLambertMaterial({ map: G.playerTextures.playerSkin });
             const head = new THREE.Mesh(headGeometry, headMaterial);
             head.position.set(0, 1.85, 0);
@@ -6205,8 +6177,8 @@ function initSetup() {
             helmetShell.castShadow = true;
             helmetGroup.add(helmetShell);
             
-            const visorGeometry = new THREE.BoxGeometry(0.35, 0.05, 0.15);
-            const visorMaterial = new THREE.MeshLambertMaterial({ color: 0x333333 });
+            const visorGeometry = getGeometry('box', 0.35, 0.05, 0.15);
+            const visorMaterial = getMaterial('lambert', { color: 0x333333 });
             const visor = new THREE.Mesh(visorGeometry, visorMaterial);
             visor.position.set(0, 0.05, 0.28);
             visor.rotation.x = -0.3;
@@ -6217,8 +6189,8 @@ function initSetup() {
             player2Group.add(helmetGroup);
 
             // Direction indicator
-            const coneGeometry = new THREE.ConeGeometry(0.15, 0.4, 8);
-            const coneMaterial = new THREE.MeshLambertMaterial({ color: 0x00FFFF });
+            const coneGeometry = getGeometry('cone', 0.15, 0.4, 8);
+            const coneMaterial = getMaterial('lambert', { color: 0x00FFFF });
             const directionCone = new THREE.Mesh(coneGeometry, coneMaterial);
             directionCone.rotation.x = Math.PI / 2;
             directionCone.position.set(0, 0.5, -1.0);
@@ -6249,16 +6221,16 @@ function initSetup() {
             kite2Group.add(kite);
             
             // Kite sticks
-            const stickMaterial = new THREE.MeshLambertMaterial({ color: 0x8B4513 });
+            const stickMaterial = getMaterial('lambert', { color: 0x8B4513 });
             const vertStick = new THREE.Mesh(
-                new THREE.CylinderGeometry(0.02, 0.02, 1.3, 4),
+                getGeometry('cylinder', 0.02, 0.02, 1.3, 4),
                 stickMaterial
             );
             vertStick.position.y = 0.15;
             kite2Group.add(vertStick);
             
             const horizStick = new THREE.Mesh(
-                new THREE.CylinderGeometry(0.02, 0.02, 1.2, 4),
+                getGeometry('cylinder', 0.02, 0.02, 1.2, 4),
                 stickMaterial
             );
             horizStick.rotation.z = Math.PI / 2;
@@ -6267,8 +6239,8 @@ function initSetup() {
             // Kite tail
             const tailGroup = new THREE.Group();
             const tailString = new THREE.Mesh(
-                new THREE.CylinderGeometry(0.01, 0.01, 2, 4),
-                new THREE.MeshLambertMaterial({ color: 0x333333 })
+                getGeometry('cylinder', 0.01, 0.01, 2, 4),
+                getMaterial('lambert', { color: 0x333333 })
             );
             tailString.position.y = -1.5;
             tailGroup.add(tailString);
@@ -6276,8 +6248,8 @@ function initSetup() {
             const ribbonColors = [0xFF0000, 0xFFFF00, 0x00FF00, 0x00FFFF];
             for (let i = 0; i < 4; i++) {
                 const ribbon = new THREE.Mesh(
-                    new THREE.BoxGeometry(0.15, 0.25, 0.02),
-                    new THREE.MeshLambertMaterial({ color: ribbonColors[i] })
+                    getGeometry('box', 0.15, 0.25, 0.02),
+                    getMaterial('lambert', { color: ribbonColors[i] })
                 );
                 ribbon.position.y = -0.8 - i * 0.5;
                 ribbon.position.x = (Math.random() - 0.5) * 0.2;

@@ -12,8 +12,8 @@
         const crystalDark = 0x5522aa;
         
         // Body - faceted crystal torso
-        const bodyGeometry = new THREE.OctahedronGeometry(0.55, 0);
-        const bodyMaterial = new THREE.MeshLambertMaterial({ 
+        const bodyGeometry = getGeometry('octahedron', 0.55, 0);
+        const bodyMaterial = getMaterial('lambert', { 
             color: crystalPurple,
             transparent: true,
             opacity: 0.85
@@ -26,8 +26,8 @@
         group.add(body);
         
         // Inner crystal core glow
-        const coreGeometry = new THREE.OctahedronGeometry(0.3, 0);
-        const coreMaterial = new THREE.MeshBasicMaterial({ 
+        const coreGeometry = getGeometry('octahedron', 0.3, 0);
+        const coreMaterial = getMaterial('basic', { 
             color: crystalGlow,
             transparent: true,
             opacity: 0.6
@@ -37,8 +37,8 @@
         group.add(core);
         
         // Head - angular crystal shape
-        const headGeometry = new THREE.OctahedronGeometry(0.4, 0);
-        const headMaterial = new THREE.MeshLambertMaterial({ 
+        const headGeometry = getGeometry('octahedron', 0.4, 0);
+        const headMaterial = getMaterial('lambert', { 
             color: crystalPurple,
             transparent: true,
             opacity: 0.85
@@ -50,8 +50,8 @@
         group.add(head);
         
         // Glowing eyes - embedded gems
-        const eyeMaterial = new THREE.MeshBasicMaterial({ color: 0x00ffff });
-        const eyeGeometry = new THREE.OctahedronGeometry(0.1, 0);
+        const eyeMaterial = getMaterial('basic', { color: 0x00ffff });
+        const eyeGeometry = getGeometry('octahedron', 0.1, 0);
         [-0.15, 0.15].forEach(x => {
             const eye = new THREE.Mesh(eyeGeometry, eyeMaterial);
             eye.position.set(x, 1.85, 0.32);
@@ -63,8 +63,8 @@
         for (let i = 0; i < 5; i++) {
             const angle = (i / 5) * Math.PI * 2;
             const spike = new THREE.Mesh(
-                new THREE.ConeGeometry(0.08, 0.35, 4),
-                new THREE.MeshLambertMaterial({ 
+                getGeometry('cone', 0.08, 0.35, 4),
+                getMaterial('lambert', { 
                     color: crystalPink,
                     transparent: true,
                     opacity: 0.8
@@ -84,8 +84,8 @@
         // Crystal shoulder formations
         [-0.55, 0.55].forEach(x => {
             const shoulder = new THREE.Mesh(
-                new THREE.OctahedronGeometry(0.2, 0),
-                new THREE.MeshLambertMaterial({ 
+                getGeometry('octahedron', 0.2, 0),
+                getMaterial('lambert', { 
                     color: crystalDark,
                     transparent: true,
                     opacity: 0.85
@@ -98,8 +98,8 @@
             
             // Small crystal cluster on shoulders
             const cluster = new THREE.Mesh(
-                new THREE.ConeGeometry(0.1, 0.25, 4),
-                new THREE.MeshLambertMaterial({ 
+                getGeometry('cone', 0.1, 0.25, 4),
+                getMaterial('lambert', { 
                     color: crystalGlow,
                     transparent: true,
                     opacity: 0.7
@@ -115,8 +115,8 @@
         for (let i = 0; i < 4; i++) {
             const angle = (i / 4) * Math.PI * 2 + Math.PI / 4;
             const shard = new THREE.Mesh(
-                new THREE.ConeGeometry(0.06, 0.2, 4),
-                new THREE.MeshBasicMaterial({ 
+                getGeometry('cone', 0.06, 0.2, 4),
+                getMaterial('basic', { 
                     color: crystalGlow,
                     transparent: true,
                     opacity: 0.5

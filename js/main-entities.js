@@ -13,8 +13,8 @@ function initEntities() {
             const whirlpoolGroup = new THREE.Group();
 
             // Outer spinning ring
-            const outerRingGeometry = new THREE.RingGeometry(1.5, 2.5, 24);
-            const outerRingMaterial = new THREE.MeshBasicMaterial({
+            const outerRingGeometry = getGeometry('ring', 1.5, 2.5, 24);
+            const outerRingMaterial = getMaterial('basic', {
                 color: 0x104080,
                 transparent: true,
                 opacity: 0.7,
@@ -26,8 +26,8 @@ function initEntities() {
             whirlpoolGroup.add(outerRing);
 
             // Middle ring
-            const midRingGeometry = new THREE.RingGeometry(0.8, 1.5, 24);
-            const midRingMaterial = new THREE.MeshBasicMaterial({
+            const midRingGeometry = getGeometry('ring', 0.8, 1.5, 24);
+            const midRingMaterial = getMaterial('basic', {
                 color: 0x1060a0,
                 transparent: true,
                 opacity: 0.8,
@@ -39,8 +39,8 @@ function initEntities() {
             whirlpoolGroup.add(midRing);
 
             // Inner dark vortex
-            const innerGeometry = new THREE.CircleGeometry(0.8, 24);
-            const innerMaterial = new THREE.MeshBasicMaterial({
+            const innerGeometry = getGeometry('circle', 0.8, 24);
+            const innerMaterial = getMaterial('basic', {
                 color: 0x000020,
                 transparent: true,
                 opacity: 0.9
@@ -52,8 +52,8 @@ function initEntities() {
 
             // Foam/spray particles around the edge
             for (let i = 0; i < 8; i++) {
-                const foamGeometry = new THREE.SphereGeometry(0.15, 4, 4);
-                const foamMaterial = new THREE.MeshBasicMaterial({
+                const foamGeometry = getGeometry('sphere', 0.15, 4, 4);
+                const foamMaterial = getMaterial('basic', {
                     color: 0xffffff,
                     transparent: true,
                     opacity: 0.6
@@ -76,8 +76,8 @@ function initEntities() {
             });
         } else {
             // Regular trap for other levels
-            const trapGeometry = new THREE.PlaneGeometry(2, 2);
-            const trapMaterial = new THREE.MeshLambertMaterial({ color: 0x6a8a6a });
+            const trapGeometry = getGeometry('plane', 2, 2);
+            const trapMaterial = getMaterial('lambert', { color: 0x6a8a6a });
             const trap = new THREE.Mesh(trapGeometry, trapMaterial);
             trap.rotation.x = -Math.PI / 2;
             trap.position.set(pos.x, terrainHeight + 0.02, pos.z);
@@ -103,7 +103,7 @@ function initEntities() {
             const coneHeight = 8 + trapConfig.radius;
             const coneRadius = trapConfig.radius * 0.8;
             const coneGeometry = new THREE.ConeGeometry(coneRadius, coneHeight, 16, 6, true);
-            const coneMaterial = new THREE.MeshBasicMaterial({
+            const coneMaterial = getMaterial('basic', {
                 color: outerColor,
                 transparent: true,
                 opacity: 0.4,
@@ -118,7 +118,7 @@ function initEntities() {
             const innerRadius = coneRadius * 0.5;
             const innerHeight = coneHeight * 0.8;
             const innerConeGeometry = new THREE.ConeGeometry(innerRadius, innerHeight, 16, 6, true);
-            const innerConeMaterial = new THREE.MeshBasicMaterial({
+            const innerConeMaterial = getMaterial('basic', {
                 color: innerColor,
                 transparent: true,
                 opacity: 0.5,
@@ -133,7 +133,7 @@ function initEntities() {
             const coreRadius = coneRadius * 0.25;
             const coreHeight = coneHeight * 0.6;
             const coreConeGeometry = new THREE.ConeGeometry(coreRadius, coreHeight, 12, 4, true);
-            const coreConeMaterial = new THREE.MeshBasicMaterial({
+            const coreConeMaterial = getMaterial('basic', {
                 color: 0xFFFFFF,
                 transparent: true,
                 opacity: 0.6,
@@ -148,7 +148,7 @@ function initEntities() {
             const dustGroup = new THREE.Group();
             for (let i = 0; i < 80; i++) {
                 const dustGeometry = new THREE.SphereGeometry(0.2 + Math.random() * 0.3, 4, 4);
-                const dustMaterial = new THREE.MeshBasicMaterial({
+                const dustMaterial = getMaterial('basic', {
                     color: i % 3 === 0 ? 0xFFFFFF : particleColor,
                     transparent: true,
                     opacity: 0.4 + Math.random() * 0.4
@@ -167,7 +167,7 @@ function initEntities() {
                 const ringHeight = (h + 1) * coneHeight * 0.2;
                 const ringRadius = (ringHeight / coneHeight) * coneRadius;
                 const foamRingGeometry = new THREE.TorusGeometry(ringRadius, 0.15, 8, 16);
-                const foamRingMaterial = new THREE.MeshBasicMaterial({
+                const foamRingMaterial = getMaterial('basic', {
                     color: 0xB0E0E6,
                     transparent: true,
                     opacity: 0.5 - h * 0.1
@@ -182,8 +182,8 @@ function initEntities() {
             // Flying debris/fish being sucked up
             const debrisGroup = new THREE.Group();
             for (let i = 0; i < 8; i++) {
-                const debrisGeometry = new THREE.BoxGeometry(0.3, 0.15, 0.5);
-                const debrisMaterial = new THREE.MeshBasicMaterial({
+                const debrisGeometry = getGeometry('box', 0.3, 0.15, 0.5);
+                const debrisMaterial = getMaterial('basic', {
                     color: i % 2 === 0 ? 0x8B4513 : 0x696969,  // Brown wood or grey
                     transparent: true,
                     opacity: 0.8
@@ -201,7 +201,7 @@ function initEntities() {
 
             // Large base foam/splash ring
             const baseRingGeometry = new THREE.RingGeometry(coneRadius * 0.5, coneRadius * 1.5, 32);
-            const baseRingMaterial = new THREE.MeshBasicMaterial({
+            const baseRingMaterial = getMaterial('basic', {
                 color: 0xFFFFFF,
                 transparent: true,
                 opacity: 0.6,
@@ -214,7 +214,7 @@ function initEntities() {
 
             // Outer splash waves
             const splashGeometry = new THREE.RingGeometry(coneRadius * 1.3, coneRadius * 2.0, 32);
-            const splashMaterial = new THREE.MeshBasicMaterial({
+            const splashMaterial = getMaterial('basic', {
                 color: 0x87CEEB,
                 transparent: true,
                 opacity: 0.3,
@@ -355,7 +355,7 @@ function initEntities() {
     G.rainbowColors.forEach((color, i) => {
         const radius = 5 - (i * 0.3);
         const arcGeometry = new THREE.TorusGeometry(radius, 0.3, 8, 32, Math.PI);
-        const arcMaterial = new THREE.MeshBasicMaterial({
+        const arcMaterial = getMaterial('basic', {
             color: color,
             transparent: true,
             opacity: 0.9
@@ -452,7 +452,7 @@ function initEntities() {
 
             // Create 3D mirror tile
             const tileGeometry = new THREE.BoxGeometry(G.tileSize, G.tileSize, G.tileDepth);
-            const tileMaterial = new THREE.MeshBasicMaterial({
+            const tileMaterial = getMaterial('basic', {
                 color: 0xffffff,
                 transparent: false
             });
@@ -470,7 +470,7 @@ function initEntities() {
     }
 
     // Add top and bottom cap tiles
-    G.capTileMaterial = new THREE.MeshBasicMaterial({ color: 0xffffff });
+    G.capTileMaterial = getMaterial('basic', { color: 0xffffff });
     G.topCap = new THREE.Mesh(new THREE.BoxGeometry(G.tileSize, G.tileSize, G.tileDepth), G.capTileMaterial.clone());
     G.topCap.position.set(0, G.discoBallRadius, 0);
     G.topCap.rotation.x = -Math.PI / 2;
@@ -487,21 +487,21 @@ function initEntities() {
 
     // Add dark gaps/core visible between tiles
     G.coreGeometry = new THREE.SphereGeometry(G.discoBallRadius - G.tileDepth, 16, 16);
-    G.coreMaterial = new THREE.MeshBasicMaterial({ color: 0x111111 });
+    G.coreMaterial = getMaterial('basic', { color: 0x111111 });
     G.core = new THREE.Mesh(G.coreGeometry, G.coreMaterial);
     G.discoBallGroup.add(G.core);
 
     // Disco ball hanging rod - connects to top of rainbow
     G.rodLength = 3;
     G.rodGeometry = new THREE.CylinderGeometry(0.08, 0.08, G.rodLength, 8);
-    G.rodMaterial = new THREE.MeshBasicMaterial({ color: 0x666666 });
+    G.rodMaterial = getMaterial('basic', { color: 0x666666 });
     G.rod = new THREE.Mesh(G.rodGeometry, G.rodMaterial);
     G.rod.position.y = G.discoBallRadius + G.rodLength / 2;
     G.discoBallGroup.add(G.rod);
 
     // Add a small hook/ring at the top of the rod
-    G.hookGeometry = new THREE.TorusGeometry(0.15, 0.04, 8, 16);
-    G.hookMaterial = new THREE.MeshBasicMaterial({ color: 0x888888 });
+    G.hookGeometry = getGeometry('torus', 0.15, 0.04, 8, 16);
+    G.hookMaterial = getMaterial('basic', { color: 0x888888 });
     G.hook = new THREE.Mesh(G.hookGeometry, G.hookMaterial);
     G.hook.position.y = G.discoBallRadius + G.rodLength;
     G.hook.rotation.x = Math.PI / 2;
@@ -567,15 +567,15 @@ function initEntities() {
 
     // World Kite (collectible)
     G.worldKiteGroup = new THREE.Group();
-    G.worldKiteGeometry = new THREE.ConeGeometry(0.8, 1.2, 4);
-    G.worldKiteMaterial = new THREE.MeshLambertMaterial({ color: 0xFF1493 });
+    G.worldKiteGeometry = getGeometry('cone', 0.8, 1.2, 4);
+    G.worldKiteMaterial = getMaterial('lambert', { color: 0xFF1493 });
     G.worldKite = new THREE.Mesh(G.worldKiteGeometry, G.worldKiteMaterial);
     G.worldKite.rotation.x = Math.PI;
     G.worldKite.castShadow = true;
     G.worldKiteGroup.add(G.worldKite);
     
-    G.worldTailGeometry = new THREE.CylinderGeometry(0.02, 0.02, 1.5, 4);
-    G.worldTailMaterial = new THREE.MeshLambertMaterial({ color: 0xFFFF00 });
+    G.worldTailGeometry = getGeometry('cylinder', 0.02, 0.02, 1.5, 4);
+    G.worldTailMaterial = getMaterial('lambert', { color: 0xFFFF00 });
     G.worldTail = new THREE.Mesh(G.worldTailGeometry, G.worldTailMaterial);
     G.worldTail.position.y = -1.2;
     G.worldKiteGroup.add(G.worldTail);
@@ -593,14 +593,14 @@ function initEntities() {
         G.worldKiteGroup.visible = false;
     }
 
-    G.chestBottomGeometry = new THREE.BoxGeometry(1, 0.6, 0.8);
-    G.chestMaterial = new THREE.MeshLambertMaterial({ color: 0x8B4513 });
+    G.chestBottomGeometry = getGeometry('box', 1, 0.6, 0.8);
+    G.chestMaterial = getMaterial('lambert', { color: 0x8B4513 });
     G.chestBottom = new THREE.Mesh(G.chestBottomGeometry, G.chestMaterial);
     G.chestBottom.position.y = 0.3;
     G.chestBottom.castShadow = true;
     G.treasureGroup.add(G.chestBottom);
 
-    G.chestLidGeometry = new THREE.BoxGeometry(1, 0.4, 0.8);
+    G.chestLidGeometry = getGeometry('box', 1, 0.4, 0.8);
     G.chestLid = new THREE.Mesh(G.chestLidGeometry, G.chestMaterial);
     G.chestLid.position.y = 0.8;
     G.chestLid.position.z = -0.3;
@@ -608,20 +608,20 @@ function initEntities() {
     G.chestLid.castShadow = true;
     G.treasureGroup.add(G.chestLid);
 
-    G.goldMaterial = new THREE.MeshLambertMaterial({ 
+    G.goldMaterial = getMaterial('lambert', { 
         color: 0xFFD700, 
         emissive: 0xFFAA00,
         emissiveIntensity: 0.5
     });
 
-    G.goldPileGeometry = new THREE.SphereGeometry(0.3, 8, 8);
+    G.goldPileGeometry = getGeometry('sphere', 0.3, 8, 8);
     G.goldPile = new THREE.Mesh(G.goldPileGeometry, G.goldMaterial);
     G.goldPile.position.y = 0.7;
     G.goldPile.castShadow = true;
     G.treasureGroup.add(G.goldPile);
 
     for (let i = 0; i < 12; i++) {
-        const goldGeometry = new THREE.CylinderGeometry(0.12, 0.12, 0.04, 8);
+        const goldGeometry = getGeometry('cylinder', 0.12, 0.12, 0.04, 8);
         const goldCoin = new THREE.Mesh(goldGeometry, G.goldMaterial);
         const angle = (i / 12) * Math.PI * 2;
         const radius = 0.4 + (i % 2) * 0.1;
@@ -657,14 +657,14 @@ function initEntities() {
         // Main ice berg structure - tall crystalline shape
         // Use obsidian theme for lava level, ice theme for others
         // Using MeshLambertMaterial for better performance (no expensive specular calculations)
-        const iceBergGeometry = new THREE.ConeGeometry(8, 20, 6);
-        const iceBergMaterial = G.lavaTheme ? new THREE.MeshLambertMaterial({
+        const iceBergGeometry = getGeometry('cone', 8, 20, 6);
+        const iceBergMaterial = G.lavaTheme ? getMaterial('lambert', {
             color: 0x3a2a4a,  // Dark purple obsidian
             transparent: true,
             opacity: 0.85,
             emissive: 0x110022,
             emissiveIntensity: 0.3
-        }) : new THREE.MeshLambertMaterial({
+        }) : getMaterial('lambert', {
             color: 0xB0E0E6,
             transparent: true,
             opacity: 0.75
@@ -677,8 +677,8 @@ function initEntities() {
 
     // Add glowing core for lava level obsidian pillar
     if (G.lavaTheme) {
-        G.coreGeometry = new THREE.ConeGeometry(3, 18, 6);
-        G.coreMaterial = new THREE.MeshBasicMaterial({
+        G.coreGeometry = getGeometry('cone', 3, 18, 6);
+        G.coreMaterial = getMaterial('basic', {
             color: 0x6633cc,
             transparent: true,
             opacity: 0.4
@@ -697,7 +697,7 @@ function initEntities() {
     for (let i = 0; i < 5; i++) {
         const angle = (i / 5) * Math.PI * 2;
         const dist = 6;
-        const crystalGeometry = new THREE.ConeGeometry(2, 8, 6);
+        const crystalGeometry = getGeometry('cone', 2, 8, 6);
         const crystal = new THREE.Mesh(crystalGeometry, iceBergMaterial);
         crystal.position.x = Math.cos(angle) * dist;
         crystal.position.z = Math.sin(angle) * dist;
@@ -723,8 +723,8 @@ function initEntities() {
     
     // Main banana ice berg structure - tall crystalline shape (yellow tinted)
     // Using MeshLambertMaterial for better performance
-    G.bananaIceBergGeometry = new THREE.ConeGeometry(8, 20, 6);
-    G.bananaIceBergMaterial = new THREE.MeshLambertMaterial({
+    G.bananaIceBergGeometry = getGeometry('cone', 8, 20, 6);
+    G.bananaIceBergMaterial = getMaterial('lambert', {
         color: 0xFFFF99, // Yellow tint
         transparent: true,
         opacity: 0.75
@@ -739,7 +739,7 @@ function initEntities() {
     for (let i = 0; i < 5; i++) {
         const angle = (i / 5) * Math.PI * 2;
         const dist = 6;
-        const crystalGeometry = new THREE.ConeGeometry(2, 8, 6);
+        const crystalGeometry = getGeometry('cone', 2, 8, 6);
         const crystal = new THREE.Mesh(crystalGeometry, G.bananaIceBergMaterial);
         crystal.position.x = Math.cos(angle) * dist;
         crystal.position.z = Math.sin(angle) * dist;
@@ -794,8 +794,8 @@ function initEntities() {
     // Only create portal if this level has one
     if (G.portalConfig) {
         // Create portal outer ring (spinning torus)
-        const portalRingGeometry = new THREE.TorusGeometry(3, 0.3, 16, 48);
-        const portalRingMaterial = new THREE.MeshPhongMaterial({
+        const portalRingGeometry = getGeometry('torus', 3, 0.3, 16, 48);
+        const portalRingMaterial = getMaterial('phong', {
             color: 0x00ffff,
             emissive: 0x00ffff,
             emissiveIntensity: 0.8,
@@ -807,8 +807,8 @@ function initEntities() {
         G.portalGroup.add(portalRing);
         
         // Inner spinning ring
-        const portalInnerRingGeometry = new THREE.TorusGeometry(2.2, 0.2, 16, 48);
-    const portalInnerRingMaterial = new THREE.MeshPhongMaterial({
+        const portalInnerRingGeometry = getGeometry('torus', 2.2, 0.2, 16, 48);
+    const portalInnerRingMaterial = getMaterial('phong', {
         color: 0xff00ff,
         emissive: 0xff00ff,
         emissiveIntensity: 0.6,
@@ -820,8 +820,8 @@ function initEntities() {
     G.portalGroup.add(portalInnerRing);
     
     // Portal center swirl effect (animated disc)
-    const portalCenterGeometry = new THREE.CircleGeometry(2, 32);
-    const portalCenterMaterial = new THREE.MeshBasicMaterial({
+    const portalCenterGeometry = getGeometry('circle', 2, 32);
+    const portalCenterMaterial = getMaterial('basic', {
         color: 0x8800ff,
         transparent: true,
         opacity: 0.6,
@@ -834,8 +834,8 @@ function initEntities() {
     
     // Portal particles (floating orbs)
     for (let i = 0; i < 12; i++) {
-        const particleGeometry = new THREE.SphereGeometry(0.15, 8, 8);
-        const particleMaterial = new THREE.MeshBasicMaterial({
+        const particleGeometry = getGeometry('sphere', 0.15, 8, 8);
+        const particleMaterial = getMaterial('basic', {
             color: i % 2 === 0 ? 0x00ffff : 0xff00ff,
             transparent: true,
             opacity: 0.8
@@ -852,8 +852,8 @@ function initEntities() {
     }
     
     // Portal base glow
-    const portalGlowGeometry = new THREE.CylinderGeometry(4, 4, 0.2, 32);
-    const portalGlowMaterial = new THREE.MeshBasicMaterial({
+    const portalGlowGeometry = getGeometry('cylinder', 4, 4, 0.2, 32);
+    const portalGlowMaterial = getMaterial('basic', {
         color: 0x4400aa,
         transparent: true,
         opacity: 0.4
@@ -863,8 +863,8 @@ function initEntities() {
     G.portalGroup.add(portalGlow);
     
     // Portal pillars (mystical columns on each side)
-    const pillarGeometry = new THREE.CylinderGeometry(0.3, 0.4, 5, 8);
-    const pillarMaterial = new THREE.MeshPhongMaterial({
+    const pillarGeometry = getGeometry('cylinder', 0.3, 0.4, 5, 8);
+    const pillarMaterial = getMaterial('phong', {
         color: 0x6600cc,
         emissive: 0x220044,
         emissiveIntensity: 0.4
@@ -879,8 +879,8 @@ function initEntities() {
     G.portalGroup.add(rightPillar);
     
     // Pillar top orbs
-    const orbGeometry = new THREE.SphereGeometry(0.5, 16, 16);
-    const orbMaterial = new THREE.MeshBasicMaterial({
+    const orbGeometry = getGeometry('sphere', 0.5, 16, 16);
+    const orbMaterial = getMaterial('basic', {
         color: 0x00ffff,
         transparent: true,
         opacity: 0.9
@@ -937,7 +937,7 @@ function initEntities() {
             
             // Main crystal
             const mainCrystalGeometry = new THREE.ConeGeometry(0.8 * crystal.scale, 3 * crystal.scale, 6);
-            const crystalMaterial = new THREE.MeshPhongMaterial({
+            const crystalMaterial = getMaterial('phong', {
                 color: 0xaaddff,
                 transparent: true,
                 opacity: 0.7,
@@ -969,7 +969,7 @@ function initEntities() {
     if (G.levelConfig.frozenLakes) {
         G.levelConfig.frozenLakes.forEach(lake => {
             const lakeGeometry = new THREE.CircleGeometry(lake.radius, 32);
-            const lakeMaterial = new THREE.MeshPhongMaterial({
+            const lakeMaterial = getMaterial('phong', {
                 color: 0x88ccff,
                 transparent: true,
                 opacity: 0.8,
@@ -994,7 +994,7 @@ function initEntities() {
             
             // Main lava surface - positioned above ground
             const poolGeometry = new THREE.CircleGeometry(pool.radius, 32);
-            const poolMaterial = new THREE.MeshBasicMaterial({
+            const poolMaterial = getMaterial('basic', {
                 color: 0xff4400,
                 transparent: true,
                 opacity: 0.95
@@ -1006,11 +1006,11 @@ function initEntities() {
             
             // Inner brighter core
             G.coreGeometry = new THREE.CircleGeometry(pool.radius * 0.6, 32);
-            G.coreMaterial = new THREE.MeshBasicMaterial({
+            G.coreMaterial = getMaterial('basic', {
                 color: 0xffaa00,
                 transparent: true,
                 opacity: 0.9
-            });
+            }).clone();
             const coreMesh = new THREE.Mesh(G.coreGeometry, G.coreMaterial);
             coreMesh.rotation.x = -Math.PI / 2;
             coreMesh.position.y = 0.35;
@@ -1018,7 +1018,7 @@ function initEntities() {
             
             // Hottest center
             const centerGeometry = new THREE.CircleGeometry(pool.radius * 0.25, 32);
-            const centerMaterial = new THREE.MeshBasicMaterial({
+            const centerMaterial = getMaterial('basic', {
                 color: 0xffff00,
                 transparent: true,
                 opacity: 0.85
@@ -1053,7 +1053,7 @@ function initEntities() {
             
             // Dark water surface
             const poolGeometry = new THREE.CircleGeometry(pool.radius, 32);
-            const poolMaterial = new THREE.MeshLambertMaterial({
+            const poolMaterial = getMaterial('lambert', {
                 color: 0x1a2a3a,
                 transparent: true,
                 opacity: 0.85
@@ -1065,7 +1065,7 @@ function initEntities() {
             
             // Mist/fog layer
             const mistGeometry = new THREE.CircleGeometry(pool.radius * 1.3, 32);
-            const mistMaterial = new THREE.MeshBasicMaterial({
+            const mistMaterial = getMaterial('basic', {
                 color: 0x445566,
                 transparent: true,
                 opacity: 0.4
@@ -1079,7 +1079,7 @@ function initEntities() {
             const particleGroup = new THREE.Group();
             for (let i = 0; i < 8; i++) {
                 const particleGeometry = new THREE.SphereGeometry(0.3 + Math.random() * 0.3, 8, 8);
-                const particleMaterial = new THREE.MeshBasicMaterial({
+                const particleMaterial = getMaterial('basic', {
                     color: 0x667788,
                     transparent: true,
                     opacity: 0.3
@@ -1202,7 +1202,7 @@ function initEntities() {
 
                 // Lava stream segment
                 const streamGeometry = new THREE.BoxGeometry(segmentWidth, 0.3, segmentLength);
-                const streamMaterial = new THREE.MeshBasicMaterial({
+                const streamMaterial = getMaterial('basic', {
                     color: i % 2 === 0 ? 0xff4400 : 0xffaa00,
                     transparent: true,
                     opacity: 0.9 - (i * 0.1)
@@ -1219,7 +1219,7 @@ function initEntities() {
 
             // Add glowing core
             G.coreGeometry = new THREE.BoxGeometry(0.8, 0.2, flow.length * 0.8);
-            G.coreMaterial = new THREE.MeshBasicMaterial({
+            G.coreMaterial = getMaterial('basic', {
                 color: 0xffffaa,
                 transparent: true,
                 opacity: 0.6
@@ -1256,7 +1256,7 @@ function initEntities() {
 
             // Dark pit opening
             const pitGeometry = new THREE.PlaneGeometry(crevice.width, crevice.length);
-            const pitMaterial = new THREE.MeshBasicMaterial({
+            const pitMaterial = getMaterial('basic', {
                 color: 0x000000,
                 side: THREE.DoubleSide
             });
@@ -1270,8 +1270,8 @@ function initEntities() {
             for (let i = 0; i < 8; i++) {
                 const side = i < 4 ? -1 : 1;
                 const along = (i % 4) / 3 - 0.5;
-                const edgeGeometry = new THREE.ConeGeometry(0.4, 1, 4);
-                const edgeMaterial = new THREE.MeshLambertMaterial({ color: edgeColor });
+                const edgeGeometry = getGeometry('cone', 0.4, 1, 4);
+                const edgeMaterial = getMaterial('lambert', { color: edgeColor });
                 const edge = new THREE.Mesh(edgeGeometry, edgeMaterial);
                 edge.position.set(
                     side * crevice.width / 2 + (Math.random() - 0.5) * 0.5,
@@ -1303,8 +1303,8 @@ function initEntities() {
         const ceilingHeight = G.levelConfig.ceilingHeight || 25;
         
         // Large ceiling plane
-        const ceilingGeometry = new THREE.PlaneGeometry(600, 600);
-        const ceilingMaterial = new THREE.MeshLambertMaterial({
+        const ceilingGeometry = getGeometry('plane', 600, 600);
+        const ceilingMaterial = getMaterial('lambert', {
             color: 0x1a0f0a,
             side: THREE.DoubleSide
         });
@@ -1321,7 +1321,7 @@ function initEntities() {
             const height = 2 + Math.random() * 4;
             
             const stalactiteGeometry = new THREE.ConeGeometry(size, height, 6);
-            const stalactiteMaterial = new THREE.MeshLambertMaterial({
+            const stalactiteMaterial = getMaterial('lambert', {
                 color: 0x2a1a0a
             });
             const stalactite = new THREE.Mesh(stalactiteGeometry, stalactiteMaterial);
@@ -1406,8 +1406,6 @@ function initEntities() {
     G.scorchMarks = [];
     G.guardianArrows = [];
     G.mummyTornados = [];
-    G.lastWildTornadoSpawn = 0;
-    G.wildTornadoBaseInterval = 2000; // Base spawn interval for out-of-bounds tornados
     G.lavaTrails = [];
     G.birds = [];
     G.bombs = [];

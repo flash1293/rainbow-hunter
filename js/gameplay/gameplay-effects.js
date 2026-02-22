@@ -44,29 +44,35 @@
             const particleCount = 50;
             const colors = [0x00FFFF, 0xFF00FF, 0x00FF00, 0xFFFF00, 0xFF0066];
             
+            // Pre-cache materials for all colors
+            const cubeMaterials = colors.map(color => 
+                getMaterial('basic', { color: color, transparent: true, opacity: 0.9 })
+            );
+            const ringMaterials = colors.map(color => 
+                getMaterial('basic', { color: color, transparent: true, opacity: 0.8 })
+            );
+            
             for (let i = 0; i < particleCount; i++) {
-                // Create glowing data cube fragments
-                const size = 0.15 + Math.random() * 0.35;
+                // Create glowing data cube fragments - use deterministic sizes
+                const sizeIndex = i % 4;
+                const size = 0.15 + sizeIndex * 0.12;
                 const cubeGeometry = new THREE.BoxGeometry(size, size, size);
-                const color = colors[Math.floor(Math.random() * colors.length)];
-                const cubeMaterial = new THREE.MeshBasicMaterial({ 
-                    color: color,
-                    transparent: true,
-                    opacity: 0.9
-                });
+                const cubeMaterial = cubeMaterials[i % colors.length].clone();
                 const cube = new THREE.Mesh(cubeGeometry, cubeMaterial);
                 cube.position.set(x, y, z);
                 cube.rotation.set(
-                    Math.random() * Math.PI,
-                    Math.random() * Math.PI,
-                    Math.random() * Math.PI
+                    (i * 0.7) % Math.PI,
+                    (i * 1.3) % Math.PI,
+                    (i * 0.9) % Math.PI
                 );
                 
-                const speed = 0.25 + Math.random() * 0.6;
+                // Deterministic velocity based on index
+                const angle = (i / particleCount) * Math.PI * 2;
+                const speed = 0.25 + (i % 5) * 0.12;
                 const velocity = new THREE.Vector3(
-                    (Math.random() - 0.5) * speed,
-                    Math.random() * speed * 0.8,
-                    (Math.random() - 0.5) * speed
+                    Math.cos(angle) * speed * 0.5,
+                    (i % 8) * 0.1,
+                    Math.sin(angle) * speed * 0.5
                 );
                 
                 G.scene.add(cube);
@@ -76,9 +82,9 @@
                     life: 40, 
                     initialScale: size,
                     spin: new THREE.Vector3(
-                        (Math.random() - 0.5) * 0.3,
-                        (Math.random() - 0.5) * 0.3,
-                        (Math.random() - 0.5) * 0.3
+                        ((i % 7) - 3) * 0.1,
+                        ((i % 5) - 2) * 0.1,
+                        ((i % 9) - 4) * 0.05
                     )
                 });
             }
@@ -86,15 +92,11 @@
             // Add glitch ring burst
             for (let i = 0; i < 3; i++) {
                 const ringGeometry = new THREE.TorusGeometry(0.5 + i * 0.3, 0.05, 8, 24);
-                const ringMaterial = new THREE.MeshBasicMaterial({ 
-                    color: colors[i % colors.length],
-                    transparent: true,
-                    opacity: 0.8
-                });
+                const ringMaterial = ringMaterials[i % colors.length].clone();
                 const ring = new THREE.Mesh(ringGeometry, ringMaterial);
                 ring.position.set(x, y, z);
                 ring.rotation.x = Math.PI / 2;
-                ring.rotation.y = Math.random() * Math.PI;
+                ring.rotation.y = i * 1.2;
                 G.scene.add(ring);
                 particles.push({ 
                     mesh: ring, 
@@ -140,12 +142,12 @@
     
     // Glitch flash effect for computer theme
     function createGlitchFlash(x, y, z) {
-        const flashGeometry = new THREE.SphereGeometry(2, 16, 16);
-        const flashMaterial = new THREE.MeshBasicMaterial({ 
+        const flashGeometry = getGeometry('sphere', 2, 16, 16);
+        const flashMaterial = getMaterial('basic', { 
             color: 0x00FFFF,
             transparent: true,
             opacity: 0.6
-        });
+        }).clone();
         const flash = new THREE.Mesh(flashGeometry, flashMaterial);
         flash.position.set(x, y, z);
         G.scene.add(flash);
@@ -176,29 +178,34 @@
             const particleCount = 80;
             const colors = [0x00FFFF, 0xFF00FF, 0x00FF00, 0xFFFF00, 0xFF0066, 0xFFFFFF];
             
+            // Pre-cache materials for all colors
+            const cubeMaterials = colors.map(color => 
+                getMaterial('basic', { color: color, transparent: true, opacity: 0.9 })
+            );
+            const ringMaterials = colors.map(color => 
+                getMaterial('basic', { color: color, transparent: true, opacity: 0.9 })
+            );
+            
             // Data cube fragments
             for (let i = 0; i < particleCount; i++) {
-                const size = 0.3 + Math.random() * 0.6;
+                const sizeIndex = i % 5;
+                const size = 0.3 + sizeIndex * 0.12;
                 const cubeGeometry = new THREE.BoxGeometry(size, size, size);
-                const color = colors[Math.floor(Math.random() * colors.length)];
-                const cubeMaterial = new THREE.MeshBasicMaterial({ 
-                    color: color,
-                    transparent: true,
-                    opacity: 0.9
-                });
+                const cubeMaterial = cubeMaterials[i % colors.length].clone();
                 const cube = new THREE.Mesh(cubeGeometry, cubeMaterial);
                 cube.position.set(x, y, z);
                 cube.rotation.set(
-                    Math.random() * Math.PI,
-                    Math.random() * Math.PI,
-                    Math.random() * Math.PI
+                    (i * 0.7) % Math.PI,
+                    (i * 1.3) % Math.PI,
+                    (i * 0.9) % Math.PI
                 );
                 
-                const speed = 0.4 + Math.random() * 0.9;
+                const angle = (i / particleCount) * Math.PI * 2;
+                const speed = 0.4 + (i % 7) * 0.13;
                 const velocity = new THREE.Vector3(
-                    (Math.random() - 0.5) * speed,
-                    Math.random() * speed * 0.9,
-                    (Math.random() - 0.5) * speed
+                    Math.cos(angle) * speed * 0.5,
+                    (i % 10) * 0.09,
+                    Math.sin(angle) * speed * 0.5
                 );
                 
                 G.scene.add(cube);
@@ -208,9 +215,9 @@
                     life: 50, 
                     initialScale: size,
                     spin: new THREE.Vector3(
-                        (Math.random() - 0.5) * 0.4,
-                        (Math.random() - 0.5) * 0.4,
-                        (Math.random() - 0.5) * 0.4
+                        ((i % 9) - 4) * 0.09,
+                        ((i % 7) - 3) * 0.09,
+                        ((i % 11) - 5) * 0.07
                     )
                 });
             }
@@ -218,15 +225,11 @@
             // Multiple expanding glitch rings
             for (let i = 0; i < 5; i++) {
                 const ringGeometry = new THREE.TorusGeometry(0.8 + i * 0.4, 0.08, 8, 32);
-                const ringMaterial = new THREE.MeshBasicMaterial({ 
-                    color: colors[i % colors.length],
-                    transparent: true,
-                    opacity: 0.9
-                });
+                const ringMaterial = ringMaterials[i % colors.length].clone();
                 const ring = new THREE.Mesh(ringGeometry, ringMaterial);
                 ring.position.set(x, y, z);
                 ring.rotation.x = Math.PI / 2;
-                ring.rotation.z = Math.random() * Math.PI;
+                ring.rotation.z = i * 0.63;
                 G.scene.add(ring);
                 particles.push({ 
                     mesh: ring, 
@@ -291,11 +294,11 @@
                 const size = 0.4 + Math.random() * 1.0;
                 const cubeGeometry = new THREE.BoxGeometry(size, size, size);
                 const color = colors[Math.floor(Math.random() * colors.length)];
-                const cubeMaterial = new THREE.MeshBasicMaterial({ 
+                const cubeMaterial = getMaterial('basic', { 
                     color: color,
                     transparent: true,
                     opacity: 0.95
-                });
+                }).clone();
                 const cube = new THREE.Mesh(cubeGeometry, cubeMaterial);
                 cube.position.set(x, y, z);
                 cube.rotation.set(
@@ -328,11 +331,11 @@
             // Epic expanding ring shockwaves
             for (let i = 0; i < 8; i++) {
                 const ringGeometry = new THREE.TorusGeometry(1 + i * 0.5, 0.12, 8, 48);
-                const ringMaterial = new THREE.MeshBasicMaterial({ 
+                const ringMaterial = getMaterial('basic', { 
                     color: colors[i % colors.length],
                     transparent: true,
                     opacity: 1.0
-                });
+                }).clone();
                 const ring = new THREE.Mesh(ringGeometry, ringMaterial);
                 ring.position.set(x, y, z);
                 ring.rotation.x = Math.PI / 2 + (Math.random() - 0.5) * 0.3;

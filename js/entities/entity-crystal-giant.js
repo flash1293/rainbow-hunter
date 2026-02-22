@@ -15,8 +15,8 @@
         const lightAmethyst = 0xcc77ff;      // Highlights
 
         // Massive torso - chunky crystal formation
-        const torsoGeometry = new THREE.BoxGeometry(1.8, 2.0, 1.4);
-        const torsoMaterial = new THREE.MeshLambertMaterial({ 
+        const torsoGeometry = getGeometry('box', 1.8, 2.0, 1.4);
+        const torsoMaterial = getMaterial('lambert', { 
             color: amethystPurple,
             emissive: amethystPurple,
             emissiveIntensity: 0.15
@@ -29,8 +29,8 @@
         group.add(torso);
 
         // Crystal protrusions on shoulders/back (spiky crystals)
-        const spikeGeometry = new THREE.ConeGeometry(0.25, 0.8, 5);
-        const spikeMaterial = new THREE.MeshLambertMaterial({ 
+        const spikeGeometry = getGeometry('cone', 0.25, 0.8, 5);
+        const spikeMaterial = getMaterial('lambert', { 
             color: crystalPink,
             emissive: crystalPink,
             emissiveIntensity: 0.25
@@ -52,8 +52,8 @@
         });
 
         // Chest plate - large crystal formation
-        const chestGeometry = new THREE.OctahedronGeometry(0.6, 0);
-        const chestMaterial = new THREE.MeshLambertMaterial({ 
+        const chestGeometry = getGeometry('octahedron', 0.6, 0);
+        const chestMaterial = getMaterial('lambert', { 
             color: lightAmethyst,
             emissive: crystalBlue,
             emissiveIntensity: 0.2
@@ -66,8 +66,8 @@
         group.add(chest);
 
         // Angular head (massive faceted crystal)
-        const headGeometry = new THREE.OctahedronGeometry(0.7, 0);
-        const headMaterial = new THREE.MeshLambertMaterial({ 
+        const headGeometry = getGeometry('octahedron', 0.7, 0);
+        const headMaterial = getMaterial('lambert', { 
             color: amethystPurple,
             emissive: amethystPurple,
             emissiveIntensity: 0.2
@@ -81,10 +81,10 @@
         group.add(head);
 
         // Glowing crystal eyes
-        const eyeMaterial = new THREE.MeshBasicMaterial({ 
+        const eyeMaterial = getMaterial('basic', { 
             color: crystalBlue
         });
-        const eyeGeometry = new THREE.OctahedronGeometry(0.18, 0);
+        const eyeGeometry = getGeometry('octahedron', 0.18, 0);
         [-0.25, 0.25].forEach(x => {
             const eye = new THREE.Mesh(eyeGeometry, eyeMaterial);
             eye.position.set(x, 5.3, 0.55);
@@ -93,8 +93,8 @@
         });
 
         // Crystal crown spikes on head
-        const crownGeometry = new THREE.ConeGeometry(0.15, 0.6, 4);
-        const crownMaterial = new THREE.MeshLambertMaterial({ 
+        const crownGeometry = getGeometry('cone', 0.15, 0.6, 4);
+        const crownMaterial = getMaterial('lambert', { 
             color: crystalPink,
             emissive: crystalPink,
             emissiveIntensity: 0.3
@@ -113,8 +113,8 @@
         });
 
         // Massive arms - chunky crystal formations
-        const upperArmGeometry = new THREE.BoxGeometry(0.7, 1.4, 0.6);
-        const armMaterial = new THREE.MeshLambertMaterial({ 
+        const upperArmGeometry = getGeometry('box', 0.7, 1.4, 0.6);
+        const armMaterial = getMaterial('lambert', { 
             color: darkCrystal,
             emissive: amethystPurple,
             emissiveIntensity: 0.1
@@ -135,8 +135,8 @@
         group.add(rightUpperArm);
 
         // Forearms
-        const forearmGeometry = new THREE.BoxGeometry(0.6, 1.2, 0.5);
-        const forearmMaterial = new THREE.MeshLambertMaterial({ 
+        const forearmGeometry = getGeometry('box', 0.6, 1.2, 0.5);
+        const forearmMaterial = getMaterial('lambert', { 
             color: amethystPurple,
             emissive: amethystPurple,
             emissiveIntensity: 0.15
@@ -155,8 +155,8 @@
         group.add(rightForearm);
 
         // Massive crystal fists (rock-smashing fists)
-        const fistGeometry = new THREE.OctahedronGeometry(0.55, 0);
-        const fistMaterial = new THREE.MeshLambertMaterial({ 
+        const fistGeometry = getGeometry('octahedron', 0.55, 0);
+        const fistMaterial = getMaterial('lambert', { 
             color: lightAmethyst,
             emissive: crystalGreen,
             emissiveIntensity: 0.2
@@ -177,8 +177,8 @@
         group.add(rightFist);
 
         // Fist crystal spikes
-        const fistSpikeGeometry = new THREE.ConeGeometry(0.12, 0.4, 4);
-        const fistSpikeMaterial = new THREE.MeshLambertMaterial({ 
+        const fistSpikeGeometry = getGeometry('cone', 0.12, 0.4, 4);
+        const fistSpikeMaterial = getMaterial('lambert', { 
             color: crystalGreen,
             emissive: crystalGreen,
             emissiveIntensity: 0.35
@@ -201,8 +201,8 @@
         });
 
         // Thick crystal legs
-        const legGeometry = new THREE.BoxGeometry(0.7, 1.8, 0.6);
-        const legMaterial = new THREE.MeshLambertMaterial({ 
+        const legGeometry = getGeometry('box', 0.7, 1.8, 0.6);
+        const legMaterial = getMaterial('lambert', { 
             color: darkCrystal,
             emissive: amethystPurple,
             emissiveIntensity: 0.1
@@ -219,8 +219,8 @@
         group.add(rightLeg);
 
         // Massive crystal feet
-        const footGeometry = new THREE.OctahedronGeometry(0.45, 0);
-        const footMaterial = new THREE.MeshLambertMaterial({ 
+        const footGeometry = getGeometry('octahedron', 0.45, 0);
+        const footMaterial = getMaterial('lambert', { 
             color: amethystPurple,
             emissive: amethystPurple,
             emissiveIntensity: 0.15
@@ -234,8 +234,8 @@
         });
 
         // Inner energy glow (core)
-        const glowGeometry = new THREE.SphereGeometry(0.8, 16, 16);
-        const glowMaterial = new THREE.MeshBasicMaterial({ 
+        const glowGeometry = getGeometry('sphere', 0.8, 16, 16);
+        const glowMaterial = getMaterial('basic', { 
             color: crystalBlue, 
             transparent: true, 
             opacity: 0.2 
@@ -245,8 +245,8 @@
         group.add(glow);
 
         // Floating crystal fragments around body
-        const fragmentGeometry = new THREE.OctahedronGeometry(0.15, 0);
-        const fragmentMaterial = new THREE.MeshLambertMaterial({ 
+        const fragmentGeometry = getGeometry('octahedron', 0.15, 0);
+        const fragmentMaterial = getMaterial('lambert', { 
             color: crystalPink,
             emissive: crystalPink,
             emissiveIntensity: 0.4

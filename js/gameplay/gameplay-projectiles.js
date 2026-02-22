@@ -25,7 +25,7 @@
             // Trojan Dragon shoots massive corrupted data bombs
             // Main virus core - dodecahedron for complex digital appearance
             const virusGeometry = new THREE.DodecahedronGeometry(0.8 * fbScale, 0);
-            const virusMaterial = new THREE.MeshBasicMaterial({ 
+            const virusMaterial = getMaterial('basic', { 
                 color: 0xFF0000,
                 transparent: true,
                 opacity: 0.9
@@ -35,7 +35,7 @@
             
             // Inner rotating cube (malware core)
             const malwareGeometry = new THREE.BoxGeometry(0.6 * fbScale, 0.6 * fbScale, 0.6 * fbScale);
-            const malwareMaterial = new THREE.MeshBasicMaterial({ 
+            const malwareMaterial = getMaterial('basic', { 
                 color: 0xFFFF00,
                 transparent: true,
                 opacity: 0.8
@@ -45,7 +45,7 @@
             
             // Wireframe shell 1
             const shell1Geometry = new THREE.IcosahedronGeometry(1.0 * fbScale, 1);
-            const shell1Material = new THREE.MeshBasicMaterial({ 
+            const shell1Material = getMaterial('basic', { 
                 color: 0x00FF00,
                 wireframe: true,
                 transparent: true,
@@ -56,7 +56,7 @@
             
             // Wireframe shell 2 (counter-rotating)
             const shell2Geometry = new THREE.IcosahedronGeometry(1.2 * fbScale, 0);
-            const shell2Material = new THREE.MeshBasicMaterial({ 
+            const shell2Material = getMaterial('basic', { 
                 color: 0x00FFFF,
                 wireframe: true,
                 transparent: true,
@@ -67,7 +67,7 @@
             
             // Glowing data rings
             const ringGeometry = new THREE.TorusGeometry(0.9 * fbScale, 0.08, 8, 24);
-            const ringMaterial1 = new THREE.MeshBasicMaterial({ 
+            const ringMaterial1 = getMaterial('basic', { 
                 color: 0xFF00FF,
                 transparent: true,
                 opacity: 0.8
@@ -76,7 +76,7 @@
             ring1.rotation.x = Math.PI / 2;
             fireballGroup.add(ring1);
             
-            const ringMaterial2 = new THREE.MeshBasicMaterial({ 
+            const ringMaterial2 = getMaterial('basic', { 
                 color: 0x00FFFF,
                 transparent: true,
                 opacity: 0.8
@@ -87,7 +87,7 @@
             
             // Outer threatening glow
             const glowGeometry = new THREE.SphereGeometry(1.5 * fbScale, 16, 16);
-            const glowMaterial = new THREE.MeshBasicMaterial({ 
+            const glowMaterial = getMaterial('basic', { 
                 color: 0xFF0066,
                 transparent: true,
                 opacity: 0.2
@@ -149,7 +149,8 @@
             trail: [],
             lastTrailTime: 0,
             isDragonFireball: true,
-            spawnTime: Date.now()
+            spawnTime: Date.now(),
+            startPos: { x: fireballGroup.position.x, z: fireballGroup.position.z }
         });
     }
 
@@ -171,7 +172,7 @@
         };
         
         const waveGeometry = new THREE.ExtrudeGeometry(waveShape, extrudeSettings);
-        const waveMaterial = new THREE.MeshBasicMaterial({
+        const waveMaterial = getMaterial('basic', {
             color: 0x00FF44, // Ghostly green
             transparent: true,
             opacity: 0.8,
@@ -183,7 +184,7 @@
         
         // Add glowing edge
         const edgeGeometry = new THREE.TorusGeometry(2 * scale, 0.1 * scale, 8, 32, Math.PI);
-        const edgeMaterial = new THREE.MeshBasicMaterial({
+        const edgeMaterial = getMaterial('basic', {
             color: 0x88FF88,
             transparent: true,
             opacity: 0.9
@@ -195,7 +196,7 @@
         // Add particle trail effect
         for (let i = 0; i < 5; i++) {
             const particleGeometry = new THREE.SphereGeometry(0.2 * scale, 8, 8);
-            const particleMaterial = new THREE.MeshBasicMaterial({
+            const particleMaterial = getMaterial('basic', {
                 color: 0x00FF44,
                 transparent: true,
                 opacity: 0.6
@@ -235,7 +236,8 @@
             lastTrailTime: 0,
             isScytheWave: true,
             spawnTime: Date.now(),
-            maxLifetime: 5000 // 5 seconds before fading
+            maxLifetime: 5000, // 5 seconds before fading
+            startPos: { x: waveGroup.position.x, z: waveGroup.position.z }
         });
     }
 
@@ -249,7 +251,7 @@
         
         // Core of the bolt - bright white/purple
         const coreGeometry = new THREE.SphereGeometry(0.4 * scale, 12, 12);
-        const coreMaterial = new THREE.MeshBasicMaterial({
+        const coreMaterial = getMaterial('basic', {
             color: 0xFFFFFF,
             transparent: true,
             opacity: 0.9
@@ -259,7 +261,7 @@
         
         // Inner glow
         const innerGlowGeometry = new THREE.SphereGeometry(0.6 * scale, 12, 12);
-        const innerGlowMaterial = new THREE.MeshBasicMaterial({
+        const innerGlowMaterial = getMaterial('basic', {
             color: 0x9400D3,
             transparent: true,
             opacity: 0.5
@@ -270,7 +272,7 @@
         // Rainbow ring
         for (let i = 0; i < 7; i++) {
             const ringGeometry = new THREE.TorusGeometry(0.8 * scale + i * 0.1 * scale, 0.05 * scale, 8, 16);
-            const ringMaterial = new THREE.MeshBasicMaterial({
+            const ringMaterial = getMaterial('basic', {
                 color: rainbowColors[i],
                 transparent: true,
                 opacity: 0.7
@@ -284,7 +286,7 @@
         // Trailing sparkles
         for (let i = 0; i < 8; i++) {
             const sparkleGeometry = new THREE.SphereGeometry(0.1 * scale, 6, 6);
-            const sparkleMaterial = new THREE.MeshBasicMaterial({
+            const sparkleMaterial = getMaterial('basic', {
                 color: rainbowColors[i % 7],
                 transparent: true,
                 opacity: 0.8
@@ -326,7 +328,8 @@
             isRainbowBolt: true,
             spawnTime: Date.now(),
             maxLifetime: 6000, // 6 seconds lifetime
-            rainbowPhase: 0
+            rainbowPhase: 0,
+            startPos: { x: boltGroup.position.x, z: boltGroup.position.z }
         });
     }
 
@@ -348,8 +351,8 @@
             const gemColors = [0xFF0000, 0x0066FF, 0x00FF00]; // Ruby, sapphire, emerald
             
             // Crown base ring
-            const baseGeometry = new THREE.CylinderGeometry(0.25, 0.3, 0.2, 8);
-            const crownMaterial = new THREE.MeshLambertMaterial({ 
+            const baseGeometry = getGeometry('cylinder', 0.25, 0.3, 0.2, 8);
+            const crownMaterial = getMaterial('lambert', { 
                 color: crownGold,
                 emissive: crownGold,
                 emissiveIntensity: 0.3
@@ -360,7 +363,7 @@
             // Crown points (5 small points)
             for (let i = 0; i < 5; i++) {
                 const angle = (i / 5) * Math.PI * 2;
-                const pointGeometry = new THREE.ConeGeometry(0.06, 0.25, 4);
+                const pointGeometry = getGeometry('cone', 0.06, 0.25, 4);
                 const point = new THREE.Mesh(pointGeometry, crownMaterial);
                 point.position.set(
                     Math.cos(angle) * 0.22,
@@ -370,8 +373,8 @@
                 fireballGroup.add(point);
                 
                 // Tiny gem on each point
-                const gemGeometry = new THREE.OctahedronGeometry(0.04, 0);
-                const gemMaterial = new THREE.MeshBasicMaterial({ 
+                const gemGeometry = getGeometry('octahedron', 0.04, 0);
+                const gemMaterial = getMaterial('basic', { 
                     color: gemColors[i % 3]
                 });
                 const gem = new THREE.Mesh(gemGeometry, gemMaterial);
@@ -384,8 +387,8 @@
             }
             
             // Golden glow aura
-            const glowGeometry = new THREE.SphereGeometry(0.4, 8, 8);
-            const glowMaterial = new THREE.MeshBasicMaterial({ 
+            const glowGeometry = getGeometry('sphere', 0.4, 8, 8);
+            const glowMaterial = getMaterial('basic', { 
                 color: 0xFFD700,
                 transparent: true,
                 opacity: 0.3
@@ -396,7 +399,7 @@
             // Computer theme: Malware virus orb / corrupted data sphere
             // Core virus geometry - icosahedron for digital look
             const virusCore = new THREE.IcosahedronGeometry(0.5 * fbScale, 1);
-            const virusMaterial = new THREE.MeshBasicMaterial({ 
+            const virusMaterial = getMaterial('basic', { 
                 color: 0xFF0000,
                 transparent: true,
                 opacity: 0.9
@@ -406,7 +409,7 @@
             
             // Wireframe shell
             const shellGeometry = new THREE.IcosahedronGeometry(0.65 * fbScale, 1);
-            const shellMaterial = new THREE.MeshBasicMaterial({ 
+            const shellMaterial = getMaterial('basic', { 
                 color: 0x00FF00,
                 wireframe: true,
                 transparent: true,
@@ -417,7 +420,7 @@
             
             // Outer digital glow ring
             const ringGeometry = new THREE.TorusGeometry(0.4 * fbScale, 0.05, 8, 16);
-            const ringMaterial = new THREE.MeshBasicMaterial({ 
+            const ringMaterial = getMaterial('basic', { 
                 color: 0x00FFFF,
                 transparent: true,
                 opacity: 0.7
@@ -426,14 +429,17 @@
             ring1.rotation.x = Math.PI / 2;
             fireballGroup.add(ring1);
             
-            const ring2 = new THREE.Mesh(ringGeometry, ringMaterial.clone());
-            ring2.material.color.setHex(0xFF00FF);
+            const ring2 = new THREE.Mesh(ringGeometry, getMaterial('basic', { 
+                color: 0xFF00FF,
+                transparent: true,
+                opacity: 0.7
+            }));
             ring2.rotation.y = Math.PI / 2;
             fireballGroup.add(ring2);
             
             // Outer glow sphere
             const glowGeometry = new THREE.SphereGeometry(0.8 * fbScale, 12, 12);
-            const glowMaterial = new THREE.MeshBasicMaterial({ 
+            const glowMaterial = getMaterial('basic', { 
                 color: 0xFF0066,
                 transparent: true,
                 opacity: 0.25
@@ -513,7 +519,8 @@
             trail: [],
             lastTrailTime: 0,
             isWizardFireball: true,
-            spawnTime: Date.now() // Track when spawned to prevent early terrain collision
+            spawnTime: Date.now(), // Track when spawned to prevent early terrain collision
+            startPos: { x: fireballGroup.position.x, z: fireballGroup.position.z }
         });
         
         // Play a sound effect
@@ -585,7 +592,8 @@
             damage: 1,
             trail: [],
             lastTrailTime: 0,
-            isLavaMonsterFireball: true
+            isLavaMonsterFireball: true,
+            startPos: { x: fireballGroup.position.x, z: fireballGroup.position.z }
         });
         
         Audio.playExplosionSound();
@@ -597,13 +605,13 @@
         
         // Glowing lava pool
         const poolGeometry = new THREE.CircleGeometry(GAME_CONFIG.LAVA_TRAIL_RADIUS, 16);
-        const poolMaterial = new THREE.MeshBasicMaterial({ 
+        const poolMaterial = getMaterial('basic', { 
             color: 0xff4400,
             transparent: true,
             opacity: 0.9,
             side: THREE.DoubleSide,
             blending: THREE.AdditiveBlending
-        });
+        }).clone();
         const pool = new THREE.Mesh(poolGeometry, poolMaterial);
         pool.rotation.x = -Math.PI / 2;
         pool.position.y = 0.15;
@@ -611,25 +619,25 @@
         
         // Darker crust ring
         const crustGeometry = new THREE.RingGeometry(GAME_CONFIG.LAVA_TRAIL_RADIUS * 0.7, GAME_CONFIG.LAVA_TRAIL_RADIUS, 16);
-        const crustMaterial = new THREE.MeshBasicMaterial({ 
+        const crustMaterial = getMaterial('basic', { 
             color: 0x4a2010,
             transparent: true,
             opacity: 0.6,
             side: THREE.DoubleSide
-        });
+        }).clone();
         const crust = new THREE.Mesh(crustGeometry, crustMaterial);
         crust.rotation.x = -Math.PI / 2;
         crust.position.y = 0.16;
         trailGroup.add(crust);
         
         // Small bubbling particle
-        const bubbleGeometry = new THREE.SphereGeometry(0.15, 8, 8);
-        const bubbleMaterial = new THREE.MeshBasicMaterial({ 
+        const bubbleGeometry = getGeometry('sphere', 0.15, 8, 8);
+        const bubbleMaterial = getMaterial('basic', { 
             color: 0xffaa00,
             transparent: true,
             opacity: 0.8,
             blending: THREE.AdditiveBlending
-        });
+        }).clone();
         const bubble = new THREE.Mesh(bubbleGeometry, bubbleMaterial);
         bubble.position.y = 0.2;
         trailGroup.add(bubble);
@@ -680,7 +688,7 @@
         const coneRadius = G.waterTheme ? 1.5 : 0.8;
         const coneHeight = G.waterTheme ? 8.0 : 3.0;
         const coneGeometry = new THREE.ConeGeometry(coneRadius, coneHeight, 12, 4, true);
-        const coneMaterial = new THREE.MeshBasicMaterial({
+        const coneMaterial = getMaterial('basic', {
             color: outerColor,
             transparent: true,
             opacity: G.waterTheme ? 0.45 : 0.7,
@@ -695,7 +703,7 @@
         const innerRadius = G.waterTheme ? 0.9 : 0.5;
         const innerHeight = G.waterTheme ? 6.5 : 2.5;
         const innerConeGeometry = new THREE.ConeGeometry(innerRadius, innerHeight, 12, 4, true);
-        const innerConeMaterial = new THREE.MeshBasicMaterial({
+        const innerConeMaterial = getMaterial('basic', {
             color: innerColor,
             transparent: true,
             opacity: G.waterTheme ? 0.55 : 0.8,
@@ -706,20 +714,22 @@
         innerCone.position.y = G.waterTheme ? innerHeight / 2 : 1.25;
         tornadoGroup.add(innerCone);
 
-        // Add dust/water particles
+        // Add dust/water particles - use deterministic opacity for caching
         const dustGroup = new THREE.Group();
         const numParticles = G.waterTheme ? 30 : 25;
         const particleScale = G.waterTheme ? 1.5 : 1;
+        // Pre-create a few cached materials with different opacities
+        const dustOpacities = [0.5, 0.6, 0.7, 0.8];
+        const dustMaterials = dustOpacities.map(opacity => 
+            getMaterial('basic', { color: particleColor, transparent: true, opacity })
+        );
         for (let i = 0; i < numParticles; i++) {
-            const dustGeometry = new THREE.SphereGeometry((0.1 + Math.random() * 0.1) * particleScale, 4, 4);
-            const dustMaterial = new THREE.MeshBasicMaterial({
-                color: particleColor,
-                transparent: true,
-                opacity: 0.5 + Math.random() * 0.3
-            });
+            const size = (0.1 + (i % 3) * 0.05) * particleScale; // Deterministic size
+            const dustGeometry = new THREE.SphereGeometry(size, 4, 4);
+            const dustMaterial = dustMaterials[i % dustMaterials.length];
             const dust = new THREE.Mesh(dustGeometry, dustMaterial);
-            const angle = Math.random() * Math.PI * 2;
-            const height = Math.random() * coneHeight;
+            const angle = (i / numParticles) * Math.PI * 2;
+            const height = (i / numParticles) * coneHeight;
             const radius = (0.2 + (height / coneHeight) * coneRadius) * particleScale;
             dust.position.set(Math.cos(angle) * radius, height, Math.sin(angle) * radius);
             dustGroup.add(dust);
@@ -746,129 +756,12 @@
             velocity: new THREE.Vector3(dirX / length * speed, 0, dirZ / length * speed),
             radius: G.waterTheme ? 1.5 : 1.0,  // Moderate collision for waterspouts
             damage: 1,
-            spinPhase: 0
+            spinPhase: 0,
+            startPos: { x: tornadoGroup.position.x, z: tornadoGroup.position.z }
         });
 
         // Play a whoosh sound
         Audio.playExplosionSound();
-    }
-
-    // Wild tornado spawning for out-of-bounds players
-    function spawnWildTornado(targetX, targetZ) {
-        // Spawn tornado from a random direction outside the visible area
-        const angle = Math.random() * Math.PI * 2;
-        const spawnDistance = 40 + Math.random() * 20;
-        const spawnX = targetX + Math.cos(angle) * spawnDistance;
-        const spawnZ = targetZ + Math.sin(angle) * spawnDistance;
-
-        // Use water colors for waterspout in water theme
-        const outerColor = G.waterTheme ? 0x1E90FF : 0xc4a14a;
-        const innerColor = G.waterTheme ? 0x87CEEB : 0xe8c36a;
-        const particleColor = G.waterTheme ? 0xB0E0E6 : 0xc4a14a;
-
-        const tornadoGroup = new THREE.Group();
-
-        // Create tornado/waterspout cone shape - moderate size for water level
-        const coneRadius = G.waterTheme ? 1.5 : 0.8;
-        const coneHeight = G.waterTheme ? 8.0 : 3.0;
-        const coneGeometry = new THREE.ConeGeometry(coneRadius, coneHeight, 12, 4, true);
-        const coneMaterial = new THREE.MeshBasicMaterial({
-            color: outerColor,
-            transparent: true,
-            opacity: G.waterTheme ? 0.45 : 0.7,
-            side: THREE.DoubleSide
-        });
-        const cone = new THREE.Mesh(coneGeometry, coneMaterial);
-        cone.rotation.x = Math.PI;
-        cone.position.y = G.waterTheme ? coneHeight / 2 : 1.5;
-        tornadoGroup.add(cone);
-
-        // Inner spinning cone
-        const innerRadius = G.waterTheme ? 0.9 : 0.5;
-        const innerHeight = G.waterTheme ? 6.5 : 2.5;
-        const innerConeGeometry = new THREE.ConeGeometry(innerRadius, innerHeight, 12, 4, true);
-        const innerConeMaterial = new THREE.MeshBasicMaterial({
-            color: innerColor,
-            transparent: true,
-            opacity: G.waterTheme ? 0.55 : 0.8,
-            side: THREE.DoubleSide
-        });
-        const innerCone = new THREE.Mesh(innerConeGeometry, innerConeMaterial);
-        innerCone.rotation.x = Math.PI;
-        innerCone.position.y = G.waterTheme ? innerHeight / 2 : 1.25;
-        tornadoGroup.add(innerCone);
-
-        // Add dust/water particles
-        const dustGroup = new THREE.Group();
-        const numParticles = G.waterTheme ? 30 : 25;
-        const particleScale = G.waterTheme ? 1.5 : 1;
-        for (let i = 0; i < numParticles; i++) {
-            const dustGeometry = new THREE.SphereGeometry((0.1 + Math.random() * 0.1) * particleScale, 4, 4);
-            const dustMaterial = new THREE.MeshBasicMaterial({
-                color: particleColor,
-                transparent: true,
-                opacity: 0.5 + Math.random() * 0.3
-            });
-            const dust = new THREE.Mesh(dustGeometry, dustMaterial);
-            const dustAngle = Math.random() * Math.PI * 2;
-            const height = Math.random() * coneHeight;
-            const radius = (0.2 + (height / coneHeight) * coneRadius) * particleScale;
-            dust.position.set(Math.cos(dustAngle) * radius, height, Math.sin(dustAngle) * radius);
-            dustGroup.add(dust);
-        }
-        tornadoGroup.add(dustGroup);
-        tornadoGroup.dustGroup = dustGroup;
-        tornadoGroup.innerCone = innerCone;
-        tornadoGroup.outerCone = cone;
-
-        const terrainHeight = getTerrainHeight(spawnX, spawnZ);
-        tornadoGroup.position.set(spawnX, terrainHeight + 0.5, spawnZ);
-        G.scene.add(tornadoGroup);
-        
-        // Calculate direction to target player
-        const dirX = targetX - spawnX;
-        const dirZ = targetZ - spawnZ;
-        const length = Math.sqrt(dirX * dirX + dirZ * dirZ);
-        
-        const speed = 0.22; // Slightly faster than mummy tornados
-        
-        G.mummyTornados.push({
-            mesh: tornadoGroup,
-            velocity: new THREE.Vector3(dirX / length * speed, 0, dirZ / length * speed),
-            radius: G.waterTheme ? 1.5 : 1.0,  // Moderate collision for waterspouts
-            damage: 1,
-            spinPhase: 0,
-            isWild: true // Mark as wild tornado
-        });
-    }
-    
-    function checkAndSpawnWildTornados() {
-        if (!G.levelConfig.safeZoneBounds) return;
-        
-        const bounds = G.levelConfig.safeZoneBounds;
-        const px = G.playerGroup.position.x;
-        const pz = G.playerGroup.position.z;
-        
-        // Check if player is outside safe zone
-        const outsideX = px < bounds.minX ? bounds.minX - px : (px > bounds.maxX ? px - bounds.maxX : 0);
-        const outsideZ = pz < bounds.minZ ? bounds.minZ - pz : (pz > bounds.maxZ ? pz - bounds.maxZ : 0);
-        const distanceOutside = Math.sqrt(outsideX * outsideX + outsideZ * outsideZ);
-        
-        if (distanceOutside > 0) {
-            const now = Date.now();
-            // Spawn rate increases the further out you are
-            // At 10 units out: every 2 seconds, at 50 units out: every 0.4 seconds
-            const spawnInterval = Math.max(400, G.wildTornadoBaseInterval - distanceOutside * 40);
-            
-            if (now - G.lastWildTornadoSpawn > spawnInterval) {
-                // Spawn 1-3 tornados based on distance
-                const tornadoCount = Math.min(3, 1 + Math.floor(distanceOutside / 20));
-                for (let i = 0; i < tornadoCount; i++) {
-                    spawnWildTornado(px, pz);
-                }
-                G.lastWildTornadoSpawn = now;
-            }
-        }
     }
 
     // Update tornados
@@ -995,11 +888,12 @@
                 continue;
             }
             
-            // Remove if out of bounds or too far
-            const tornadoDistFromOrigin = Math.sqrt(
-                tornado.mesh.position.x ** 2 + tornado.mesh.position.z ** 2
-            );
-            if (tornadoDistFromOrigin > 300) {
+            // Remove if tornado traveled too far from start
+            const tornadoDistFromStart = tornado.startPos ? Math.sqrt(
+                Math.pow(tornado.mesh.position.x - tornado.startPos.x, 2) +
+                Math.pow(tornado.mesh.position.z - tornado.startPos.z, 2)
+            ) : 0;
+            if (tornadoDistFromStart > 120) {
                 G.scene.remove(tornado.mesh);
                 G.mummyTornados.splice(i, 1);
             }
@@ -1261,10 +1155,18 @@
                             wallDepth = mtn.depth || 8;
                         }
                         const halfDepth = wallDepth / 2;
-                        const dx = Math.abs(fireball.mesh.position.x - mtn.x);
-                        const dz = Math.abs(fireball.mesh.position.z - mtn.z);
+                        let dx = fireball.mesh.position.x - mtn.x;
+                        let dz = fireball.mesh.position.z - mtn.z;
+                        if (mtn.rotation) {
+                            const cos = Math.cos(-mtn.rotation);
+                            const sin = Math.sin(-mtn.rotation);
+                            const lx = dx * cos - dz * sin;
+                            const lz = dx * sin + dz * cos;
+                            dx = lx;
+                            dz = lz;
+                        }
                         const mtnHeight = mtn.height || 25;
-                        if (dx < halfWidth && dz < halfDepth && fireball.mesh.position.y < mtnHeight) {
+                        if (Math.abs(dx) < halfWidth && Math.abs(dz) < halfDepth && fireball.mesh.position.y < mtnHeight) {
                             hitMountain = true;
                             break;
                         }
@@ -1327,9 +1229,13 @@
             // Check terrain collision - skip during grace period and for scythe waves
             const hitTerrain = !inGracePeriod && !fireball.isScytheWave && fireball.mesh.position.y < terrainHeight;
             
-            if (hitTerrain || hitMountain || hitCanyonWall || hitCliff ||
-                Math.abs(fireball.mesh.position.x) > GAME_CONFIG.WORLD_BOUND ||
-                Math.abs(fireball.mesh.position.z) > GAME_CONFIG.WORLD_BOUND) {
+            // Check if fireball has traveled too far from its origin
+            const fireballTravelDist = fireball.startPos ? Math.sqrt(
+                Math.pow(fireball.mesh.position.x - fireball.startPos.x, 2) +
+                Math.pow(fireball.mesh.position.z - fireball.startPos.z, 2)
+            ) : 0;
+            
+            if (hitTerrain || hitMountain || hitCanyonWall || hitCliff || fireballTravelDist > 150) {
                 createFireballExplosion(fireball.mesh.position.x, terrainHeight, fireball.mesh.position.z);
                 // Clean up trail particles
                 if (fireball.trail) {
@@ -1352,7 +1258,7 @@
         
         // Egg body - oval shape
         const eggGeometry = new THREE.SphereGeometry(0.5 * scale, 16, 16);
-        const eggMaterial = new THREE.MeshPhongMaterial({
+        const eggMaterial = getMaterial('phong', {
             color: eggColor,
             shininess: 80,
             emissive: eggColor,
@@ -1364,7 +1270,7 @@
         
         // Decorative stripe
         const stripeGeometry = new THREE.TorusGeometry(0.35 * scale, 0.06 * scale, 8, 16);
-        const stripeMaterial = new THREE.MeshBasicMaterial({
+        const stripeMaterial = getMaterial('basic', {
             color: 0xFFFFFF,
             transparent: true,
             opacity: 0.9
@@ -1376,7 +1282,7 @@
         // Sparkle trail
         for (let i = 0; i < 6; i++) {
             const sparkleGeometry = new THREE.SphereGeometry(0.08 * scale, 6, 6);
-            const sparkleMaterial = new THREE.MeshBasicMaterial({
+            const sparkleMaterial = getMaterial('basic', {
                 color: easterColors[i % easterColors.length],
                 transparent: true,
                 opacity: 0.7
@@ -1422,7 +1328,8 @@
             scale: scale,
             isEasterEgg: true,
             spawnTime: Date.now(),
-            maxLifetime: 6000
+            maxLifetime: 6000,
+            startPos: { x: eggGroup.position.x, z: eggGroup.position.z }
         });
     }
 
@@ -1435,12 +1342,12 @@
         const boxGeometry = new THREE.BoxGeometry(0.7 * scale, 0.7 * scale, 0.7 * scale);
         const wrapColors = [0xFF0000, 0x00FF00, 0x0000FF, 0xFFD700, 0xFF00FF];
         const wrapColor = wrapColors[Math.floor(Math.random() * wrapColors.length)];
-        const boxMaterial = new THREE.MeshLambertMaterial({ color: wrapColor });
+        const boxMaterial = getMaterial('lambert', { color: wrapColor });
         const box = new THREE.Mesh(boxGeometry, boxMaterial);
         presentGroup.add(box);
         
         // Ribbon cross on top
-        const ribbonMaterial = new THREE.MeshLambertMaterial({ color: 0xFFD700 }); // Gold ribbon
+        const ribbonMaterial = getMaterial('lambert', { color: 0xFFD700 }); // Gold ribbon
         const ribbonH = new THREE.Mesh(
             new THREE.BoxGeometry(0.75 * scale, 0.1 * scale, 0.15 * scale),
             ribbonMaterial
@@ -1457,7 +1364,7 @@
         
         // Bow on top
         const bowGeometry = new THREE.SphereGeometry(0.15 * scale, 8, 8);
-        const bowMaterial = new THREE.MeshLambertMaterial({ color: 0xFFD700 });
+        const bowMaterial = getMaterial('lambert', { color: 0xFFD700 });
         const bow = new THREE.Mesh(bowGeometry, bowMaterial);
         bow.position.y = 0.45 * scale;
         bow.scale.set(1.5, 0.6, 1.5);
@@ -1466,7 +1373,7 @@
         // Evil glow effect - sparkles around the present
         for (let i = 0; i < 8; i++) {
             const sparkleGeometry = new THREE.SphereGeometry(0.06 * scale, 6, 6);
-            const sparkleMaterial = new THREE.MeshBasicMaterial({
+            const sparkleMaterial = getMaterial('basic', {
                 color: 0xFF0000,
                 transparent: true,
                 opacity: 0.7
@@ -1514,7 +1421,8 @@
             isPresent: true,
             rotationSpeed: 0.05 + Math.random() * 0.03, // Tumbling rotation
             spawnTime: Date.now(),
-            maxLifetime: 5000
+            maxLifetime: 5000,
+            startPos: { x: presentGroup.position.x, z: presentGroup.position.z }
         });
     }
 
@@ -1525,7 +1433,7 @@
         
         // Green magical core
         const coreGeometry = new THREE.SphereGeometry(0.4 * scale, 12, 12);
-        const coreMaterial = new THREE.MeshBasicMaterial({ 
+        const coreMaterial = getMaterial('basic', { 
             color: 0x00FF00,
             transparent: true,
             opacity: 0.9
@@ -1535,7 +1443,7 @@
         
         // Inner bright green glow
         const innerGlowGeometry = new THREE.SphereGeometry(0.5 * scale, 12, 12);
-        const innerGlowMaterial = new THREE.MeshBasicMaterial({ 
+        const innerGlowMaterial = getMaterial('basic', { 
             color: 0x7FFF00,
             transparent: true,
             opacity: 0.5
@@ -1545,7 +1453,7 @@
         
         // Outer magical aura
         const outerGlowGeometry = new THREE.SphereGeometry(0.7 * scale, 12, 12);
-        const outerGlowMaterial = new THREE.MeshBasicMaterial({ 
+        const outerGlowMaterial = getMaterial('basic', { 
             color: 0x00FF7F,
             transparent: true,
             opacity: 0.25
@@ -1557,7 +1465,7 @@
         for (let i = 0; i < 6; i++) {
             const angle = (i / 6) * Math.PI * 2;
             const sparkleGeometry = new THREE.OctahedronGeometry(0.1 * scale, 0);
-            const sparkleMaterial = new THREE.MeshBasicMaterial({ 
+            const sparkleMaterial = getMaterial('basic', { 
                 color: [0x00FF00, 0x7FFF00, 0x00FF7F][i % 3],
                 transparent: true,
                 opacity: 0.8
@@ -1604,7 +1512,8 @@
             isWitchFireball: true,
             rotationSpeed: 0.08,
             spawnTime: Date.now(),
-            maxLifetime: 6000
+            maxLifetime: 6000,
+            startPos: { x: fireballGroup.position.x, z: fireballGroup.position.z }
         });
     }
 
@@ -1619,8 +1528,6 @@
     window.createLavaMonsterFireball = createLavaMonsterFireball;
     window.createLavaTrail = createLavaTrail;
     window.createMummyTornado = createMummyTornado;
-    window.spawnWildTornado = spawnWildTornado;
-    window.checkAndSpawnWildTornados = checkAndSpawnWildTornados;
     window.updateMummyTornados = updateMummyTornados;
     window.updateLavaTrails = updateLavaTrails;
     window.updateFireballs = updateFireballs;

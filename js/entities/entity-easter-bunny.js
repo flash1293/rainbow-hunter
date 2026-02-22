@@ -18,8 +18,8 @@
         const glowColor = 0xFFD700;         // Gold glow
 
         // Main body - large fluffy body
-        const bodyGeometry = new THREE.SphereGeometry(3, 16, 16);
-        const bodyMaterial = new THREE.MeshPhongMaterial({
+        const bodyGeometry = getGeometry('sphere', 3, 16, 16);
+        const bodyMaterial = getMaterial('phong', {
             color: furWhite,
             emissive: glowColor,
             emissiveIntensity: 0.05,
@@ -32,15 +32,15 @@
         bunnyGroup.add(body);
 
         // Head - round bunny head
-        const headGeometry = new THREE.SphereGeometry(2, 16, 16);
+        const headGeometry = getGeometry('sphere', 2, 16, 16);
         const head = new THREE.Mesh(headGeometry, bodyMaterial);
         head.position.set(0, 10, 0);
         head.castShadow = true;
         bunnyGroup.add(head);
 
         // Long ears
-        const earGeometry = new THREE.CylinderGeometry(0.4, 0.6, 4, 8);
-        const innerEarMaterial = new THREE.MeshPhongMaterial({
+        const earGeometry = getGeometry('cylinder', 0.4, 0.6, 4, 8);
+        const innerEarMaterial = getMaterial('phong', {
             color: innerEarPink,
             shininess: 10
         });
@@ -53,7 +53,7 @@
         bunnyGroup.add(leftEar);
 
         // Left inner ear
-        const leftInnerEarGeometry = new THREE.CylinderGeometry(0.2, 0.4, 3, 8);
+        const leftInnerEarGeometry = getGeometry('cylinder', 0.2, 0.4, 3, 8);
         const leftInnerEar = new THREE.Mesh(leftInnerEarGeometry, innerEarMaterial);
         leftInnerEar.position.set(-1, 13, 0.2);
         leftInnerEar.rotation.z = 0.2;
@@ -73,12 +73,12 @@
         bunnyGroup.add(rightInnerEar);
 
         // Eyes - big and sparkling
-        const eyeWhiteGeometry = new THREE.SphereGeometry(0.5, 12, 12);
-        const eyeWhiteMaterial = new THREE.MeshBasicMaterial({ color: 0xFFFFFF });
-        const eyeGeometry = new THREE.SphereGeometry(0.35, 12, 12);
-        const eyeMaterial = new THREE.MeshBasicMaterial({ color: eyeBlue });
-        const sparkleGeometry = new THREE.SphereGeometry(0.1, 6, 6);
-        const sparkleMaterial = new THREE.MeshBasicMaterial({ color: 0xFFFFFF });
+        const eyeWhiteGeometry = getGeometry('sphere', 0.5, 12, 12);
+        const eyeWhiteMaterial = getMaterial('basic', { color: 0xFFFFFF });
+        const eyeGeometry = getGeometry('sphere', 0.35, 12, 12);
+        const eyeMaterial = getMaterial('basic', { color: eyeBlue });
+        const sparkleGeometry = getGeometry('sphere', 0.1, 6, 6);
+        const sparkleMaterial = getMaterial('basic', { color: 0xFFFFFF });
 
         // Left eye
         const leftEyeWhite = new THREE.Mesh(eyeWhiteGeometry, eyeWhiteMaterial);
@@ -103,8 +103,8 @@
         bunnyGroup.add(rightSparkle);
 
         // Cute nose
-        const noseGeometry = new THREE.SphereGeometry(0.3, 8, 8);
-        const noseMaterial = new THREE.MeshPhongMaterial({
+        const noseGeometry = getGeometry('sphere', 0.3, 8, 8);
+        const noseMaterial = getMaterial('phong', {
             color: nosePink,
             shininess: 50
         });
@@ -113,8 +113,8 @@
         bunnyGroup.add(nose);
 
         // Whiskers
-        const whiskerMaterial = new THREE.MeshBasicMaterial({ color: 0xFFFFFF });
-        const whiskerGeometry = new THREE.CylinderGeometry(0.02, 0.02, 1.2, 4);
+        const whiskerMaterial = getMaterial('basic', { color: 0xFFFFFF });
+        const whiskerGeometry = getGeometry('cylinder', 0.02, 0.02, 1.2, 4);
         for (let side = -1; side <= 1; side += 2) {
             for (let i = 0; i < 3; i++) {
                 const whisker = new THREE.Mesh(whiskerGeometry, whiskerMaterial);
@@ -126,7 +126,7 @@
         }
 
         // Pink ribbon bow
-        const ribbonMaterial = new THREE.MeshPhongMaterial({
+        const ribbonMaterial = getMaterial('phong', {
             color: ribbonPink,
             shininess: 50
         });
@@ -139,12 +139,12 @@
         rightBow.position.set(0.7, 11.5, 1.2);
         rightBow.rotation.y = -0.5;
         bunnyGroup.add(rightBow);
-        const bowCenter = new THREE.Mesh(new THREE.SphereGeometry(0.25, 8, 8), ribbonMaterial);
+        const bowCenter = new THREE.Mesh(getGeometry('sphere', 0.25, 8, 8), ribbonMaterial);
         bowCenter.position.set(0, 11.5, 1.4);
         bunnyGroup.add(bowCenter);
 
         // Arms
-        const armGeometry = new THREE.CylinderGeometry(0.5, 0.6, 2.5, 8);
+        const armGeometry = getGeometry('cylinder', 0.5, 0.6, 2.5, 8);
         const leftArm = new THREE.Mesh(armGeometry, bodyMaterial);
         leftArm.position.set(-3, 6.5, 0);
         leftArm.rotation.z = 0.8;
@@ -157,7 +157,7 @@
         bunnyGroup.add(rightArm);
 
         // Paws
-        const pawGeometry = new THREE.SphereGeometry(0.4, 8, 8);
+        const pawGeometry = getGeometry('sphere', 0.4, 8, 8);
         const leftPaw = new THREE.Mesh(pawGeometry, bodyMaterial);
         leftPaw.position.set(-4, 5.5, 0);
         bunnyGroup.add(leftPaw);
@@ -167,7 +167,7 @@
 
         // Golden basket (held by right paw)
         const basketGeometry = new THREE.CylinderGeometry(1.2, 0.8, 1, 12, 1, true);
-        const basketMaterial = new THREE.MeshPhongMaterial({
+        const basketMaterial = getMaterial('phong', {
             color: basketGold,
             side: THREE.DoubleSide,
             shininess: 80
@@ -186,8 +186,8 @@
         // Eggs in basket
         const eggColors = [0xFF69B4, 0x98FB98, 0x87CEEB, 0xFFD700, 0xE6E6FA];
         eggColors.forEach((color, i) => {
-            const eggGeometry = new THREE.SphereGeometry(0.3, 8, 8);
-            const eggMaterial = new THREE.MeshPhongMaterial({ 
+            const eggGeometry = getGeometry('sphere', 0.3, 8, 8);
+            const eggMaterial = getMaterial('phong', { 
                 color: color,
                 shininess: 50
             });
@@ -203,14 +203,14 @@
         });
 
         // Fluffy tail
-        const tailGeometry = new THREE.SphereGeometry(1, 12, 12);
+        const tailGeometry = getGeometry('sphere', 1, 12, 12);
         const tail = new THREE.Mesh(tailGeometry, bodyMaterial);
         tail.position.set(0, 4, -3);
         tail.castShadow = true;
         bunnyGroup.add(tail);
 
         // Large feet
-        const footGeometry = new THREE.SphereGeometry(1.2, 8, 8);
+        const footGeometry = getGeometry('sphere', 1.2, 8, 8);
         const leftFoot = new THREE.Mesh(footGeometry, bodyMaterial);
         leftFoot.position.set(-1.5, 1, 1.5);
         leftFoot.scale.set(0.6, 0.4, 1.2);
@@ -225,7 +225,7 @@
         // Magic aura sparkles
         for (let i = 0; i < 20; i++) {
             const auraGeometry = new THREE.SphereGeometry(0.15 + Math.random() * 0.1, 6, 6);
-            const auraMaterial = new THREE.MeshBasicMaterial({
+            const auraMaterial = getMaterial('basic', {
                 color: [0xFFD700, 0xFF69B4, 0x98FB98, 0x87CEEB][i % 4],
                 transparent: true,
                 opacity: 0.7

@@ -40,7 +40,7 @@
         const bulletSize = isGiantBullet ? 0.6 : 0.2;
         const bulletGeometry = new THREE.SphereGeometry(bulletSize, 8, 8);
         const bulletColor = isGiantBullet ? 0xFF4500 : (G.isHost ? 0xFF69B4 : 0x4169E1); // Orange-red for giant, else Pink/Blue
-        const bulletMaterial = new THREE.MeshLambertMaterial({ color: bulletColor });
+        const bulletMaterial = getMaterial('lambert', { color: bulletColor });
         const bulletMesh = new THREE.Mesh(bulletGeometry, bulletMaterial);
         bulletMesh.position.copy(G.playerGroup.position);
         bulletMesh.position.y = isGiantBullet ? 2 : 1;
@@ -79,9 +79,9 @@
         // Play shooting sound
         Audio.playShootSound();
         
-        const bulletGeometry = new THREE.SphereGeometry(0.2, 8, 8);
+        const bulletGeometry = getGeometry('sphere', 0.2, 8, 8);
         const remoteBulletColor = G.isHost ? 0x4169E1 : 0xFF69B4; // Blue for boy's bullets, Pink for girl's bullets
-        const bulletMaterial = new THREE.MeshLambertMaterial({ color: remoteBulletColor });
+        const bulletMaterial = getMaterial('lambert', { color: remoteBulletColor });
         const bulletMesh = new THREE.Mesh(bulletGeometry, bulletMaterial);
         bulletMesh.position.set(bulletData.position.x, bulletData.position.y, bulletData.position.z);
         bulletMesh.castShadow = true;
@@ -118,7 +118,7 @@
             const bulletSize = isGiantBullet ? 0.6 : 0.15;
             const bulletGeometry = new THREE.SphereGeometry(bulletSize, 8, 8);
             const bulletColor = isGiantBullet ? 0xFF4500 : 0x4488FF; // Orange-red for giant, else blue
-            const bulletMaterial = new THREE.MeshLambertMaterial({ color: bulletColor });
+            const bulletMaterial = getMaterial('lambert', { color: bulletColor });
             const bulletMesh = new THREE.Mesh(bulletGeometry, bulletMaterial);
             
             bulletMesh.position.set(
@@ -159,9 +159,10 @@
                 bullet.mesh.position.z - bullet.startPos.z
             ).length();
             
-            const maxDistance = difficulty === 'hard' ? 35 : GAME_CONFIG.WORLD_BOUND;
+            const maxDistance = difficulty === 'hard' ? 35 : 100; // Max bullet travel distance
             
-            if (Math.abs(bullet.mesh.position.x) > GAME_CONFIG.WORLD_BOUND || Math.abs(bullet.mesh.position.z) > GAME_CONFIG.WORLD_BOUND || distFromStart > maxDistance) {
+            // Only check distance traveled, not absolute position (supports infinite world)
+            if (distFromStart > maxDistance) {
                 G.scene.remove(bullet.mesh);
                 G.bullets.splice(i, 1);
                 continue;

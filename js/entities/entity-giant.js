@@ -76,8 +76,8 @@
         const screenColor = 0x003300;    // Terminal screen
 
         // Main chassis body - tall server rack
-        const chassisGeometry = new THREE.BoxGeometry(3.5, 6.0, 2.5);
-        const chassisMaterial = new THREE.MeshPhongMaterial({
+        const chassisGeometry = getGeometry('box', 3.5, 6.0, 2.5);
+        const chassisMaterial = getMaterial('phong', {
             color: chassisColor,
             shininess: 30
         });
@@ -87,8 +87,8 @@
         group.add(chassis);
 
         // Front panel (slightly recessed)
-        const panelGeometry = new THREE.BoxGeometry(3.2, 5.6, 0.1);
-        const panelMaterial = new THREE.MeshPhongMaterial({
+        const panelGeometry = getGeometry('box', 3.2, 5.6, 0.1);
+        const panelMaterial = getMaterial('phong', {
             color: panelColor,
             shininess: 20
         });
@@ -97,8 +97,8 @@
         group.add(panel);
 
         // Terminal screen (face)
-        const screenGeometry = new THREE.BoxGeometry(2.0, 1.5, 0.05);
-        const screenMaterial = new THREE.MeshBasicMaterial({
+        const screenGeometry = getGeometry('box', 2.0, 1.5, 0.05);
+        const screenMaterial = getMaterial('basic', {
             color: screenColor
         });
         const screen = new THREE.Mesh(screenGeometry, screenMaterial);
@@ -106,8 +106,8 @@
         group.add(screen);
 
         // Eyes on screen (terminal cursors)
-        const eyeGeometry = new THREE.BoxGeometry(0.3, 0.4, 0.02);
-        const eyeMaterial = new THREE.MeshBasicMaterial({
+        const eyeGeometry = getGeometry('box', 0.3, 0.4, 0.02);
+        const eyeMaterial = getMaterial('basic', {
             color: ledGreen,
             transparent: true,
             blending: THREE.AdditiveBlending
@@ -121,8 +121,8 @@
         group.add(eye2);
 
         // Angry "eyebrows" - error indicators
-        const browGeometry = new THREE.BoxGeometry(0.5, 0.08, 0.02);
-        const browMaterial = new THREE.MeshBasicMaterial({ color: 0xFF0000 });
+        const browGeometry = getGeometry('box', 0.5, 0.08, 0.02);
+        const browMaterial = getMaterial('basic', { color: 0xFF0000 });
         const brow1 = new THREE.Mesh(browGeometry, browMaterial);
         brow1.position.set(-0.5, 5.9, 1.35);
         brow1.rotation.z = 0.3;
@@ -134,11 +134,11 @@
         group.add(brow2);
 
         // LED status lights grid
-        const ledGeometry = new THREE.SphereGeometry(0.08, 8, 8);
+        const ledGeometry = getGeometry('sphere', 0.08, 8, 8);
         for (let row = 0; row < 4; row++) {
             for (let col = 0; col < 6; col++) {
                 const ledColor = Math.random() > 0.3 ? ledGreen : ledOrange;
-                const ledMaterial = new THREE.MeshBasicMaterial({
+                const ledMaterial = getMaterial('basic', {
                     color: ledColor,
                     transparent: true,
                     opacity: 0.8 + Math.random() * 0.2
@@ -156,14 +156,14 @@
 
         // Drive bays with activity lights
         for (let i = 0; i < 3; i++) {
-            const bayGeometry = new THREE.BoxGeometry(2.8, 0.4, 0.15);
-            const bayMaterial = new THREE.MeshLambertMaterial({ color: 0x111118 });
+            const bayGeometry = getGeometry('box', 2.8, 0.4, 0.15);
+            const bayMaterial = getMaterial('lambert', { color: 0x111118 });
             const bay = new THREE.Mesh(bayGeometry, bayMaterial);
             bay.position.set(0, 2.0 + i * 0.6, 1.25);
             group.add(bay);
 
             // Activity light
-            const activityMaterial = new THREE.MeshBasicMaterial({
+            const activityMaterial = getMaterial('basic', {
                 color: Math.random() > 0.5 ? ledGreen : ledOrange,
                 transparent: true,
                 blending: THREE.AdditiveBlending
@@ -176,8 +176,8 @@
         // Ventilation grilles on sides
         for (let side = -1; side <= 1; side += 2) {
             for (let i = 0; i < 8; i++) {
-                const grillGeometry = new THREE.BoxGeometry(0.05, 0.3, 2.0);
-                const grillMaterial = new THREE.MeshLambertMaterial({ color: 0x0A0A0A });
+                const grillGeometry = getGeometry('box', 0.05, 0.3, 2.0);
+                const grillMaterial = getMaterial('lambert', { color: 0x0A0A0A });
                 const grill = new THREE.Mesh(grillGeometry, grillMaterial);
                 grill.position.set(side * 1.8, 1.5 + i * 0.5, 0);
                 group.add(grill);
@@ -185,8 +185,8 @@
         }
 
         // Cable "arms" (thick data cables)
-        const cableGeometry = new THREE.CylinderGeometry(0.2, 0.25, 3.0, 8);
-        const cableMaterial = new THREE.MeshLambertMaterial({ color: 0x222222 });
+        const cableGeometry = getGeometry('cylinder', 0.2, 0.25, 3.0, 8);
+        const cableMaterial = getMaterial('lambert', { color: 0x222222 });
         
         const leftCable = new THREE.Mesh(cableGeometry, cableMaterial);
         leftCable.position.set(-2.0, 3.0, 0);
@@ -203,8 +203,8 @@
         group.rightArm = rightCable;
 
         // Cable connectors (fists)
-        const connectorGeometry = new THREE.BoxGeometry(0.6, 0.6, 0.6);
-        const connectorMaterial = new THREE.MeshPhongMaterial({
+        const connectorGeometry = getGeometry('box', 0.6, 0.6, 0.6);
+        const connectorMaterial = getMaterial('phong', {
             color: 0x333333,
             emissive: ledOrange,
             emissiveIntensity: 0.2
@@ -221,15 +221,15 @@
         group.rightFist = rightConn;
 
         // Base with wheels/casters
-        const baseGeometry = new THREE.BoxGeometry(3.8, 0.4, 2.8);
-        const baseMaterial = new THREE.MeshLambertMaterial({ color: 0x1A1A1A });
+        const baseGeometry = getGeometry('box', 3.8, 0.4, 2.8);
+        const baseMaterial = getMaterial('lambert', { color: 0x1A1A1A });
         const base = new THREE.Mesh(baseGeometry, baseMaterial);
         base.position.y = 0.2;
         group.add(base);
 
         // Add some floor glow
-        const glowGeometry = new THREE.PlaneGeometry(4, 3);
-        const glowMaterial = new THREE.MeshBasicMaterial({
+        const glowGeometry = getGeometry('plane', 4, 3);
+        const glowMaterial = getMaterial('basic', {
             color: ledGreen,
             transparent: true,
             opacity: 0.15,
@@ -249,8 +249,8 @@
         const marshmallowPink = 0xFFB6C1;
 
         // Marshmallow body - cylindrical and fluffy
-        const bodyGeometry = new THREE.CylinderGeometry(1.8, 2.0, 4.5, 16);
-        const bodyMaterial = new THREE.MeshPhongMaterial({
+        const bodyGeometry = getGeometry('cylinder', 1.8, 2.0, 4.5, 16);
+        const bodyMaterial = getMaterial('phong', {
             color: marshmallowWhite,
             shininess: 30,
             specular: 0xffffff
@@ -262,7 +262,7 @@
 
         // Fluffy texture bumps on body
         for (let i = 0; i < 12; i++) {
-            const bumpGeometry = new THREE.SphereGeometry(0.4 + Math.random() * 0.3, 12, 12);
+            const bumpGeometry = getGeometry('sphere', 0.4 + Math.random() * 0.3, 12, 12);
             const bump = new THREE.Mesh(bumpGeometry, bodyMaterial);
             const angle = (i / 12) * Math.PI * 2;
             const height = 1.5 + Math.random() * 3;
@@ -271,15 +271,15 @@
         }
 
         // Round marshmallow head
-        const headGeometry = new THREE.SphereGeometry(1.4, 16, 16);
+        const headGeometry = getGeometry('sphere', 1.4, 16, 16);
         const head = new THREE.Mesh(headGeometry, bodyMaterial);
         head.position.y = 6.0;
         head.castShadow = true;
         group.add(head);
 
         // Cute angry eyes
-        const eyeGeometry = new THREE.SphereGeometry(0.35, 16, 16);
-        const eyeBlackMaterial = new THREE.MeshBasicMaterial({ color: 0x000000 });
+        const eyeGeometry = getGeometry('sphere', 0.35, 16, 16);
+        const eyeBlackMaterial = getMaterial('basic', { color: 0x000000 });
         const e1 = new THREE.Mesh(eyeGeometry, eyeBlackMaterial);
         e1.position.set(-0.5, 6.2, 1.1);
         group.add(e1);
@@ -289,8 +289,8 @@
         group.add(e2);
 
         // Angry eyebrows
-        const browGeometry = new THREE.BoxGeometry(0.5, 0.12, 0.1);
-        const browMaterial = new THREE.MeshBasicMaterial({ color: 0x333333 });
+        const browGeometry = getGeometry('box', 0.5, 0.12, 0.1);
+        const browMaterial = getMaterial('basic', { color: 0x333333 });
         const brow1 = new THREE.Mesh(browGeometry, browMaterial);
         brow1.position.set(-0.5, 6.6, 1.2);
         brow1.rotation.z = 0.3;
@@ -302,8 +302,8 @@
         group.add(brow2);
 
         // Pink blush cheeks
-        const blushGeometry = new THREE.CircleGeometry(0.25, 16);
-        const blushMaterial = new THREE.MeshBasicMaterial({
+        const blushGeometry = getGeometry('circle', 0.25, 16);
+        const blushMaterial = getMaterial('basic', {
             color: marshmallowPink,
             transparent: true,
             opacity: 0.6
@@ -317,7 +317,7 @@
         group.add(blush2);
 
         // Stubby marshmallow arms
-        const armGeometry = new THREE.CylinderGeometry(0.5, 0.7, 2.5, 12);
+        const armGeometry = getGeometry('cylinder', 0.5, 0.7, 2.5, 12);
         const leftArm = new THREE.Mesh(armGeometry, bodyMaterial);
         leftArm.position.set(-2.3, 3.5, 0);
         leftArm.rotation.z = 0.5;
@@ -333,7 +333,7 @@
         group.rightArm = rightArm;
 
         // Round marshmallow fists
-        const fistGeometry = new THREE.SphereGeometry(0.6, 12, 12);
+        const fistGeometry = getGeometry('sphere', 0.6, 12, 12);
         const leftFist = new THREE.Mesh(fistGeometry, bodyMaterial);
         leftFist.position.set(-3.0, 2.0, 0);
         leftFist.castShadow = true;
@@ -347,7 +347,7 @@
         group.rightFist = rightFist;
 
         // Stubby legs
-        const legGeometry = new THREE.CylinderGeometry(0.8, 1.0, 2.0, 12);
+        const legGeometry = getGeometry('cylinder', 0.8, 1.0, 2.0, 12);
         const leftLeg = new THREE.Mesh(legGeometry, bodyMaterial);
         leftLeg.position.set(-1.0, 0.8, 0);
         leftLeg.castShadow = true;
@@ -365,8 +365,8 @@
         const skinPale = 0x6a5a5a;
 
         // Massive robed body
-        const bodyGeometry = new THREE.CylinderGeometry(1.4, 2.2, 5.0, 12);
-        const bodyMaterial = new THREE.MeshLambertMaterial({ color: hoodBlack });
+        const bodyGeometry = getGeometry('cylinder', 1.4, 2.2, 5.0, 12);
+        const bodyMaterial = getMaterial('lambert', { color: hoodBlack });
         const body = new THREE.Mesh(bodyGeometry, bodyMaterial);
         body.position.y = 3.2;
         body.castShadow = true;
@@ -374,8 +374,8 @@
 
         // Ragged cape edges
         for (let i = 0; i < 12; i++) {
-            const ragGeometry = new THREE.ConeGeometry(0.25, 1.0, 4);
-            const ragMaterial = new THREE.MeshLambertMaterial({ color: 0x050508 });
+            const ragGeometry = getGeometry('cone', 0.25, 1.0, 4);
+            const ragMaterial = getMaterial('lambert', { color: 0x050508 });
             const rag = new THREE.Mesh(ragGeometry, ragMaterial);
             const angle = (i / 12) * Math.PI * 2;
             rag.position.set(Math.cos(angle) * 2.0, 0.5, Math.sin(angle) * 2.0);
@@ -384,23 +384,23 @@
         }
 
         // Hood
-        const hoodGeometry = new THREE.ConeGeometry(1.2, 2.0, 12);
+        const hoodGeometry = getGeometry('cone', 1.2, 2.0, 12);
         const hood = new THREE.Mesh(hoodGeometry, bodyMaterial);
         hood.position.y = 6.5;
         hood.castShadow = true;
         group.add(hood);
 
         // Shadowed face (only glowing eyes visible)
-        const faceGeometry = new THREE.SphereGeometry(0.8, 12, 12);
-        const faceMaterial = new THREE.MeshBasicMaterial({ color: 0x000000 });
+        const faceGeometry = getGeometry('sphere', 0.8, 12, 12);
+        const faceMaterial = getMaterial('basic', { color: 0x000000 });
         const face = new THREE.Mesh(faceGeometry, faceMaterial);
         face.position.set(0, 5.8, 0.4);
         face.scale.z = 0.6;
         group.add(face);
 
         // Glowing red eyes in the darkness
-        const eyeGeometry = new THREE.SphereGeometry(0.15, 12, 12);
-        const eyeMaterial = new THREE.MeshBasicMaterial({
+        const eyeGeometry = getGeometry('sphere', 0.15, 12, 12);
+        const eyeMaterial = getMaterial('basic', {
             color: 0xFF0000,
             transparent: true,
             opacity: 1.0
@@ -413,14 +413,16 @@
         e2.position.set(0.25, 5.85, 0.85);
         group.add(e2);
 
-        // Eye glow light
-        const eyeLight = new THREE.PointLight(0xFF0000, 0.3, 3);
-        eyeLight.position.set(0, 5.85, 0.9);
-        group.add(eyeLight);
+        // Eye glow (emissive mesh instead of PointLight for perf)
+        const eyeGlowGeometry = getGeometry('sphere', 0.2, 8, 8);
+        const eyeGlowMaterial = getMaterial('basic', { color: 0xFF0000, transparent: true, opacity: 0.4 });
+        const eyeGlowMesh = new THREE.Mesh(eyeGlowGeometry, eyeGlowMaterial);
+        eyeGlowMesh.position.set(0, 5.85, 0.9);
+        group.add(eyeGlowMesh);
 
         // Massive arms
-        const armGeometry = new THREE.CylinderGeometry(0.4, 0.7, 3.5, 8);
-        const armMaterial = new THREE.MeshLambertMaterial({ color: hoodBlack });
+        const armGeometry = getGeometry('cylinder', 0.4, 0.7, 3.5, 8);
+        const armMaterial = getMaterial('lambert', { color: hoodBlack });
         
         const leftArm = new THREE.Mesh(armGeometry, armMaterial);
         leftArm.position.set(-2.0, 3.5, 0);
@@ -437,8 +439,8 @@
         group.rightArm = rightArm;
 
         // Pale hands
-        const handGeometry = new THREE.BoxGeometry(0.6, 0.6, 0.5);
-        const handMaterial = new THREE.MeshLambertMaterial({ color: skinPale });
+        const handGeometry = getGeometry('box', 0.6, 0.6, 0.5);
+        const handMaterial = getMaterial('lambert', { color: skinPale });
         
         const leftFist = new THREE.Mesh(handGeometry, handMaterial);
         leftFist.position.set(-2.6, 1.5, 0);
@@ -454,31 +456,31 @@
 
         // GIANT AXE
         // Axe handle
-        const handleGeometry = new THREE.CylinderGeometry(0.12, 0.12, 5.0, 8);
-        const handleMaterial = new THREE.MeshLambertMaterial({ color: 0x3a2a1a });
+        const handleGeometry = getGeometry('cylinder', 0.12, 0.12, 5.0, 8);
+        const handleMaterial = getMaterial('lambert', { color: 0x3a2a1a });
         const handle = new THREE.Mesh(handleGeometry, handleMaterial);
         handle.position.set(2.8, 3.5, 0.5);
         handle.rotation.z = -0.3;
         group.add(handle);
 
         // Axe blade (double-sided)
-        const bladeGeometry = new THREE.BoxGeometry(2.0, 2.5, 0.15);
-        const bladeMaterial = new THREE.MeshLambertMaterial({ color: 0x4a4a4a });
+        const bladeGeometry = getGeometry('box', 2.0, 2.5, 0.15);
+        const bladeMaterial = getMaterial('lambert', { color: 0x4a4a4a });
         const blade = new THREE.Mesh(bladeGeometry, bladeMaterial);
         blade.position.set(3.5, 5.5, 0.5);
         blade.rotation.z = -0.3;
         group.add(blade);
 
         // Blade edge (sharper triangle)
-        const edgeGeometry = new THREE.ConeGeometry(0.8, 2.5, 4);
-        const edgeMaterial = new THREE.MeshLambertMaterial({ color: 0x6a6a6a });
+        const edgeGeometry = getGeometry('cone', 0.8, 2.5, 4);
+        const edgeMaterial = getMaterial('lambert', { color: 0x6a6a6a });
         const edge1 = new THREE.Mesh(edgeGeometry, edgeMaterial);
         edge1.position.set(4.5, 5.5, 0.5);
         edge1.rotation.z = Math.PI / 2 - 0.3;
         group.add(edge1);
 
         // Blood stains on blade - more prominent and dripping
-        const bloodMaterial = new THREE.MeshBasicMaterial({
+        const bloodMaterial = getMaterial('basic', {
             color: 0x8B0000,
             transparent: true,
             opacity: 0.9,
@@ -487,7 +489,7 @@
         
         // Main blood splatter on blade
         for (let i = 0; i < 5; i++) {
-            const bloodGeometry = new THREE.PlaneGeometry(0.4 + Math.random() * 0.3, 0.6 + Math.random() * 0.4);
+            const bloodGeometry = getGeometry('plane', 0.4 + Math.random() * 0.3, 0.6 + Math.random() * 0.4);
             const blood = new THREE.Mesh(bloodGeometry, bloodMaterial);
             blood.position.set(3.3 + i * 0.35, 4.8 + i * 0.25, 0.53 + (i % 2) * 0.02);
             blood.rotation.z = Math.random() * 0.6 - 0.3;
@@ -495,13 +497,13 @@
         }
         
         // Blood drips running down the blade
-        const dripMaterial = new THREE.MeshBasicMaterial({
+        const dripMaterial = getMaterial('basic', {
             color: 0x660000,
             transparent: true,
             opacity: 0.85
         });
         for (let i = 0; i < 4; i++) {
-            const dripGeometry = new THREE.CylinderGeometry(0.04, 0.08, 0.8 + Math.random() * 0.5, 6);
+            const dripGeometry = getGeometry('cylinder', 0.04, 0.08, 0.8 + Math.random() * 0.5, 6);
             const drip = new THREE.Mesh(dripGeometry, dripMaterial);
             drip.position.set(3.0 + i * 0.5, 4.2 + Math.random() * 0.3, 0.52);
             drip.rotation.z = -0.3 + Math.random() * 0.2;
@@ -509,15 +511,15 @@
         }
         
         // Fresh blood drop at blade tip
-        const dropGeometry = new THREE.SphereGeometry(0.12, 8, 8);
-        const dropMaterial = new THREE.MeshBasicMaterial({ color: 0x8B0000 });
+        const dropGeometry = getGeometry('sphere', 0.12, 8, 8);
+        const dropMaterial = getMaterial('basic', { color: 0x8B0000 });
         const bloodDrop = new THREE.Mesh(dropGeometry, dropMaterial);
         bloodDrop.position.set(4.8, 4.5, 0.5);
         group.add(bloodDrop);
 
         // Thick legs
-        const legGeometry = new THREE.CylinderGeometry(0.6, 0.8, 2.5, 8);
-        const legMaterial = new THREE.MeshLambertMaterial({ color: hoodBlack });
+        const legGeometry = getGeometry('cylinder', 0.6, 0.8, 2.5, 8);
+        const legMaterial = getMaterial('lambert', { color: hoodBlack });
         
         const leftLeg = new THREE.Mesh(legGeometry, legMaterial);
         leftLeg.position.set(-0.8, 1.0, 0);
@@ -539,8 +541,8 @@
         const poisonGreen = 0x44FF44;
 
         // Spider abdomen (large back section)
-        const abdomenGeometry = new THREE.SphereGeometry(1.3 * scale, 16, 16);
-        const abdomenMaterial = new THREE.MeshLambertMaterial({ color: spiderBlack });
+        const abdomenGeometry = getGeometry('sphere', 1.3 * scale, 16, 16);
+        const abdomenMaterial = getMaterial('lambert', { color: spiderBlack });
         const abdomen = new THREE.Mesh(abdomenGeometry, abdomenMaterial);
         abdomen.position.set(0, 1.5 * scale, -1.0 * scale);
         abdomen.scale.set(1, 0.8, 1.3);
@@ -548,8 +550,8 @@
         group.add(abdomen);
 
         // Spider markings on abdomen
-        const markingGeometry = new THREE.CircleGeometry(0.3 * scale, 8);
-        const markingMaterial = new THREE.MeshBasicMaterial({ color: 0x8B0000 });
+        const markingGeometry = getGeometry('circle', 0.3 * scale, 8);
+        const markingMaterial = getMaterial('basic', { color: 0x8B0000 });
         const marking1 = new THREE.Mesh(markingGeometry, markingMaterial);
         marking1.position.set(0, 2.0 * scale, -0.3 * scale);
         marking1.rotation.x = -0.5;
@@ -562,8 +564,8 @@
         group.add(marking2);
 
         // Spider cephalothorax (front section)
-        const thoraxGeometry = new THREE.SphereGeometry(0.9 * scale, 16, 16);
-        const thoraxMaterial = new THREE.MeshLambertMaterial({ color: spiderBrown });
+        const thoraxGeometry = getGeometry('sphere', 0.9 * scale, 16, 16);
+        const thoraxMaterial = getMaterial('lambert', { color: spiderBrown });
         const thorax = new THREE.Mesh(thoraxGeometry, thoraxMaterial);
         thorax.position.set(0, 1.4 * scale, 0.6 * scale);
         thorax.scale.set(1, 0.7, 1);
@@ -571,8 +573,8 @@
         group.add(thorax);
 
         // Multiple eyes (spider has 8)
-        const eyeGeometry = new THREE.SphereGeometry(0.15 * scale, 8, 8);
-        const eyeMaterial = new THREE.MeshBasicMaterial({ 
+        const eyeGeometry = getGeometry('sphere', 0.15 * scale, 8, 8);
+        const eyeMaterial = getMaterial('basic', { 
             color: poisonGreen,
             transparent: true,
             opacity: 0.9
@@ -593,7 +595,7 @@
         });
 
         // Back row of smaller eyes (4 eyes)
-        const smallEyeGeometry = new THREE.SphereGeometry(0.1 * scale, 8, 8);
+        const smallEyeGeometry = getGeometry('sphere', 0.1 * scale, 8, 8);
         const backEyePositions = [
             { x: -0.35, y: 1.75, z: 1.0 },
             { x: -0.15, y: 1.8, z: 1.1 },
@@ -608,8 +610,8 @@
         });
 
         // Fangs/chelicerae
-        const fangGeometry = new THREE.ConeGeometry(0.12 * scale, 0.5 * scale, 6);
-        const fangMaterial = new THREE.MeshLambertMaterial({ color: 0x111111 });
+        const fangGeometry = getGeometry('cone', 0.12 * scale, 0.5 * scale, 6);
+        const fangMaterial = getMaterial('lambert', { color: 0x111111 });
         const fang1 = new THREE.Mesh(fangGeometry, fangMaterial);
         fang1.position.set(-0.2 * scale, 1.1 * scale, 1.4 * scale);
         fang1.rotation.x = 0.5;
@@ -623,8 +625,8 @@
         group.add(fang2);
 
         // Poison dripping from fangs
-        const poisonGeometry = new THREE.SphereGeometry(0.06 * scale, 8, 8);
-        const poisonMaterial = new THREE.MeshBasicMaterial({ 
+        const poisonGeometry = getGeometry('sphere', 0.06 * scale, 8, 8);
+        const poisonMaterial = getMaterial('basic', { 
             color: poisonGreen,
             transparent: true,
             opacity: 0.8
@@ -638,8 +640,8 @@
         group.add(poison2);
 
         // 8 spider legs
-        const legSegmentGeometry = new THREE.CylinderGeometry(0.08 * scale, 0.06 * scale, 1.5 * scale, 6);
-        const legMaterial = new THREE.MeshLambertMaterial({ color: spiderBlack });
+        const legSegmentGeometry = getGeometry('cylinder', 0.08 * scale, 0.06 * scale, 1.5 * scale, 6);
+        const legMaterial = getMaterial('lambert', { color: spiderBlack });
         
         const legConfigs = [
             // Right side legs
@@ -663,7 +665,7 @@
             group.add(upperLeg);
 
             // Lower leg segment (pointing down to ground)
-            const lowerLegGeometry = new THREE.CylinderGeometry(0.06 * scale, 0.04 * scale, 1.8 * scale, 6);
+            const lowerLegGeometry = getGeometry('cylinder', 0.06 * scale, 0.04 * scale, 1.8 * scale, 6);
             const lowerLeg = new THREE.Mesh(lowerLegGeometry, legMaterial);
             const legEndX = config.x + Math.sin(config.angle) * 1.5;
             lowerLeg.position.set(
@@ -675,7 +677,7 @@
             group.add(lowerLeg);
 
             // Leg joint
-            const jointGeometry = new THREE.SphereGeometry(0.1 * scale, 8, 8);
+            const jointGeometry = getGeometry('sphere', 0.1 * scale, 8, 8);
             const joint = new THREE.Mesh(jointGeometry, legMaterial);
             joint.position.set(
                 (config.x + Math.sin(config.angle) * 0.8) * scale,
@@ -686,8 +688,8 @@
         });
 
         // Spinnerets at back
-        const spinneretGeometry = new THREE.ConeGeometry(0.15 * scale, 0.4 * scale, 6);
-        const spinneretMaterial = new THREE.MeshLambertMaterial({ color: spiderBrown });
+        const spinneretGeometry = getGeometry('cone', 0.15 * scale, 0.4 * scale, 6);
+        const spinneretMaterial = getMaterial('lambert', { color: spiderBrown });
         const spinneret1 = new THREE.Mesh(spinneretGeometry, spinneretMaterial);
         spinneret1.position.set(-0.15 * scale, 1.2 * scale, -2.2 * scale);
         spinneret1.rotation.x = -Math.PI / 2 - 0.3;
@@ -699,8 +701,8 @@
         group.add(spinneret2);
 
         // Web strand trailing behind
-        const webGeometry = new THREE.CylinderGeometry(0.02 * scale, 0.02 * scale, 2.0 * scale, 4);
-        const webMaterial = new THREE.MeshBasicMaterial({ 
+        const webGeometry = getGeometry('cylinder', 0.02 * scale, 0.02 * scale, 2.0 * scale, 4);
+        const webMaterial = getMaterial('basic', { 
             color: 0xcccccc,
             transparent: true,
             opacity: 0.4
@@ -720,8 +722,8 @@
         const eyeColor = 0x90EE90;
 
         // Thick trunk body
-        const bodyGeometry = new THREE.CylinderGeometry(0.8 * s, 1.0 * s, 2.5 * s, 8);
-        const bodyMaterial = new THREE.MeshLambertMaterial({ color: barkColor });
+        const bodyGeometry = getGeometry('cylinder', 0.8 * s, 1.0 * s, 2.5 * s, 8);
+        const bodyMaterial = getMaterial('lambert', { color: barkColor });
         const body = new THREE.Mesh(bodyGeometry, bodyMaterial);
         body.position.y = 1.5 * s;
         body.castShadow = true;
@@ -729,7 +731,7 @@
 
         // Bark texture ridges
         for (let i = 0; i < 6; i++) {
-            const ridgeGeometry = new THREE.BoxGeometry(0.12 * s, 2.0 * s, 0.08 * s);
+            const ridgeGeometry = getGeometry('box', 0.12 * s, 2.0 * s, 0.08 * s);
             const ridge = new THREE.Mesh(ridgeGeometry, bodyMaterial);
             const angle = (i / 6) * Math.PI * 2;
             ridge.position.set(Math.cos(angle) * 0.85 * s, 1.5 * s, Math.sin(angle) * 0.85 * s);
@@ -738,15 +740,15 @@
         }
 
         // Head (wider top of trunk)
-        const headGeometry = new THREE.CylinderGeometry(0.9 * s, 0.8 * s, 0.8 * s, 8);
+        const headGeometry = getGeometry('cylinder', 0.9 * s, 0.8 * s, 0.8 * s, 8);
         const head = new THREE.Mesh(headGeometry, bodyMaterial);
         head.position.y = 3.1 * s;
         head.castShadow = true;
         group.add(head);
 
         // Glowing eyes
-        const eyeGeometry = new THREE.SphereGeometry(0.15 * s, 8, 8);
-        const eyeMaterial = new THREE.MeshBasicMaterial({ color: eyeColor });
+        const eyeGeometry = getGeometry('sphere', 0.15 * s, 8, 8);
+        const eyeMaterial = getMaterial('basic', { color: eyeColor });
         [-0.4, 0.4].forEach(x => {
             const eye = new THREE.Mesh(eyeGeometry, eyeMaterial);
             eye.position.set(x * s, 3.1 * s, 0.75 * s);
@@ -754,7 +756,7 @@
         });
 
         // Branch arms with knotted ends (fists attached)
-        const armGeometry = new THREE.CylinderGeometry(0.2 * s, 0.35 * s, 1.8 * s, 6);
+        const armGeometry = getGeometry('cylinder', 0.2 * s, 0.35 * s, 1.8 * s, 6);
         const leftArm = new THREE.Mesh(armGeometry, bodyMaterial);
         leftArm.position.set(-1.4 * s, 2.5 * s, 0);
         leftArm.rotation.z = 0.8;
@@ -768,7 +770,7 @@
         group.add(rightArm);
 
         // Knotted branch ends (visual fists at end of arms)
-        const fistGeometry = new THREE.SphereGeometry(0.35 * s, 6, 6);
+        const fistGeometry = getGeometry('sphere', 0.35 * s, 6, 6);
         const leftFist = new THREE.Mesh(fistGeometry, bodyMaterial);
         // Position at end of rotated arm
         leftFist.position.set(-1.4 * s - Math.sin(0.8) * 0.9 * s, 2.5 * s - Math.cos(0.8) * 0.9 * s, 0);
@@ -783,9 +785,9 @@
         // Treant doesn't use standard arm animation (no leftArm/rightArm/leftFist/rightFist refs)
 
         // Leaf crown
-        const leafMaterial = new THREE.MeshLambertMaterial({ color: mossColor });
+        const leafMaterial = getMaterial('lambert', { color: mossColor });
         for (let i = 0; i < 8; i++) {
-            const leafGeometry = new THREE.SphereGeometry((0.25 + Math.random() * 0.15) * s, 6, 6);
+            const leafGeometry = getGeometry('sphere', (0.25 + Math.random() * 0.15) * s, 6, 6);
             const leaf = new THREE.Mesh(leafGeometry, leafMaterial);
             const angle = (i / 8) * Math.PI * 2;
             leaf.position.set(
@@ -798,7 +800,7 @@
 
         // Moss patches on body
         for (let i = 0; i < 4; i++) {
-            const mossGeometry = new THREE.SphereGeometry(0.15 * s, 6, 6);
+            const mossGeometry = getGeometry('sphere', 0.15 * s, 6, 6);
             const moss = new THREE.Mesh(mossGeometry, leafMaterial);
             const angle = Math.random() * Math.PI * 2;
             moss.position.set(
@@ -812,7 +814,7 @@
 
         // Root feet
         for (let i = 0; i < 3; i++) {
-            const rootGeometry = new THREE.CylinderGeometry(0.15 * s, 0.3 * s, 0.8 * s, 6);
+            const rootGeometry = getGeometry('cylinder', 0.15 * s, 0.3 * s, 0.8 * s, 6);
             const root = new THREE.Mesh(rootGeometry, bodyMaterial);
             const angle = (i / 3) * Math.PI * 2 + 0.4;
             root.position.set(Math.cos(angle) * 0.9 * s, 0.3 * s, Math.sin(angle) * 0.9 * s);
@@ -833,23 +835,23 @@
         const wingColor = 0xFFA500;     // Orange
 
         // Round body (scaled for giant size)
-        const bodyGeometry = new THREE.SphereGeometry(1.6, 16, 16);
-        const bodyMaterial = new THREE.MeshLambertMaterial({ color: bodyColor });
+        const bodyGeometry = getGeometry('sphere', 1.6, 16, 16);
+        const bodyMaterial = getMaterial('lambert', { color: bodyColor });
         const body = new THREE.Mesh(bodyGeometry, bodyMaterial);
         body.position.y = 2.0;
         body.castShadow = true;
         group.add(body);
 
         // Head
-        const headGeometry = new THREE.SphereGeometry(1.0, 16, 16);
+        const headGeometry = getGeometry('sphere', 1.0, 16, 16);
         const head = new THREE.Mesh(headGeometry, bodyMaterial);
         head.position.y = 4.0;
         head.castShadow = true;
         group.add(head);
 
         // Eyes
-        const eyeGeometry = new THREE.SphereGeometry(0.2, 8, 8);
-        const eyeMaterial = new THREE.MeshBasicMaterial({ color: eyeColor });
+        const eyeGeometry = getGeometry('sphere', 0.2, 8, 8);
+        const eyeMaterial = getMaterial('basic', { color: eyeColor });
         [-0.4, 0.4].forEach(x => {
             const eye = new THREE.Mesh(eyeGeometry, eyeMaterial);
             eye.position.set(x, 4.2, 0.8);
@@ -857,16 +859,16 @@
         });
 
         // Beak
-        const beakGeometry = new THREE.ConeGeometry(0.3, 0.6, 8);
-        const beakMaterial = new THREE.MeshLambertMaterial({ color: beakColor });
+        const beakGeometry = getGeometry('cone', 0.3, 0.6, 8);
+        const beakMaterial = getMaterial('lambert', { color: beakColor });
         const beak = new THREE.Mesh(beakGeometry, beakMaterial);
         beak.position.set(0, 3.8, 1.1);
         beak.rotation.x = Math.PI / 2;
         group.add(beak);
 
         // Small comb on head
-        const combGeometry = new THREE.ConeGeometry(0.16, 0.4, 4);
-        const combMaterial = new THREE.MeshLambertMaterial({ color: 0xFF4444 });
+        const combGeometry = getGeometry('cone', 0.16, 0.4, 4);
+        const combMaterial = getMaterial('lambert', { color: 0xFF4444 });
         for (let i = 0; i < 3; i++) {
             const comb = new THREE.Mesh(combGeometry, combMaterial);
             comb.position.set(0, 5.0 + i * 0.1, -0.2 + i * 0.1);
@@ -874,8 +876,8 @@
         }
 
         // Wings
-        const wingGeometry = new THREE.SphereGeometry(0.6, 8, 8);
-        const wingMaterial = new THREE.MeshLambertMaterial({ color: wingColor });
+        const wingGeometry = getGeometry('sphere', 0.6, 8, 8);
+        const wingMaterial = getMaterial('lambert', { color: wingColor });
         [-1.4, 1.4].forEach(x => {
             const wing = new THREE.Mesh(wingGeometry, wingMaterial);
             wing.position.set(x, 2.4, 0);
@@ -885,8 +887,8 @@
         });
 
         // Feet
-        const legGeometry = new THREE.CylinderGeometry(0.1, 0.1, 0.6, 6);
-        const legMaterial = new THREE.MeshLambertMaterial({ color: beakColor });
+        const legGeometry = getGeometry('cylinder', 0.1, 0.1, 0.6, 6);
+        const legMaterial = getMaterial('lambert', { color: beakColor });
         [-0.6, 0.6].forEach(x => {
             const leg = new THREE.Mesh(legGeometry, legMaterial);
             leg.position.set(x, 0.3, 0);
@@ -908,8 +910,8 @@
         const iceBlue = 0xccffff;           // Icy highlights
         
         // Large snowball body (bottom)
-        const bodyBottomGeometry = new THREE.SphereGeometry(1.8, 16, 16);
-        const snowMaterial = new THREE.MeshLambertMaterial({ color: snowWhite });
+        const bodyBottomGeometry = getGeometry('sphere', 1.8, 16, 16);
+        const snowMaterial = getMaterial('lambert', { color: snowWhite });
         const bodyBottom = new THREE.Mesh(bodyBottomGeometry, snowMaterial);
         bodyBottom.position.y = 2.0;
         bodyBottom.scale.set(1, 0.95, 1);
@@ -917,7 +919,7 @@
         group.add(bodyBottom);
         
         // Middle snowball
-        const bodyMiddleGeometry = new THREE.SphereGeometry(1.5, 16, 16);
+        const bodyMiddleGeometry = getGeometry('sphere', 1.5, 16, 16);
         const bodyMiddle = new THREE.Mesh(bodyMiddleGeometry, snowMaterial);
         bodyMiddle.position.y = 4.2;
         bodyMiddle.scale.set(1, 0.9, 1);
@@ -925,8 +927,8 @@
         group.add(bodyMiddle);
         
         // Coal buttons on body
-        const buttonGeometry = new THREE.SphereGeometry(0.25, 12, 12);
-        const coalMaterial = new THREE.MeshLambertMaterial({ color: coalBlack });
+        const buttonGeometry = getGeometry('sphere', 0.25, 12, 12);
+        const coalMaterial = getMaterial('lambert', { color: coalBlack });
         for (let i = 0; i < 3; i++) {
             const button = new THREE.Mesh(buttonGeometry, coalMaterial);
             button.position.set(0, 3.5 + (i * 0.5), 1.5);
@@ -934,23 +936,23 @@
         }
         
         // Head (top snowball)
-        const headGeometry = new THREE.SphereGeometry(1.2, 16, 16);
+        const headGeometry = getGeometry('sphere', 1.2, 16, 16);
         const head = new THREE.Mesh(headGeometry, snowMaterial);
         head.position.y = 6.0;
         head.castShadow = true;
         group.add(head);
         
         // Evil coal eyes (glowing red)
-        const eyeGeometry = new THREE.SphereGeometry(0.2, 12, 12);
-        const eyeMaterial = new THREE.MeshBasicMaterial({ color: 0xff0000 });
+        const eyeGeometry = getGeometry('sphere', 0.2, 12, 12);
+        const eyeMaterial = getMaterial('basic', { color: 0xff0000 });
         [-0.4, 0.4].forEach(x => {
             const eye = new THREE.Mesh(eyeGeometry, eyeMaterial);
             eye.position.set(x, 6.2, 1.1);
             group.add(eye);
             
             // Evil glow
-            const glowGeometry = new THREE.SphereGeometry(0.25, 12, 12);
-            const glowMaterial = new THREE.MeshBasicMaterial({ 
+            const glowGeometry = getGeometry('sphere', 0.25, 12, 12);
+            const glowMaterial = getMaterial('basic', { 
                 color: 0xff0000, 
                 transparent: true, 
                 opacity: 0.3 
@@ -961,15 +963,15 @@
         });
         
         // Carrot nose
-        const noseGeometry = new THREE.ConeGeometry(0.15, 0.8, 8);
-        const noseMaterial = new THREE.MeshLambertMaterial({ color: carrotOrange });
+        const noseGeometry = getGeometry('cone', 0.15, 0.8, 8);
+        const noseMaterial = getMaterial('lambert', { color: carrotOrange });
         const nose = new THREE.Mesh(noseGeometry, noseMaterial);
         nose.position.set(0, 5.9, 1.2);
         nose.rotation.x = Math.PI / 2;
         group.add(nose);
         
         // Evil grin made of coal pieces
-        const mouthCoalGeometry = new THREE.SphereGeometry(0.12, 8, 8);
+        const mouthCoalGeometry = getGeometry('sphere', 0.12, 8, 8);
         for (let i = 0; i < 7; i++) {
             const angle = (i - 3) * 0.15;
             const x = Math.sin(angle) * 0.6;
@@ -980,34 +982,34 @@
         }
         
         // Black top hat
-        const hatBaseGeometry = new THREE.CylinderGeometry(0.8, 0.8, 0.2, 16);
-        const hatMaterial = new THREE.MeshLambertMaterial({ color: hatBlack });
+        const hatBaseGeometry = getGeometry('cylinder', 0.8, 0.8, 0.2, 16);
+        const hatMaterial = getMaterial('lambert', { color: hatBlack });
         const hatBase = new THREE.Mesh(hatBaseGeometry, hatMaterial);
         hatBase.position.y = 7.0;
         group.add(hatBase);
         
-        const hatTopGeometry = new THREE.CylinderGeometry(0.6, 0.6, 1.2, 16);
+        const hatTopGeometry = getGeometry('cylinder', 0.6, 0.6, 1.2, 16);
         const hatTop = new THREE.Mesh(hatTopGeometry, hatMaterial);
         hatTop.position.y = 7.7;
         group.add(hatTop);
         
         // Red ribbon on hat
-        const ribbonGeometry = new THREE.CylinderGeometry(0.65, 0.65, 0.15, 16);
-        const ribbonMaterial = new THREE.MeshLambertMaterial({ color: hatRibbon });
+        const ribbonGeometry = getGeometry('cylinder', 0.65, 0.65, 0.15, 16);
+        const ribbonMaterial = getMaterial('lambert', { color: hatRibbon });
         const ribbon = new THREE.Mesh(ribbonGeometry, ribbonMaterial);
         ribbon.position.y = 7.2;
         group.add(ribbon);
         
         // Red scarf around neck
-        const scarfMaterial = new THREE.MeshLambertMaterial({ color: scarfRed });
-        const scarfRingGeometry = new THREE.TorusGeometry(1.3, 0.2, 8, 16);
+        const scarfMaterial = getMaterial('lambert', { color: scarfRed });
+        const scarfRingGeometry = getGeometry('torus', 1.3, 0.2, 8, 16);
         const scarfRing = new THREE.Mesh(scarfRingGeometry, scarfMaterial);
         scarfRing.position.y = 5.2;
         scarfRing.rotation.x = Math.PI / 2;
         group.add(scarfRing);
         
         // Scarf tails hanging down
-        const scarfTailGeometry = new THREE.CylinderGeometry(0.18, 0.15, 1.5, 8);
+        const scarfTailGeometry = getGeometry('cylinder', 0.18, 0.15, 1.5, 8);
         [-0.9, 0.9].forEach(x => {
             const tail = new THREE.Mesh(scarfTailGeometry, scarfMaterial);
             tail.position.set(x, 4.2, 0.8);
@@ -1016,8 +1018,8 @@
         });
         
         // Stick arms (frozen tree branches)
-        const stickMaterial = new THREE.MeshLambertMaterial({ color: 0x4a3a2a });
-        const armGeometry = new THREE.CylinderGeometry(0.15, 0.12, 2.5, 8);
+        const stickMaterial = getMaterial('lambert', { color: 0x4a3a2a });
+        const armGeometry = getGeometry('cylinder', 0.15, 0.12, 2.5, 8);
         
         const leftArm = new THREE.Mesh(armGeometry, stickMaterial);
         leftArm.position.set(-1.8, 4.5, 0);
@@ -1030,7 +1032,7 @@
         group.add(rightArm);
         
         // Stick fingers (3 per hand)
-        const fingerGeometry = new THREE.CylinderGeometry(0.05, 0.04, 0.6, 6);
+        const fingerGeometry = getGeometry('cylinder', 0.05, 0.04, 0.6, 6);
         [[-2.7, 3.8], [2.7, 3.8]].forEach(([x, y], armIndex) => {
             for (let i = 0; i < 3; i++) {
                 const finger = new THREE.Mesh(fingerGeometry, stickMaterial);
@@ -1048,12 +1050,12 @@
         });
         
         // Icy highlights/frost patches
-        const frostMaterial = new THREE.MeshLambertMaterial({ 
+        const frostMaterial = getMaterial('lambert', { 
             color: iceBlue, 
             transparent: true, 
             opacity: 0.4 
         });
-        const frostGeometry = new THREE.SphereGeometry(0.3, 12, 12);
+        const frostGeometry = getGeometry('sphere', 0.3, 12, 12);
         [
             [0.8, 4.5, 1.4],
             [-0.9, 3.2, 1.6],
@@ -1073,28 +1075,28 @@
         const giantEyeTexture = textures.giantEye || null;
         
         // Massive body with texture
-        const bodyGeometry = new THREE.CylinderGeometry(1.4, 1.8, 5.0, 12);
+        const bodyGeometry = getGeometry('cylinder', 1.4, 1.8, 5.0, 12);
         const bodyMaterial = giantSkinTexture 
-            ? new THREE.MeshLambertMaterial({ map: giantSkinTexture })
-            : new THREE.MeshLambertMaterial({ color: 0x5a4a3a });
+            ? getMaterial('lambert', { map: giantSkinTexture })
+            : getMaterial('lambert', { color: 0x5a4a3a });
         const body = new THREE.Mesh(bodyGeometry, bodyMaterial);
         body.position.y = 3.2;
         body.castShadow = true;
         group.add(body);
         
         // Giant head
-        const headGeometry = new THREE.SphereGeometry(1.3, 16, 16);
+        const headGeometry = getGeometry('sphere', 1.3, 16, 16);
         const headMaterial = giantSkinTexture
-            ? new THREE.MeshLambertMaterial({ map: giantSkinTexture })
-            : new THREE.MeshLambertMaterial({ color: 0x5a4a3a });
+            ? getMaterial('lambert', { map: giantSkinTexture })
+            : getMaterial('lambert', { color: 0x5a4a3a });
         const head = new THREE.Mesh(headGeometry, headMaterial);
         head.position.y = 6.5;
         head.castShadow = true;
         group.add(head);
         
         // Horns
-        const hornGeometry = new THREE.ConeGeometry(0.25, 1.2, 8);
-        const hornMaterial = new THREE.MeshLambertMaterial({ color: 0x3a3a2a });
+        const hornGeometry = getGeometry('cone', 0.25, 1.2, 8);
+        const hornMaterial = getMaterial('lambert', { color: 0x3a3a2a });
         
         const leftHorn = new THREE.Mesh(hornGeometry, hornMaterial);
         leftHorn.position.set(-0.9, 7.5, 0);
@@ -1109,15 +1111,15 @@
         group.add(rightHorn);
         
         // Glowing eyes with texture
-        const eyeGeometry = new THREE.SphereGeometry(0.4, 16, 16);
+        const eyeGeometry = getGeometry('sphere', 0.4, 16, 16);
         const eyeMaterial = giantEyeTexture 
-            ? new THREE.MeshBasicMaterial({ 
+            ? getMaterial('basic', { 
                 map: giantEyeTexture,
                 transparent: true,
                 blending: THREE.AdditiveBlending,
                 depthWrite: false
             })
-            : new THREE.MeshBasicMaterial({ color: 0xFF4400 });
+            : getMaterial('basic', { color: 0xFF4400 });
         const e1 = new THREE.Mesh(eyeGeometry, eyeMaterial);
         e1.position.set(-0.5, 6.5, 0.9);
         group.add(e1);
@@ -1127,10 +1129,10 @@
         group.add(e2);
         
         // Massive club-like arms
-        const armGeometry = new THREE.CylinderGeometry(0.4, 0.8, 4.0, 8);
+        const armGeometry = getGeometry('cylinder', 0.4, 0.8, 4.0, 8);
         const armMaterial = giantSkinTexture
-            ? new THREE.MeshLambertMaterial({ map: giantSkinTexture })
-            : new THREE.MeshLambertMaterial({ color: 0x5a4a3a });
+            ? getMaterial('lambert', { map: giantSkinTexture })
+            : getMaterial('lambert', { color: 0x5a4a3a });
         
         const leftArm = new THREE.Mesh(armGeometry, armMaterial);
         leftArm.position.set(-2.2, 4.0, 0);
@@ -1147,10 +1149,10 @@
         group.rightArm = rightArm;
         
         // Giant fists
-        const fistGeometry = new THREE.BoxGeometry(0.8, 0.8, 0.8);
+        const fistGeometry = getGeometry('box', 0.8, 0.8, 0.8);
         const fistMaterial = giantSkinTexture
-            ? new THREE.MeshLambertMaterial({ map: giantSkinTexture })
-            : new THREE.MeshLambertMaterial({ color: 0x5a4a3a });
+            ? getMaterial('lambert', { map: giantSkinTexture })
+            : getMaterial('lambert', { color: 0x5a4a3a });
         
         const leftFist = new THREE.Mesh(fistGeometry, fistMaterial);
         leftFist.position.set(-2.8, 1.8, 0);
@@ -1165,7 +1167,7 @@
         group.rightFist = rightFist;
         
         // Thick legs
-        const legGeometry = new THREE.CylinderGeometry(0.7, 0.9, 3.5, 8);
+        const legGeometry = getGeometry('cylinder', 0.7, 0.9, 3.5, 8);
         const leftLeg = new THREE.Mesh(legGeometry, armMaterial);
         leftLeg.position.set(-0.9, 1.2, 0);
         leftLeg.castShadow = true;
@@ -1186,8 +1188,8 @@
         const darkCrystal = 0x5a3a7a;
         
         // Massive crystal body - multiple faceted shapes
-        const bodyGeometry = new THREE.OctahedronGeometry(2.0, 0);
-        const bodyMaterial = new THREE.MeshLambertMaterial({ 
+        const bodyGeometry = getGeometry('octahedron', 2.0, 0);
+        const bodyMaterial = getMaterial('lambert', { 
             color: crystalPurple,
             emissive: crystalPurple,
             emissiveIntensity: 0.15,
@@ -1201,8 +1203,8 @@
         group.add(body);
         
         // Inner glow core
-        const coreGeometry = new THREE.OctahedronGeometry(1.2, 0);
-        const coreMaterial = new THREE.MeshBasicMaterial({ 
+        const coreGeometry = getGeometry('octahedron', 1.2, 0);
+        const coreMaterial = getMaterial('basic', { 
             color: crystalGlow,
             transparent: true,
             opacity: 0.4
@@ -1212,8 +1214,8 @@
         group.add(core);
         
         // Crystal head - large angular faceted shape
-        const headGeometry = new THREE.OctahedronGeometry(1.2, 0);
-        const headMaterial = new THREE.MeshLambertMaterial({ 
+        const headGeometry = getGeometry('octahedron', 1.2, 0);
+        const headMaterial = getMaterial('lambert', { 
             color: crystalPurple,
             emissive: crystalPurple,
             emissiveIntensity: 0.2,
@@ -1227,8 +1229,8 @@
         group.add(head);
         
         // Glowing eyes - large gem-like
-        const eyeMaterial = new THREE.MeshBasicMaterial({ color: 0x00ffff });
-        const eyeGeometry = new THREE.OctahedronGeometry(0.3, 0);
+        const eyeMaterial = getMaterial('basic', { color: 0x00ffff });
+        const eyeGeometry = getGeometry('octahedron', 0.3, 0);
         [-0.5, 0.5].forEach(x => {
             const eye = new THREE.Mesh(eyeGeometry, eyeMaterial);
             eye.position.set(x, 7.0, 1.0);
@@ -1238,8 +1240,8 @@
         // Massive crystal spikes on shoulders
         [-2.2, 2.2].forEach(x => {
             const spike = new THREE.Mesh(
-                new THREE.ConeGeometry(0.6, 2.5, 5),
-                new THREE.MeshLambertMaterial({ 
+                getGeometry('cone', 0.6, 2.5, 5),
+                getMaterial('lambert', { 
                     color: crystalPink,
                     emissive: crystalPink,
                     emissiveIntensity: 0.3,
@@ -1255,8 +1257,8 @@
         
         // Crystal arms - angular formations
         [-2.5, 2.5].forEach((x, i) => {
-            const armGeometry = new THREE.ConeGeometry(0.5, 3.0, 6);
-            const armMaterial = new THREE.MeshLambertMaterial({ 
+            const armGeometry = getGeometry('cone', 0.5, 3.0, 6);
+            const armMaterial = getMaterial('lambert', { 
                 color: darkCrystal,
                 transparent: true,
                 opacity: 0.85
@@ -1271,8 +1273,8 @@
             
             // Crystal fist
             const fist = new THREE.Mesh(
-                new THREE.OctahedronGeometry(0.5, 0),
-                new THREE.MeshLambertMaterial({ color: crystalBlue, emissive: crystalBlue, emissiveIntensity: 0.3 })
+                getGeometry('octahedron', 0.5, 0),
+                getMaterial('lambert', { color: crystalBlue, emissive: crystalBlue, emissiveIntensity: 0.3 })
             );
             fist.position.set(x * 1.3, 1.5, 0);
             group.add(fist);
@@ -1282,8 +1284,8 @@
         
         // Crystal legs - thick angular supports
         [-1.0, 1.0].forEach(x => {
-            const legGeometry = new THREE.ConeGeometry(0.7, 3.0, 6);
-            const legMaterial = new THREE.MeshLambertMaterial({ 
+            const legGeometry = getGeometry('cone', 0.7, 3.0, 6);
+            const legMaterial = getMaterial('lambert', { 
                 color: darkCrystal,
                 transparent: true,
                 opacity: 0.85
@@ -1299,8 +1301,8 @@
         for (let i = 0; i < 6; i++) {
             const angle = (i / 6) * Math.PI * 2;
             const spike = new THREE.Mesh(
-                new THREE.ConeGeometry(0.2, 1.2, 4),
-                new THREE.MeshLambertMaterial({ color: crystalPink, emissive: crystalPink, emissiveIntensity: 0.4 })
+                getGeometry('cone', 0.2, 1.2, 4),
+                getMaterial('lambert', { color: crystalPink, emissive: crystalPink, emissiveIntensity: 0.4 })
             );
             spike.position.set(
                 Math.cos(angle) * 0.8,
@@ -1321,8 +1323,8 @@
         const doorColor = 0x4A3A2A;         // Wooden door brown
         
         // Main tower body (tall cylinder with slight taper)
-        const towerGeometry = new THREE.CylinderGeometry(1.8, 2.2, 5.0, 12);
-        const towerMaterial = new THREE.MeshLambertMaterial({ color: stoneColor });
+        const towerGeometry = getGeometry('cylinder', 1.8, 2.2, 5.0, 12);
+        const towerMaterial = getMaterial('lambert', { color: stoneColor });
         const tower = new THREE.Mesh(towerGeometry, towerMaterial);
         tower.position.y = 3.0;
         tower.castShadow = true;
@@ -1331,8 +1333,8 @@
         
         // Stone block texture lines (horizontal)
         for (let i = 0; i < 8; i++) {
-            const lineGeometry = new THREE.TorusGeometry(1.85 - i * 0.03, 0.03, 4, 24);
-            const lineMaterial = new THREE.MeshLambertMaterial({ color: stoneDark });
+            const lineGeometry = getGeometry('torus', 1.85 - i * 0.03, 0.03, 4, 24);
+            const lineMaterial = getMaterial('lambert', { color: stoneDark });
             const line = new THREE.Mesh(lineGeometry, lineMaterial);
             line.position.y = 0.8 + i * 0.6;
             line.rotation.x = Math.PI / 2;
@@ -1343,8 +1345,8 @@
         const numBattlements = 8;
         for (let i = 0; i < numBattlements; i++) {
             const angle = (i / numBattlements) * Math.PI * 2;
-            const battlementGeometry = new THREE.BoxGeometry(0.8, 1.0, 0.5);
-            const battlementMaterial = new THREE.MeshLambertMaterial({ color: stoneDark });
+            const battlementGeometry = getGeometry('box', 0.8, 1.0, 0.5);
+            const battlementMaterial = getMaterial('lambert', { color: stoneDark });
             const battlement = new THREE.Mesh(battlementGeometry, battlementMaterial);
             battlement.position.set(
                 Math.cos(angle) * 1.6,
@@ -1358,16 +1360,16 @@
         
         // Face - carved into the tower
         // Glowing eyes (windows that look like eyes)
-        const eyeGeometry = new THREE.BoxGeometry(0.5, 0.7, 0.2);
-        const eyeMaterial = new THREE.MeshBasicMaterial({ color: eyeGlow });
+        const eyeGeometry = getGeometry('box', 0.5, 0.7, 0.2);
+        const eyeMaterial = getMaterial('basic', { color: eyeGlow });
         [-0.7, 0.7].forEach(x => {
             const eye = new THREE.Mesh(eyeGeometry, eyeMaterial);
             eye.position.set(x, 4.5, 1.9);
             group.add(eye);
             
             // Eye glow effect
-            const glowGeometry = new THREE.SphereGeometry(0.4, 8, 8);
-            const glowMaterial = new THREE.MeshBasicMaterial({ 
+            const glowGeometry = getGeometry('sphere', 0.4, 8, 8);
+            const glowMaterial = getMaterial('basic', { 
                 color: eyeGlow,
                 transparent: true,
                 opacity: 0.3
@@ -1378,8 +1380,8 @@
         });
         
         // Angry stone eyebrows
-        const browGeometry = new THREE.BoxGeometry(0.7, 0.15, 0.2);
-        const browMaterial = new THREE.MeshLambertMaterial({ color: stoneDark });
+        const browGeometry = getGeometry('box', 0.7, 0.15, 0.2);
+        const browMaterial = getMaterial('lambert', { color: stoneDark });
         [-0.7, 0.7].forEach((x, i) => {
             const brow = new THREE.Mesh(browGeometry, browMaterial);
             brow.position.set(x, 5.0, 1.9);
@@ -1388,31 +1390,31 @@
         });
         
         // Mouth (door that looks like a grimacing mouth)
-        const mouthGeometry = new THREE.BoxGeometry(1.2, 0.8, 0.2);
-        const mouthMaterial = new THREE.MeshLambertMaterial({ color: doorColor });
+        const mouthGeometry = getGeometry('box', 1.2, 0.8, 0.2);
+        const mouthMaterial = getMaterial('lambert', { color: doorColor });
         const mouth = new THREE.Mesh(mouthGeometry, mouthMaterial);
         mouth.position.set(0, 3.0, 2.0);
         group.add(mouth);
         
         // Teeth (stone blocks in mouth)
         for (let i = 0; i < 4; i++) {
-            const toothGeometry = new THREE.BoxGeometry(0.2, 0.3, 0.15);
-            const toothMaterial = new THREE.MeshLambertMaterial({ color: 0xE8E8E8 });
+            const toothGeometry = getGeometry('box', 0.2, 0.3, 0.15);
+            const toothMaterial = getMaterial('lambert', { color: 0xE8E8E8 });
             const tooth = new THREE.Mesh(toothGeometry, toothMaterial);
             tooth.position.set(-0.45 + i * 0.3, 3.4, 2.05);
             group.add(tooth);
         }
         
         // Nose (protruding stone block)
-        const noseGeometry = new THREE.BoxGeometry(0.5, 0.5, 0.4);
+        const noseGeometry = getGeometry('box', 0.5, 0.5, 0.4);
         const nose = new THREE.Mesh(noseGeometry, towerMaterial);
         nose.position.set(0, 3.8, 2.1);
         nose.castShadow = true;
         group.add(nose);
         
         // Moss patches
-        const mossGeometry = new THREE.SphereGeometry(0.3, 8, 8);
-        const mossMaterial = new THREE.MeshLambertMaterial({ color: mossColor });
+        const mossGeometry = getGeometry('sphere', 0.3, 8, 8);
+        const mossMaterial = getMaterial('lambert', { color: mossColor });
         [[1.5, 2.0, 1.0], [-1.6, 3.5, 0.8], [1.2, 5.0, -1.2], [-1.0, 1.5, -1.5]].forEach(pos => {
             const moss = new THREE.Mesh(mossGeometry, mossMaterial);
             moss.position.set(pos[0], pos[1], pos[2]);
@@ -1424,7 +1426,7 @@
         for (let i = 0; i < 3; i++) {
             const vineAngle = Math.random() * Math.PI * 2;
             for (let j = 0; j < 6; j++) {
-                const vineLeafGeometry = new THREE.SphereGeometry(0.15, 6, 6);
+                const vineLeafGeometry = getGeometry('sphere', 0.15, 6, 6);
                 const vineLeaf = new THREE.Mesh(vineLeafGeometry, mossMaterial);
                 vineLeaf.position.set(
                     Math.cos(vineAngle + j * 0.2) * 2.0,
@@ -1437,8 +1439,8 @@
         }
         
         // Stone legs (thick pillars)
-        const legGeometry = new THREE.CylinderGeometry(0.6, 0.8, 2.0, 8);
-        const legMaterial = new THREE.MeshLambertMaterial({ color: stoneDark });
+        const legGeometry = getGeometry('cylinder', 0.6, 0.8, 2.0, 8);
+        const legMaterial = getMaterial('lambert', { color: stoneDark });
         [-1.0, 1.0].forEach(x => {
             const leg = new THREE.Mesh(legGeometry, legMaterial);
             leg.position.set(x, 0.5, 0);
@@ -1447,7 +1449,7 @@
         });
         
         // Stone feet
-        const footGeometry = new THREE.BoxGeometry(1.0, 0.4, 1.2);
+        const footGeometry = getGeometry('box', 1.0, 0.4, 1.2);
         [-1.0, 1.0].forEach(x => {
             const foot = new THREE.Mesh(footGeometry, legMaterial);
             foot.position.set(x, 0.2, 0.2);
@@ -1456,7 +1458,7 @@
         });
         
         // Stone arms (smaller towers as arms)
-        const armGeometry = new THREE.CylinderGeometry(0.35, 0.45, 2.5, 8);
+        const armGeometry = getGeometry('cylinder', 0.35, 0.45, 2.5, 8);
         [-2.3, 2.3].forEach((x, i) => {
             const arm = new THREE.Mesh(armGeometry, towerMaterial);
             arm.position.set(x, 3.5, 0);
@@ -1467,7 +1469,7 @@
             else group.rightArm = arm;
             
             // Stone fist
-            const fistGeometry = new THREE.BoxGeometry(0.7, 0.7, 0.7);
+            const fistGeometry = getGeometry('box', 0.7, 0.7, 0.7);
             const fist = new THREE.Mesh(fistGeometry, stoneDark);
             fist.position.set(x * 1.35, 2.2, 0);
             fist.castShadow = true;

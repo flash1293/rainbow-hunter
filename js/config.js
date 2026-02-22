@@ -112,3 +112,149 @@ const GAME_CONFIG = {
 
 const HILLS = [];  // Empty fallback - actual hills come from level config
 const MOUNTAINS = [];  // Empty fallback - actual mountains come from level config
+
+// =============================================================================
+// GLOBAL MATERIAL CACHE
+// =============================================================================
+// Caches THREE.js materials to prevent GPU shader recompilation on every entity/
+// projectile/effect creation. Call getMaterial() instead of new THREE.Mesh*Material().
+// Call clearMaterialCache() on level transitions.
+
+const MATERIAL_CACHE = new Map();
+
+/**
+ * Get a cached material or create a new one
+ * @param {string} type - 'basic', 'lambert', or 'phong'
+ * @param {object} props - Material properties (color, transparent, opacity, etc.)
+ * @returns {THREE.Material} Cached or newly created material
+ */
+function getMaterial(type, props) {
+    // Create a cache key from type and sorted properties
+    const key = type + '_' + JSON.stringify(props, Object.keys(props).sort());
+    
+    if (MATERIAL_CACHE.has(key)) {
+        return MATERIAL_CACHE.get(key);
+    }
+    
+    let material;
+    switch (type) {
+        case 'basic':
+            material = new THREE.MeshBasicMaterial(props);
+            break;
+        case 'phong':
+            material = new THREE.MeshPhongMaterial(props);
+            break;
+        case 'lambert':
+        default:
+            material = new THREE.MeshLambertMaterial(props);
+            break;
+    }
+    
+    MATERIAL_CACHE.set(key, material);
+    return material;
+}
+
+/**
+ * Clear the material cache (call on level transitions)
+ */
+function clearMaterialCache() {
+    // Dispose all materials to free GPU memory
+    MATERIAL_CACHE.forEach(material => {
+        if (material.dispose) material.dispose();
+    });
+    MATERIAL_CACHE.clear();
+}
+
+/**
+ * Get a cached material that uses a texture map.
+ * Regular getMaterial() can't cache textured materials because JSON.stringify
+ * doesn't serialize texture objects. This function uses a textureName string as key.
+ * @param {string} type - 'basic', 'lambert', or 'phong'
+ * @param {object} props - Material properties INCLUDING map (texture object)
+ * @param {string} textureName - A stable name for the texture (e.g. 'rock', 'brickWall')
+ * @returns {THREE.Material} Cached or newly created material
+ */
+function getTexturedMaterial(type, props, textureName) {
+    // Build cache key from type, sorted scalar props, and texture name
+    const scalarProps = {};
+    for (const k of Object.keys(props).sort()) {
+        if (k !== 'map') scalarProps[k] = props[k];
+    }
+    const key = 'tex_' + type + '_' + textureName + '_' + JSON.stringify(scalarProps);
+
+    if (MATERIAL_CACHE.has(key)) {
+        return MATERIAL_CACHE.get(key);
+    }
+
+    let material;
+    switch (type) {
+        case 'basic':
+            material = new THREE.MeshBasicMaterial(props);
+            break;
+        case 'phong':
+            material = new THREE.MeshPhongMaterial(props);
+            break;
+        case 'lambert':
+        default:
+            material = new THREE.MeshLambertMaterial(props);
+            break;
+    }
+
+    MATERIAL_CACHE.set(key, material);
+    return material;
+}
+
+// ============================================================================
+// GEOMETRY CACHE
+// ============================================================================
+// Reuse identical geometry objects across entities and terrain.
+// Geometries with the same type + constructor args share one GPU buffer.
+// Do NOT cache geometries that are mutated after creation (.scale(), .translate(), etc.)
+
+const GEOMETRY_CACHE = new Map();
+
+/**
+ * Get a cached geometry or create a new one
+ * @param {string} type - 'box', 'sphere', 'cylinder', 'cone', 'plane', 'torus', 'circle', 'ring', 'dodecahedron', 'icosahedron', 'octahedron', 'tetrahedron'
+ * @param {...number} args - Constructor arguments for the geometry
+ * @returns {THREE.BufferGeometry} Cached or newly created geometry
+ */
+function getGeometry(type, ...args) {
+    const key = type + '_' + args.join('_');
+
+    if (GEOMETRY_CACHE.has(key)) {
+        return GEOMETRY_CACHE.get(key);
+    }
+
+    let geometry;
+    switch (type) {
+        case 'box':          geometry = new THREE.BoxGeometry(...args); break;
+        case 'sphere':       geometry = new THREE.SphereGeometry(...args); break;
+        case 'cylinder':     geometry = new THREE.CylinderGeometry(...args); break;
+        case 'cone':         geometry = new THREE.ConeGeometry(...args); break;
+        case 'plane':        geometry = new THREE.PlaneGeometry(...args); break;
+        case 'torus':        geometry = new THREE.TorusGeometry(...args); break;
+        case 'circle':       geometry = new THREE.CircleGeometry(...args); break;
+        case 'ring':         geometry = new THREE.RingGeometry(...args); break;
+        case 'dodecahedron': geometry = new THREE.DodecahedronGeometry(...args); break;
+        case 'icosahedron':  geometry = new THREE.IcosahedronGeometry(...args); break;
+        case 'octahedron':   geometry = new THREE.OctahedronGeometry(...args); break;
+        case 'tetrahedron':  geometry = new THREE.TetrahedronGeometry(...args); break;
+        default:
+            console.warn('getGeometry: unknown type', type);
+            geometry = new THREE.BoxGeometry(...args);
+    }
+
+    GEOMETRY_CACHE.set(key, geometry);
+    return geometry;
+}
+
+/**
+ * Clear the geometry cache (call on level transitions alongside clearMaterialCache)
+ */
+function clearGeometryCache() {
+    GEOMETRY_CACHE.forEach(geometry => {
+        if (geometry.dispose) geometry.dispose();
+    });
+    GEOMETRY_CACHE.clear();
+}

@@ -16,8 +16,8 @@
         const glowGreen = 0x00FF44;
 
         // Main body/robe - massive flowing cloak
-        const robeGeometry = new THREE.CylinderGeometry(2.5, 4.5, 12, 16);
-        const robeMaterial = new THREE.MeshLambertMaterial({
+        const robeGeometry = getGeometry('cylinder', 2.5, 4.5, 12, 16);
+        const robeMaterial = getMaterial('lambert', {
             color: cloakBlack
         });
         const robe = new THREE.Mesh(robeGeometry, robeMaterial);
@@ -27,8 +27,8 @@
 
         // Flowing tattered edges
         for (let i = 0; i < 16; i++) {
-            const tatGeometry = new THREE.ConeGeometry(0.5, 3 + Math.random() * 2, 4);
-            const tatMaterial = new THREE.MeshLambertMaterial({ color: cloakDark });
+            const tatGeometry = getGeometry('cone', 0.5, 3 + Math.random() * 2, 4);
+            const tatMaterial = getMaterial('lambert', { color: cloakDark });
             const tatter = new THREE.Mesh(tatGeometry, tatMaterial);
             const angle = (i / 16) * Math.PI * 2;
             tatter.position.set(Math.cos(angle) * 4.2, 0.5, Math.sin(angle) * 4.2);
@@ -37,15 +37,15 @@
         }
 
         // Upper body shroud
-        const shroudGeometry = new THREE.CylinderGeometry(2.0, 2.5, 4, 12);
+        const shroudGeometry = getGeometry('cylinder', 2.0, 2.5, 4, 12);
         const shroud = new THREE.Mesh(shroudGeometry, robeMaterial);
         shroud.position.y = 12.5;
         shroud.castShadow = true;
         reaperGroup.add(shroud);
 
         // Hood - deep and dark
-        const hoodGeometry = new THREE.ConeGeometry(2.5, 4, 12);
-        const hoodMaterial = new THREE.MeshLambertMaterial({ color: cloakBlack });
+        const hoodGeometry = getGeometry('cone', 2.5, 4, 12);
+        const hoodMaterial = getMaterial('lambert', { color: cloakBlack });
         const hood = new THREE.Mesh(hoodGeometry, hoodMaterial);
         hood.position.y = 16;
         hood.rotation.x = 0.2;
@@ -53,8 +53,8 @@
         reaperGroup.add(hood);
 
         // Hood opening (shadowed face area)
-        const faceVoidGeometry = new THREE.SphereGeometry(1.5, 16, 16);
-        const faceVoidMaterial = new THREE.MeshBasicMaterial({
+        const faceVoidGeometry = getGeometry('sphere', 1.5, 16, 16);
+        const faceVoidMaterial = getMaterial('basic', {
             color: 0x000000,
             transparent: true,
             opacity: 0.95
@@ -65,8 +65,8 @@
         reaperGroup.add(faceVoid);
 
         // Skull face (barely visible in hood darkness)
-        const skullGeometry = new THREE.SphereGeometry(1.2, 16, 16);
-        const skullMaterial = new THREE.MeshLambertMaterial({
+        const skullGeometry = getGeometry('sphere', 1.2, 16, 16);
+        const skullMaterial = getMaterial('lambert', {
             color: boneWhite,
             transparent: true,
             opacity: 0.4
@@ -77,8 +77,8 @@
         reaperGroup.add(skull);
 
         // Glowing eye sockets
-        const eyeGeometry = new THREE.SphereGeometry(0.35, 12, 12);
-        const eyeMaterial = new THREE.MeshBasicMaterial({
+        const eyeGeometry = getGeometry('sphere', 0.35, 12, 12);
+        const eyeMaterial = getMaterial('basic', {
             color: 0xFF0000,
             transparent: true,
             blending: THREE.AdditiveBlending
@@ -91,23 +91,25 @@
         rightEye.position.set(0.5, 14.7, 1.8);
         reaperGroup.add(rightEye);
 
-        // Eye glow effect - brighter
-        const eyeGlowLight = new THREE.PointLight(0xFF0000, 3.0, 20);
-        eyeGlowLight.position.set(0, 14.7, 2);
-        reaperGroup.add(eyeGlowLight);
+        // Eye glow effect (emissive mesh instead of PointLight for perf)
+        const eyeGlowGeometry = getGeometry('sphere', 0.8, 8, 8);
+        const eyeGlowMaterial = getMaterial('basic', { color: 0xFF0000, transparent: true, opacity: 0.4 });
+        const eyeGlowMesh = new THREE.Mesh(eyeGlowGeometry, eyeGlowMaterial);
+        eyeGlowMesh.position.set(0, 14.7, 2);
+        reaperGroup.add(eyeGlowMesh);
 
         // Skeletal hands emerging from sleeves
-        const handMaterial = new THREE.MeshLambertMaterial({ color: boneWhite });
+        const handMaterial = getMaterial('lambert', { color: boneWhite });
 
         // Left hand holding scythe
-        const leftHandGeometry = new THREE.BoxGeometry(0.8, 1.5, 0.4);
+        const leftHandGeometry = getGeometry('box', 0.8, 1.5, 0.4);
         const leftHand = new THREE.Mesh(leftHandGeometry, handMaterial);
         leftHand.position.set(-3.5, 10, 2);
         leftHand.rotation.z = 0.3;
         reaperGroup.add(leftHand);
 
         // Left arm sleeve
-        const leftSleeveGeometry = new THREE.CylinderGeometry(0.6, 1.2, 4, 8);
+        const leftSleeveGeometry = getGeometry('cylinder', 0.6, 1.2, 4, 8);
         const leftSleeve = new THREE.Mesh(leftSleeveGeometry, robeMaterial);
         leftSleeve.position.set(-3, 11, 1);
         leftSleeve.rotation.z = 0.4;
@@ -115,14 +117,14 @@
         reaperGroup.add(leftSleeve);
 
         // Right hand reaching out
-        const rightHandGeometry = new THREE.BoxGeometry(0.8, 1.5, 0.4);
+        const rightHandGeometry = getGeometry('box', 0.8, 1.5, 0.4);
         const rightHand = new THREE.Mesh(rightHandGeometry, handMaterial);
         rightHand.position.set(3.5, 10, 2);
         rightHand.rotation.z = -0.3;
         reaperGroup.add(rightHand);
 
         // Right arm sleeve
-        const rightSleeveGeometry = new THREE.CylinderGeometry(0.6, 1.2, 4, 8);
+        const rightSleeveGeometry = getGeometry('cylinder', 0.6, 1.2, 4, 8);
         const rightSleeve = new THREE.Mesh(rightSleeveGeometry, robeMaterial);
         rightSleeve.position.set(3, 11, 1);
         rightSleeve.rotation.z = -0.4;
@@ -131,8 +133,8 @@
 
         // GIANT SCYTHE
         // Scythe handle
-        const handleGeometry = new THREE.CylinderGeometry(0.2, 0.2, 16, 8);
-        const handleMaterial = new THREE.MeshLambertMaterial({ color: 0x2a1a0a });
+        const handleGeometry = getGeometry('cylinder', 0.2, 0.2, 16, 8);
+        const handleMaterial = getMaterial('lambert', { color: 0x2a1a0a });
         const handle = new THREE.Mesh(handleGeometry, handleMaterial);
         handle.position.set(-4, 12, 2.5);
         handle.rotation.z = 0.3;
@@ -153,7 +155,7 @@
             bevelEnabled: false
         };
         const bladeGeometry = new THREE.ExtrudeGeometry(bladeShape, bladeExtrudeSettings);
-        const bladeMaterial = new THREE.MeshPhongMaterial({
+        const bladeMaterial = getMaterial('phong', {
             color: 0x3a3a3a,
             shininess: 100,
             specular: 0x666666
@@ -165,8 +167,8 @@
         reaperGroup.add(blade);
 
         // Blade edge glow
-        const edgeGeometry = new THREE.CylinderGeometry(0.05, 0.05, 6, 8);
-        const edgeMaterial = new THREE.MeshBasicMaterial({
+        const edgeGeometry = getGeometry('cylinder', 0.05, 0.05, 6, 8);
+        const edgeMaterial = getMaterial('basic', {
             color: glowGreen,
             transparent: true,
             opacity: 0.6
@@ -177,8 +179,8 @@
         reaperGroup.add(edge);
 
         // Ghostly trail particles (ethereal essence)
-        const trailGeometry = new THREE.SphereGeometry(0.5, 8, 8);
-        const trailMaterial = new THREE.MeshBasicMaterial({
+        const trailGeometry = getGeometry('sphere', 0.5, 8, 8);
+        const trailMaterial = getMaterial('basic', {
             color: glowGreen,
             transparent: true,
             opacity: 0.3
@@ -194,10 +196,12 @@
             reaperGroup.add(trail);
         }
 
-        // Eerie ambient light
-        const ambientGlow = new THREE.PointLight(glowGreen, 0.5, 15);
-        ambientGlow.position.set(0, 8, 0);
-        reaperGroup.add(ambientGlow);
+        // Eerie ambient glow (emissive mesh instead of PointLight for perf)
+        const ambientGlowGeometry = getGeometry('sphere', 2.0, 8, 8);
+        const ambientGlowMaterial = getMaterial('basic', { color: glowGreen, transparent: true, opacity: 0.15 });
+        const ambientGlowMesh = new THREE.Mesh(ambientGlowGeometry, ambientGlowMaterial);
+        ambientGlowMesh.position.set(0, 8, 0);
+        reaperGroup.add(ambientGlowMesh);
 
         // Position reaper
         const reaperConfig = posConfig || G.levelConfig.dragon || { x: 0, z: -200 };

@@ -17,8 +17,8 @@
         const glowPurple = 0x9400D3;       // Dark violet glow
 
         // Main body - horse-like elongated body
-        const bodyGeometry = new THREE.CylinderGeometry(2, 2.5, 8, 16);
-        const bodyMaterial = new THREE.MeshPhongMaterial({
+        const bodyGeometry = getGeometry('cylinder', 2, 2.5, 8, 16);
+        const bodyMaterial = getMaterial('phong', {
             color: bodyDark,
             emissive: glowPurple,
             emissiveIntensity: 0.1,
@@ -31,7 +31,7 @@
         unicornGroup.add(body);
 
         // Neck
-        const neckGeometry = new THREE.CylinderGeometry(1.2, 1.8, 4, 12);
+        const neckGeometry = getGeometry('cylinder', 1.2, 1.8, 4, 12);
         const neck = new THREE.Mesh(neckGeometry, bodyMaterial);
         neck.position.set(4, 6, 0);
         neck.rotation.z = -0.4;
@@ -39,7 +39,7 @@
         unicornGroup.add(neck);
 
         // Head - horse head shape
-        const headGeometry = new THREE.CylinderGeometry(0.8, 1.4, 3.5, 12);
+        const headGeometry = getGeometry('cylinder', 0.8, 1.4, 3.5, 12);
         const head = new THREE.Mesh(headGeometry, bodyMaterial);
         head.position.set(6, 8.5, 0);
         head.rotation.z = 0.2;
@@ -47,7 +47,7 @@
         unicornGroup.add(head);
 
         // Snout
-        const snoutGeometry = new THREE.CylinderGeometry(0.5, 0.8, 2, 10);
+        const snoutGeometry = getGeometry('cylinder', 0.5, 0.8, 2, 10);
         const snout = new THREE.Mesh(snoutGeometry, bodyMaterial);
         snout.position.set(7.5, 8, 0);
         snout.rotation.z = Math.PI / 2;
@@ -55,8 +55,8 @@
         unicornGroup.add(snout);
 
         // Nostrils with faint glow
-        const nostrilGeometry = new THREE.SphereGeometry(0.15, 8, 8);
-        const nostrilMaterial = new THREE.MeshBasicMaterial({
+        const nostrilGeometry = getGeometry('sphere', 0.15, 8, 8);
+        const nostrilMaterial = getMaterial('basic', {
             color: glowPurple,
             transparent: true,
             opacity: 0.7
@@ -70,8 +70,8 @@
         unicornGroup.add(rightNostril);
 
         // BROKEN HORN - jagged and cracked
-        const hornGeometry = new THREE.ConeGeometry(0.4, 2.5, 6);
-        const hornMaterial = new THREE.MeshPhongMaterial({
+        const hornGeometry = getGeometry('cone', 0.4, 2.5, 6);
+        const hornMaterial = getMaterial('phong', {
             color: hornBroken,
             emissive: glowPurple,
             emissiveIntensity: 0.2
@@ -85,7 +85,7 @@
         // Crack effect on horn
         for (let i = 0; i < 3; i++) {
             const crackGeometry = new THREE.BoxGeometry(0.05, 0.5 + Math.random() * 0.3, 0.05);
-            const crackMaterial = new THREE.MeshBasicMaterial({
+            const crackMaterial = getMaterial('basic', {
                 color: 0x000000,
                 transparent: true,
                 opacity: 0.8
@@ -97,8 +97,8 @@
         }
 
         // Ears
-        const earGeometry = new THREE.ConeGeometry(0.3, 0.8, 6);
-        const earMaterial = new THREE.MeshPhongMaterial({ color: bodyDark });
+        const earGeometry = getGeometry('cone', 0.3, 0.8, 6);
+        const earMaterial = getMaterial('phong', { color: bodyDark });
         const leftEar = new THREE.Mesh(earGeometry, earMaterial);
         leftEar.position.set(5.5, 10, 0.6);
         leftEar.rotation.x = -0.2;
@@ -110,8 +110,8 @@
         unicornGroup.add(rightEar);
 
         // Glowing RED eyes
-        const eyeGeometry = new THREE.SphereGeometry(0.35, 12, 12);
-        const eyeMaterial = new THREE.MeshBasicMaterial({
+        const eyeGeometry = getGeometry('sphere', 0.35, 12, 12);
+        const eyeMaterial = getMaterial('basic', {
             color: eyeRed,
             transparent: true,
             blending: THREE.AdditiveBlending
@@ -124,13 +124,15 @@
         rightEye.position.set(6.8, 9, -0.6);
         unicornGroup.add(rightEye);
 
-        // Eye glow light
-        const eyeLight = new THREE.PointLight(eyeRed, 2.0, 15);
-        eyeLight.position.set(6.8, 9, 0);
-        unicornGroup.add(eyeLight);
+        // Eye glow (emissive mesh instead of PointLight for perf)
+        const eyeGlowGeometry = getGeometry('sphere', 0.5, 8, 8);
+        const eyeGlowMaterial = getMaterial('basic', { color: eyeRed, transparent: true, opacity: 0.4 });
+        const eyeGlowMesh = new THREE.Mesh(eyeGlowGeometry, eyeGlowMaterial);
+        eyeGlowMesh.position.set(6.8, 9, 0);
+        unicornGroup.add(eyeGlowMesh);
 
         // MANE - flowing purple strands
-        const maneMaterial = new THREE.MeshPhongMaterial({
+        const maneMaterial = getMaterial('phong', {
             color: manePurple,
             emissive: maneHighlight,
             emissiveIntensity: 0.3,
@@ -159,7 +161,7 @@
         }
 
         // LEGS - four horse legs
-        const legMaterial = new THREE.MeshPhongMaterial({ color: bodyDark });
+        const legMaterial = getMaterial('phong', { color: bodyDark });
         const legPositions = [
             { x: -2.5, z: 1.2 }, // back left
             { x: -2.5, z: -1.2 }, // back right
@@ -169,20 +171,20 @@
 
         legPositions.forEach((pos, i) => {
             // Upper leg
-            const upperLegGeometry = new THREE.CylinderGeometry(0.4, 0.5, 2.5, 8);
+            const upperLegGeometry = getGeometry('cylinder', 0.4, 0.5, 2.5, 8);
             const upperLeg = new THREE.Mesh(upperLegGeometry, legMaterial);
             upperLeg.position.set(pos.x, 2, pos.z);
             unicornGroup.add(upperLeg);
 
             // Lower leg
-            const lowerLegGeometry = new THREE.CylinderGeometry(0.3, 0.35, 2, 8);
+            const lowerLegGeometry = getGeometry('cylinder', 0.3, 0.35, 2, 8);
             const lowerLeg = new THREE.Mesh(lowerLegGeometry, legMaterial);
             lowerLeg.position.set(pos.x, 0.3, pos.z);
             unicornGroup.add(lowerLeg);
 
             // Hoof
-            const hoofGeometry = new THREE.CylinderGeometry(0.4, 0.35, 0.4, 8);
-            const hoofMaterial = new THREE.MeshPhongMaterial({ color: 0x333333 });
+            const hoofGeometry = getGeometry('cylinder', 0.4, 0.35, 0.4, 8);
+            const hoofMaterial = getMaterial('phong', { color: 0x333333 });
             const hoof = new THREE.Mesh(hoofGeometry, hoofMaterial);
             hoof.position.set(pos.x, -0.5, pos.z);
             unicornGroup.add(hoof);
@@ -199,7 +201,7 @@
         }
 
         // WINGS - dark ethereal wings (for flying)
-        const wingMaterial = new THREE.MeshPhongMaterial({
+        const wingMaterial = getMaterial('phong', {
             color: bodyDark,
             emissive: glowPurple,
             emissiveIntensity: 0.2,
@@ -230,7 +232,7 @@
             // Wing bones
             for (let i = 0; i < 4; i++) {
                 const boneGeometry = new THREE.CylinderGeometry(0.08, 0.05, 4 + i * 0.5, 6);
-                const boneMaterial = new THREE.MeshPhongMaterial({ color: 0x111111 });
+                const boneMaterial = getMaterial('phong', { color: 0x111111 });
                 const bone = new THREE.Mesh(boneGeometry, boneMaterial);
                 bone.position.set(0, 2 + i * 0.3, side * (1 + i * 0.3));
                 bone.rotation.x = side * 0.3;
@@ -254,7 +256,7 @@
         // Corruption particles floating around
         for (let i = 0; i < 10; i++) {
             const particleGeometry = new THREE.SphereGeometry(0.1 + Math.random() * 0.15, 6, 6);
-            const particleMaterial = new THREE.MeshBasicMaterial({
+            const particleMaterial = getMaterial('basic', {
                 color: Math.random() > 0.5 ? glowPurple : manePurple,
                 transparent: true,
                 opacity: 0.5 + Math.random() * 0.3
@@ -270,10 +272,12 @@
             unicornGroup.add(particle);
         }
 
-        // Body glow
-        const bodyLight = new THREE.PointLight(glowPurple, 1.5, 25);
-        bodyLight.position.set(0, 5, 0);
-        unicornGroup.add(bodyLight);
+        // Body glow (emissive mesh instead of PointLight for perf)
+        const bodyGlowGeometry = getGeometry('sphere', 3.0, 8, 8);
+        const bodyGlowMaterial = getMaterial('basic', { color: glowPurple, transparent: true, opacity: 0.12 });
+        const bodyGlowMesh = new THREE.Mesh(bodyGlowGeometry, bodyGlowMaterial);
+        bodyGlowMesh.position.set(0, 5, 0);
+        unicornGroup.add(bodyGlowMesh);
 
         // Scale and position
         unicornGroup.scale.set(scale, scale, scale);

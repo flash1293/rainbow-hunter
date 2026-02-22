@@ -12,8 +12,8 @@
         const herzmanGroup = new THREE.Group();
         
         // Base platform (cute pink pedestal)
-        const baseGeometry = new THREE.CylinderGeometry(0.5, 0.7, 0.2, 16);
-        const baseMaterial = new THREE.MeshLambertMaterial({ color: 0xFFB6C1 });
+        const baseGeometry = getGeometry('cylinder', 0.5, 0.7, 0.2, 16);
+        const baseMaterial = getMaterial('lambert', { color: 0xFFB6C1 });
         const base = new THREE.Mesh(baseGeometry, baseMaterial);
         base.position.y = 0.1;
         base.castShadow = true;
@@ -31,7 +31,7 @@
         
         const extrudeSettings = { depth: 0.4, bevelEnabled: true, bevelSegments: 3, bevelSize: 0.08, bevelThickness: 0.08 };
         const heartGeometry = new THREE.ExtrudeGeometry(heartShape, extrudeSettings);
-        const heartMaterial = new THREE.MeshLambertMaterial({ 
+        const heartMaterial = getMaterial('lambert', { 
             color: 0xFF1493, // Deep pink
             emissive: 0xFF1493,
             emissiveIntensity: 0.2
@@ -45,8 +45,8 @@
         
         // Face on the heart - positioned in front of the heart body
         // Eyes (cute round eyes)
-        const eyeGeometry = new THREE.SphereGeometry(0.12, 12, 12);
-        const eyeWhiteMaterial = new THREE.MeshBasicMaterial({ color: 0xFFFFFF });
+        const eyeGeometry = getGeometry('sphere', 0.12, 12, 12);
+        const eyeWhiteMaterial = getMaterial('basic', { color: 0xFFFFFF });
         const eyeLeft = new THREE.Mesh(eyeGeometry, eyeWhiteMaterial);
         eyeLeft.position.set(-0.25, 1.35, 0.65);
         herzmanGroup.add(eyeLeft);
@@ -56,8 +56,8 @@
         herzmanGroup.add(eyeRight);
         
         // Pupils
-        const pupilGeometry = new THREE.SphereGeometry(0.06, 8, 8);
-        const pupilMaterial = new THREE.MeshBasicMaterial({ color: 0x000000 });
+        const pupilGeometry = getGeometry('sphere', 0.06, 8, 8);
+        const pupilMaterial = getMaterial('basic', { color: 0x000000 });
         const pupilLeft = new THREE.Mesh(pupilGeometry, pupilMaterial);
         pupilLeft.position.set(-0.25, 1.35, 0.76);
         herzmanGroup.add(pupilLeft);
@@ -67,8 +67,8 @@
         herzmanGroup.add(pupilRight);
         
         // Eye sparkles
-        const sparkleGeometry = new THREE.SphereGeometry(0.03, 4, 4);
-        const sparkleMaterial = new THREE.MeshBasicMaterial({ color: 0xFFFFFF });
+        const sparkleGeometry = getGeometry('sphere', 0.03, 4, 4);
+        const sparkleMaterial = getMaterial('basic', { color: 0xFFFFFF });
         const sparkle1 = new THREE.Mesh(sparkleGeometry, sparkleMaterial);
         sparkle1.position.set(-0.22, 1.4, 0.8);
         herzmanGroup.add(sparkle1);
@@ -77,8 +77,8 @@
         herzmanGroup.add(sparkle2);
         
         // Cute blush cheeks
-        const blushGeometry = new THREE.CircleGeometry(0.1, 12);
-        const blushMaterial = new THREE.MeshBasicMaterial({ 
+        const blushGeometry = getGeometry('circle', 0.1, 12);
+        const blushMaterial = getMaterial('basic', { 
             color: 0xFF6B6B, 
             transparent: true, 
             opacity: 0.6,
@@ -95,25 +95,25 @@
         herzmanGroup.add(blush2);
         
         // Happy smile (wider arc)
-        const smileGeometry = new THREE.TorusGeometry(0.15, 0.03, 8, 16, Math.PI);
-        const smileMaterial = new THREE.MeshBasicMaterial({ color: 0x8B0000 });
+        const smileGeometry = getGeometry('torus', 0.15, 0.03, 8, 16, Math.PI);
+        const smileMaterial = getMaterial('basic', { color: 0x8B0000 });
         const smile = new THREE.Mesh(smileGeometry, smileMaterial);
         smile.position.set(0, 1.05, 0.7);
         smile.rotation.x = Math.PI;
         herzmanGroup.add(smile);
         
         // Arms (stubby cute arms) - using cylinder with spheres at ends
-        const armMaterial = new THREE.MeshLambertMaterial({ color: 0xFF69B4 });
+        const armMaterial = getMaterial('lambert', { color: 0xFF69B4 });
         
         // Left arm (cylinder + sphere ends)
         const leftArmGroup = new THREE.Group();
-        const leftArmCyl = new THREE.Mesh(new THREE.CylinderGeometry(0.08, 0.08, 0.3, 8), armMaterial);
+        const leftArmCyl = new THREE.Mesh(getGeometry('cylinder', 0.08, 0.08, 0.3, 8), armMaterial);
         leftArmCyl.rotation.z = Math.PI / 2;
         leftArmGroup.add(leftArmCyl);
-        const leftArmEnd1 = new THREE.Mesh(new THREE.SphereGeometry(0.08, 8, 8), armMaterial);
+        const leftArmEnd1 = new THREE.Mesh(getGeometry('sphere', 0.08, 8, 8), armMaterial);
         leftArmEnd1.position.x = -0.15;
         leftArmGroup.add(leftArmEnd1);
-        const leftArmEnd2 = new THREE.Mesh(new THREE.SphereGeometry(0.08, 8, 8), armMaterial);
+        const leftArmEnd2 = new THREE.Mesh(getGeometry('sphere', 0.08, 8, 8), armMaterial);
         leftArmEnd2.position.x = 0.15;
         leftArmGroup.add(leftArmEnd2);
         leftArmGroup.position.set(-0.7, 1.0, 0);
@@ -123,13 +123,13 @@
         
         // Right arm (cylinder + sphere ends)
         const rightArmGroup = new THREE.Group();
-        const rightArmCyl = new THREE.Mesh(new THREE.CylinderGeometry(0.08, 0.08, 0.3, 8), armMaterial);
+        const rightArmCyl = new THREE.Mesh(getGeometry('cylinder', 0.08, 0.08, 0.3, 8), armMaterial);
         rightArmCyl.rotation.z = Math.PI / 2;
         rightArmGroup.add(rightArmCyl);
-        const rightArmEnd1 = new THREE.Mesh(new THREE.SphereGeometry(0.08, 8, 8), armMaterial);
+        const rightArmEnd1 = new THREE.Mesh(getGeometry('sphere', 0.08, 8, 8), armMaterial);
         rightArmEnd1.position.x = -0.15;
         rightArmGroup.add(rightArmEnd1);
-        const rightArmEnd2 = new THREE.Mesh(new THREE.SphereGeometry(0.08, 8, 8), armMaterial);
+        const rightArmEnd2 = new THREE.Mesh(getGeometry('sphere', 0.08, 8, 8), armMaterial);
         rightArmEnd2.position.x = 0.15;
         rightArmGroup.add(rightArmEnd2);
         rightArmGroup.position.set(0.7, 1.0, 0);
@@ -138,8 +138,8 @@
         herzmanGroup.add(rightArmGroup);
         
         // Little hands (spheres)
-        const handGeometry = new THREE.SphereGeometry(0.1, 8, 8);
-        const handMaterial = new THREE.MeshLambertMaterial({ color: 0xFFDAB9 });
+        const handGeometry = getGeometry('sphere', 0.1, 8, 8);
+        const handMaterial = getMaterial('lambert', { color: 0xFFDAB9 });
         
         const leftHand = new THREE.Mesh(handGeometry, handMaterial);
         leftHand.position.set(-0.9, 0.8, 0);
@@ -150,16 +150,16 @@
         herzmanGroup.add(rightHand);
         
         // Legs (short stubby legs) - using cylinder with sphere ends
-        const legMaterial = new THREE.MeshLambertMaterial({ color: 0xFF69B4 });
+        const legMaterial = getMaterial('lambert', { color: 0xFF69B4 });
         
         // Left leg (cylinder + sphere ends)
         const leftLegGroup = new THREE.Group();
-        const leftLegCyl = new THREE.Mesh(new THREE.CylinderGeometry(0.08, 0.08, 0.25, 8), legMaterial);
+        const leftLegCyl = new THREE.Mesh(getGeometry('cylinder', 0.08, 0.08, 0.25, 8), legMaterial);
         leftLegGroup.add(leftLegCyl);
-        const leftLegTop = new THREE.Mesh(new THREE.SphereGeometry(0.08, 8, 8), legMaterial);
+        const leftLegTop = new THREE.Mesh(getGeometry('sphere', 0.08, 8, 8), legMaterial);
         leftLegTop.position.y = 0.125;
         leftLegGroup.add(leftLegTop);
-        const leftLegBot = new THREE.Mesh(new THREE.SphereGeometry(0.08, 8, 8), legMaterial);
+        const leftLegBot = new THREE.Mesh(getGeometry('sphere', 0.08, 8, 8), legMaterial);
         leftLegBot.position.y = -0.125;
         leftLegGroup.add(leftLegBot);
         leftLegGroup.position.set(-0.25, 0.35, 0);
@@ -168,12 +168,12 @@
         
         // Right leg (cylinder + sphere ends)
         const rightLegGroup = new THREE.Group();
-        const rightLegCyl = new THREE.Mesh(new THREE.CylinderGeometry(0.08, 0.08, 0.25, 8), legMaterial);
+        const rightLegCyl = new THREE.Mesh(getGeometry('cylinder', 0.08, 0.08, 0.25, 8), legMaterial);
         rightLegGroup.add(rightLegCyl);
-        const rightLegTop = new THREE.Mesh(new THREE.SphereGeometry(0.08, 8, 8), legMaterial);
+        const rightLegTop = new THREE.Mesh(getGeometry('sphere', 0.08, 8, 8), legMaterial);
         rightLegTop.position.y = 0.125;
         rightLegGroup.add(rightLegTop);
-        const rightLegBot = new THREE.Mesh(new THREE.SphereGeometry(0.08, 8, 8), legMaterial);
+        const rightLegBot = new THREE.Mesh(getGeometry('sphere', 0.08, 8, 8), legMaterial);
         rightLegBot.position.y = -0.125;
         rightLegGroup.add(rightLegBot);
         rightLegGroup.position.set(0.25, 0.35, 0);
@@ -181,8 +181,8 @@
         herzmanGroup.add(rightLegGroup);
         
         // Little feet (oval spheres)
-        const footGeometry = new THREE.SphereGeometry(0.12, 8, 8);
-        const footMaterial = new THREE.MeshLambertMaterial({ color: 0xFF1493 });
+        const footGeometry = getGeometry('sphere', 0.12, 8, 8);
+        const footMaterial = getMaterial('lambert', { color: 0xFF1493 });
         
         const leftFoot = new THREE.Mesh(footGeometry, footMaterial);
         leftFoot.position.set(-0.25, 0.12, 0.05);
@@ -213,7 +213,7 @@
         
         const extrudeSettings = { depth: 0.1, bevelEnabled: true, bevelSegments: 2, bevelSize: 0.02, bevelThickness: 0.02 };
         const heartGeometry = new THREE.ExtrudeGeometry(heartShape, extrudeSettings);
-        const heartMaterial = new THREE.MeshLambertMaterial({ 
+        const heartMaterial = getMaterial('lambert', { 
             color: 0xFF69B4,
             emissive: 0xFF1493,
             emissiveIntensity: 0.6
@@ -223,8 +223,8 @@
         heartBombGroup.add(heart);
         
         // Trailing sparkles glow
-        const glowGeometry = new THREE.SphereGeometry(0.15, 8, 8);
-        const glowMaterial = new THREE.MeshBasicMaterial({
+        const glowGeometry = getGeometry('sphere', 0.15, 8, 8);
+        const glowMaterial = getMaterial('basic', {
             color: 0xFFB6C1,
             transparent: true,
             opacity: 0.5
@@ -293,8 +293,8 @@
         const noteGroup = new THREE.Group();
         
         // Sticky note background (yellow square)
-        const noteGeometry = new THREE.PlaneGeometry(2, 1.5);
-        const noteMaterial = new THREE.MeshBasicMaterial({
+        const noteGeometry = getGeometry('plane', 2, 1.5);
+        const noteMaterial = getMaterial('basic', {
             color: 0xFFFF88,
             side: THREE.DoubleSide
         });

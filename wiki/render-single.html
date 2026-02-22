@@ -7099,6 +7099,840 @@
                 });
                 
                 return group;
+            },
+
+            // === Flying Witch (Level 14) ===
+            'flying-witch': function() {
+                const group = new THREE.Group();
+                const cloakColor = 0x2D1B4E;
+                const skinColor = 0x98FB98;
+                const hatColor = 0x1A0F2E;
+                const broomColor = 0x5D4037;
+                const bristleColor = 0x8B7355;
+                const eyeGlow = 0x00FF00;
+                
+                // Broomstick handle
+                const handleGeometry = new THREE.CylinderGeometry(0.08, 0.1, 3, 8);
+                const handleMaterial = new THREE.MeshLambertMaterial({ color: broomColor });
+                const handle = new THREE.Mesh(handleGeometry, handleMaterial);
+                handle.rotation.x = Math.PI / 2;
+                group.add(handle);
+                
+                // Bristles
+                const bristleGeometry = new THREE.ConeGeometry(0.35, 1.0, 8);
+                const bristleMaterial = new THREE.MeshLambertMaterial({ color: bristleColor });
+                const bristles = new THREE.Mesh(bristleGeometry, bristleMaterial);
+                bristles.rotation.x = -Math.PI / 2;
+                bristles.position.z = -2.0;
+                group.add(bristles);
+                
+                // Witch cloak body
+                const cloakGeometry = new THREE.ConeGeometry(0.45, 1.0, 8);
+                const cloakMaterial = new THREE.MeshLambertMaterial({ color: cloakColor });
+                const cloak = new THREE.Mesh(cloakGeometry, cloakMaterial);
+                cloak.position.y = 0.7;
+                cloak.position.z = 0.4;
+                group.add(cloak);
+                
+                // Head
+                const headGeometry = new THREE.SphereGeometry(0.32, 16, 16);
+                const headMaterial = new THREE.MeshLambertMaterial({ color: skinColor });
+                const head = new THREE.Mesh(headGeometry, headMaterial);
+                head.position.y = 1.45;
+                head.position.z = 0.4;
+                group.add(head);
+                
+                // Pointy nose
+                const noseGeometry = new THREE.ConeGeometry(0.07, 0.18, 6);
+                const nose = new THREE.Mesh(noseGeometry, headMaterial);
+                nose.position.set(0, 1.4, 0.75);
+                nose.rotation.x = Math.PI / 2;
+                group.add(nose);
+                
+                // Green glowing eyes
+                const eyeGeometry = new THREE.SphereGeometry(0.07, 12, 12);
+                const eyeMaterial = new THREE.MeshBasicMaterial({ color: eyeGlow });
+                [-0.1, 0.1].forEach(x => {
+                    const eye = new THREE.Mesh(eyeGeometry, eyeMaterial);
+                    eye.position.set(x, 1.5, 0.68);
+                    group.add(eye);
+                });
+                
+                // Witch hat
+                const hatBrimGeometry = new THREE.CylinderGeometry(0.4, 0.4, 0.05, 16);
+                const hatMaterial = new THREE.MeshLambertMaterial({ color: hatColor });
+                const hatBrim = new THREE.Mesh(hatBrimGeometry, hatMaterial);
+                hatBrim.position.y = 1.75;
+                hatBrim.position.z = 0.4;
+                group.add(hatBrim);
+                
+                const hatConeGeometry = new THREE.ConeGeometry(0.25, 0.7, 12);
+                const hatCone = new THREE.Mesh(hatConeGeometry, hatMaterial);
+                hatCone.position.y = 2.15;
+                hatCone.position.z = 0.4;
+                hatCone.rotation.z = 0.15;
+                group.add(hatCone);
+                
+                return group;
+            },
+
+            // === Flying Witch House (Level 14) ===
+            'flying-witch-house': function() {
+                const group = new THREE.Group();
+                const woodColor = 0x5D4E37;
+                const roofColor = 0x3D2817;
+                const windowGlow = 0x88FF88;
+                const cloudColor = 0xE8E8FF;
+                
+                // Cloud base
+                const cloudMaterial = new THREE.MeshLambertMaterial({ color: cloudColor, transparent: true, opacity: 0.85 });
+                const cloudPositions = [
+                    { x: 0, y: -1.5, z: 0, r: 1.8 },
+                    { x: 1.4, y: -1.6, z: 0.7, r: 1.4 },
+                    { x: -1.5, y: -1.5, z: 0.3, r: 1.5 },
+                    { x: 0.7, y: -1.7, z: -1.0, r: 1.3 },
+                    { x: -1.0, y: -1.6, z: -0.8, r: 1.4 }
+                ];
+                cloudPositions.forEach(pos => {
+                    const cloudGeometry = new THREE.SphereGeometry(pos.r, 12, 10);
+                    const cloud = new THREE.Mesh(cloudGeometry, cloudMaterial);
+                    cloud.position.set(pos.x, pos.y, pos.z);
+                    group.add(cloud);
+                });
+                
+                // House body
+                const houseGeometry = new THREE.BoxGeometry(2.8, 2.2, 2.4);
+                const houseMaterial = new THREE.MeshLambertMaterial({ color: woodColor });
+                const house = new THREE.Mesh(houseGeometry, houseMaterial);
+                house.position.y = 1.1;
+                group.add(house);
+                
+                // Pointy roof
+                const roofGeometry = new THREE.ConeGeometry(2.5, 2.2, 4);
+                const roofMaterial = new THREE.MeshLambertMaterial({ color: roofColor });
+                const roof = new THREE.Mesh(roofGeometry, roofMaterial);
+                roof.position.y = 3.3;
+                roof.rotation.y = Math.PI / 4;
+                group.add(roof);
+                
+                // Crooked chimney
+                const chimneyGeometry = new THREE.BoxGeometry(0.45, 1.1, 0.45);
+                const chimneyMaterial = new THREE.MeshLambertMaterial({ color: 0x6B4423 });
+                const chimney = new THREE.Mesh(chimneyGeometry, chimneyMaterial);
+                chimney.position.set(0.9, 2.8, 0.6);
+                chimney.rotation.z = 0.12;
+                group.add(chimney);
+                
+                // Glowing windows
+                const windowMaterial = new THREE.MeshBasicMaterial({ color: windowGlow, transparent: true, opacity: 0.9 });
+                const windowGeometry = new THREE.PlaneGeometry(0.5, 0.5);
+                [-0.6, 0.6].forEach(x => {
+                    const window = new THREE.Mesh(windowGeometry, windowMaterial);
+                    window.position.set(x, 1.4, 1.21);
+                    group.add(window);
+                });
+                
+                // Door
+                const doorGeometry = new THREE.BoxGeometry(0.6, 1.0, 0.1);
+                const doorMaterial = new THREE.MeshLambertMaterial({ color: 0x2D1B1B });
+                const door = new THREE.Mesh(doorGeometry, doorMaterial);
+                door.position.set(0, 0.5, 1.21);
+                group.add(door);
+                
+                return group;
+            },
+
+            // === Crystal Goblin / Cave Crawler (Level 13) ===
+            'crystal-goblin': function() {
+                const group = new THREE.Group();
+                const biolumGreen = 0x44ffaa;      // Bioluminescent skin
+                const crystalPurple = 0xaa44ff;   // Crystal accents
+                const crystalBlue = 0x44aaff;     // Secondary glow
+                const darkCave = 0x2a2a4a;        // Dark cave clothing
+                const glowWhite = 0xccffee;       // Bright glow spots
+                
+                // Body - dark cave clothing
+                const bodyGeometry = new THREE.BoxGeometry(0.6, 0.8, 0.4);
+                const bodyMaterial = new THREE.MeshLambertMaterial({ color: darkCave });
+                const body = new THREE.Mesh(bodyGeometry, bodyMaterial);
+                body.position.y = 0.8;
+                group.add(body);
+                
+                // Crystal shard belt
+                const beltGeometry = new THREE.BoxGeometry(0.65, 0.12, 0.42);
+                const beltMaterial = new THREE.MeshLambertMaterial({ color: crystalPurple });
+                const belt = new THREE.Mesh(beltGeometry, beltMaterial);
+                belt.position.y = 0.7;
+                group.add(belt);
+                
+                // Crystal on belt
+                const beltCrystalGeometry = new THREE.OctahedronGeometry(0.1, 0);
+                const beltCrystalMaterial = new THREE.MeshBasicMaterial({ color: crystalBlue });
+                const beltCrystal = new THREE.Mesh(beltCrystalGeometry, beltCrystalMaterial);
+                beltCrystal.position.set(0, 0.7, 0.23);
+                beltCrystal.rotation.y = Math.PI / 4;
+                group.add(beltCrystal);
+                
+                // Head - bioluminescent green
+                const headGeometry = new THREE.SphereGeometry(0.4, 16, 16);
+                const headMaterial = new THREE.MeshLambertMaterial({ color: biolumGreen });
+                const head = new THREE.Mesh(headGeometry, headMaterial);
+                head.position.y = 1.5;
+                group.add(head);
+                
+                // Glowing eyes
+                const eyeMaterial = new THREE.MeshBasicMaterial({ color: glowWhite });
+                const eyeGeometry = new THREE.SphereGeometry(0.1, 16, 16);
+                [-0.15, 0.15].forEach(x => {
+                    const eye = new THREE.Mesh(eyeGeometry, eyeMaterial);
+                    eye.position.set(x, 1.5, 0.35);
+                    group.add(eye);
+                });
+                
+                // Bioluminescent spots on face
+                const spotMaterial = new THREE.MeshBasicMaterial({ color: glowWhite });
+                const spotGeometry = new THREE.SphereGeometry(0.04, 8, 8);
+                [[-0.25, 1.6, 0.25], [0.25, 1.6, 0.25], [-0.1, 1.35, 0.38], [0.1, 1.35, 0.38]].forEach(pos => {
+                    const spot = new THREE.Mesh(spotGeometry, spotMaterial);
+                    spot.position.set(pos[0], pos[1], pos[2]);
+                    group.add(spot);
+                });
+                
+                // Pointed ears - bioluminescent
+                const earGeometry = new THREE.ConeGeometry(0.15, 0.4, 4);
+                const earMaterial = new THREE.MeshLambertMaterial({ color: biolumGreen });
+                [-0.5, 0.5].forEach((x, i) => {
+                    const ear = new THREE.Mesh(earGeometry, earMaterial);
+                    ear.rotation.z = i === 0 ? Math.PI / 2 : -Math.PI / 2;
+                    ear.position.set(x, 1.5, 0);
+                    group.add(ear);
+                });
+                
+                // Crystal growths on head
+                const headCrystalGeometry = new THREE.ConeGeometry(0.08, 0.35, 5);
+                const headCrystalMaterial = new THREE.MeshBasicMaterial({ color: crystalPurple });
+                const headCrystal1 = new THREE.Mesh(headCrystalGeometry, headCrystalMaterial);
+                headCrystal1.position.set(-0.15, 1.95, 0);
+                headCrystal1.rotation.z = 0.3;
+                group.add(headCrystal1);
+                
+                const headCrystal2 = new THREE.Mesh(headCrystalGeometry, headCrystalMaterial);
+                headCrystal2.position.set(0.1, 2.0, 0.05);
+                headCrystal2.rotation.z = -0.2;
+                headCrystal2.scale.set(0.8, 1.2, 0.8);
+                group.add(headCrystal2);
+                
+                const headCrystal3Geometry = new THREE.ConeGeometry(0.06, 0.25, 5);
+                const headCrystal3Material = new THREE.MeshBasicMaterial({ color: crystalBlue });
+                const headCrystal3 = new THREE.Mesh(headCrystal3Geometry, headCrystal3Material);
+                headCrystal3.position.set(0.2, 1.9, -0.1);
+                headCrystal3.rotation.z = -0.4;
+                group.add(headCrystal3);
+                
+                return group;
+            },
+
+            // === Crystal Guardian / Crystal Sentinel (Level 13) ===
+            'crystal-guardian': function() {
+                const group = new THREE.Group();
+                const crystalPurple = 0x8844ff;
+                const crystalPink = 0xff44aa;
+                const crystalGlow = 0xaa88ff;
+                const crystalDark = 0x5522aa;
+                
+                // Faceted crystal body
+                const bodyGeometry = new THREE.OctahedronGeometry(0.55, 0);
+                const bodyMaterial = new THREE.MeshLambertMaterial({ 
+                    color: crystalPurple, 
+                    transparent: true, 
+                    opacity: 0.85 
+                });
+                const body = new THREE.Mesh(bodyGeometry, bodyMaterial);
+                body.position.y = 1.0;
+                body.scale.set(0.9, 1.2, 0.7);
+                group.add(body);
+                
+                // Inner core glow
+                const coreGeometry = new THREE.OctahedronGeometry(0.3, 0);
+                const coreMaterial = new THREE.MeshBasicMaterial({ 
+                    color: crystalGlow, 
+                    transparent: true, 
+                    opacity: 0.6 
+                });
+                const core = new THREE.Mesh(coreGeometry, coreMaterial);
+                core.position.y = 1.0;
+                group.add(core);
+                
+                // Angular crystal head
+                const headGeometry = new THREE.OctahedronGeometry(0.4, 0);
+                const headMaterial = new THREE.MeshLambertMaterial({ 
+                    color: crystalPurple, 
+                    transparent: true, 
+                    opacity: 0.85 
+                });
+                const head = new THREE.Mesh(headGeometry, headMaterial);
+                head.position.y = 1.85;
+                head.rotation.y = Math.PI / 4;
+                group.add(head);
+                
+                // Glowing gem eyes
+                const eyeMaterial = new THREE.MeshBasicMaterial({ color: 0x00ffff });
+                const eyeGeometry = new THREE.OctahedronGeometry(0.1, 0);
+                [-0.15, 0.15].forEach(x => {
+                    const eye = new THREE.Mesh(eyeGeometry, eyeMaterial);
+                    eye.position.set(x, 1.85, 0.32);
+                    eye.rotation.y = Math.PI / 4;
+                    group.add(eye);
+                });
+                
+                // Crystal crown spikes
+                for (let i = 0; i < 5; i++) {
+                    const angle = (i / 5) * Math.PI * 2;
+                    const spike = new THREE.Mesh(
+                        new THREE.ConeGeometry(0.08, 0.35, 4),
+                        new THREE.MeshLambertMaterial({ color: crystalPink, transparent: true, opacity: 0.8 })
+                    );
+                    spike.position.set(Math.cos(angle) * 0.28, 2.15, Math.sin(angle) * 0.28);
+                    spike.rotation.x = Math.cos(angle) * 0.3;
+                    spike.rotation.z = -Math.sin(angle) * 0.3;
+                    group.add(spike);
+                }
+                
+                // Crystal shoulders
+                [-0.55, 0.55].forEach(x => {
+                    const shoulder = new THREE.Mesh(
+                        new THREE.OctahedronGeometry(0.2, 0),
+                        new THREE.MeshLambertMaterial({ color: crystalDark, transparent: true, opacity: 0.85 })
+                    );
+                    shoulder.position.set(x, 1.4, 0);
+                    shoulder.rotation.z = x > 0 ? -0.5 : 0.5;
+                    group.add(shoulder);
+                });
+                
+                return group;
+            },
+
+            // === Crystal Wizard / Gem Mage (Level 13) ===
+            'crystal-wizard': function() {
+                const group = new THREE.Group();
+                const crystalPink = 0xff44aa;
+                const crystalPurple = 0xaa44ff;
+                const crystalGlow = 0xff88cc;
+                const crystalDark = 0x8822aa;
+                
+                // Crystal robe body - hexagonal
+                const bodyGeometry = new THREE.CylinderGeometry(0.5, 0.9, 2.5, 6);
+                const bodyMaterial = new THREE.MeshLambertMaterial({ 
+                    color: crystalPink, 
+                    transparent: true, 
+                    opacity: 0.85 
+                });
+                const body = new THREE.Mesh(bodyGeometry, bodyMaterial);
+                body.position.y = 1.5;
+                group.add(body);
+                
+                // Inner robe glow
+                const innerGlowGeometry = new THREE.CylinderGeometry(0.35, 0.7, 2.3, 6);
+                const innerGlowMaterial = new THREE.MeshBasicMaterial({ 
+                    color: crystalGlow, 
+                    transparent: true, 
+                    opacity: 0.4 
+                });
+                const innerGlow = new THREE.Mesh(innerGlowGeometry, innerGlowMaterial);
+                innerGlow.position.y = 1.5;
+                group.add(innerGlow);
+                
+                // Crystal collar
+                const collarGeometry = new THREE.TorusGeometry(0.55, 0.12, 6, 6);
+                const collarMaterial = new THREE.MeshLambertMaterial({ 
+                    color: crystalPurple, 
+                    transparent: true, 
+                    opacity: 0.9 
+                });
+                const collar = new THREE.Mesh(collarGeometry, collarMaterial);
+                collar.rotation.x = Math.PI / 2;
+                collar.position.y = 2.7;
+                group.add(collar);
+                
+                // Octahedron head
+                const headGeometry = new THREE.OctahedronGeometry(0.55, 0);
+                const headMaterial = new THREE.MeshLambertMaterial({ 
+                    color: 0xffccee, 
+                    transparent: true, 
+                    opacity: 0.9 
+                });
+                const head = new THREE.Mesh(headGeometry, headMaterial);
+                head.position.y = 3.2;
+                head.scale.set(1.0, 0.85, 0.9);
+                head.rotation.y = Math.PI / 4;
+                group.add(head);
+                
+                // Crystal wizard hat
+                const hatGeometry = new THREE.ConeGeometry(0.65, 1.6, 6);
+                const hatMaterial = new THREE.MeshLambertMaterial({ 
+                    color: crystalDark, 
+                    transparent: true, 
+                    opacity: 0.85 
+                });
+                const hat = new THREE.Mesh(hatGeometry, hatMaterial);
+                hat.position.y = 4.3;
+                group.add(hat);
+                
+                // Hat inner glow
+                const hatGlowGeometry = new THREE.ConeGeometry(0.45, 1.4, 6);
+                const hatGlowMaterial = new THREE.MeshBasicMaterial({ 
+                    color: crystalPink, 
+                    transparent: true, 
+                    opacity: 0.3 
+                });
+                const hatGlow = new THREE.Mesh(hatGlowGeometry, hatGlowMaterial);
+                hatGlow.position.y = 4.3;
+                group.add(hatGlow);
+                
+                // Hat brim
+                const brimGeometry = new THREE.TorusGeometry(0.7, 0.12, 6, 6);
+                const brimMaterial = new THREE.MeshLambertMaterial({ 
+                    color: crystalPink, 
+                    transparent: true, 
+                    opacity: 0.85 
+                });
+                const brim = new THREE.Mesh(brimGeometry, brimMaterial);
+                brim.rotation.x = Math.PI / 2;
+                brim.position.y = 3.6;
+                group.add(brim);
+                
+                // Crystal spikes on hat tip
+                for (let i = 0; i < 4; i++) {
+                    const angle = (i / 4) * Math.PI * 2;
+                    const spike = new THREE.Mesh(
+                        new THREE.ConeGeometry(0.08, 0.35, 4),
+                        new THREE.MeshBasicMaterial({ color: crystalGlow, transparent: true, opacity: 0.8 })
+                    );
+                    spike.position.set(Math.cos(angle) * 0.25, 5.0, Math.sin(angle) * 0.25);
+                    spike.rotation.x = Math.cos(angle) * 0.4;
+                    spike.rotation.z = -Math.sin(angle) * 0.4;
+                    group.add(spike);
+                }
+                
+                // Glowing gem eyes
+                const eyeMaterial = new THREE.MeshBasicMaterial({ color: 0x00ffff });
+                const eyeGeometry = new THREE.OctahedronGeometry(0.1, 0);
+                [-0.2, 0.2].forEach(x => {
+                    const eye = new THREE.Mesh(eyeGeometry, eyeMaterial);
+                    eye.position.set(x, 3.15, 0.45);
+                    eye.rotation.y = Math.PI / 4;
+                    group.add(eye);
+                });
+                
+                // Crystal staff
+                const staffGeometry = new THREE.CylinderGeometry(0.06, 0.1, 3.0, 6);
+                const staffMaterial = new THREE.MeshLambertMaterial({ 
+                    color: crystalPurple, 
+                    transparent: true, 
+                    opacity: 0.85 
+                });
+                const staff = new THREE.Mesh(staffGeometry, staffMaterial);
+                staff.position.set(0.85, 1.5, 0.3);
+                staff.rotation.z = -0.2;
+                group.add(staff);
+                
+                // Gem orb on staff
+                const orbGeometry = new THREE.OctahedronGeometry(0.3, 0);
+                const orbMaterial = new THREE.MeshBasicMaterial({ 
+                    color: crystalPink, 
+                    transparent: true, 
+                    opacity: 0.9 
+                });
+                const orb = new THREE.Mesh(orbGeometry, orbMaterial);
+                orb.position.set(0.95, 3.1, 0.35);
+                orb.rotation.y = Math.PI / 4;
+                group.add(orb);
+                
+                return group;
+            },
+
+            // === Crystal Golem (Level 13) ===
+            'crystal-golem': function() {
+                const group = new THREE.Group();
+                const crystalPurple = 0xaa44ff;
+                const crystalPink = 0xff4488;
+                const crystalBlue = 0x44aaff;
+                const crystalGreen = 0x44ff88;
+                const darkCrystal = 0x3a2a5a;
+                
+                // Chunky torso
+                const torsoGeometry = new THREE.BoxGeometry(0.7, 0.7, 0.5);
+                const torsoMaterial = new THREE.MeshLambertMaterial({ color: crystalPurple });
+                const torso = new THREE.Mesh(torsoGeometry, torsoMaterial);
+                torso.position.y = 0.8;
+                torso.rotation.y = Math.PI / 6;
+                group.add(torso);
+                
+                // Crystal protrusions on torso
+                const protrusionGeometry = new THREE.ConeGeometry(0.12, 0.35, 5);
+                const protrusionMaterial = new THREE.MeshBasicMaterial({ color: crystalPink });
+                [[0.3, 1.1, 0.15, 0.3], [-0.25, 1.05, -0.1, -0.4], [0.15, 0.95, -0.25, 0.5]].forEach(([x, y, z, rotZ]) => {
+                    const protrusion = new THREE.Mesh(protrusionGeometry, protrusionMaterial);
+                    protrusion.position.set(x, y, z);
+                    protrusion.rotation.z = rotZ;
+                    group.add(protrusion);
+                });
+                
+                // Angular head (faceted)
+                const headGeometry = new THREE.OctahedronGeometry(0.35, 0);
+                const headMaterial = new THREE.MeshLambertMaterial({ color: crystalPurple });
+                const head = new THREE.Mesh(headGeometry, headMaterial);
+                head.position.y = 1.45;
+                head.rotation.y = Math.PI / 4;
+                group.add(head);
+                
+                // Glowing crystal eyes
+                const eyeMaterial = new THREE.MeshBasicMaterial({ color: crystalBlue });
+                const eyeGeometry = new THREE.OctahedronGeometry(0.08, 0);
+                [-0.12, 0.12].forEach(x => {
+                    const eye = new THREE.Mesh(eyeGeometry, eyeMaterial);
+                    eye.position.set(x, 1.48, 0.28);
+                    group.add(eye);
+                });
+                
+                // Crystal spike crown
+                const spikeGeometry = new THREE.ConeGeometry(0.06, 0.25, 4);
+                const spikeMaterial = new THREE.MeshBasicMaterial({ color: crystalPink });
+                [[0, 1.75, 0], [-0.15, 1.68, 0.1], [0.15, 1.68, -0.1], [0.1, 1.65, 0.15]].forEach(([x, y, z]) => {
+                    const spike = new THREE.Mesh(spikeGeometry, spikeMaterial);
+                    spike.position.set(x, y, z);
+                    group.add(spike);
+                });
+                
+                // Chunky arms
+                const armGeometry = new THREE.BoxGeometry(0.25, 0.5, 0.2);
+                const armMaterial = new THREE.MeshLambertMaterial({ color: darkCrystal });
+                [-0.55, 0.55].forEach((x, i) => {
+                    const arm = new THREE.Mesh(armGeometry, armMaterial);
+                    arm.position.set(x, 0.7, 0);
+                    arm.rotation.z = i === 0 ? 0.3 : -0.3;
+                    group.add(arm);
+                });
+                
+                // Crystal claw hands
+                const clawGeometry = new THREE.ConeGeometry(0.06, 0.3, 4);
+                const clawMaterial = new THREE.MeshBasicMaterial({ color: crystalGreen });
+                [[-0.6, 0.35, 0.1], [-0.7, 0.38, 0], [-0.6, 0.35, -0.1]].forEach(([x, y, z]) => {
+                    const claw = new THREE.Mesh(clawGeometry, clawMaterial);
+                    claw.position.set(x, y, z);
+                    claw.rotation.z = Math.PI / 2 + 0.3;
+                    group.add(claw);
+                });
+                [[0.6, 0.35, 0.1], [0.7, 0.38, 0], [0.6, 0.35, -0.1]].forEach(([x, y, z]) => {
+                    const claw = new THREE.Mesh(clawGeometry, clawMaterial);
+                    claw.position.set(x, y, z);
+                    claw.rotation.z = -Math.PI / 2 - 0.3;
+                    group.add(claw);
+                });
+                
+                return group;
+            },
+
+            // === Gem Specter (Level 13) ===
+            'gem-specter': function() {
+                const group = new THREE.Group();
+                const crystalPurple = 0xaa44ff;
+                const crystalPink = 0xff4488;
+                const crystalBlue = 0x44aaff;
+                const spectralWhite = 0xccddff;
+                
+                // Large crystal shell
+                const shellGeometry = new THREE.OctahedronGeometry(0.8, 0);
+                const shellMaterial = new THREE.MeshLambertMaterial({ 
+                    color: crystalPurple, 
+                    transparent: true, 
+                    opacity: 0.6 
+                });
+                const shell = new THREE.Mesh(shellGeometry, shellMaterial);
+                shell.position.y = 1.3;
+                shell.rotation.y = Math.PI / 4;
+                group.add(shell);
+                
+                // Inner core
+                const coreGeometry = new THREE.OctahedronGeometry(0.45, 0);
+                const coreMaterial = new THREE.MeshBasicMaterial({ 
+                    color: crystalBlue, 
+                    transparent: true, 
+                    opacity: 0.5 
+                });
+                const core = new THREE.Mesh(coreGeometry, coreMaterial);
+                core.position.y = 1.3;
+                core.rotation.y = Math.PI / 6;
+                group.add(core);
+                
+                // Ghostly face inside
+                const faceGeometry = new THREE.SphereGeometry(0.3, 16, 16);
+                const faceMaterial = new THREE.MeshBasicMaterial({ 
+                    color: spectralWhite, 
+                    transparent: true, 
+                    opacity: 0.7 
+                });
+                const face = new THREE.Mesh(faceGeometry, faceMaterial);
+                face.position.y = 1.45;
+                face.scale.set(1.0, 1.2, 0.9);
+                group.add(face);
+                
+                // Eerie glowing eyes
+                const eyeMaterial = new THREE.MeshBasicMaterial({ color: crystalPink });
+                const eyeGeometry = new THREE.SphereGeometry(0.08, 12, 12);
+                [-0.1, 0.1].forEach(x => {
+                    const eye = new THREE.Mesh(eyeGeometry, eyeMaterial);
+                    eye.position.set(x, 1.5, 0.25);
+                    group.add(eye);
+                });
+                
+                // Dark mouth void
+                const mouthGeometry = new THREE.SphereGeometry(0.06, 8, 8);
+                const mouthMaterial = new THREE.MeshBasicMaterial({ color: 0x220022 });
+                const mouth = new THREE.Mesh(mouthGeometry, mouthMaterial);
+                mouth.position.set(0, 1.35, 0.28);
+                mouth.scale.set(1.5, 0.8, 1);
+                group.add(mouth);
+                
+                // Crystal spikes protruding from shell
+                const spikeGeometry = new THREE.ConeGeometry(0.1, 0.5, 5);
+                const spikeMaterial = new THREE.MeshBasicMaterial({ color: crystalPink });
+                [
+                    [0, 2.2, 0, 0, 0],
+                    [0.7, 1.3, 0, 0, -Math.PI/2],
+                    [-0.7, 1.3, 0, 0, Math.PI/2],
+                    [0, 1.3, 0.7, Math.PI/2, 0],
+                    [0, 1.3, -0.7, -Math.PI/2, 0],
+                    [0, 0.4, 0, Math.PI, 0]
+                ].forEach(([x, y, z, rotX, rotZ]) => {
+                    const spike = new THREE.Mesh(spikeGeometry, spikeMaterial);
+                    spike.position.set(x, y, z);
+                    spike.rotation.x = rotX;
+                    spike.rotation.z = rotZ;
+                    group.add(spike);
+                });
+                
+                return group;
+            },
+
+            // === Crystal Giant (Level 13) ===
+            'crystal-giant': function() {
+                const group = new THREE.Group();
+                const amethystPurple = 0x9944ff;
+                const crystalPink = 0xff4488;
+                const crystalBlue = 0x44aaff;
+                const lightAmethyst = 0xcc77ff;
+                const darkCrystal = 0x3a2a5a;
+                
+                // Massive torso
+                const torsoGeometry = new THREE.BoxGeometry(1.8, 2.0, 1.4);
+                const torsoMaterial = new THREE.MeshLambertMaterial({ color: amethystPurple });
+                const torso = new THREE.Mesh(torsoGeometry, torsoMaterial);
+                torso.position.y = 3.5;
+                torso.rotation.y = Math.PI / 8;
+                group.add(torso);
+                
+                // Crystal spike protrusions
+                const spikeGeometry = new THREE.ConeGeometry(0.25, 0.8, 5);
+                const spikeMaterial = new THREE.MeshBasicMaterial({ color: crystalPink });
+                [
+                    [0.8, 4.5, 0.4, 0.4],
+                    [-0.7, 4.4, 0.3, -0.5],
+                    [0.4, 4.6, -0.5, 0.2],
+                    [-0.3, 4.7, -0.6, -0.2],
+                    [0.9, 4.2, -0.3, 0.6],
+                    [-0.85, 4.3, -0.2, -0.6]
+                ].forEach(([x, y, z, rotZ]) => {
+                    const spike = new THREE.Mesh(spikeGeometry, spikeMaterial);
+                    spike.position.set(x, y, z);
+                    spike.rotation.z = rotZ;
+                    group.add(spike);
+                });
+                
+                // Chest plate crystal
+                const chestGeometry = new THREE.OctahedronGeometry(0.6, 0);
+                const chestMaterial = new THREE.MeshBasicMaterial({ color: lightAmethyst });
+                const chest = new THREE.Mesh(chestGeometry, chestMaterial);
+                chest.position.set(0, 3.5, 0.75);
+                chest.rotation.y = Math.PI / 4;
+                chest.scale.set(1, 1.2, 0.5);
+                group.add(chest);
+                
+                // Massive faceted head
+                const headGeometry = new THREE.OctahedronGeometry(0.7, 0);
+                const headMaterial = new THREE.MeshLambertMaterial({ color: amethystPurple });
+                const head = new THREE.Mesh(headGeometry, headMaterial);
+                head.position.y = 5.2;
+                head.rotation.y = Math.PI / 4;
+                head.scale.set(1, 1.3, 0.9);
+                group.add(head);
+                
+                // Glowing crystal eyes
+                const eyeMaterial = new THREE.MeshBasicMaterial({ color: crystalBlue });
+                const eyeGeometry = new THREE.OctahedronGeometry(0.18, 0);
+                [-0.25, 0.25].forEach(x => {
+                    const eye = new THREE.Mesh(eyeGeometry, eyeMaterial);
+                    eye.position.set(x, 5.3, 0.55);
+                    group.add(eye);
+                });
+                
+                // Crown spikes
+                const crownGeometry = new THREE.ConeGeometry(0.15, 0.6, 4);
+                const crownMaterial = new THREE.MeshBasicMaterial({ color: crystalPink });
+                [[0, 5.9, 0], [-0.35, 5.7, 0.2], [0.35, 5.7, -0.2], [0.2, 5.65, 0.35], [-0.2, 5.65, -0.35]].forEach(([x, y, z]) => {
+                    const crown = new THREE.Mesh(crownGeometry, crownMaterial);
+                    crown.position.set(x, y, z);
+                    group.add(crown);
+                });
+                
+                // Massive arms
+                const upperArmGeometry = new THREE.BoxGeometry(0.7, 1.4, 0.6);
+                const armMaterial = new THREE.MeshLambertMaterial({ color: darkCrystal });
+                [-1.2, 1.2].forEach((x, i) => {
+                    const arm = new THREE.Mesh(upperArmGeometry, armMaterial);
+                    arm.position.set(x, 3.2, 0);
+                    arm.rotation.z = i === 0 ? 0.2 : -0.2;
+                    group.add(arm);
+                });
+                
+                // Fist accents
+                const fistGeometry = new THREE.BoxGeometry(0.6, 0.6, 0.5);
+                const fistMaterial = new THREE.MeshLambertMaterial({ color: amethystPurple });
+                [-1.4, 1.4].forEach(x => {
+                    const fist = new THREE.Mesh(fistGeometry, fistMaterial);
+                    fist.position.set(x, 2.2, 0);
+                    group.add(fist);
+                });
+                
+                // Legs
+                const legGeometry = new THREE.BoxGeometry(0.6, 1.8, 0.5);
+                const legMaterial = new THREE.MeshLambertMaterial({ color: darkCrystal });
+                [-0.5, 0.5].forEach(x => {
+                    const leg = new THREE.Mesh(legGeometry, legMaterial);
+                    leg.position.set(x, 1.0, 0);
+                    group.add(leg);
+                });
+                
+                return group;
+            },
+
+            // === Crystal Dragon (Level 13 Boss) ===
+            'crystal-dragon': function() {
+                const group = new THREE.Group();
+                const crystalPurple = 0xaa44ff;
+                const crystalPink = 0xff4488;
+                const crystalBlue = 0x44aaff;
+                const deepPurple = 0x5a3a7a;
+                const crystalWhite = 0xeeddff;
+                
+                // Long body
+                const bodyGeometry = new THREE.CylinderGeometry(2.2, 2.8, 12, 8);
+                const bodyMaterial = new THREE.MeshLambertMaterial({ color: crystalPurple });
+                const body = new THREE.Mesh(bodyGeometry, bodyMaterial);
+                body.rotation.z = Math.PI / 2;
+                body.position.x = 5;
+                group.add(body);
+                
+                // Crystal scales along body
+                const scaleGeometry = new THREE.OctahedronGeometry(0.8, 0);
+                const scaleMaterial = new THREE.MeshBasicMaterial({ color: crystalPink });
+                for (let i = 0; i < 10; i++) {
+                    const scale = new THREE.Mesh(scaleGeometry, scaleMaterial);
+                    scale.position.set(i * 1.0, 3.2, 0);
+                    scale.rotation.y = Math.PI / 4;
+                    scale.scale.set(0.8, 1.2, 0.6);
+                    group.add(scale);
+                }
+                
+                // Neck
+                const neckGeometry = new THREE.CylinderGeometry(1.8, 2.2, 5, 6);
+                const neckMaterial = new THREE.MeshLambertMaterial({ color: deepPurple });
+                const neck = new THREE.Mesh(neckGeometry, neckMaterial);
+                neck.rotation.z = Math.PI / 2 + 0.3;
+                neck.position.x = 12;
+                neck.position.y = 2;
+                group.add(neck);
+                
+                // Large faceted head
+                const headGeometry = new THREE.OctahedronGeometry(3, 0);
+                const headMaterial = new THREE.MeshLambertMaterial({ color: crystalPurple });
+                const head = new THREE.Mesh(headGeometry, headMaterial);
+                head.position.x = 15;
+                head.position.y = 3;
+                head.rotation.z = -0.3;
+                head.rotation.y = Math.PI / 4;
+                head.scale.set(1.2, 1, 1.5);
+                group.add(head);
+                
+                // Jaw
+                const jawGeometry = new THREE.OctahedronGeometry(1.5, 0);
+                const jaw = new THREE.Mesh(jawGeometry, headMaterial);
+                jaw.position.set(17, 1.5, 0);
+                jaw.rotation.y = Math.PI / 4;
+                jaw.scale.set(1.5, 0.5, 1);
+                group.add(jaw);
+                
+                // Crystal fangs
+                const toothGeometry = new THREE.ConeGeometry(0.2, 0.8, 4);
+                const toothMaterial = new THREE.MeshBasicMaterial({ color: crystalWhite });
+                for (let i = 0; i < 6; i++) {
+                    const tooth = new THREE.Mesh(toothGeometry, toothMaterial);
+                    tooth.position.set(16.5 + (i % 2) * 0.6, 2, -1.0 + i * 0.4);
+                    tooth.rotation.z = Math.PI;
+                    group.add(tooth);
+                }
+                
+                // Glowing crystal eyes
+                const eyeGeometry = new THREE.OctahedronGeometry(0.8, 0);
+                const eyeMaterial = new THREE.MeshBasicMaterial({ color: crystalBlue });
+                [-1.5, 1.5].forEach(z => {
+                    const eye = new THREE.Mesh(eyeGeometry, eyeMaterial);
+                    eye.position.set(15.5, 4, z);
+                    eye.rotation.y = Math.PI / 4;
+                    group.add(eye);
+                });
+                
+                // Crown horns
+                const hornGeometry = new THREE.ConeGeometry(0.5, 2.5, 5);
+                const hornMaterial = new THREE.MeshBasicMaterial({ color: crystalPink });
+                [-2, 2].forEach(z => {
+                    const horn = new THREE.Mesh(hornGeometry, hornMaterial);
+                    horn.position.set(14, 5.5, z);
+                    horn.rotation.x = z > 0 ? 0.3 : -0.3;
+                    group.add(horn);
+                });
+                
+                // Wings - crystal membrane frames
+                [-1, 1].forEach(side => {
+                    const wingGeometry = new THREE.BoxGeometry(0.3, 8, 4);
+                    const wingMaterial = new THREE.MeshLambertMaterial({ 
+                        color: crystalPurple, 
+                        transparent: true, 
+                        opacity: 0.7 
+                    });
+                    const wing = new THREE.Mesh(wingGeometry, wingMaterial);
+                    wing.position.set(5, 4, side * 5);
+                    wing.rotation.x = side * 0.3;
+                    group.add(wing);
+                });
+                
+                // Tail
+                const tailGeometry = new THREE.ConeGeometry(1.5, 5, 6);
+                const tailMaterial = new THREE.MeshLambertMaterial({ color: deepPurple });
+                const tail = new THREE.Mesh(tailGeometry, tailMaterial);
+                tail.rotation.z = -Math.PI / 2;
+                tail.position.set(-3, 0, 0);
+                group.add(tail);
+                
+                // Tail spike
+                const tailSpikeGeometry = new THREE.OctahedronGeometry(1.2, 0);
+                const tailSpikeMaterial = new THREE.MeshBasicMaterial({ color: crystalPink });
+                const tailSpike = new THREE.Mesh(tailSpikeGeometry, tailSpikeMaterial);
+                tailSpike.position.set(-5.5, 0, 0);
+                tailSpike.rotation.y = Math.PI / 4;
+                group.add(tailSpike);
+                
+                return group;
             }
         };
 

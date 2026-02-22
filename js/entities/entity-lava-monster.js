@@ -19,7 +19,7 @@
         // Torso - larger, more menacing molten core
         const torsoGeometry = new THREE.SphereGeometry(1.0, 16, 12);
         torsoGeometry.scale(1.0, 1.3, 0.9); // Elongated torso
-        const torsoMaterial = new THREE.MeshBasicMaterial({ 
+        const torsoMaterial = getMaterial('basic', { 
             color: 0xff3300,
             transparent: true,
             opacity: 0.9
@@ -32,7 +32,7 @@
         // Outer rocky armor shell (cracked and jagged)
         const shellGeometry = new THREE.DodecahedronGeometry(1.25, 1);
         shellGeometry.scale(1.0, 1.3, 0.9);
-        const shellMaterial = new THREE.MeshLambertMaterial({ 
+        const shellMaterial = getMaterial('lambert', { 
             color: 0x1a0a05,
             transparent: true,
             opacity: 0.75
@@ -43,16 +43,16 @@
         lavaGrp.add(shell);
         
         // Head - angular and intimidating
-        const headGeometry = new THREE.DodecahedronGeometry(0.6, 0);
-        const headMaterial = new THREE.MeshLambertMaterial({ color: 0x2a1208 });
+        const headGeometry = getGeometry('dodecahedron', 0.6, 0);
+        const headMaterial = getMaterial('lambert', { color: 0x2a1208 });
         const head = new THREE.Mesh(headGeometry, headMaterial);
         head.position.y = 3.5;
         head.castShadow = true;
         lavaGrp.add(head);
         
         // Glowing lava cracks on head
-        const headGlowGeometry = new THREE.DodecahedronGeometry(0.55, 0);
-        const headGlowMaterial = new THREE.MeshBasicMaterial({ 
+        const headGlowGeometry = getGeometry('dodecahedron', 0.55, 0);
+        const headGlowMaterial = getMaterial('basic', { 
             color: 0xff4400,
             transparent: true,
             opacity: 0.6,
@@ -63,8 +63,8 @@
         lavaGrp.add(headGlow);
         
         // Horns - demonic appearance
-        const hornMaterial = new THREE.MeshLambertMaterial({ color: 0x1a0805 });
-        const hornGeometry = new THREE.ConeGeometry(0.15, 0.6, 6);
+        const hornMaterial = getMaterial('lambert', { color: 0x1a0805 });
+        const hornGeometry = getGeometry('cone', 0.15, 0.6, 6);
         const leftHorn = new THREE.Mesh(hornGeometry, hornMaterial);
         leftHorn.position.set(-0.35, 3.9, 0);
         leftHorn.rotation.z = 0.4;
@@ -80,7 +80,7 @@
         // Eyes - menacing, slitted, glowing
         const eyeGeometry = new THREE.SphereGeometry(0.18, 12, 12);
         eyeGeometry.scale(1.3, 0.7, 1); // Slitted eyes
-        const eyeMaterial = new THREE.MeshBasicMaterial({ 
+        const eyeMaterial = getMaterial('basic', { 
             color: 0xffff00,
             transparent: true,
             opacity: 0.95,
@@ -112,8 +112,8 @@
         lavaGrp.add(rightEyeGlow);
         
         // Mouth - jagged opening with lava glow
-        const mouthGeometry = new THREE.BoxGeometry(0.5, 0.15, 0.2);
-        const mouthMaterial = new THREE.MeshBasicMaterial({ 
+        const mouthGeometry = getGeometry('box', 0.5, 0.15, 0.2);
+        const mouthMaterial = getMaterial('basic', { 
             color: 0xff2200,
             transparent: true,
             opacity: 0.9,
@@ -124,8 +124,8 @@
         lavaGrp.add(mouth);
         
         // ARMS - bulky, molten rock
-        const armMaterial = new THREE.MeshLambertMaterial({ color: 0x2a1510 });
-        const armGlowMaterial = new THREE.MeshBasicMaterial({ 
+        const armMaterial = getMaterial('lambert', { color: 0x2a1510 });
+        const armGlowMaterial = getMaterial('basic', { 
             color: 0xff4400,
             transparent: true,
             opacity: 0.7,
@@ -134,23 +134,23 @@
         
         // Left arm
         const leftArmGroup = new THREE.Group();
-        const leftUpperArm = new THREE.Mesh(new THREE.CylinderGeometry(0.25, 0.3, 1.0, 8), armMaterial);
+        const leftUpperArm = new THREE.Mesh(getGeometry('cylinder', 0.25, 0.3, 1.0, 8), armMaterial);
         leftUpperArm.position.y = -0.3;
         leftUpperArm.rotation.z = 0.5;
         leftArmGroup.add(leftUpperArm);
         
-        const leftForearm = new THREE.Mesh(new THREE.CylinderGeometry(0.2, 0.25, 0.9, 8), armMaterial);
+        const leftForearm = new THREE.Mesh(getGeometry('cylinder', 0.2, 0.25, 0.9, 8), armMaterial);
         leftForearm.position.set(-0.4, -0.9, 0);
         leftForearm.rotation.z = 0.3;
         leftArmGroup.add(leftForearm);
         
         // Left hand - claw-like
-        const leftHand = new THREE.Mesh(new THREE.DodecahedronGeometry(0.25, 0), armMaterial);
+        const leftHand = new THREE.Mesh(getGeometry('dodecahedron', 0.25, 0), armMaterial);
         leftHand.position.set(-0.6, -1.5, 0);
         leftArmGroup.add(leftHand);
         
         // Lava glow on arm
-        const leftArmGlow = new THREE.Mesh(new THREE.CylinderGeometry(0.15, 0.18, 0.6, 6), armGlowMaterial);
+        const leftArmGlow = new THREE.Mesh(getGeometry('cylinder', 0.15, 0.18, 0.6, 6), armGlowMaterial);
         leftArmGlow.position.set(-0.2, -0.6, 0);
         leftArmGlow.rotation.z = 0.4;
         leftArmGroup.add(leftArmGlow);
@@ -161,21 +161,21 @@
         
         // Right arm (mirrored)
         const rightArmGroup = new THREE.Group();
-        const rightUpperArm = new THREE.Mesh(new THREE.CylinderGeometry(0.25, 0.3, 1.0, 8), armMaterial);
+        const rightUpperArm = new THREE.Mesh(getGeometry('cylinder', 0.25, 0.3, 1.0, 8), armMaterial);
         rightUpperArm.position.y = -0.3;
         rightUpperArm.rotation.z = -0.5;
         rightArmGroup.add(rightUpperArm);
         
-        const rightForearm = new THREE.Mesh(new THREE.CylinderGeometry(0.2, 0.25, 0.9, 8), armMaterial);
+        const rightForearm = new THREE.Mesh(getGeometry('cylinder', 0.2, 0.25, 0.9, 8), armMaterial);
         rightForearm.position.set(0.4, -0.9, 0);
         rightForearm.rotation.z = -0.3;
         rightArmGroup.add(rightForearm);
         
-        const rightHand = new THREE.Mesh(new THREE.DodecahedronGeometry(0.25, 0), armMaterial);
+        const rightHand = new THREE.Mesh(getGeometry('dodecahedron', 0.25, 0), armMaterial);
         rightHand.position.set(0.6, -1.5, 0);
         rightArmGroup.add(rightHand);
         
-        const rightArmGlow = new THREE.Mesh(new THREE.CylinderGeometry(0.15, 0.18, 0.6, 6), armGlowMaterial);
+        const rightArmGlow = new THREE.Mesh(getGeometry('cylinder', 0.15, 0.18, 0.6, 6), armGlowMaterial);
         rightArmGlow.position.set(0.2, -0.6, 0);
         rightArmGlow.rotation.z = -0.4;
         rightArmGroup.add(rightArmGlow);
@@ -185,24 +185,24 @@
         lavaGrp.rightArm = rightArmGroup;
         
         // LEGS - thick, powerful
-        const legMaterial = new THREE.MeshLambertMaterial({ color: 0x2a1510 });
+        const legMaterial = getMaterial('lambert', { color: 0x2a1510 });
         
         // Left leg
         const leftLegGroup = new THREE.Group();
-        const leftThigh = new THREE.Mesh(new THREE.CylinderGeometry(0.35, 0.3, 0.9, 8), legMaterial);
+        const leftThigh = new THREE.Mesh(getGeometry('cylinder', 0.35, 0.3, 0.9, 8), legMaterial);
         leftThigh.position.y = -0.4;
         leftLegGroup.add(leftThigh);
         
-        const leftShin = new THREE.Mesh(new THREE.CylinderGeometry(0.28, 0.35, 0.8, 8), legMaterial);
+        const leftShin = new THREE.Mesh(getGeometry('cylinder', 0.28, 0.35, 0.8, 8), legMaterial);
         leftShin.position.y = -1.1;
         leftLegGroup.add(leftShin);
         
-        const leftFoot = new THREE.Mesh(new THREE.BoxGeometry(0.5, 0.2, 0.7), legMaterial);
+        const leftFoot = new THREE.Mesh(getGeometry('box', 0.5, 0.2, 0.7), legMaterial);
         leftFoot.position.set(0, -1.6, 0.1);
         leftLegGroup.add(leftFoot);
         
         // Lava glow in leg cracks
-        const leftLegGlow = new THREE.Mesh(new THREE.CylinderGeometry(0.12, 0.15, 0.5, 6), armGlowMaterial);
+        const leftLegGlow = new THREE.Mesh(getGeometry('cylinder', 0.12, 0.15, 0.5, 6), armGlowMaterial);
         leftLegGlow.position.y = -0.75;
         leftLegGroup.add(leftLegGlow);
         
@@ -212,19 +212,19 @@
         
         // Right leg (mirrored)
         const rightLegGroup = new THREE.Group();
-        const rightThigh = new THREE.Mesh(new THREE.CylinderGeometry(0.35, 0.3, 0.9, 8), legMaterial);
+        const rightThigh = new THREE.Mesh(getGeometry('cylinder', 0.35, 0.3, 0.9, 8), legMaterial);
         rightThigh.position.y = -0.4;
         rightLegGroup.add(rightThigh);
         
-        const rightShin = new THREE.Mesh(new THREE.CylinderGeometry(0.28, 0.35, 0.8, 8), legMaterial);
+        const rightShin = new THREE.Mesh(getGeometry('cylinder', 0.28, 0.35, 0.8, 8), legMaterial);
         rightShin.position.y = -1.1;
         rightLegGroup.add(rightShin);
         
-        const rightFoot = new THREE.Mesh(new THREE.BoxGeometry(0.5, 0.2, 0.7), legMaterial);
+        const rightFoot = new THREE.Mesh(getGeometry('box', 0.5, 0.2, 0.7), legMaterial);
         rightFoot.position.set(0, -1.6, 0.1);
         rightLegGroup.add(rightFoot);
         
-        const rightLegGlow = new THREE.Mesh(new THREE.CylinderGeometry(0.12, 0.15, 0.5, 6), armGlowMaterial);
+        const rightLegGlow = new THREE.Mesh(getGeometry('cylinder', 0.12, 0.15, 0.5, 6), armGlowMaterial);
         rightLegGlow.position.y = -0.75;
         rightLegGroup.add(rightLegGlow);
         
@@ -235,7 +235,7 @@
         // Glowing lava veins across body
         for (let i = 0; i < 10; i++) {
             const veinGeometry = new THREE.BoxGeometry(0.1, 0.6 + Math.random() * 0.5, 0.1);
-            const veinMaterial = new THREE.MeshBasicMaterial({ 
+            const veinMaterial = getMaterial('basic', { 
                 color: 0xff5500,
                 transparent: true,
                 opacity: 0.85,
@@ -256,7 +256,7 @@
         const emberGroup = new THREE.Group();
         for (let i = 0; i < 16; i++) {
             const emberGeometry = new THREE.SphereGeometry(0.06 + Math.random() * 0.08, 6, 6);
-            const emberMaterial = new THREE.MeshBasicMaterial({ 
+            const emberMaterial = getMaterial('basic', { 
                 color: Math.random() > 0.5 ? 0xff4400 : 0xff8800,
                 transparent: true,
                 opacity: 0.85,

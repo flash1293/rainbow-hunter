@@ -2579,6 +2579,16 @@ function createHills(scene, THREE, hillPositions, hillColor, iceTheme, desertThe
     } else {
         textureToUse = textures.grass;
     }
+    // Determine texture name for material caching
+    let hillTextureName = 'grass';
+    if (waterTheme) hillTextureName = 'sand';
+    else if (lavaTheme) hillTextureName = 'rock';
+    else if (desertTheme) hillTextureName = 'sand';
+    else if (candyTheme) hillTextureName = 'candy';
+    else if (graveyardTheme) hillTextureName = 'graveyard';
+    else if (ruinsTheme) hillTextureName = 'rock';
+    else if (iceTheme || christmasTheme) hillTextureName = 'grassIce';
+    else if (crystalTheme) hillTextureName = 'rock';
     hills.forEach(hill => {
         if (computerTheme) {
             // Create processor chip / data hub instead of cone hill
@@ -2587,7 +2597,7 @@ function createHills(scene, THREE, hillPositions, hillColor, iceTheme, desertThe
             
             // Main processor chip - flat octagonal/hexagonal shape
             const chipGeometry = new THREE.CylinderGeometry(chipSize, chipSize * 1.1, chipHeight, 8);
-            const chipMaterial = new THREE.MeshPhongMaterial({ 
+            const chipMaterial = getMaterial('phong', { 
                 color: 0x0A0A15,
                 emissive: 0x001133,
                 emissiveIntensity: 0.4,
@@ -2603,7 +2613,7 @@ function createHills(scene, THREE, hillPositions, hillColor, iceTheme, desertThe
             
             // Glowing top surface circuit pattern
             const surfaceGeometry = new THREE.CylinderGeometry(chipSize * 0.95, chipSize * 0.95, 0.1, 8);
-            const surfaceMaterial = new THREE.MeshBasicMaterial({ 
+            const surfaceMaterial = getMaterial('basic', { 
                 color: 0x002244,
                 transparent: true,
                 opacity: 0.8
@@ -2614,7 +2624,7 @@ function createHills(scene, THREE, hillPositions, hillColor, iceTheme, desertThe
             
             // CPU core in center - glowing
             const coreGeometry = new THREE.BoxGeometry(chipSize * 0.4, 0.3, chipSize * 0.4);
-            const coreMaterial = new THREE.MeshBasicMaterial({ 
+            const coreMaterial = getMaterial('basic', { 
                 color: 0x00FFFF,
                 transparent: true,
                 opacity: 0.9
@@ -2630,7 +2640,7 @@ function createHills(scene, THREE, hillPositions, hillColor, iceTheme, desertThe
                 const traceLength = chipSize * 0.45;
                 const traceGeometry = new THREE.BoxGeometry(0.15, 0.1, traceLength);
                 const traceColor = i % 2 === 0 ? 0x00FFFF : 0xFF00FF;
-                const traceMaterial = new THREE.MeshBasicMaterial({ 
+                const traceMaterial = getMaterial('basic', { 
                     color: traceColor,
                     transparent: true,
                     opacity: 0.8
@@ -2650,8 +2660,8 @@ function createHills(scene, THREE, hillPositions, hillColor, iceTheme, desertThe
             const numPins = 8;
             for (let i = 0; i < numPins; i++) {
                 const angle = (i / numPins) * Math.PI * 2 + Math.PI / 8;
-                const pinGeometry = new THREE.BoxGeometry(0.8, 0.6, 0.3);
-                const pinMaterial = new THREE.MeshPhongMaterial({ 
+                const pinGeometry = getGeometry('box', 0.8, 0.6, 0.3);
+                const pinMaterial = getMaterial('phong', { 
                     color: 0xCCCC00,
                     emissive: 0x444400,
                     emissiveIntensity: 0.3,
@@ -2670,7 +2680,7 @@ function createHills(scene, THREE, hillPositions, hillColor, iceTheme, desertThe
             // Holographic data readout floating above
             const holoHeight = hill.height * 0.3 + 2;
             const holoGeometry = new THREE.PlaneGeometry(chipSize * 0.6, chipSize * 0.4);
-            const holoMaterial = new THREE.MeshBasicMaterial({ 
+            const holoMaterial = getMaterial('basic', { 
                 color: 0x00FF88,
                 transparent: true,
                 opacity: 0.5,
@@ -2682,9 +2692,9 @@ function createHills(scene, THREE, hillPositions, hillColor, iceTheme, desertThe
             scene.add(holo);
             
             // Glowing status indicator
-            const statusGeometry = new THREE.SphereGeometry(0.4, 16, 16);
+            const statusGeometry = getGeometry('sphere', 0.4, 16, 16);
             const statusColor = Math.random() > 0.3 ? 0x00FF00 : 0xFF0000;
-            const statusMaterial = new THREE.MeshBasicMaterial({ 
+            const statusMaterial = getMaterial('basic', { 
                 color: statusColor,
                 transparent: true,
                 opacity: 0.9
@@ -2698,28 +2708,28 @@ function createHills(scene, THREE, hillPositions, hillColor, iceTheme, desertThe
             let hillMaterial;
             if (candyTheme) {
                 // Cupcake-style hills with frosting
-                hillMaterial = new THREE.MeshPhongMaterial({ 
+                hillMaterial = getTexturedMaterial('phong', { 
                     map: textureToUse,
                     color: color,
                     shininess: 50
-                });
+                }, hillTextureName);
             } else if (graveyardTheme) {
                 // Dark burial mounds
-                hillMaterial = new THREE.MeshLambertMaterial({ 
+                hillMaterial = getTexturedMaterial('lambert', { 
                     map: textureToUse,
                     color: 0x2a2a20
-                });
+                }, hillTextureName);
             } else if (ruinsTheme) {
                 // Rocky rubble piles
-                hillMaterial = new THREE.MeshLambertMaterial({ 
+                hillMaterial = getTexturedMaterial('lambert', { 
                     map: textureToUse,
                     color: 0x6B5B4F
-                });
+                }, hillTextureName);
             } else {
-                hillMaterial = new THREE.MeshLambertMaterial({ 
+                hillMaterial = getTexturedMaterial('lambert', { 
                     map: textureToUse,
                     color: color
-                });
+                }, hillTextureName);
             }
             const hillMesh = new THREE.Mesh(hillGeometry, hillMaterial);
             hillMesh.position.set(hill.x, hill.height / 2, hill.z);
@@ -2731,9 +2741,9 @@ function createHills(scene, THREE, hillPositions, hillColor, iceTheme, desertThe
             if (candyTheme) {
                 const sprinkleColors = [0xFF6347, 0xFFD700, 0x98FB98, 0xDDA0DD, 0x00CED1, 0xFF1493];
                 for (let i = 0; i < 15; i++) {
-                    const sprinkleGeometry = new THREE.CylinderGeometry(0.1, 0.1, 0.4, 6);
+                    const sprinkleGeometry = getGeometry('cylinder', 0.1, 0.1, 0.4, 6);
                     const sprinkleColor = sprinkleColors[Math.floor(Math.random() * sprinkleColors.length)];
-                    const sprinkleMaterial = new THREE.MeshPhongMaterial({ color: sprinkleColor, shininess: 80 });
+                    const sprinkleMaterial = getMaterial('phong', { color: sprinkleColor, shininess: 80 });
                     const sprinkle = new THREE.Mesh(sprinkleGeometry, sprinkleMaterial);
                     const angle = Math.random() * Math.PI * 2;
                     const dist = Math.random() * hill.radius * 0.7;
@@ -2755,20 +2765,20 @@ function createHills(scene, THREE, hillPositions, hillColor, iceTheme, desertThe
                 const gravestoneGroup = new THREE.Group();
                 
                 // Gravestone base
-                const baseGeometry = new THREE.BoxGeometry(1.2, 0.3, 0.6);
-                const stoneMaterial = new THREE.MeshLambertMaterial({ color: 0x4a4a4a });
+                const baseGeometry = getGeometry('box', 1.2, 0.3, 0.6);
+                const stoneMaterial = getMaterial('lambert', { color: 0x4a4a4a });
                 const base = new THREE.Mesh(baseGeometry, stoneMaterial);
                 base.position.y = 0.15;
                 gravestoneGroup.add(base);
                 
                 // Gravestone body (rounded top)
-                const bodyGeometry = new THREE.BoxGeometry(1, 1.5, 0.3);
+                const bodyGeometry = getGeometry('box', 1, 1.5, 0.3);
                 const body = new THREE.Mesh(bodyGeometry, stoneMaterial);
                 body.position.y = 1.05;
                 gravestoneGroup.add(body);
                 
                 // Rounded top
-                const topGeometry = new THREE.CylinderGeometry(0.5, 0.5, 0.3, 16, 1, false, 0, Math.PI);
+                const topGeometry = getGeometry('cylinder', 0.5, 0.5, 0.3, 16, 1, false, 0, Math.PI);
                 const top = new THREE.Mesh(topGeometry, stoneMaterial);
                 top.rotation.x = Math.PI / 2;
                 top.rotation.z = Math.PI / 2;
@@ -2796,6 +2806,23 @@ function createHills(scene, THREE, hillPositions, hillColor, iceTheme, desertThe
 function createMountains(scene, THREE, mountainPositions, candyTheme, graveyardTheme, ruinsTheme, computerTheme, enchantedTheme, easterTheme, christmasTheme, crystalTheme, rapunzelTheme) {
     const textures = getTerrainTextures(THREE);
     mountainPositions.forEach(mtn => {
+        // If this mountain has a rotation, use a Group as a proxy scene
+        // so all child objects get positioned relative to origin, then
+        // the Group is rotated and placed at the final position.
+        const hasRotation = mtn.rotation && mtn.rotation !== 0;
+        let targetScene = scene;
+        let proxyGroup = null;
+        let origX, origZ;
+        if (hasRotation) {
+            proxyGroup = new THREE.Group();
+            targetScene = proxyGroup;
+            origX = mtn.x;
+            origZ = mtn.z;
+            // Temporarily zero out position so children build around origin
+            mtn = Object.assign({}, mtn, { x: 0, z: 0 });
+        }
+        // Alias scene to targetScene for all theme code below
+        const _scene = targetScene;
         if (computerTheme) {
             // Firewall server racks - tall glowing barriers
             const wallHeight = mtn.height;
@@ -2804,7 +2831,7 @@ function createMountains(scene, THREE, mountainPositions, candyTheme, graveyardT
             
             // Main server rack body - dark metallic
             const wallGeometry = new THREE.BoxGeometry(wallWidth, wallHeight, wallDepth);
-            const wallMaterial = new THREE.MeshPhongMaterial({ 
+            const wallMaterial = getMaterial('phong', { 
                 color: 0x0A0A1A,
                 emissive: 0x001122,
                 emissiveIntensity: 0.3,
@@ -2813,7 +2840,7 @@ function createMountains(scene, THREE, mountainPositions, candyTheme, graveyardT
             const wall = new THREE.Mesh(wallGeometry, wallMaterial);
             wall.position.set(mtn.x, wallHeight/2, mtn.z);
             wall.castShadow = true;
-            scene.add(wall);
+            _scene.add(wall);
             
             // Add glowing LED strips vertically
             const numStrips = Math.max(3, Math.floor(wallWidth / 8));
@@ -2822,30 +2849,30 @@ function createMountains(scene, THREE, mountainPositions, candyTheme, graveyardT
                 const stripColor = [0x00FFFF, 0xFF00FF, 0x00FF00][i % 3];
                 
                 const stripGeometry = new THREE.BoxGeometry(0.3, wallHeight * 0.9, 0.5);
-                const stripMaterial = new THREE.MeshBasicMaterial({ 
+                const stripMaterial = getMaterial('basic', { 
                     color: stripColor,
                     transparent: true,
                     opacity: 0.8
                 });
                 const strip = new THREE.Mesh(stripGeometry, stripMaterial);
                 strip.position.set(stripX, wallHeight/2, mtn.z + wallDepth/2 + 0.1);
-                scene.add(strip);
+                _scene.add(strip);
             }
             
             // Add blinking indicator lights along top
             const numLights = Math.max(5, Math.floor(wallWidth / 4));
             for (let i = 0; i < numLights; i++) {
                 const lightX = mtn.x - wallWidth/2 + (i + 0.5) * (wallWidth / numLights);
-                const lightGeometry = new THREE.SphereGeometry(0.25, 8, 8);
+                const lightGeometry = getGeometry('sphere', 0.25, 8, 8);
                 const lightColor = Math.random() > 0.5 ? 0xFF0000 : 0x00FF00;
-                const lightMaterial = new THREE.MeshBasicMaterial({ 
+                const lightMaterial = getMaterial('basic', { 
                     color: lightColor,
                     transparent: true,
                     opacity: 0.9
                 });
                 const light = new THREE.Mesh(lightGeometry, lightMaterial);
                 light.position.set(lightX, wallHeight - 0.5, mtn.z + wallDepth/2 + 0.2);
-                scene.add(light);
+                _scene.add(light);
             }
             
         } else if (graveyardTheme) {
@@ -2857,24 +2884,24 @@ function createMountains(scene, THREE, mountainPositions, candyTheme, graveyardT
             
             // Brick wall body
             const wallGeometry = new THREE.BoxGeometry(wallWidth, wallHeight, wallDepth);
-            const wallMaterial = new THREE.MeshLambertMaterial({ 
+            const wallMaterial = getTexturedMaterial('lambert', { 
                 color: 0x8b7355,
                 map: textures.brickWall
-            });
+            }, 'brickWall');
             const wall = new THREE.Mesh(wallGeometry, wallMaterial);
             wall.position.set(mtn.x, wallHeight/2, mtn.z);
-            scene.add(wall);
+            _scene.add(wall);
             
             // Stone cap on top of wall (proportional to wall)
             const capHeight = Math.min(0.3, wallHeight * 0.1);
             const capGeometry = new THREE.BoxGeometry(wallWidth + 0.4, capHeight, wallDepth + 0.4);
-            const capMaterial = new THREE.MeshLambertMaterial({ 
+            const capMaterial = getTexturedMaterial('lambert', { 
                 color: 0x4a4a4a,
                 map: textures.rock
-            });
+            }, 'rock');
             const cap = new THREE.Mesh(capGeometry, capMaterial);
             cap.position.set(mtn.x, wallHeight + capHeight/2, mtn.z);
-            scene.add(cap);
+            _scene.add(cap);
             
             // Iron fence on top (realistic height ~1m)
             const fenceHeight = 1.5;
@@ -2888,28 +2915,28 @@ function createMountains(scene, THREE, mountainPositions, candyTheme, graveyardT
                 
                 // Main post
                 const postGeometry = new THREE.CylinderGeometry(0.08, 0.08, fenceHeight, 6);
-                const postMaterial = new THREE.MeshPhongMaterial({ 
+                const postMaterial = getMaterial('phong', { 
                     color: 0x1a1a1a,
                     shininess: 30
                 });
                 const post = new THREE.Mesh(postGeometry, postMaterial);
                 post.position.set(postX, fenceBase + fenceHeight/2, mtn.z);
-                scene.add(post);
+                _scene.add(post);
                 
                 // Spear tip on post
-                const tipGeometry = new THREE.ConeGeometry(0.12, 0.25, 6);
-                const tipMaterial = new THREE.MeshPhongMaterial({ 
+                const tipGeometry = getGeometry('cone', 0.12, 0.25, 6);
+                const tipMaterial = getMaterial('phong', { 
                     color: 0x1a1a1a,
                     shininess: 50
                 });
                 const tip = new THREE.Mesh(tipGeometry, tipMaterial);
                 tip.position.set(postX, fenceBase + fenceHeight + 0.12, mtn.z);
-                scene.add(tip);
+                _scene.add(tip);
             }
             
             // Horizontal rails
             const railGeometry = new THREE.BoxGeometry(wallWidth, 0.06, 0.06);
-            const railMaterial = new THREE.MeshPhongMaterial({ 
+            const railMaterial = getMaterial('phong', { 
                 color: 0x1a1a1a,
                 shininess: 30
             });
@@ -2917,24 +2944,24 @@ function createMountains(scene, THREE, mountainPositions, candyTheme, graveyardT
             // Lower rail
             const lowerRail = new THREE.Mesh(railGeometry, railMaterial);
             lowerRail.position.set(mtn.x, fenceBase + fenceHeight * 0.35, mtn.z);
-            scene.add(lowerRail);
+            _scene.add(lowerRail);
             
             // Upper rail
             const upperRail = new THREE.Mesh(railGeometry, railMaterial);
             upperRail.position.set(mtn.x, fenceBase + fenceHeight * 0.75, mtn.z);
-            scene.add(upperRail);
+            _scene.add(upperRail);
             
             // Eerie green glow behind fence (only on some walls)
             if (Math.random() > 0.5) {
                 const glowGeometry = new THREE.SphereGeometry(Math.min(mtn.width/8, 5), 12, 12);
-                const glowMaterial = new THREE.MeshBasicMaterial({ 
+                const glowMaterial = getMaterial('basic', { 
                     color: 0x44ff44,
                     transparent: true,
                     opacity: 0.2
                 });
                 const glow = new THREE.Mesh(glowGeometry, glowMaterial);
                 glow.position.set(mtn.x, fenceBase + fenceHeight/2, mtn.z - wallDepth/2 - 3);
-                scene.add(glow);
+                _scene.add(glow);
             }
             
         } else if (ruinsTheme) {
@@ -2945,32 +2972,32 @@ function createMountains(scene, THREE, mountainPositions, candyTheme, graveyardT
             
             // Main stone wall body
             const wallGeometry = new THREE.BoxGeometry(wallWidth, wallHeight * 0.8, wallDepth);
-            const wallMaterial = new THREE.MeshLambertMaterial({ 
+            const wallMaterial = getTexturedMaterial('lambert', { 
                 color: 0xC8BEA8, // Light warm sandstone
                 map: textures.rock
-            });
+            }, 'rock');
             const wall = new THREE.Mesh(wallGeometry, wallMaterial);
             wall.position.set(mtn.x, wallHeight * 0.4, mtn.z);
             wall.castShadow = true;
             wall.receiveShadow = true;
-            scene.add(wall);
+            _scene.add(wall);
             
             // Stone base (slightly wider, darker)
             const baseGeometry = new THREE.BoxGeometry(wallWidth + 0.6, wallHeight * 0.12, wallDepth + 0.5);
-            const baseMaterial = new THREE.MeshLambertMaterial({ 
+            const baseMaterial = getTexturedMaterial('lambert', { 
                 color: 0xA09888,
                 map: textures.rock
-            });
+            }, 'rock');
             const base = new THREE.Mesh(baseGeometry, baseMaterial);
             base.position.set(mtn.x, wallHeight * 0.06, mtn.z);
-            scene.add(base);
+            _scene.add(base);
             
             // Horizontal decorative band
             const bandGeometry = new THREE.BoxGeometry(wallWidth + 0.3, wallHeight * 0.06, wallDepth + 0.2);
-            const bandMaterial = new THREE.MeshLambertMaterial({ color: 0xD5CAB8 });
+            const bandMaterial = getMaterial('lambert', { color: 0xD5CAB8 });
             const band = new THREE.Mesh(bandGeometry, bandMaterial);
             band.position.set(mtn.x, wallHeight * 0.6, mtn.z);
-            scene.add(band);
+            _scene.add(band);
             
             // Battlements on top
             const merlonCount = Math.floor(wallWidth / 3);
@@ -2978,10 +3005,10 @@ function createMountains(scene, THREE, mountainPositions, candyTheme, graveyardT
                 if (Math.random() > 0.1) { // Most intact
                     const merlonHeight = wallHeight * 0.18;
                     const merlonGeometry = new THREE.BoxGeometry(1.3, merlonHeight, wallDepth);
-                    const merlonMaterial = new THREE.MeshLambertMaterial({ 
+                    const merlonMaterial = getTexturedMaterial('lambert', { 
                         color: 0xBFB5A0,
                         map: textures.rock
-                    });
+                    }, 'rock');
                     const merlon = new THREE.Mesh(merlonGeometry, merlonMaterial);
                     merlon.position.set(
                         mtn.x - wallWidth/2 + (i + 0.5) * (wallWidth / merlonCount),
@@ -2989,13 +3016,13 @@ function createMountains(scene, THREE, mountainPositions, candyTheme, graveyardT
                         mtn.z
                     );
                     merlon.castShadow = true;
-                    scene.add(merlon);
+                    _scene.add(merlon);
                     
                     // Cap on merlon
                     const capGeometry = new THREE.BoxGeometry(1.5, 0.12, wallDepth + 0.1);
                     const cap = new THREE.Mesh(capGeometry, bandMaterial);
                     cap.position.set(merlon.position.x, merlon.position.y + merlonHeight/2 + 0.06, mtn.z);
-                    scene.add(cap);
+                    _scene.add(cap);
                 }
             }
             
@@ -3003,20 +3030,20 @@ function createMountains(scene, THREE, mountainPositions, candyTheme, graveyardT
             const slitCount = Math.floor(wallWidth / 10);
             for (let i = 0; i < slitCount; i++) {
                 const slitGeometry = new THREE.BoxGeometry(0.12, wallHeight * 0.2, wallDepth + 0.1);
-                const slitMaterial = new THREE.MeshBasicMaterial({ color: 0x2A2520 });
+                const slitMaterial = getMaterial('basic', { color: 0x2A2520 });
                 const slit = new THREE.Mesh(slitGeometry, slitMaterial);
                 slit.position.set(
                     mtn.x - wallWidth/2 + (i + 0.5) * (wallWidth / slitCount),
                     wallHeight * 0.35,
                     mtn.z
                 );
-                scene.add(slit);
+                _scene.add(slit);
             }
             
             // Subtle rubble
             for (let i = 0; i < wallWidth / 15; i++) {
                 const rubbleGeometry = new THREE.DodecahedronGeometry(0.3 + Math.random() * 0.3, 0);
-                const rubbleMaterial = new THREE.MeshLambertMaterial({ color: 0xA09888 });
+                const rubbleMaterial = getMaterial('lambert', { color: 0xA09888 });
                 const rubble = new THREE.Mesh(rubbleGeometry, rubbleMaterial);
                 rubble.position.set(
                     mtn.x - wallWidth/2 + Math.random() * wallWidth,
@@ -3024,13 +3051,13 @@ function createMountains(scene, THREE, mountainPositions, candyTheme, graveyardT
                     mtn.z + wallDepth/2 + 0.3 + Math.random()
                 );
                 rubble.rotation.set(Math.random() * Math.PI, Math.random() * Math.PI, Math.random() * Math.PI);
-                scene.add(rubble);
+                _scene.add(rubble);
             }
             
             // Ivy/moss patches
             if (Math.random() > 0.4) {
                 const ivyGeometry = new THREE.PlaneGeometry(wallWidth * 0.2, wallHeight * 0.3);
-                const ivyMaterial = new THREE.MeshLambertMaterial({ 
+                const ivyMaterial = getMaterial('lambert', { 
                     color: 0x5A8F5A,
                     transparent: true,
                     opacity: 0.65,
@@ -3042,7 +3069,7 @@ function createMountains(scene, THREE, mountainPositions, candyTheme, graveyardT
                     wallHeight * 0.35, 
                     mtn.z + wallDepth/2 + 0.05
                 );
-                scene.add(ivy);
+                _scene.add(ivy);
             }
             
         } else if (enchantedTheme) {
@@ -3053,28 +3080,28 @@ function createMountains(scene, THREE, mountainPositions, candyTheme, graveyardT
             
             // Dense foliage wall base
             const foliageGeometry = new THREE.BoxGeometry(wallWidth, wallHeight * 0.7, wallDepth);
-            const foliageMaterial = new THREE.MeshLambertMaterial({ 
+            const foliageMaterial = getMaterial('lambert', { 
                 color: 0x1A4D1A,  // Very dark forest green
             });
             const foliageWall = new THREE.Mesh(foliageGeometry, foliageMaterial);
             foliageWall.position.set(mtn.x, wallHeight * 0.35, mtn.z);
             foliageWall.castShadow = true;
-            scene.add(foliageWall);
+            _scene.add(foliageWall);
             
             // Add tree trunks visible through foliage
             const trunkCount = Math.max(3, Math.floor(wallWidth / 8));
-            const trunkMaterial = new THREE.MeshLambertMaterial({ color: 0x3D2817 });
+            const trunkMaterial = getMaterial('lambert', { color: 0x3D2817 });
             for (let i = 0; i < trunkCount; i++) {
                 const trunkX = mtn.x - wallWidth/2 + (i + 0.5) * (wallWidth / trunkCount);
                 const trunkGeometry = new THREE.CylinderGeometry(0.4, 0.6, wallHeight, 8);
                 const trunk = new THREE.Mesh(trunkGeometry, trunkMaterial);
                 trunk.position.set(trunkX, wallHeight/2, mtn.z);
                 trunk.castShadow = true;
-                scene.add(trunk);
+                _scene.add(trunk);
             }
             
             // Canopy on top - layered spherical foliage
-            const canopyMaterial = new THREE.MeshLambertMaterial({ color: 0x2D5A27 });
+            const canopyMaterial = getMaterial('lambert', { color: 0x2D5A27 });
             for (let i = 0; i < trunkCount; i++) {
                 const canopyX = mtn.x - wallWidth/2 + (i + 0.5) * (wallWidth / trunkCount);
                 const canopyGeometry = new THREE.SphereGeometry(wallDepth * 0.8, 8, 6);
@@ -3082,28 +3109,28 @@ function createMountains(scene, THREE, mountainPositions, candyTheme, graveyardT
                 canopy.position.set(canopyX, wallHeight * 0.85, mtn.z);
                 canopy.scale.y = 0.6;
                 canopy.castShadow = true;
-                scene.add(canopy);
+                _scene.add(canopy);
             }
             
             // Fairy lights scattered in the foliage
-            const lightMaterial = new THREE.MeshBasicMaterial({ 
+            const lightMaterial = getMaterial('basic', { 
                 color: 0xFFFF88,
                 transparent: true,
                 opacity: 0.7
             });
             for (let i = 0; i < wallWidth / 5; i++) {
-                const lightGeometry = new THREE.SphereGeometry(0.15, 6, 6);
+                const lightGeometry = getGeometry('sphere', 0.15, 6, 6);
                 const light = new THREE.Mesh(lightGeometry, lightMaterial);
                 light.position.set(
                     mtn.x - wallWidth/2 + Math.random() * wallWidth,
                     wallHeight * 0.3 + Math.random() * wallHeight * 0.5,
                     mtn.z + (Math.random() - 0.5) * wallDepth * 0.8
                 );
-                scene.add(light);
+                _scene.add(light);
             }
             
             // Hanging vines on front
-            const vineMaterial = new THREE.MeshLambertMaterial({ color: 0x4A7A42 });
+            const vineMaterial = getMaterial('lambert', { color: 0x4A7A42 });
             for (let i = 0; i < wallWidth / 10; i++) {
                 const vineLength = 2 + Math.random() * 3;
                 const vineGeometry = new THREE.CylinderGeometry(0.04, 0.06, vineLength, 4);
@@ -3114,7 +3141,7 @@ function createMountains(scene, THREE, mountainPositions, candyTheme, graveyardT
                     mtn.z + wallDepth/2 + 0.1
                 );
                 vine.rotation.z = (Math.random() - 0.5) * 0.3;
-                scene.add(vine);
+                _scene.add(vine);
             }
             
         } else if (easterTheme) {
@@ -3125,34 +3152,34 @@ function createMountains(scene, THREE, mountainPositions, candyTheme, graveyardT
             
             // Main hedge body - lush green
             const hedgeGeometry = new THREE.BoxGeometry(wallWidth, wallHeight * 0.85, wallDepth);
-            const hedgeMaterial = new THREE.MeshLambertMaterial({ 
+            const hedgeMaterial = getMaterial('lambert', { 
                 color: 0x228B22  // Forest green
             });
             const hedge = new THREE.Mesh(hedgeGeometry, hedgeMaterial);
             hedge.position.set(mtn.x, wallHeight * 0.425, mtn.z);
             hedge.castShadow = true;
-            scene.add(hedge);
+            _scene.add(hedge);
             
             // Rounded top layer - slightly different green
             const topGeometry = new THREE.BoxGeometry(wallWidth * 1.02, wallHeight * 0.2, wallDepth * 1.1);
-            const topMaterial = new THREE.MeshLambertMaterial({ color: 0x32CD32 }); // Lime green
+            const topMaterial = getMaterial('lambert', { color: 0x32CD32 }); // Lime green
             const top = new THREE.Mesh(topGeometry, topMaterial);
             top.position.set(mtn.x, wallHeight * 0.95, mtn.z);
-            scene.add(top);
+            _scene.add(top);
             
             // Add spring flowers scattered on hedge
             const flowerColors = [0xFF69B4, 0xFFFF00, 0xFF6347, 0xFFB6C1, 0xFFA500]; // Pink, yellow, red, light pink, orange
             for (let i = 0; i < wallWidth / 4; i++) {
                 const flowerColor = flowerColors[Math.floor(Math.random() * flowerColors.length)];
-                const flowerGeometry = new THREE.SphereGeometry(0.3, 6, 6);
-                const flowerMaterial = new THREE.MeshBasicMaterial({ color: flowerColor });
+                const flowerGeometry = getGeometry('sphere', 0.3, 6, 6);
+                const flowerMaterial = getMaterial('basic', { color: flowerColor });
                 const flower = new THREE.Mesh(flowerGeometry, flowerMaterial);
                 flower.position.set(
                     mtn.x - wallWidth/2 + Math.random() * wallWidth,
                     wallHeight * 0.4 + Math.random() * wallHeight * 0.5,
                     mtn.z + (Math.random() > 0.5 ? 1 : -1) * (wallDepth/2 + 0.2)
                 );
-                scene.add(flower);
+                _scene.add(flower);
             }
             
             // Easter bunny decorations on top occasionally
@@ -3160,29 +3187,29 @@ function createMountains(scene, THREE, mountainPositions, candyTheme, graveyardT
                 const bunnyX = mtn.x + (Math.random() - 0.5) * wallWidth * 0.5;
                 // Simple bunny silhouette - body
                 const bunnyBody = new THREE.Mesh(
-                    new THREE.SphereGeometry(0.5, 8, 8),
-                    new THREE.MeshLambertMaterial({ color: 0xFFFFFF })
+                    getGeometry('sphere', 0.5, 8, 8),
+                    getMaterial('lambert', { color: 0xFFFFFF })
                 );
                 bunnyBody.position.set(bunnyX, wallHeight + 0.5, mtn.z);
-                scene.add(bunnyBody);
+                _scene.add(bunnyBody);
                 // Head
                 const bunnyHead = new THREE.Mesh(
-                    new THREE.SphereGeometry(0.35, 8, 8),
-                    new THREE.MeshLambertMaterial({ color: 0xFFFFFF })
+                    getGeometry('sphere', 0.35, 8, 8),
+                    getMaterial('lambert', { color: 0xFFFFFF })
                 );
                 bunnyHead.position.set(bunnyX, wallHeight + 1.1, mtn.z);
-                scene.add(bunnyHead);
+                _scene.add(bunnyHead);
                 // Ears
-                const earGeometry = new THREE.CylinderGeometry(0.1, 0.12, 0.5, 6);
-                const earMaterial = new THREE.MeshLambertMaterial({ color: 0xFFB6C1 }); // Pink inner ear
+                const earGeometry = getGeometry('cylinder', 0.1, 0.12, 0.5, 6);
+                const earMaterial = getMaterial('lambert', { color: 0xFFB6C1 }); // Pink inner ear
                 const leftEar = new THREE.Mesh(earGeometry, earMaterial);
                 leftEar.position.set(bunnyX - 0.15, wallHeight + 1.6, mtn.z);
                 leftEar.rotation.z = -0.2;
-                scene.add(leftEar);
+                _scene.add(leftEar);
                 const rightEar = new THREE.Mesh(earGeometry, earMaterial);
                 rightEar.position.set(bunnyX + 0.15, wallHeight + 1.6, mtn.z);
                 rightEar.rotation.z = 0.2;
-                scene.add(rightEar);
+                _scene.add(rightEar);
             }
             
         } else if (christmasTheme) {
@@ -3191,11 +3218,11 @@ function createMountains(scene, THREE, mountainPositions, candyTheme, graveyardT
             const wallWidth = mtn.width;
             const wallDepth = Math.min(mtn.width * 0.3, 8);
             
-            const snowMaterial = new THREE.MeshLambertMaterial({ 
+            const snowMaterial = getTexturedMaterial('lambert', { 
                 color: 0xF0F8FF,  // Alice blue - natural snow
                 map: textures.grassIce
-            });
-            const pureSnowMaterial = new THREE.MeshLambertMaterial({ color: 0xFFFAFA }); // Snow white
+            }, 'grassIce');
+            const pureSnowMaterial = getMaterial('lambert', { color: 0xFFFAFA }); // Snow white
             
             // Build natural snowbank from overlapping elongated spheres
             const moundCount = Math.max(3, Math.floor(wallWidth / 12));
@@ -3206,21 +3233,21 @@ function createMountains(scene, THREE, mountainPositions, candyTheme, graveyardT
                 const moundDepth = wallDepth * (0.8 + Math.random() * 0.4);
                 
                 // Main mound body - elongated sphere
-                const moundGeometry = new THREE.SphereGeometry(1, 12, 8);
+                const moundGeometry = getGeometry('sphere', 1, 12, 8);
                 const mound = new THREE.Mesh(moundGeometry, snowMaterial);
                 mound.position.set(moundX + (Math.random() - 0.5) * 2, moundHeight * 0.4, mtn.z);
                 mound.scale.set(moundWidth * 0.5, moundHeight * 0.5, moundDepth * 0.5);
                 mound.castShadow = true;
                 mound.receiveShadow = true;
-                scene.add(mound);
+                _scene.add(mound);
                 
                 // Add smaller rounded top for fluffy look
-                const topGeometry = new THREE.SphereGeometry(1, 10, 6);
+                const topGeometry = getGeometry('sphere', 1, 10, 6);
                 const top = new THREE.Mesh(topGeometry, pureSnowMaterial);
                 top.position.set(moundX + (Math.random() - 0.5) * 3, moundHeight * 0.75, mtn.z);
                 top.scale.set(moundWidth * 0.35, moundHeight * 0.3, moundDepth * 0.4);
                 top.castShadow = true;
-                scene.add(top);
+                _scene.add(top);
             }
             
             // Add natural snow drifts scattered around base
@@ -3234,7 +3261,7 @@ function createMountains(scene, THREE, mountainPositions, candyTheme, graveyardT
                 drift.position.set(driftX, driftSize * 0.25, mtn.z + side * (wallDepth/2 + driftSize * 0.4));
                 drift.scale.set(1.2 + Math.random() * 0.5, 0.35, 0.9 + Math.random() * 0.3); // Flatten into natural drift
                 drift.receiveShadow = true;
-                scene.add(drift);
+                _scene.add(drift);
             }
             
             // Occasional icicles hanging from taller mounds
@@ -3244,7 +3271,7 @@ function createMountains(scene, THREE, mountainPositions, candyTheme, graveyardT
                     const icicleX = mtn.x - wallWidth/2 + Math.random() * wallWidth;
                     const icicleLength = 0.4 + Math.random() * 1.2;
                     const icicleGeometry = new THREE.ConeGeometry(0.08, icicleLength, 4);
-                    const icicleMaterial = new THREE.MeshPhongMaterial({ 
+                    const icicleMaterial = getMaterial('phong', { 
                         color: 0xB0E0E6,  // Pale blue ice
                         shininess: 100,
                         transparent: true,
@@ -3253,14 +3280,14 @@ function createMountains(scene, THREE, mountainPositions, candyTheme, graveyardT
                     const icicle = new THREE.Mesh(icicleGeometry, icicleMaterial);
                     icicle.position.set(icicleX, wallHeight * 0.6 + Math.random() * wallHeight * 0.3, mtn.z + wallDepth/3);
                     icicle.rotation.x = Math.PI; // Point downward
-                    scene.add(icicle);
+                    _scene.add(icicle);
                 }
             }
             
             // Add subtle sparkle effects
             for (let i = 0; i < wallWidth / 12; i++) {
-                const sparkleGeometry = new THREE.SphereGeometry(0.06, 4, 4);
-                const sparkleMaterial = new THREE.MeshBasicMaterial({ 
+                const sparkleGeometry = getGeometry('sphere', 0.06, 4, 4);
+                const sparkleMaterial = getMaterial('basic', { 
                     color: 0xFFFFFF,
                     transparent: true,
                     opacity: 0.5
@@ -3271,7 +3298,7 @@ function createMountains(scene, THREE, mountainPositions, candyTheme, graveyardT
                     wallHeight * 0.2 + Math.random() * wallHeight * 0.6,
                     mtn.z + (Math.random() - 0.5) * wallDepth
                 );
-                scene.add(sparkle);
+                _scene.add(sparkle);
             }
             
         } else if (crystalTheme) {
@@ -3292,7 +3319,7 @@ function createMountains(scene, THREE, mountainPositions, candyTheme, graveyardT
                 
                 // Main large crystal pillar
                 const crystalGeometry = new THREE.ConeGeometry(crystalRadius, crystalHeight, 6);
-                const crystalMaterial = new THREE.MeshPhongMaterial({ 
+                const crystalMaterial = getMaterial('phong', { 
                     color: crystalColor,
                     emissive: crystalColor,
                     emissiveIntensity: 0.35,
@@ -3310,7 +3337,7 @@ function createMountains(scene, THREE, mountainPositions, candyTheme, graveyardT
                 crystal.rotation.x = (Math.random() - 0.5) * 0.25;
                 crystal.rotation.z = (Math.random() - 0.5) * 0.25;
                 crystal.castShadow = true;
-                scene.add(crystal);
+                _scene.add(crystal);
                 
                 // Secondary smaller crystals around the main one
                 const secondaryCount = 2 + Math.floor(Math.random() * 3);
@@ -3320,7 +3347,7 @@ function createMountains(scene, THREE, mountainPositions, candyTheme, graveyardT
                     const secRadius = crystalRadius * (0.3 + Math.random() * 0.4);
                     
                     const secGeometry = new THREE.ConeGeometry(secRadius, secHeight, 6);
-                    const secMaterial = new THREE.MeshPhongMaterial({ 
+                    const secMaterial = getMaterial('phong', { 
                         color: secColor,
                         emissive: secColor,
                         emissiveIntensity: 0.4,
@@ -3337,35 +3364,35 @@ function createMountains(scene, THREE, mountainPositions, candyTheme, graveyardT
                     );
                     secCrystal.rotation.x = (Math.random() - 0.5) * 0.4;
                     secCrystal.rotation.z = (Math.random() - 0.5) * 0.4;
-                    scene.add(secCrystal);
+                    _scene.add(secCrystal);
                 }
                 
                 // Inner glow core
                 const coreGeometry = new THREE.SphereGeometry(crystalRadius * 0.5, 8, 8);
-                const coreMaterial = new THREE.MeshBasicMaterial({ 
+                const coreMaterial = getMaterial('basic', { 
                     color: 0xffffff,
                     transparent: true,
                     opacity: 0.25
                 });
                 const core = new THREE.Mesh(coreGeometry, coreMaterial);
                 core.position.set(crystal.position.x, crystalHeight * 0.3, crystal.position.z);
-                scene.add(core);
+                _scene.add(core);
                 
                 // Outer glow aura
                 const glowGeometry = new THREE.SphereGeometry(crystalRadius * 2, 8, 8);
-                const glowMaterial = new THREE.MeshBasicMaterial({ 
+                const glowMaterial = getMaterial('basic', { 
                     color: crystalColor,
                     transparent: true,
                     opacity: 0.12
                 });
                 const glow = new THREE.Mesh(glowGeometry, glowMaterial);
                 glow.position.set(crystal.position.x, crystalHeight * 0.4, crystal.position.z);
-                scene.add(glow);
+                _scene.add(glow);
             }
             
             // Crystal base - faceted rock with embedded gems
             const baseGeometry = new THREE.BoxGeometry(wallWidth * 1.1, wallHeight * 0.15, wallDepth);
-            const baseMaterial = new THREE.MeshPhongMaterial({ 
+            const baseMaterial = getMaterial('phong', { 
                 color: 0x3a2a5a,
                 emissive: 0x1a0a2a,
                 emissiveIntensity: 0.2,
@@ -3373,7 +3400,7 @@ function createMountains(scene, THREE, mountainPositions, candyTheme, graveyardT
             });
             const base = new THREE.Mesh(baseGeometry, baseMaterial);
             base.position.set(mtn.x, wallHeight * 0.075, mtn.z);
-            scene.add(base);
+            _scene.add(base);
             
             // Embedded gems in base
             const gemCount = Math.floor(wallWidth / 2);
@@ -3381,7 +3408,7 @@ function createMountains(scene, THREE, mountainPositions, candyTheme, graveyardT
                 const gemColor = crystalColors[Math.floor(Math.random() * crystalColors.length)];
                 const gemSize = 0.2 + Math.random() * 0.3;
                 const gemGeometry = new THREE.OctahedronGeometry(gemSize, 0);
-                const gemMaterial = new THREE.MeshPhongMaterial({ 
+                const gemMaterial = getMaterial('phong', { 
                     color: gemColor,
                     emissive: gemColor,
                     emissiveIntensity: 0.6,
@@ -3394,7 +3421,7 @@ function createMountains(scene, THREE, mountainPositions, candyTheme, graveyardT
                     mtn.z + wallDepth/2 + 0.1
                 );
                 gem.rotation.y = Math.random() * Math.PI;
-                scene.add(gem);
+                _scene.add(gem);
             }
             
         } else if (rapunzelTheme) {
@@ -3424,10 +3451,10 @@ function createMountains(scene, THREE, mountainPositions, candyTheme, graveyardT
                     
                     // Varied rock colors
                     const rockColors = [0x7A7A6A, 0x6A6A5A, 0x8A8A7A, 0x5A5A4A];
-                    const peakMaterial = new THREE.MeshLambertMaterial({ 
+                    const peakMaterial = getTexturedMaterial('lambert', { 
                         map: textures.rock,
                         color: rockColors[p % rockColors.length]
-                    });
+                    }, 'rock');
                     const peak = new THREE.Mesh(peakGeometry, peakMaterial);
                     peak.position.set(
                         -wallWidth/2 + peakSpacing * (p + 0.5) + (Math.random() - 0.5) * 1.5,
@@ -3440,14 +3467,14 @@ function createMountains(scene, THREE, mountainPositions, candyTheme, graveyardT
                     // Snow cap on taller peaks
                     if (peakHeight > wallHeight * 0.8) {
                         const snowCapGeometry = new THREE.ConeGeometry(peakRadius * 0.4, peakHeight * 0.25, 8);
-                        const snowCapMaterial = new THREE.MeshLambertMaterial({ color: 0xF5F5F5 });
+                        const snowCapMaterial = getMaterial('lambert', { color: 0xF5F5F5 });
                         const snowCap = new THREE.Mesh(snowCapGeometry, snowCapMaterial);
                         snowCap.position.set(peak.position.x, peakHeight * 0.88, peak.position.z);
                         cliffGroup.add(snowCap);
                     } else {
                         // Mossy/grassy cap on shorter peaks
                         const capGeometry = new THREE.ConeGeometry(peakRadius * 0.35, peakHeight * 0.2, 8);
-                        const capMaterial = new THREE.MeshLambertMaterial({ color: 0x5A6B4A });
+                        const capMaterial = getMaterial('lambert', { color: 0x5A6B4A });
                         const cap = new THREE.Mesh(capGeometry, capMaterial);
                         cap.position.set(peak.position.x, peakHeight * 0.9, peak.position.z);
                         cliffGroup.add(cap);
@@ -3458,10 +3485,10 @@ function createMountains(scene, THREE, mountainPositions, candyTheme, graveyardT
                         const secondaryHeight = peakHeight * (0.4 + Math.random() * 0.3);
                         const secondaryRadius = secondaryHeight * 0.5;
                         const secondaryGeometry = new THREE.ConeGeometry(secondaryRadius, secondaryHeight, 6);
-                        const secondaryMaterial = new THREE.MeshLambertMaterial({ 
+                        const secondaryMaterial = getTexturedMaterial('lambert', { 
                             map: textures.rock,
                             color: 0x6A6A5A
-                        });
+                        }, 'rock');
                         const secondaryPeak = new THREE.Mesh(secondaryGeometry, secondaryMaterial);
                         const sideOffset = (Math.random() > 0.5 ? 1 : -1) * (peakRadius * 0.8 + secondaryRadius * 0.6);
                         secondaryPeak.position.set(
@@ -3480,10 +3507,10 @@ function createMountains(scene, THREE, mountainPositions, candyTheme, graveyardT
                     const ridgeWidth = 3 + Math.random() * 4;
                     const ridgeHeight = wallHeight * (0.2 + Math.random() * 0.2);
                     const ridgeGeometry = new THREE.BoxGeometry(ridgeWidth, ridgeHeight, 1.5);
-                    const ridgeMaterial = new THREE.MeshLambertMaterial({ 
+                    const ridgeMaterial = getTexturedMaterial('lambert', { 
                         map: textures.rock,
                         color: 0x6A6A5A 
-                    });
+                    }, 'rock');
                     const ridge = new THREE.Mesh(ridgeGeometry, ridgeMaterial);
                     ridge.position.set(
                         -wallWidth/2 + Math.random() * wallWidth,
@@ -3500,10 +3527,10 @@ function createMountains(scene, THREE, mountainPositions, candyTheme, graveyardT
                 for (let b = 0; b < numBoulders; b++) {
                     const boulderSize = 0.5 + Math.random() * 1.0;
                     const boulderGeometry = new THREE.DodecahedronGeometry(boulderSize, 0);
-                    const boulderMaterial = new THREE.MeshLambertMaterial({ 
+                    const boulderMaterial = getTexturedMaterial('lambert', { 
                         map: textures.rock,
                         color: 0x5A5A4A 
-                    });
+                    }, 'rock');
                     const boulder = new THREE.Mesh(boulderGeometry, boulderMaterial);
                     boulder.position.set(
                         -wallWidth/2 + Math.random() * wallWidth,
@@ -3520,10 +3547,10 @@ function createMountains(scene, THREE, mountainPositions, candyTheme, graveyardT
                 for (let o = 0; o < outcroppingCount; o++) {
                     const outHeight = 1 + Math.random() * 2;
                     const outGeometry = new THREE.ConeGeometry(outHeight * 0.6, outHeight, 5);
-                    const outMaterial = new THREE.MeshLambertMaterial({ 
+                    const outMaterial = getTexturedMaterial('lambert', { 
                         map: textures.rock,
                         color: 0x7A7A6A
-                    });
+                    }, 'rock');
                     const outcropping = new THREE.Mesh(outGeometry, outMaterial);
                     outcropping.position.set(
                         -wallWidth/2 + Math.random() * wallWidth,
@@ -3536,28 +3563,28 @@ function createMountains(scene, THREE, mountainPositions, candyTheme, graveyardT
                 }
                 
                 cliffGroup.position.set(mtn.x, 0, mtn.z);
-                scene.add(cliffGroup);
+                _scene.add(cliffGroup);
                 
             } else {
                 // Stone wall section with ivy and moss
                 // Stone wall base
                 const wallGeometry = new THREE.BoxGeometry(wallWidth, wallHeight, wallDepth);
-                const wallMaterial = new THREE.MeshLambertMaterial({ 
+                const wallMaterial = getTexturedMaterial('lambert', { 
                     color: 0x7A7A7A,
                     map: textures.rock
-                });
+                }, 'rock');
                 const wall = new THREE.Mesh(wallGeometry, wallMaterial);
                 wall.position.set(mtn.x, wallHeight/2, mtn.z);
                 wall.castShadow = true;
-                scene.add(wall);
+                _scene.add(wall);
                 
                 // Stone cap on top
                 const capHeight = Math.min(0.4, wallHeight * 0.1);
                 const capGeometry = new THREE.BoxGeometry(wallWidth + 0.6, capHeight, wallDepth + 0.6);
-                const capMaterial = new THREE.MeshLambertMaterial({ color: 0x5A5A5A });
+                const capMaterial = getMaterial('lambert', { color: 0x5A5A5A });
                 const cap = new THREE.Mesh(capGeometry, capMaterial);
                 cap.position.set(mtn.x, wallHeight + capHeight/2, mtn.z);
-                scene.add(cap);
+                _scene.add(cap);
                 
                 // Ivy vines climbing walls
                 const ivyColor = 0x2D5A2D;
@@ -3568,16 +3595,16 @@ function createMountains(scene, THREE, mountainPositions, candyTheme, graveyardT
                     
                     // Vine stem
                     const stemGeometry = new THREE.CylinderGeometry(0.08, 0.12, vineHeight, 6);
-                    const stemMaterial = new THREE.MeshLambertMaterial({ color: 0x3D4A3D });
+                    const stemMaterial = getMaterial('lambert', { color: 0x3D4A3D });
                     const stem = new THREE.Mesh(stemGeometry, stemMaterial);
                     stem.position.set(ivyX, vineHeight/2, mtn.z + wallDepth/2 + 0.15);
-                    scene.add(stem);
+                    _scene.add(stem);
                     
                     // Ivy leaves along the vine
                     const leafCount = Math.floor(vineHeight / 0.8);
                     for (let j = 0; j < leafCount; j++) {
                         const leafGeometry = new THREE.SphereGeometry(0.25 + Math.random() * 0.15, 6, 6);
-                        const leafMaterial = new THREE.MeshLambertMaterial({ color: ivyColor });
+                        const leafMaterial = getMaterial('lambert', { color: ivyColor });
                         const leaf = new THREE.Mesh(leafGeometry, leafMaterial);
                         leaf.position.set(
                             ivyX + (Math.random() - 0.5) * 0.6,
@@ -3585,7 +3612,7 @@ function createMountains(scene, THREE, mountainPositions, candyTheme, graveyardT
                             mtn.z + wallDepth/2 + 0.2 + Math.random() * 0.2
                         );
                         leaf.scale.set(1.3, 0.6, 1);
-                        scene.add(leaf);
+                        _scene.add(leaf);
                     }
                 }
                 
@@ -3593,7 +3620,7 @@ function createMountains(scene, THREE, mountainPositions, candyTheme, graveyardT
                 const mossCount = Math.floor(wallWidth / 4);
                 for (let i = 0; i < mossCount; i++) {
                     const mossGeometry = new THREE.SphereGeometry(0.4 + Math.random() * 0.3, 8, 8);
-                    const mossMaterial = new THREE.MeshLambertMaterial({ color: 0x4A5D3A });
+                    const mossMaterial = getMaterial('lambert', { color: 0x4A5D3A });
                     const moss = new THREE.Mesh(mossGeometry, mossMaterial);
                     moss.position.set(
                         mtn.x - wallWidth/2 + Math.random() * wallWidth,
@@ -3601,7 +3628,7 @@ function createMountains(scene, THREE, mountainPositions, candyTheme, graveyardT
                         mtn.z + wallDepth/2 + 0.1
                     );
                     moss.scale.set(1.5, 0.5, 0.8);
-                    scene.add(moss);
+                    _scene.add(moss);
                 }
                 
                 // Small flowers growing on wall
@@ -3609,15 +3636,15 @@ function createMountains(scene, THREE, mountainPositions, candyTheme, graveyardT
                 const flowerCount = Math.floor(wallWidth / 3);
                 for (let i = 0; i < flowerCount; i++) {
                     const flowerColor = flowerColors[Math.floor(Math.random() * flowerColors.length)];
-                    const flowerGeometry = new THREE.SphereGeometry(0.15, 8, 8);
-                    const flowerMaterial = new THREE.MeshLambertMaterial({ color: flowerColor });
+                    const flowerGeometry = getGeometry('sphere', 0.15, 8, 8);
+                    const flowerMaterial = getMaterial('lambert', { color: flowerColor });
                     const flower = new THREE.Mesh(flowerGeometry, flowerMaterial);
                     flower.position.set(
                         mtn.x - wallWidth/2 + Math.random() * wallWidth,
                         wallHeight * 0.1 + Math.random() * wallHeight * 0.5,
                         mtn.z + wallDepth/2 + 0.25
                     );
-                    scene.add(flower);
+                    _scene.add(flower);
                 }
             }
             
@@ -3630,50 +3657,58 @@ function createMountains(scene, THREE, mountainPositions, candyTheme, graveyardT
                 // Rock candy / crystal mountains
                 const crystalColors = [0xFF69B4, 0x87CEEB, 0xDDA0DD, 0x98FB98];
                 const crystalColor = crystalColors[Math.floor(Math.random() * crystalColors.length)];
-                mountainMaterial = new THREE.MeshPhongMaterial({ 
+                mountainMaterial = getMaterial('phong', { 
                     color: crystalColor,
                     shininess: 100,
                     transparent: true,
                     opacity: 0.85
                 });
             } else {
-                mountainMaterial = new THREE.MeshLambertMaterial({ 
+                mountainMaterial = getTexturedMaterial('lambert', { 
                     map: textures.mountain,
                     color: 0xaaaaaa
-                });
+                }, 'mountain');
             }
             const mountain = new THREE.Mesh(mountainGeometry, mountainMaterial);
             mountain.position.set(mtn.x, mtn.height/2, mtn.z);
-            scene.add(mountain);
+            _scene.add(mountain);
             
             if (candyTheme) {
                 // Frosting top instead of snow
                 const frostingGeometry = new THREE.ConeGeometry(mtn.width/4, mtn.height/3, 6);
-                const frostingMaterial = new THREE.MeshPhongMaterial({ 
+                const frostingMaterial = getMaterial('phong', { 
                     color: 0xFFFFFF,
                     shininess: 80
                 });
                 const frosting = new THREE.Mesh(frostingGeometry, frostingMaterial);
                 frosting.position.set(mtn.x, mtn.height * 0.75, mtn.z);
-                scene.add(frosting);
+                _scene.add(frosting);
                 
                 // Add cherry on top
                 const cherryGeometry = new THREE.SphereGeometry(mtn.width/8, 12, 12);
-                const cherryMaterial = new THREE.MeshPhongMaterial({ color: 0xFF0000, shininess: 100 });
+                const cherryMaterial = getMaterial('phong', { color: 0xFF0000, shininess: 100 });
                 const cherry = new THREE.Mesh(cherryGeometry, cherryMaterial);
                 cherry.position.set(mtn.x, mtn.height * 0.95, mtn.z);
-                scene.add(cherry);
+                _scene.add(cherry);
             } else {
                 // Snow cap on top
                 const snowGeometry = new THREE.ConeGeometry(mtn.width/4, mtn.height/3, 6);
-                const snowMaterial = new THREE.MeshLambertMaterial({ 
+                const snowMaterial = getTexturedMaterial('lambert', { 
                     map: textures.snow,
                     color: 0xffffff
-                });
+                }, 'snow');
                 const snow = new THREE.Mesh(snowGeometry, snowMaterial);
                 snow.position.set(mtn.x, mtn.height * 0.75, mtn.z);
-                scene.add(snow);
+                _scene.add(snow);
             }
+        }
+
+        // If this mountain was rotated, finalize the proxy Group:
+        // rotate it, position it at the original coordinates, and add to the real scene.
+        if (hasRotation && proxyGroup) {
+            proxyGroup.rotation.y = mtn.rotation;
+            proxyGroup.position.set(origX, 0, origZ);
+            scene.add(proxyGroup);
         }
     });
 }
@@ -3681,8 +3716,8 @@ function createMountains(scene, THREE, mountainPositions, candyTheme, graveyardT
 // Create computer-themed ground with circuit board pattern and glowing grid lines
 function createComputerGround(scene, THREE) {
     // Base dark ground
-    const groundGeometry = new THREE.PlaneGeometry(600, 600, 1, 1);
-    const groundMaterial = new THREE.MeshLambertMaterial({ 
+    const groundGeometry = getGeometry('plane', 600, 600, 1, 1);
+    const groundMaterial = getMaterial('lambert', { 
         color: 0x000808,  // Very dark teal-black
         emissive: 0x001111,
         emissiveIntensity: 0.3
@@ -3696,7 +3731,7 @@ function createComputerGround(scene, THREE) {
     // Create glowing grid lines - raised position to be clearly visible
     const gridSpacing = 8;  // Denser grid
     const gridExtent = 300;
-    const gridMaterial = new THREE.MeshBasicMaterial({ 
+    const gridMaterial = getMaterial('basic', { 
         color: 0x00FFFF,
         transparent: true,
         opacity: 0.8,
@@ -3745,8 +3780,8 @@ function createComputerGround(scene, THREE) {
     scene.add(gridGroup);
     
     // Add some glowing accent circles/nodes at intersections
-    const nodeGeometry = new THREE.CircleGeometry(0.5, 16);
-    const nodeMaterial = new THREE.MeshBasicMaterial({ 
+    const nodeGeometry = getGeometry('circle', 0.5, 16);
+    const nodeMaterial = getMaterial('basic', { 
         color: 0xFF00FF,  // Magenta nodes
         transparent: true,
         opacity: 0.8
@@ -3773,8 +3808,8 @@ function createComputerGround(scene, THREE) {
     
     hubPositions.forEach(pos => {
         // Outer ring
-        const ringGeometry = new THREE.RingGeometry(3, 4, 32);
-        const ringMaterial = new THREE.MeshBasicMaterial({ 
+        const ringGeometry = getGeometry('ring', 3, 4, 32);
+        const ringMaterial = getMaterial('basic', { 
             color: 0x00FF00,  // Green data hubs
             transparent: true,
             opacity: 0.9,
@@ -3786,8 +3821,8 @@ function createComputerGround(scene, THREE) {
         scene.add(ring);
         
         // Inner circle
-        const centerGeometry = new THREE.CircleGeometry(2, 32);
-        const centerMaterial = new THREE.MeshBasicMaterial({ 
+        const centerGeometry = getGeometry('circle', 2, 32);
+        const centerMaterial = getMaterial('basic', { 
             color: 0x00FF88,
             transparent: true,
             opacity: 0.6
@@ -3802,7 +3837,7 @@ function createComputerGround(scene, THREE) {
     for (let i = 0; i < 50; i++) {
         const traceLength = 10 + Math.random() * 40;
         const traceGeometry = new THREE.PlaneGeometry(traceLength, 0.3);
-        const traceMaterial = new THREE.MeshBasicMaterial({ 
+        const traceMaterial = getMaterial('basic', { 
             color: Math.random() > 0.5 ? 0x00FFFF : 0xFF00FF,
             transparent: true,
             opacity: 0.4 + Math.random() * 0.3
@@ -3850,14 +3885,14 @@ function createGround(scene, THREE, groundColor, iceTheme, desertTheme, lavaThem
         }
         
         const waterTexture = generateWaterTexture(THREE);
-        groundMaterial = new THREE.MeshLambertMaterial({ 
+        groundMaterial = getTexturedMaterial('lambert', { 
             map: waterTexture,
             color: 0xFFFFFF,
             transparent: true,
             opacity: 0.9,
             side: THREE.DoubleSide,
             flatShading: true
-        });
+        }, 'water');
         
         const water = new THREE.Mesh(waterGeometry, groundMaterial);
         water.rotation.x = -Math.PI / 2;
@@ -3888,11 +3923,20 @@ function createGround(scene, THREE, groundColor, iceTheme, desertTheme, lavaThem
     } else {
         textureToUse = textures.grass;
     }
-    const groundGeometry = new THREE.PlaneGeometry(600, 600, 1, 1);
-    groundMaterial = new THREE.MeshLambertMaterial({ 
+    // Determine texture name for ground material caching
+    let groundTextureName = 'grass';
+    if (lavaTheme) groundTextureName = 'rock';
+    else if (desertTheme) groundTextureName = 'sand';
+    else if (candyTheme) groundTextureName = 'candy';
+    else if (graveyardTheme) groundTextureName = 'graveyard';
+    else if (ruinsTheme) groundTextureName = 'grass';
+    else if (iceTheme || christmasTheme) groundTextureName = 'grassIce';
+    else if (crystalTheme) groundTextureName = 'rock';
+    const groundGeometry = getGeometry('plane', 600, 600, 1, 1);
+    groundMaterial = getTexturedMaterial('lambert', { 
         map: textureToUse,
         color: color
-    });
+    }, groundTextureName);
     const ground = new THREE.Mesh(groundGeometry, groundMaterial);
     ground.rotation.x = -Math.PI / 2;
     ground.receiveShadow = true;
@@ -3901,8 +3945,8 @@ function createGround(scene, THREE, groundColor, iceTheme, desertTheme, lavaThem
 
 // Create river
 function createRiver(scene, THREE) {
-    const riverGeometry = new THREE.PlaneGeometry(600, 4, 60, 8);
-    const riverMaterial = new THREE.MeshLambertMaterial({ 
+    const riverGeometry = getGeometry('plane', 600, 4, 60, 8);
+    const riverMaterial = getMaterial('lambert', { 
         color: 0x4682B4,
         transparent: true,
         opacity: 0.8
@@ -3925,8 +3969,8 @@ function createBridge(scene, THREE) {
     const bridgeGroup = new THREE.Group();
 
     // Bridge deck
-    const deckGeometry = new THREE.BoxGeometry(5, 0.3, 5);
-    const deckMaterial = new THREE.MeshLambertMaterial({ color: 0x8B4513 });
+    const deckGeometry = getGeometry('box', 5, 0.3, 5);
+    const deckMaterial = getMaterial('lambert', { color: 0x8B4513 });
     const deck = new THREE.Mesh(deckGeometry, deckMaterial);
     deck.position.y = 0.5;
     deck.castShadow = true;
@@ -3936,8 +3980,8 @@ function createBridge(scene, THREE) {
     // Add visible wood planks on bridge (like the material)
     for (let i = 0; i < 3; i++) {
         const woodPlank = new THREE.Mesh(
-            new THREE.BoxGeometry(0.8, 0.15, 4.5),
-            new THREE.MeshLambertMaterial({ color: 0x8B4513 })
+            getGeometry('box', 0.8, 0.15, 4.5),
+            getMaterial('lambert', { color: 0x8B4513 })
         );
         woodPlank.position.set(-1.5 + i * 1.5, 0.73, 0);
         woodPlank.castShadow = true;
@@ -3947,8 +3991,8 @@ function createBridge(scene, THREE) {
     // Add glass panels on sides (like the material)
     for (let i = 0; i < 2; i++) {
         const glassPanel = new THREE.Mesh(
-            new THREE.BoxGeometry(0.1, 0.6, 4.5),
-            new THREE.MeshLambertMaterial({ 
+            getGeometry('box', 0.1, 0.6, 4.5),
+            getMaterial('lambert', { 
                 color: 0x87CEEB,
                 transparent: true,
                 opacity: 0.4,
@@ -3964,8 +4008,8 @@ function createBridge(scene, THREE) {
     // Add metal support beams (like the material)
     for (let i = 0; i < 4; i++) {
         const metalBeam = new THREE.Mesh(
-            new THREE.CylinderGeometry(0.08, 0.08, 1.2, 8),
-            new THREE.MeshLambertMaterial({ 
+            getGeometry('cylinder', 0.08, 0.08, 1.2, 8),
+            getMaterial('lambert', { 
                 color: 0xC0C0C0,
                 emissive: 0x444444,
                 emissiveIntensity: 0.2
@@ -3978,8 +4022,8 @@ function createBridge(scene, THREE) {
     }
 
     // Bridge railings
-    const railGeometry = new THREE.BoxGeometry(0.1, 0.5, 5);
-    const railMaterial = new THREE.MeshLambertMaterial({ color: 0x654321 });
+    const railGeometry = getGeometry('box', 0.1, 0.5, 5);
+    const railMaterial = getMaterial('lambert', { color: 0x654321 });
     const rail1 = new THREE.Mesh(railGeometry, railMaterial);
     rail1.position.set(2.5, 0.9, 0);
     rail1.castShadow = true;
@@ -4007,8 +4051,8 @@ function createBridge(scene, THREE) {
 function createBrokenBridge(scene, THREE) {
     const brokenBridgeGroup = new THREE.Group();
     
-    const plankGeometry = new THREE.BoxGeometry(5, 0.2, 1);
-    const plankMaterial = new THREE.MeshLambertMaterial({ color: 0x654321 });
+    const plankGeometry = getGeometry('box', 5, 0.2, 1);
+    const plankMaterial = getMaterial('lambert', { color: 0x654321 });
     
     for (let i = 0; i < 3; i++) {
         const plank = new THREE.Mesh(plankGeometry, plankMaterial);

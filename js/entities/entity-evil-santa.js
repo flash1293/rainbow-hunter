@@ -17,8 +17,8 @@
         const eyeGlow = 0xFF0000;       // Evil red eyes
         
         // Large body with coat
-        const bodyGeometry = new THREE.CylinderGeometry(1.0, 1.4, 2.5, 12);
-        const bodyMaterial = new THREE.MeshLambertMaterial({ color: santaRed });
+        const bodyGeometry = getGeometry('cylinder', 1.0, 1.4, 2.5, 12);
+        const bodyMaterial = getMaterial('lambert', { color: santaRed });
         const body = new THREE.Mesh(bodyGeometry, bodyMaterial);
         body.position.y = 2.5;
         body.castShadow = true;
@@ -26,76 +26,76 @@
         group.add(body);
         
         // White coat trim (bottom)
-        const trimBottomGeometry = new THREE.CylinderGeometry(1.5, 1.5, 0.3, 12);
-        const trimMaterial = new THREE.MeshLambertMaterial({ color: santaWhite });
+        const trimBottomGeometry = getGeometry('cylinder', 1.5, 1.5, 0.3, 12);
+        const trimMaterial = getMaterial('lambert', { color: santaWhite });
         const trimBottom = new THREE.Mesh(trimBottomGeometry, trimMaterial);
         trimBottom.position.y = 1.3;
         trimBottom.castShadow = true;
         group.add(trimBottom);
         
         // White coat trim (middle)
-        const trimMiddleGeometry = new THREE.CylinderGeometry(1.1, 1.1, 0.15, 12);
+        const trimMiddleGeometry = getGeometry('cylinder', 1.1, 1.1, 0.15, 12);
         const trimMiddle = new THREE.Mesh(trimMiddleGeometry, trimMaterial);
         trimMiddle.position.y = 3.7;
         trimMiddle.castShadow = true;
         group.add(trimMiddle);
         
         // Black belt
-        const beltGeometry = new THREE.CylinderGeometry(1.05, 1.35, 0.25, 12);
-        const beltMaterial = new THREE.MeshLambertMaterial({ color: beltColor });
+        const beltGeometry = getGeometry('cylinder', 1.05, 1.35, 0.25, 12);
+        const beltMaterial = getMaterial('lambert', { color: beltColor });
         const belt = new THREE.Mesh(beltGeometry, beltMaterial);
         belt.position.y = 2.3;
         belt.castShadow = true;
         group.add(belt);
         
         // Gold belt buckle
-        const buckleGeometry = new THREE.BoxGeometry(0.4, 0.3, 0.15);
-        const buckleMaterial = new THREE.MeshLambertMaterial({ color: buckleColor });
+        const buckleGeometry = getGeometry('box', 0.4, 0.3, 0.15);
+        const buckleMaterial = getMaterial('lambert', { color: buckleColor });
         const buckle = new THREE.Mesh(buckleGeometry, buckleMaterial);
         buckle.position.set(0, 2.3, 1.4);
         buckle.castShadow = true;
         group.add(buckle);
         
         // Head
-        const headGeometry = new THREE.SphereGeometry(0.8, 16, 16);
-        const headMaterial = new THREE.MeshLambertMaterial({ color: skinColor });
+        const headGeometry = getGeometry('sphere', 0.8, 16, 16);
+        const headMaterial = getMaterial('lambert', { color: skinColor });
         const head = new THREE.Mesh(headGeometry, headMaterial);
         head.position.y = 4.5;
         head.castShadow = true;
         group.add(head);
         
         // Santa hat
-        const hatGeometry = new THREE.ConeGeometry(0.7, 1.5, 12);
+        const hatGeometry = getGeometry('cone', 0.7, 1.5, 12);
         const hat = new THREE.Mesh(hatGeometry, bodyMaterial);
         hat.position.y = 5.6;
         hat.castShadow = true;
         group.add(hat);
         
         // Hat trim
-        const hatTrimGeometry = new THREE.CylinderGeometry(0.75, 0.75, 0.2, 12);
+        const hatTrimGeometry = getGeometry('cylinder', 0.75, 0.75, 0.2, 12);
         const hatTrim = new THREE.Mesh(hatTrimGeometry, trimMaterial);
         hatTrim.position.y = 4.9;
         hatTrim.castShadow = true;
         group.add(hatTrim);
         
         // Hat pom-pom
-        const pomPomGeometry = new THREE.SphereGeometry(0.2, 12, 12);
+        const pomPomGeometry = getGeometry('sphere', 0.2, 12, 12);
         const pomPom = new THREE.Mesh(pomPomGeometry, trimMaterial);
         pomPom.position.y = 6.3;
         pomPom.castShadow = true;
         group.add(pomPom);
         
         // Evil glowing eyes
-        const eyeGeometry = new THREE.SphereGeometry(0.15, 12, 12);
-        const eyeMaterial = new THREE.MeshBasicMaterial({ color: eyeGlow });
+        const eyeGeometry = getGeometry('sphere', 0.15, 12, 12);
+        const eyeMaterial = getMaterial('basic', { color: eyeGlow });
         [-0.3, 0.3].forEach(x => {
             const eye = new THREE.Mesh(eyeGeometry, eyeMaterial);
             eye.position.set(x, 4.6, 0.7);
             group.add(eye);
             
             // Evil glow effect
-            const glowGeometry = new THREE.SphereGeometry(0.2, 12, 12);
-            const glowMaterial = new THREE.MeshBasicMaterial({ 
+            const glowGeometry = getGeometry('sphere', 0.2, 12, 12);
+            const glowMaterial = getMaterial('basic', { 
                 color: eyeGlow, 
                 transparent: true, 
                 opacity: 0.3 
@@ -106,8 +106,8 @@
         });
         
         // Evil beard (darker, scraggly)
-        const beardGeometry = new THREE.SphereGeometry(0.6, 12, 12);
-        const beardMaterial = new THREE.MeshLambertMaterial({ color: 0xE0E0E0 });
+        const beardGeometry = getGeometry('sphere', 0.6, 12, 12);
+        const beardMaterial = getMaterial('lambert', { color: 0xE0E0E0 });
         const beard = new THREE.Mesh(beardGeometry, beardMaterial);
         beard.position.set(0, 4.0, 0.6);
         beard.scale.set(1.2, 1.0, 0.8);
@@ -116,7 +116,7 @@
         
         // Mustache
         [-0.3, 0.3].forEach(x => {
-            const mustacheGeometry = new THREE.SphereGeometry(0.25, 12, 12);
+            const mustacheGeometry = getGeometry('sphere', 0.25, 12, 12);
             const mustache = new THREE.Mesh(mustacheGeometry, beardMaterial);
             mustache.position.set(x, 4.3, 0.65);
             mustache.scale.set(1.5, 0.5, 0.8);
@@ -125,8 +125,8 @@
         });
         
         // Arms
-        const armGeometry = new THREE.CylinderGeometry(0.3, 0.35, 1.8, 8);
-        const armMaterial = new THREE.MeshLambertMaterial({ color: santaRed });
+        const armGeometry = getGeometry('cylinder', 0.3, 0.35, 1.8, 8);
+        const armMaterial = getMaterial('lambert', { color: santaRed });
         [-1.3, 1.3].forEach((x, i) => {
             const arm = new THREE.Mesh(armGeometry, armMaterial);
             arm.position.set(x, 2.8, 0);
@@ -135,7 +135,7 @@
             group.add(arm);
             
             // White cuff
-            const cuffGeometry = new THREE.CylinderGeometry(0.38, 0.38, 0.2, 8);
+            const cuffGeometry = getGeometry('cylinder', 0.38, 0.38, 0.2, 8);
             const cuff = new THREE.Mesh(cuffGeometry, trimMaterial);
             const cuffOffset = i === 0 ? 
                 { x: x - 0.4, y: 2.2 } : 
@@ -145,8 +145,8 @@
             group.add(cuff);
             
             // Black gloves
-            const gloveGeometry = new THREE.SphereGeometry(0.35, 8, 8);
-            const gloveMaterial = new THREE.MeshLambertMaterial({ color: beltColor });
+            const gloveGeometry = getGeometry('sphere', 0.35, 8, 8);
+            const gloveMaterial = getMaterial('lambert', { color: beltColor });
             const glove = new THREE.Mesh(gloveGeometry, gloveMaterial);
             const gloveOffset = i === 0 ? 
                 { x: x - 0.6, y: 1.8 } : 
@@ -157,8 +157,8 @@
         });
         
         // Flying Sledge
-        const sledgeBaseGeometry = new THREE.BoxGeometry(3.0, 0.3, 1.5);
-        const sledgeMaterial = new THREE.MeshLambertMaterial({ color: sledgeColor });
+        const sledgeBaseGeometry = getGeometry('box', 3.0, 0.3, 1.5);
+        const sledgeMaterial = getMaterial('lambert', { color: sledgeColor });
         const sledgeBase = new THREE.Mesh(sledgeBaseGeometry, sledgeMaterial);
         sledgeBase.position.set(0, 0.5, 0);
         sledgeBase.castShadow = true;
@@ -166,7 +166,7 @@
         group.add(sledgeBase);
         
         // Sledge curved front
-        const sledgeFrontGeometry = new THREE.CylinderGeometry(0.15, 0.15, 1.5, 8);
+        const sledgeFrontGeometry = getGeometry('cylinder', 0.15, 0.15, 1.5, 8);
         const sledgeFront = new THREE.Mesh(sledgeFrontGeometry, sledgeMaterial);
         sledgeFront.position.set(1.5, 0.6, 0);
         sledgeFront.rotation.x = Math.PI / 2;
@@ -175,8 +175,8 @@
         group.add(sledgeFront);
         
         // Gold rails (runners)
-        const railGeometry = new THREE.BoxGeometry(3.5, 0.15, 0.2);
-        const railMaterial = new THREE.MeshLambertMaterial({ color: sledgeRailColor });
+        const railGeometry = getGeometry('box', 3.5, 0.15, 0.2);
+        const railMaterial = getMaterial('lambert', { color: sledgeRailColor });
         [-0.6, 0.6].forEach(z => {
             const rail = new THREE.Mesh(railGeometry, railMaterial);
             rail.position.set(0, 0.2, z);
@@ -184,7 +184,7 @@
             group.add(rail);
             
             // Curved front of rail
-            const railFrontGeometry = new THREE.TorusGeometry(0.3, 0.1, 8, 16, Math.PI / 2);
+            const railFrontGeometry = getGeometry('torus', 0.3, 0.1, 8, 16, Math.PI / 2);
             const railFront = new THREE.Mesh(railFrontGeometry, railMaterial);
             railFront.position.set(1.6, 0.3, z);
             railFront.rotation.y = Math.PI / 2;
@@ -193,8 +193,8 @@
         });
         
         // Gift bag on sledge (stolen presents!)
-        const bagGeometry = new THREE.SphereGeometry(0.6, 12, 12);
-        const bagMaterial = new THREE.MeshLambertMaterial({ color: 0x8B4513 });
+        const bagGeometry = getGeometry('sphere', 0.6, 12, 12);
+        const bagMaterial = getMaterial('lambert', { color: 0x8B4513 });
         const bag = new THREE.Mesh(bagGeometry, bagMaterial);
         bag.position.set(-1.0, 0.9, 0);
         bag.scale.set(1.2, 1.4, 1.0);
@@ -202,8 +202,8 @@
         group.add(bag);
         
         // Rope tied around bag
-        const ropeGeometry = new THREE.TorusGeometry(0.5, 0.05, 8, 16);
-        const ropeMaterial = new THREE.MeshLambertMaterial({ color: 0xFFD700 });
+        const ropeGeometry = getGeometry('torus', 0.5, 0.05, 8, 16);
+        const ropeMaterial = getMaterial('lambert', { color: 0xFFD700 });
         const rope = new THREE.Mesh(ropeGeometry, ropeMaterial);
         rope.position.set(-1.0, 1.5, 0);
         rope.rotation.x = Math.PI / 2;
@@ -214,8 +214,8 @@
         for (let i = 0; i < 12; i++) {
             const angle = (i / 12) * Math.PI * 2;
             const radius = 2.5 + Math.random() * 0.5;
-            const sparkleGeometry = new THREE.SphereGeometry(0.08, 6, 6);
-            const sparkleMaterial = new THREE.MeshBasicMaterial({ 
+            const sparkleGeometry = getGeometry('sphere', 0.08, 6, 6);
+            const sparkleMaterial = getMaterial('basic', { 
                 color: Math.random() > 0.5 ? 0xFF0000 : 0x8B0000,
                 transparent: true,
                 opacity: 0.6

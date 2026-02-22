@@ -531,6 +531,87 @@
       "levels": [14],
       "health": 0,
       "damage": 0
+    },
+    {
+      "id": "flying-witch",
+      "name": "Fliegende Hexe",
+      "description": "Eine böse Hexe auf einem Besen mit grüner Haut und leuchtend grünen Augen. Fliegt durch die Lüfte und wirft magische grüne Feuerbälle.",
+      "tags": ["Fliegend", "Magie", "Fernkampf"],
+      "levels": [14],
+      "health": 30,
+      "damage": 1
+    },
+    {
+      "id": "flying-witch-house",
+      "name": "Fliegendes Hexenhaus",
+      "description": "Ein magisches Cottage, das auf Wolken schwebt. Enthält eine Hexenküche mit brodelndem Kessel. Beschwört fliegende Hexen, die herabsteigen und Spieler angreifen.",
+      "tags": ["Boss", "Spawner", "Fliegend"],
+      "levels": [14],
+      "health": 9999,
+      "damage": 0
+    },
+    {
+      "id": "crystal-goblin",
+      "name": "Kristall-Goblin",
+      "description": "Ein Goblin aus magischem Kristall mit durchscheinendem Körper und einem leuchtenden Edelstein auf der Stirn. Patrouilliert die dunklen Höhlengänge.",
+      "tags": ["Kristall", "Nahkampf"],
+      "levels": [13],
+      "health": 3,
+      "damage": 1
+    },
+    {
+      "id": "crystal-guardian",
+      "name": "Kristall-Wächter",
+      "description": "Ein größerer Kristall-Goblin mit violettem Leuchten. Wacht über wertvolle Edelsteinadern und schießt kristallene Splitter.",
+      "tags": ["Kristall", "Elite", "Fernkampf"],
+      "levels": [13],
+      "health": 5,
+      "damage": 1
+    },
+    {
+      "id": "crystal-golem",
+      "name": "Kristall-Golem",
+      "description": "Ein massiver Golem aus reinem Kristall mit einem magischen Kern. Seine schweren Schritte lassen Stalaktiten erzittern.",
+      "tags": ["Kristall", "Boss", "Schwer"],
+      "levels": [13],
+      "health": 20,
+      "damage": 2
+    },
+    {
+      "id": "crystal-wizard",
+      "name": "Kristall-Magier",
+      "description": "Ein Zauberer, dessen Körper von Kristallsplittern durchsetzt ist. Sein Stab ist ein leuchtender Amethyst. Wirft kristallene Feuerbälle.",
+      "tags": ["Kristall", "Magie", "Fernkampf"],
+      "levels": [13],
+      "health": 7,
+      "damage": 1
+    },
+    {
+      "id": "gem-specter",
+      "name": "Edelstein-Geist",
+      "description": "Der Geist eines uralten Minenarbeiters, umgeben von schwebenden Edelsteinen. Wirft explodierende Kristallbomben von oben.",
+      "tags": ["Kristall", "Fliegend", "Bomben"],
+      "levels": [13],
+      "health": 2,
+      "damage": 1
+    },
+    {
+      "id": "crystal-giant",
+      "name": "Kristall-Riese",
+      "description": "Ein gewaltiger Riese aus massivem violettem Kristall. Seine Fäuste sind Amethyst-Cluster, sein Blick ein kaltes, blaues Leuchten.",
+      "tags": ["Kristall", "Boss", "Schwer"],
+      "levels": [13],
+      "health": 20,
+      "damage": 2
+    },
+    {
+      "id": "crystal-dragon",
+      "name": "Kristall-Drache",
+      "description": "Ein majestätischer Drache aus reinem Kristall, dessen Schuppen in allen Regenbogenfarben schillern. Sein Atem ist ein Strahl aus zersplitternden Kristallen.",
+      "tags": ["Kristall", "Boss", "Fliegend", "Feuerball"],
+      "levels": [13],
+      "health": 60,
+      "damage": 2
     }
   ],
   "items": [

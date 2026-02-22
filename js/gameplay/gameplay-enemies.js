@@ -258,9 +258,9 @@
                         const shardGroup = new THREE.Group();
                         
                         // Main crystal shard (elongated octahedron)
-                        const shardGeometry = new THREE.OctahedronGeometry(0.25, 0);
+                        const shardGeometry = getGeometry('octahedron', 0.25, 0);
                         const shardColor = [0xaa44ff, 0xff4488, 0x44aaff, 0x44ff88][Math.floor(Math.random() * 4)];
-                        const shardMaterial = new THREE.MeshLambertMaterial({
+                        const shardMaterial = getMaterial('lambert', {
                             color: shardColor,
                             emissive: shardColor,
                             emissiveIntensity: 0.6,
@@ -272,8 +272,8 @@
                         shardGroup.add(shard);
                         
                         // Inner glow core
-                        const coreGeometry = new THREE.SphereGeometry(0.12, 8, 8);
-                        const coreMaterial = new THREE.MeshBasicMaterial({
+                        const coreGeometry = getGeometry('sphere', 0.12, 8, 8);
+                        const coreMaterial = getMaterial('basic', {
                             color: 0xffffff,
                             transparent: true,
                             opacity: 0.5
@@ -282,8 +282,8 @@
                         shardGroup.add(core);
                         
                         // Trailing sparkle particles
-                        const sparkleGeometry = new THREE.SphereGeometry(0.05, 6, 6);
-                        const sparkleMaterial = new THREE.MeshBasicMaterial({
+                        const sparkleGeometry = getGeometry('sphere', 0.05, 6, 6);
+                        const sparkleMaterial = getMaterial('basic', {
                             color: shardColor,
                             transparent: true,
                             opacity: 0.7
@@ -307,8 +307,8 @@
                         const packetGroup = new THREE.Group();
                         
                         // Glowing cube core (data packet)
-                        const cubeGeometry = new THREE.BoxGeometry(0.35, 0.35, 0.35);
-                        const cubeMaterial = new THREE.MeshBasicMaterial({ 
+                        const cubeGeometry = getGeometry('box', 0.35, 0.35, 0.35);
+                        const cubeMaterial = getMaterial('basic', { 
                             color: 0xFF0066,
                             transparent: true,
                             opacity: 0.9
@@ -317,8 +317,8 @@
                         packetGroup.add(cube);
                         
                         // Wireframe outline
-                        const wireGeometry = new THREE.BoxGeometry(0.4, 0.4, 0.4);
-                        const wireMaterial = new THREE.MeshBasicMaterial({ 
+                        const wireGeometry = getGeometry('box', 0.4, 0.4, 0.4);
+                        const wireMaterial = getMaterial('basic', { 
                             color: 0x00FFFF,
                             wireframe: true,
                             transparent: true,
@@ -328,8 +328,8 @@
                         packetGroup.add(wireframe);
                         
                         // Outer glow
-                        const glowGeometry = new THREE.SphereGeometry(0.3, 8, 8);
-                        const glowMaterial = new THREE.MeshBasicMaterial({ 
+                        const glowGeometry = getGeometry('sphere', 0.3, 8, 8);
+                        const glowMaterial = getMaterial('basic', { 
                             color: 0xFF00FF,
                             transparent: true,
                             opacity: 0.3
@@ -343,8 +343,8 @@
                         arrowMesh = packetGroup;
                     } else if (G.waterTheme) {
                         // Ink ball for octopus guardians
-                        const inkGeometry = new THREE.SphereGeometry(0.3, 12, 12);
-                        const inkMaterial = new THREE.MeshLambertMaterial({ color: 0x000000 });
+                        const inkGeometry = getGeometry('sphere', 0.3, 12, 12);
+                        const inkMaterial = getMaterial('lambert', { color: 0x000000 });
                         arrowMesh = new THREE.Mesh(inkGeometry, inkMaterial);
                         arrowMesh.position.copy(gob.mesh.position);
                         arrowMesh.position.y += 1.2;
@@ -354,8 +354,8 @@
                         const ghostGroup = new THREE.Group();
                         
                         // Mini ghost body (inverted cone)
-                        const bodyGeometry = new THREE.ConeGeometry(0.25, 0.5, 8);
-                        const bodyMaterial = new THREE.MeshPhongMaterial({ 
+                        const bodyGeometry = getGeometry('cone', 0.25, 0.5, 8);
+                        const bodyMaterial = getMaterial('phong', { 
                             color: 0x88aacc,
                             transparent: true,
                             opacity: 0.7,
@@ -367,14 +367,14 @@
                         ghostGroup.add(body);
                         
                         // Mini ghost head
-                        const headGeometry = new THREE.SphereGeometry(0.15, 8, 8);
+                        const headGeometry = getGeometry('sphere', 0.15, 8, 8);
                         const head = new THREE.Mesh(headGeometry, bodyMaterial);
                         head.position.y = 0.3;
                         ghostGroup.add(head);
                         
                         // Tiny eyes (black dots)
-                        const eyeGeometry = new THREE.SphereGeometry(0.04, 6, 6);
-                        const eyeMaterial = new THREE.MeshBasicMaterial({ color: 0x000000 });
+                        const eyeGeometry = getGeometry('sphere', 0.04, 6, 6);
+                        const eyeMaterial = getMaterial('basic', { color: 0x000000 });
                         const leftEye = new THREE.Mesh(eyeGeometry, eyeMaterial);
                         leftEye.position.set(-0.06, 0.32, 0.12);
                         ghostGroup.add(leftEye);
@@ -391,15 +391,15 @@
                         const pineGroup = new THREE.Group();
                         
                         // Pine cone body (oval shape made from cone)
-                        const coneGeometry = new THREE.ConeGeometry(0.2, 0.5, 8);
-                        const coneMaterial = new THREE.MeshLambertMaterial({ color: 0x5D4037 }); // Brown
+                        const coneGeometry = getGeometry('cone', 0.2, 0.5, 8);
+                        const coneMaterial = getMaterial('lambert', { color: 0x5D4037 }); // Brown
                         const coneBody = new THREE.Mesh(coneGeometry, coneMaterial);
                         coneBody.rotation.x = Math.PI; // Point down
                         pineGroup.add(coneBody);
                         
                         // Pine cone scales (small overlapping pieces)
-                        const scaleGeometry = new THREE.ConeGeometry(0.08, 0.12, 6);
-                        const scaleMaterial = new THREE.MeshLambertMaterial({ color: 0x795548 });
+                        const scaleGeometry = getGeometry('cone', 0.08, 0.12, 6);
+                        const scaleMaterial = getMaterial('lambert', { color: 0x795548 });
                         for (let ring = 0; ring < 3; ring++) {
                             const scalesInRing = 6;
                             for (let s = 0; s < scalesInRing; s++) {
@@ -417,8 +417,8 @@
                         }
                         
                         // Green magic glow trail
-                        const glowGeometry = new THREE.SphereGeometry(0.15, 8, 8);
-                        const glowMaterial = new THREE.MeshBasicMaterial({ 
+                        const glowGeometry = getGeometry('sphere', 0.15, 8, 8);
+                        const glowMaterial = getMaterial('basic', { 
                             color: 0x228B22,
                             transparent: true,
                             opacity: 0.4
@@ -433,15 +433,15 @@
                         arrowMesh = pineGroup;
                     } else {
                         // Regular arrow
-                        const arrowGeometry = new THREE.CylinderGeometry(0.05, 0.05, 0.8, 8);
-                        const arrowMaterial = new THREE.MeshLambertMaterial({ color: 0x8B4513 });
+                        const arrowGeometry = getGeometry('cylinder', 0.05, 0.05, 0.8, 8);
+                        const arrowMaterial = getMaterial('lambert', { color: 0x8B4513 });
                         arrowMesh = new THREE.Mesh(arrowGeometry, arrowMaterial);
                         arrowMesh.position.copy(gob.mesh.position);
                         arrowMesh.position.y += 1.5;
                         G.scene.add(arrowMesh);
                         
-                        const tipGeometry = new THREE.ConeGeometry(0.1, 0.2, 8);
-                        const tipMaterial = new THREE.MeshLambertMaterial({ color: 0x696969 });
+                        const tipGeometry = getGeometry('cone', 0.1, 0.2, 8);
+                        const tipMaterial = getMaterial('lambert', { color: 0x696969 });
                         const tipMesh = new THREE.Mesh(tipGeometry, tipMaterial);
                         tipMesh.position.y = 0.5;
                         arrowMesh.add(tipMesh);
@@ -474,7 +474,8 @@
                     G.guardianArrows.push({
                         mesh: arrowMesh,
                         velocity: direction.multiplyScalar(arrowSpeed * speedMultiplier),
-                        radius: 0.3
+                        radius: 0.3,
+                        startPos: { x: arrowMesh.position.x, z: arrowMesh.position.z }
                     });
                 }
             }
@@ -490,21 +491,21 @@
                     const arrowGroup = new THREE.Group();
                     
                     // Arrow shaft (bone color)
-                    const shaftGeometry = new THREE.CylinderGeometry(0.04, 0.04, 0.7, 6);
-                    const shaftMaterial = new THREE.MeshLambertMaterial({ color: 0xe8e0d0 });
+                    const shaftGeometry = getGeometry('cylinder', 0.04, 0.04, 0.7, 6);
+                    const shaftMaterial = getMaterial('lambert', { color: 0xe8e0d0 });
                     const shaft = new THREE.Mesh(shaftGeometry, shaftMaterial);
                     arrowGroup.add(shaft);
                     
                     // Arrow tip (dark bone)
-                    const tipGeometry = new THREE.ConeGeometry(0.08, 0.2, 6);
-                    const tipMaterial = new THREE.MeshLambertMaterial({ color: 0x4a4a4a });
+                    const tipGeometry = getGeometry('cone', 0.08, 0.2, 6);
+                    const tipMaterial = getMaterial('lambert', { color: 0x4a4a4a });
                     const tip = new THREE.Mesh(tipGeometry, tipMaterial);
                     tip.position.y = 0.45;
                     arrowGroup.add(tip);
                     
                     // Feather fletching (dark red)
-                    const fletchGeometry = new THREE.BoxGeometry(0.15, 0.12, 0.02);
-                    const fletchMaterial = new THREE.MeshLambertMaterial({ color: 0x8B0000 });
+                    const fletchGeometry = getGeometry('box', 0.15, 0.12, 0.02);
+                    const fletchMaterial = getMaterial('lambert', { color: 0x8B0000 });
                     const fletch1 = new THREE.Mesh(fletchGeometry, fletchMaterial);
                     fletch1.position.set(0, -0.3, 0.05);
                     fletch1.rotation.z = 0.3;
@@ -538,7 +539,8 @@
                     G.guardianArrows.push({
                         mesh: arrowGroup,
                         velocity: direction.multiplyScalar(arrowSpeed * speedMultiplier),
-                        radius: 0.3
+                        radius: 0.3,
+                        startPos: { x: arrowGroup.position.x, z: arrowGroup.position.z }
                     });
                 }
             }
@@ -827,9 +829,17 @@
                         }
                         const halfW = wallWidth / 2;
                         const halfD = wallDepth / 2;
-                        const dx = Math.abs(arrow.mesh.position.x - mtn.x);
-                        const dz = Math.abs(arrow.mesh.position.z - mtn.z);
-                        if (dx < halfW && dz < halfD && arrow.mesh.position.y < (mtn.height || 15)) {
+                        let dx = arrow.mesh.position.x - mtn.x;
+                        let dz = arrow.mesh.position.z - mtn.z;
+                        if (mtn.rotation) {
+                            const cos = Math.cos(-mtn.rotation);
+                            const sin = Math.sin(-mtn.rotation);
+                            const lx = dx * cos - dz * sin;
+                            const lz = dx * sin + dz * cos;
+                            dx = lx;
+                            dz = lz;
+                        }
+                        if (Math.abs(dx) < halfW && Math.abs(dz) < halfD && arrow.mesh.position.y < (mtn.height || 15)) {
                             hitObstacle = true;
                             break;
                         }
@@ -853,12 +863,12 @@
                 continue;
             }
             
-            // Remove arrows that travel too far
-            const distFromOrigin = Math.sqrt(
-                arrow.mesh.position.x * arrow.mesh.position.x +
-                arrow.mesh.position.z * arrow.mesh.position.z
-            );
-            if (distFromOrigin > GAME_CONFIG.WORLD_BOUND) {
+            // Remove arrows that travel too far from their origin
+            const distFromStart = arrow.startPos ? Math.sqrt(
+                Math.pow(arrow.mesh.position.x - arrow.startPos.x, 2) +
+                Math.pow(arrow.mesh.position.z - arrow.startPos.z, 2)
+            ) : 0;
+            if (distFromStart > 80) { // Max arrow travel distance
                 G.scene.remove(arrow.mesh);
                 G.guardianArrows.splice(i, 1);
             }
@@ -950,8 +960,8 @@
                     const bombGroup = new THREE.Group();
                     
                     // Core cube
-                    const cubeGeometry = new THREE.BoxGeometry(0.35, 0.35, 0.35);
-                    const cubeMaterial = new THREE.MeshBasicMaterial({ 
+                    const cubeGeometry = getGeometry('box', 0.35, 0.35, 0.35);
+                    const cubeMaterial = getMaterial('basic', { 
                         color: 0xFF0000,
                         transparent: true,
                         opacity: 0.9
@@ -960,8 +970,8 @@
                     bombGroup.add(cube);
                     
                     // Wireframe shell
-                    const shellGeometry = new THREE.OctahedronGeometry(0.35, 0);
-                    const shellMaterial = new THREE.MeshBasicMaterial({ 
+                    const shellGeometry = getGeometry('octahedron', 0.35, 0);
+                    const shellMaterial = getMaterial('basic', { 
                         color: 0x00FFFF,
                         wireframe: true,
                         transparent: true,
@@ -971,8 +981,8 @@
                     bombGroup.add(shell);
                     
                     // Blinking warning light
-                    const lightGeometry = new THREE.SphereGeometry(0.1, 8, 8);
-                    const lightMaterial = new THREE.MeshBasicMaterial({ 
+                    const lightGeometry = getGeometry('sphere', 0.1, 8, 8);
+                    const lightMaterial = getMaterial('basic', { 
                         color: 0xFFFF00,
                         transparent: true,
                         opacity: 0.9
@@ -985,8 +995,8 @@
                     G.scene.add(bombGroup);
                     bombMesh = bombGroup;
                 } else {
-                    const bombGeometry = new THREE.SphereGeometry(0.3, 8, 8);
-                    const bombMaterial = new THREE.MeshLambertMaterial({ color: 0x000000 });
+                    const bombGeometry = getGeometry('sphere', 0.3, 8, 8);
+                    const bombMaterial = getMaterial('lambert', { color: 0x000000 });
                     bombMesh = new THREE.Mesh(bombGeometry, bombMaterial);
                     bombMesh.position.copy(bird.mesh.position);
                     bombMesh.castShadow = true;
@@ -1133,8 +1143,8 @@
                 ship.fireInterval = 800 + Math.random() * 700;  // Fast firing rate (0.8-1.5s)
 
                 // Create cannonball aimed at player
-                const cannonballGeometry = new THREE.SphereGeometry(0.5, 8, 8);
-                const cannonballMaterial = new THREE.MeshLambertMaterial({ color: 0x222222 });
+                const cannonballGeometry = getGeometry('sphere', 0.5, 8, 8);
+                const cannonballMaterial = getMaterial('lambert', { color: 0x222222 });
                 const cannonball = new THREE.Mesh(cannonballGeometry, cannonballMaterial);
 
                 // Fire from the side facing the player

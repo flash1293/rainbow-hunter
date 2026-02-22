@@ -14,8 +14,8 @@
         const darkCrystal = 0x3a2a5a;       // Core/joints
 
         // Chunky torso made of crystal formations
-        const torsoGeometry = new THREE.BoxGeometry(0.7, 0.7, 0.5);
-        const torsoMaterial = new THREE.MeshLambertMaterial({ 
+        const torsoGeometry = getGeometry('box', 0.7, 0.7, 0.5);
+        const torsoMaterial = getMaterial('lambert', { 
             color: crystalPurple,
             emissive: crystalPurple,
             emissiveIntensity: 0.15
@@ -28,8 +28,8 @@
         group.add(torso);
 
         // Crystal protrusions on torso
-        const protrusionGeometry = new THREE.ConeGeometry(0.12, 0.35, 5);
-        const protrusionMaterial = new THREE.MeshLambertMaterial({ 
+        const protrusionGeometry = getGeometry('cone', 0.12, 0.35, 5);
+        const protrusionMaterial = getMaterial('lambert', { 
             color: crystalPink,
             emissive: crystalPink,
             emissiveIntensity: 0.2
@@ -47,8 +47,8 @@
         });
 
         // Angular head (faceted crystal shape)
-        const headGeometry = new THREE.OctahedronGeometry(0.35, 0);
-        const headMaterial = new THREE.MeshLambertMaterial({ 
+        const headGeometry = getGeometry('octahedron', 0.35, 0);
+        const headMaterial = getMaterial('lambert', { 
             color: crystalPurple,
             emissive: crystalPurple,
             emissiveIntensity: 0.2
@@ -61,10 +61,10 @@
         group.add(head);
 
         // Glowing crystal eyes
-        const eyeMaterial = new THREE.MeshBasicMaterial({ 
+        const eyeMaterial = getMaterial('basic', { 
             color: crystalBlue
         });
-        const eyeGeometry = new THREE.OctahedronGeometry(0.08, 0);
+        const eyeGeometry = getGeometry('octahedron', 0.08, 0);
         [-0.12, 0.12].forEach(x => {
             const eye = new THREE.Mesh(eyeGeometry, eyeMaterial);
             eye.position.set(x, 1.48, 0.28);
@@ -73,8 +73,8 @@
         });
 
         // Crystal spike crown on head
-        const spikeGeometry = new THREE.ConeGeometry(0.06, 0.25, 4);
-        const spikeMaterial = new THREE.MeshLambertMaterial({ 
+        const spikeGeometry = getGeometry('cone', 0.06, 0.25, 4);
+        const spikeMaterial = getMaterial('lambert', { 
             color: crystalPink,
             emissive: crystalPink,
             emissiveIntensity: 0.25
@@ -92,8 +92,8 @@
         });
 
         // Arms - chunky crystal formations
-        const armGeometry = new THREE.BoxGeometry(0.25, 0.5, 0.2);
-        const armMaterial = new THREE.MeshLambertMaterial({ 
+        const armGeometry = getGeometry('box', 0.25, 0.5, 0.2);
+        const armMaterial = getMaterial('lambert', { 
             color: darkCrystal,
             emissive: crystalPurple,
             emissiveIntensity: 0.1
@@ -107,8 +107,8 @@
         });
 
         // Crystal claw hands
-        const clawGeometry = new THREE.ConeGeometry(0.06, 0.3, 4);
-        const clawMaterial = new THREE.MeshLambertMaterial({ 
+        const clawGeometry = getGeometry('cone', 0.06, 0.3, 4);
+        const clawMaterial = getMaterial('lambert', { 
             color: crystalGreen,
             emissive: crystalGreen,
             emissiveIntensity: 0.3
@@ -131,8 +131,8 @@
         });
 
         // Stumpy crystal legs
-        const legGeometry = new THREE.BoxGeometry(0.25, 0.4, 0.25);
-        const legMaterial = new THREE.MeshLambertMaterial({ 
+        const legGeometry = getGeometry('box', 0.25, 0.4, 0.25);
+        const legMaterial = getMaterial('lambert', { 
             color: darkCrystal,
             emissive: crystalPurple,
             emissiveIntensity: 0.1
@@ -145,8 +145,8 @@
         });
 
         // Crystal feet
-        const footGeometry = new THREE.OctahedronGeometry(0.15, 0);
-        const footMaterial = new THREE.MeshLambertMaterial({ 
+        const footGeometry = getGeometry('octahedron', 0.15, 0);
+        const footMaterial = getMaterial('lambert', { 
             color: crystalPurple,
             emissive: crystalPurple,
             emissiveIntensity: 0.15
@@ -160,8 +160,8 @@
         });
 
         // Inner glow effect
-        const glowGeometry = new THREE.SphereGeometry(0.5, 12, 12);
-        const glowMaterial = new THREE.MeshBasicMaterial({ 
+        const glowGeometry = getGeometry('sphere', 0.5, 12, 12);
+        const glowMaterial = getMaterial('basic', { 
             color: crystalBlue, 
             transparent: true, 
             opacity: 0.15 

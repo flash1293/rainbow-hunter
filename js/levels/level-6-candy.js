@@ -270,14 +270,8 @@ LEVEL_REGISTRY.register(6, {
         { x: -65, z: -130 }, { x: 70, z: -160 }
     ],
     
-    // Candy walls create maze-like structure
+    // Candy walls create maze-like structure (no boundary walls - infinite world extends beyond)
     canyonWalls: [
-        // Boundary walls
-        { x: 0, z: 200, width: 250, depth: 10, height: 15, rotation: 0 },
-        { x: 0, z: -220, width: 250, depth: 10, height: 15, rotation: 0 },
-        { x: -120, z: 0, width: 10, depth: 430, height: 15, rotation: 0 },
-        { x: 120, z: 0, width: 10, depth: 430, height: 15, rotation: 0 },
-        
         // Internal candy walls
         { x: 0, z: 140, width: 80, depth: 8, height: 12, rotation: 0 },
         { x: -60, z: 100, width: 70, depth: 8, height: 12, rotation: 0 },

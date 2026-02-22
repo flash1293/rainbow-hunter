@@ -12,8 +12,8 @@
         const crystalDark = 0x8822aa;
         
         // Crystal robe body - faceted like a gem
-        const bodyGeometry = new THREE.CylinderGeometry(0.5, 0.9, 2.5, 6);
-        const bodyMaterial = new THREE.MeshLambertMaterial({ 
+        const bodyGeometry = getGeometry('cylinder', 0.5, 0.9, 2.5, 6);
+        const bodyMaterial = getMaterial('lambert', { 
             color: crystalPink,
             transparent: true,
             opacity: 0.85
@@ -25,8 +25,8 @@
         group.add(body);
         
         // Inner robe glow
-        const innerGlowGeometry = new THREE.CylinderGeometry(0.35, 0.7, 2.3, 6);
-        const innerGlowMaterial = new THREE.MeshBasicMaterial({ 
+        const innerGlowGeometry = getGeometry('cylinder', 0.35, 0.7, 2.3, 6);
+        const innerGlowMaterial = getMaterial('basic', { 
             color: crystalGlow,
             transparent: true,
             opacity: 0.4
@@ -36,8 +36,8 @@
         group.add(innerGlow);
         
         // Crystal collar/trim
-        const collarGeometry = new THREE.TorusGeometry(0.55, 0.12, 6, 6);
-        const collarMaterial = new THREE.MeshLambertMaterial({ 
+        const collarGeometry = getGeometry('torus', 0.55, 0.12, 6, 6);
+        const collarMaterial = getMaterial('lambert', { 
             color: crystalPurple,
             transparent: true,
             opacity: 0.9
@@ -49,8 +49,8 @@
         group.add(collar);
         
         // Head - octahedron for crystal feel
-        const headGeometry = new THREE.OctahedronGeometry(0.55, 0);
-        const headMaterial = new THREE.MeshLambertMaterial({ 
+        const headGeometry = getGeometry('octahedron', 0.55, 0);
+        const headMaterial = getMaterial('lambert', { 
             color: 0xffccee,
             transparent: true,
             opacity: 0.9
@@ -63,8 +63,8 @@
         group.add(head);
         
         // Crystal wizard hat - pointed cone with facets
-        const hatGeometry = new THREE.ConeGeometry(0.65, 1.6, 6);
-        const hatMaterial = new THREE.MeshLambertMaterial({ 
+        const hatGeometry = getGeometry('cone', 0.65, 1.6, 6);
+        const hatMaterial = getMaterial('lambert', { 
             color: crystalDark,
             transparent: true,
             opacity: 0.85
@@ -75,8 +75,8 @@
         group.add(hat);
         
         // Hat inner glow
-        const hatGlowGeometry = new THREE.ConeGeometry(0.45, 1.4, 6);
-        const hatGlowMaterial = new THREE.MeshBasicMaterial({ 
+        const hatGlowGeometry = getGeometry('cone', 0.45, 1.4, 6);
+        const hatGlowMaterial = getMaterial('basic', { 
             color: crystalPink,
             transparent: true,
             opacity: 0.3
@@ -86,8 +86,8 @@
         group.add(hatGlow);
         
         // Crystal brim - hexagonal
-        const brimGeometry = new THREE.TorusGeometry(0.7, 0.12, 6, 6);
-        const brimMaterial = new THREE.MeshLambertMaterial({ 
+        const brimGeometry = getGeometry('torus', 0.7, 0.12, 6, 6);
+        const brimMaterial = getMaterial('lambert', { 
             color: crystalPink,
             transparent: true,
             opacity: 0.85
@@ -102,8 +102,8 @@
         for (let i = 0; i < 4; i++) {
             const angle = (i / 4) * Math.PI * 2;
             const spike = new THREE.Mesh(
-                new THREE.ConeGeometry(0.08, 0.35, 4),
-                new THREE.MeshLambertMaterial({ 
+                getGeometry('cone', 0.08, 0.35, 4),
+                getMaterial('lambert', { 
                     color: crystalGlow,
                     transparent: true,
                     opacity: 0.8
@@ -121,8 +121,8 @@
         }
         
         // Glowing gem eyes
-        const eyeMaterial = new THREE.MeshBasicMaterial({ color: 0x00ffff });
-        const eyeGeometry = new THREE.OctahedronGeometry(0.1, 0);
+        const eyeMaterial = getMaterial('basic', { color: 0x00ffff });
+        const eyeGeometry = getGeometry('octahedron', 0.1, 0);
         [-0.2, 0.2].forEach(x => {
             const eye = new THREE.Mesh(eyeGeometry, eyeMaterial);
             eye.position.set(x, 3.15, 0.45);
@@ -131,8 +131,8 @@
         });
         
         // Crystal staff - faceted pillar
-        const staffGeometry = new THREE.CylinderGeometry(0.06, 0.1, 3.0, 6);
-        const staffMaterial = new THREE.MeshLambertMaterial({ 
+        const staffGeometry = getGeometry('cylinder', 0.06, 0.1, 3.0, 6);
+        const staffMaterial = getMaterial('lambert', { 
             color: crystalPurple,
             transparent: true,
             opacity: 0.85
@@ -144,8 +144,8 @@
         group.add(staff);
         
         // Large gem orb on staff
-        const orbGeometry = new THREE.OctahedronGeometry(0.3, 0);
-        const orbMaterial = new THREE.MeshBasicMaterial({ 
+        const orbGeometry = getGeometry('octahedron', 0.3, 0);
+        const orbMaterial = getMaterial('basic', { 
             color: crystalPink,
             transparent: true,
             opacity: 0.9
@@ -157,8 +157,8 @@
         group.add(orb);
         
         // Outer orb glow
-        const orbGlowGeometry = new THREE.SphereGeometry(0.38, 8, 8);
-        const orbGlowMaterial = new THREE.MeshBasicMaterial({ 
+        const orbGlowGeometry = getGeometry('sphere', 0.38, 8, 8);
+        const orbGlowMaterial = getMaterial('basic', { 
             color: crystalGlow,
             transparent: true,
             opacity: 0.3
@@ -171,8 +171,8 @@
         for (let i = 0; i < 5; i++) {
             const angle = (i / 5) * Math.PI * 2;
             const shard = new THREE.Mesh(
-                new THREE.ConeGeometry(0.06, 0.22, 4),
-                new THREE.MeshBasicMaterial({ 
+                getGeometry('cone', 0.06, 0.22, 4),
+                getMaterial('basic', { 
                     color: i % 2 === 0 ? crystalPink : crystalPurple,
                     transparent: true,
                     opacity: 0.6
@@ -190,8 +190,8 @@
         
         // Gem embedded in robe
         const robeGem = new THREE.Mesh(
-            new THREE.OctahedronGeometry(0.15, 0),
-            new THREE.MeshBasicMaterial({ color: 0x00ffaa })
+            getGeometry('octahedron', 0.15, 0),
+            getMaterial('basic', { color: 0x00ffaa })
         );
         robeGem.position.set(0, 2.0, 0.85);
         robeGem.rotation.y = Math.PI / 4;

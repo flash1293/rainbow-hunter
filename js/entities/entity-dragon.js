@@ -38,15 +38,17 @@
             dragonEyeTexture = textures.dragonEye;
         }
         
+        const dragonScaleTexName = G.lavaTheme ? 'dragonScaleLava' : G.iceTheme ? 'dragonScaleIce' : G.waterTheme ? 'dragonScaleWater' : G.candyTheme ? 'dragonScaleCandy' : G.crystalTheme ? 'dragonScaleCrystal' : 'dragonScale';
+        
         // Trojan Dragon - corrupted data beast with glitch effects (wiki style)
         const trojanColor = 0x9900FF;      // Purple corruption (wiki glitchPurple)
         const dataColor = 0x00FFFF;        // Cyan data
         const darkColor = 0x110022;        // Dark corrupted core
         
         // Body - long segmented shape
-        const bodyGeometry = new THREE.CylinderGeometry(2, 2.5, 10, 12);
+        const bodyGeometry = getGeometry('cylinder', 2, 2.5, 10, 12);
         const bodyMaterial = useGlitchStyle 
-            ? new THREE.MeshPhongMaterial({
+            ? getMaterial('phong', {
                 color: darkColor,
                 emissive: trojanColor,
                 emissiveIntensity: 0.3,
@@ -54,7 +56,7 @@
                 transparent: true,
                 opacity: 0.9
             })
-            : new THREE.MeshLambertMaterial({ map: dragonScaleTexture });
+            : getTexturedMaterial('lambert', { map: dragonScaleTexture }, dragonScaleTexName);
         const body = new THREE.Mesh(bodyGeometry, bodyMaterial);
         body.rotation.z = Math.PI / 2;
         body.position.x = 5;
@@ -64,12 +66,12 @@
         // Add glitch effect fragments for Trojan Dragon
         if (useGlitchStyle) {
             for (let i = 0; i < 12; i++) {
-                const glitchGeometry = new THREE.BoxGeometry(
+                const glitchGeometry = getGeometry('box',
                     0.3 + Math.random() * 0.5,
                     0.1 + Math.random() * 0.3,
                     0.3 + Math.random() * 0.5
                 );
-                const glitchMaterial = new THREE.MeshBasicMaterial({
+                const glitchMaterial = getMaterial('basic', {
                     color: Math.random() > 0.5 ? trojanColor : dataColor,
                     transparent: true,
                     opacity: 0.6 + Math.random() * 0.4
@@ -87,14 +89,14 @@
         
         // Body scales
         for (let i = 0; i < 8; i++) {
-            const scaleGeometry = new THREE.ConeGeometry(0.6, 1.2, 6);
+            const scaleGeometry = getGeometry('cone', 0.6, 1.2, 6);
             const scaleMaterial = useGlitchStyle
-                ? new THREE.MeshPhongMaterial({
+                ? getMaterial('phong', {
                     color: darkColor,
                     emissive: i % 2 === 0 ? trojanColor : dataColor,
                     emissiveIntensity: 0.5
                 })
-                : new THREE.MeshLambertMaterial({ map: dragonScaleTexture });
+                : getTexturedMaterial('lambert', { map: dragonScaleTexture }, dragonScaleTexName);
             const scale = new THREE.Mesh(scaleGeometry, scaleMaterial);
             scale.position.set(i * 1.2, 2.8, 0);
             scale.rotation.z = 0;
@@ -103,7 +105,7 @@
         }
         
         // Neck
-        const neckGeometry = new THREE.CylinderGeometry(1.8, 2, 4, 8);
+        const neckGeometry = getGeometry('cylinder', 1.8, 2, 4, 8);
         const neck = new THREE.Mesh(neckGeometry, bodyMaterial);
         neck.rotation.z = Math.PI / 2;
         neck.position.x = 10;
@@ -112,15 +114,15 @@
         dragonGroup.add(neck);
         
         // Head - large diamond shape
-        const headGeometry = new THREE.ConeGeometry(2.5, 5, 8);
+        const headGeometry = getGeometry('cone', 2.5, 5, 8);
         const headMaterial = useGlitchStyle
-            ? new THREE.MeshPhongMaterial({
+            ? getMaterial('phong', {
                 color: darkColor,
                 emissive: trojanColor,
                 emissiveIntensity: 0.4,
                 shininess: 60
             })
-            : new THREE.MeshLambertMaterial({ map: dragonScaleTexture });
+            : getTexturedMaterial('lambert', { map: dragonScaleTexture }, dragonScaleTexName);
         const head = new THREE.Mesh(headGeometry, headMaterial);
         head.rotation.z = -Math.PI / 2;
         head.position.x = 13;
@@ -129,7 +131,7 @@
         dragonGroup.add(head);
         
         // Jaw
-        const jawGeometry = new THREE.BoxGeometry(2, 1.5, 2);
+        const jawGeometry = getGeometry('box', 2, 1.5, 2);
         const jaw = new THREE.Mesh(jawGeometry, headMaterial);
         jaw.position.set(14, 0.5, 0);
         jaw.castShadow = true;
@@ -137,8 +139,8 @@
         
         // Teeth
         for (let i = 0; i < 6; i++) {
-            const toothGeometry = new THREE.ConeGeometry(0.15, 0.6, 4);
-            const toothMaterial = new THREE.MeshLambertMaterial({ color: 0xFFFFFF });
+            const toothGeometry = getGeometry('cone', 0.15, 0.6, 4);
+            const toothMaterial = getMaterial('lambert', { color: 0xFFFFFF });
             const tooth = new THREE.Mesh(toothGeometry, toothMaterial);
             tooth.position.set(14 + (i % 2) * 0.5, 1.2, -1 + i * 0.4);
             tooth.rotation.z = Math.PI;
@@ -146,9 +148,9 @@
         }
         
         // Eyes - glowing with texture and sprite glow
-        const eyeGeometry = new THREE.SphereGeometry(0.6, 16, 16);
+        const eyeGeometry = getGeometry('sphere', 0.6, 16, 16);
         const eyeMaterial = useGlitchStyle
-            ? new THREE.MeshBasicMaterial({ 
+            ? getMaterial('basic', { 
                 color: 0xFF0000,
                 transparent: true,
                 blending: THREE.AdditiveBlending,
@@ -169,9 +171,9 @@
         dragonGroup.add(rightEye);
         
         // Eye glow sprites - larger and brighter
-        const eyeGlowGeometry = new THREE.PlaneGeometry(2.5, 2.5);
+        const eyeGlowGeometry = getGeometry('plane', 2.5, 2.5);
         const eyeGlowMaterial = useGlitchStyle
-            ? new THREE.MeshBasicMaterial({
+            ? getMaterial('basic', {
                 color: 0xFF0000,
                 transparent: true,
                 opacity: 0.7,
@@ -228,7 +230,7 @@
         // Tail segments
         const tailSegments = [];
         for (let i = 0; i < 3; i++) {
-            const segmentGeometry = new THREE.CylinderGeometry(1.5 - i * 0.3, 1.8 - i * 0.3, 3, 8);
+            const segmentGeometry = getGeometry('cylinder', 1.5 - i * 0.3, 1.8 - i * 0.3, 3, 8);
             const segment = new THREE.Mesh(segmentGeometry, bodyMaterial);
             segment.rotation.z = Math.PI / 2;
             segment.position.x = -3 - i * 2.5;
@@ -240,8 +242,8 @@
         
         // Tail spikes
         for (let i = 0; i < 10; i++) {
-            const spikeGeometry = new THREE.ConeGeometry(0.3, 1, 6);
-            const spikeMaterial = new THREE.MeshLambertMaterial({ map: dragonScaleTexture });
+            const spikeGeometry = getGeometry('cone', 0.3, 1, 6);
+            const spikeMaterial = getTexturedMaterial('lambert', { map: dragonScaleTexture }, dragonScaleTexName);
             const spike = new THREE.Mesh(spikeGeometry, spikeMaterial);
             spike.position.set(-i * 0.8, 2.5, 0);
             spike.rotation.z = Math.PI;
@@ -250,8 +252,8 @@
         }
         
         // Horns - larger and more imposing
-        const hornGeometry = new THREE.ConeGeometry(0.5, 2.5, 6);
-        const hornMaterial = new THREE.MeshLambertMaterial({ color: 0x2F2F2F });
+        const hornGeometry = getGeometry('cone', 0.5, 2.5, 6);
+        const hornMaterial = getMaterial('lambert', { color: 0x2F2F2F });
         
         const leftHorn = new THREE.Mesh(hornGeometry, hornMaterial);
         leftHorn.position.set(12.5, 4, 1.5);
@@ -268,8 +270,8 @@
         dragonGroup.add(rightHorn);
         
         // Chest/belly - lighter color
-        const bellyGeometry = new THREE.CylinderGeometry(1.8, 2.2, 8, 12);
-        const bellyMaterial = new THREE.MeshLambertMaterial({ map: textures.dragonBelly });
+        const bellyGeometry = getGeometry('cylinder', 1.8, 2.2, 8, 12);
+        const bellyMaterial = getTexturedMaterial('lambert', { map: textures.dragonBelly }, 'dragonBelly');
         const belly = new THREE.Mesh(bellyGeometry, bellyMaterial);
         belly.rotation.z = Math.PI / 2;
         belly.position.x = 5;

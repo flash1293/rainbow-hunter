@@ -17,8 +17,8 @@
         const crystalWhite = 0xeeddff;       // Belly/teeth
         
         // Long segmented body - crystalline form
-        const bodyGeometry = new THREE.CylinderGeometry(2.2, 2.8, 12, 8);
-        const bodyMaterial = new THREE.MeshLambertMaterial({ 
+        const bodyGeometry = getGeometry('cylinder', 2.2, 2.8, 12, 8);
+        const bodyMaterial = getMaterial('lambert', { 
             color: crystalPurple,
             emissive: crystalPurple,
             emissiveIntensity: 0.15
@@ -31,8 +31,8 @@
         innerGroup.add(body);
         
         // Crystal scales/spines along body
-        const scaleGeometry = new THREE.OctahedronGeometry(0.8, 0);
-        const scaleMaterial = new THREE.MeshLambertMaterial({ 
+        const scaleGeometry = getGeometry('octahedron', 0.8, 0);
+        const scaleMaterial = getMaterial('lambert', { 
             color: crystalPink,
             emissive: crystalPink,
             emissiveIntensity: 0.25
@@ -47,8 +47,8 @@
         }
         
         // Neck - angular crystal formation
-        const neckGeometry = new THREE.CylinderGeometry(1.8, 2.2, 5, 6);
-        const neckMaterial = new THREE.MeshLambertMaterial({ 
+        const neckGeometry = getGeometry('cylinder', 1.8, 2.2, 5, 6);
+        const neckMaterial = getMaterial('lambert', { 
             color: deepPurple,
             emissive: crystalPurple,
             emissiveIntensity: 0.1
@@ -61,8 +61,8 @@
         innerGroup.add(neck);
         
         // Head - large faceted crystal
-        const headGeometry = new THREE.OctahedronGeometry(3, 0);
-        const headMaterial = new THREE.MeshLambertMaterial({ 
+        const headGeometry = getGeometry('octahedron', 3, 0);
+        const headMaterial = getMaterial('lambert', { 
             color: crystalPurple,
             emissive: crystalPurple,
             emissiveIntensity: 0.2
@@ -78,7 +78,7 @@
         innerGroup.add(head);
         
         // Jaw - angular crystal
-        const jawGeometry = new THREE.OctahedronGeometry(1.5, 0);
+        const jawGeometry = getGeometry('octahedron', 1.5, 0);
         const jaw = new THREE.Mesh(jawGeometry, headMaterial);
         jaw.position.set(17, 1.5, 0);
         jaw.rotation.y = Math.PI / 4;
@@ -87,8 +87,8 @@
         innerGroup.add(jaw);
         
         // Crystal fangs/teeth
-        const toothGeometry = new THREE.ConeGeometry(0.2, 0.8, 4);
-        const toothMaterial = new THREE.MeshLambertMaterial({ 
+        const toothGeometry = getGeometry('cone', 0.2, 0.8, 4);
+        const toothMaterial = getMaterial('lambert', { 
             color: crystalWhite,
             emissive: crystalBlue,
             emissiveIntensity: 0.3
@@ -102,8 +102,8 @@
         }
         
         // Glowing crystal eyes
-        const eyeGeometry = new THREE.OctahedronGeometry(0.8, 0);
-        const eyeMaterial = new THREE.MeshBasicMaterial({ color: crystalBlue });
+        const eyeGeometry = getGeometry('octahedron', 0.8, 0);
+        const eyeMaterial = getMaterial('basic', { color: crystalBlue });
         [-1.5, 1.5].forEach(z => {
             const eye = new THREE.Mesh(eyeGeometry, eyeMaterial);
             eye.position.set(15.5, 4, z);
@@ -112,8 +112,8 @@
             innerGroup.add(eye);
             
             // Eye glow
-            const glowGeometry = new THREE.SphereGeometry(1, 12, 12);
-            const glowMaterial = new THREE.MeshBasicMaterial({ 
+            const glowGeometry = getGeometry('sphere', 1, 12, 12);
+            const glowMaterial = getMaterial('basic', { 
                 color: crystalBlue, 
                 transparent: true, 
                 opacity: 0.3 
@@ -124,8 +124,8 @@
         });
         
         // Crystal horns
-        const hornGeometry = new THREE.ConeGeometry(0.6, 3, 5);
-        const hornMaterial = new THREE.MeshLambertMaterial({ 
+        const hornGeometry = getGeometry('cone', 0.6, 3, 5);
+        const hornMaterial = getMaterial('lambert', { 
             color: crystalPink,
             emissive: crystalPink,
             emissiveIntensity: 0.3
@@ -140,7 +140,7 @@
         });
         
         // Extra crystal crown spikes
-        const crownGeometry = new THREE.ConeGeometry(0.4, 2, 4);
+        const crownGeometry = getGeometry('cone', 0.4, 2, 4);
         [
             [14, 5.8, 0],
             [12.5, 5.3, 1],
@@ -165,7 +165,7 @@
         wingGeometry.setAttribute('position', new THREE.BufferAttribute(wingVertices, 3));
         wingGeometry.setIndex([0, 1, 2, 0, 2, 3, 0, 3, 4, 0, 4, 5]);
         wingGeometry.computeVertexNormals();
-        const wingMaterial = new THREE.MeshLambertMaterial({ 
+        const wingMaterial = getMaterial('lambert', { 
             color: lightAmethyst, 
             side: THREE.DoubleSide,
             emissive: crystalPurple,
@@ -187,7 +187,7 @@
         innerGroup.add(rightWing);
         
         // Wing crystal spikes
-        const wingSpikeGeometry = new THREE.ConeGeometry(0.3, 1.5, 4);
+        const wingSpikeGeometry = getGeometry('cone', 0.3, 1.5, 4);
         const wingSpikePositions = [
             [3, 5, 4], [3, 4.5, 7], [3, 3.5, 9],
             [3, 5, -4], [3, 4.5, -7], [3, 3.5, -9]
@@ -203,7 +203,7 @@
         // Tail segments - crystal formations
         for (let i = 0; i < 4; i++) {
             const segGeometry = new THREE.OctahedronGeometry(1.8 - i * 0.3, 0);
-            const segMaterial = new THREE.MeshLambertMaterial({ 
+            const segMaterial = getMaterial('lambert', { 
                 color: i % 2 === 0 ? crystalPurple : deepPurple,
                 emissive: crystalPurple,
                 emissiveIntensity: 0.12
@@ -219,7 +219,7 @@
         
         // Tail crystal spikes
         for (let i = 0; i < 12; i++) {
-            const spikeGeometry = new THREE.ConeGeometry(0.35, 1.2, 4);
+            const spikeGeometry = getGeometry('cone', 0.35, 1.2, 4);
             const spike = new THREE.Mesh(spikeGeometry, scaleMaterial);
             spike.position.set(-i * 0.9, 3, 0);
             spike.rotation.z = Math.PI;
@@ -228,8 +228,8 @@
         }
         
         // Tail tip - large crystal
-        const tailTipGeometry = new THREE.OctahedronGeometry(1.2, 0);
-        const tailTipMaterial = new THREE.MeshLambertMaterial({ 
+        const tailTipGeometry = getGeometry('octahedron', 1.2, 0);
+        const tailTipMaterial = getMaterial('lambert', { 
             color: crystalPink,
             emissive: crystalPink,
             emissiveIntensity: 0.35
@@ -242,8 +242,8 @@
         innerGroup.add(tailTip);
         
         // Crystalline belly
-        const bellyGeometry = new THREE.CylinderGeometry(2, 2.4, 10, 6);
-        const bellyMaterial = new THREE.MeshLambertMaterial({ 
+        const bellyGeometry = getGeometry('cylinder', 2, 2.4, 10, 6);
+        const bellyMaterial = getMaterial('lambert', { 
             color: lightAmethyst,
             emissive: crystalBlue,
             emissiveIntensity: 0.1
@@ -256,8 +256,8 @@
         innerGroup.add(belly);
         
         // Legs - angular crystal formations
-        const legGeometry = new THREE.BoxGeometry(1, 2.5, 1);
-        const legMaterial = new THREE.MeshLambertMaterial({ 
+        const legGeometry = getGeometry('box', 1, 2.5, 1);
+        const legMaterial = getMaterial('lambert', { 
             color: deepPurple,
             emissive: crystalPurple,
             emissiveIntensity: 0.1
@@ -272,7 +272,7 @@
             innerGroup.add(leg);
             
             // Crystal claws
-            const clawGeometry = new THREE.ConeGeometry(0.25, 0.8, 4);
+            const clawGeometry = getGeometry('cone', 0.25, 0.8, 4);
             for (let c = 0; c < 3; c++) {
                 const claw = new THREE.Mesh(clawGeometry, toothMaterial);
                 claw.position.set(x + (c - 1) * 0.3, -3, z);
@@ -283,8 +283,8 @@
         });
         
         // Inner energy core glow
-        const coreGeometry = new THREE.SphereGeometry(2, 16, 16);
-        const coreMaterial = new THREE.MeshBasicMaterial({ 
+        const coreGeometry = getGeometry('sphere', 2, 16, 16);
+        const coreMaterial = getMaterial('basic', { 
             color: crystalGreen, 
             transparent: true, 
             opacity: 0.15 
@@ -294,8 +294,8 @@
         innerGroup.add(core);
         
         // Floating crystal fragments around dragon
-        const fragmentGeometry = new THREE.OctahedronGeometry(0.4, 0);
-        const fragmentMaterial = new THREE.MeshLambertMaterial({ 
+        const fragmentGeometry = getGeometry('octahedron', 0.4, 0);
+        const fragmentMaterial = getMaterial('lambert', { 
             color: crystalPink,
             emissive: crystalPink,
             emissiveIntensity: 0.4
@@ -312,8 +312,8 @@
         });
         
         // Crystal breath energy glow (at mouth)
-        const breathGeometry = new THREE.SphereGeometry(0.8, 12, 12);
-        const breathMaterial = new THREE.MeshBasicMaterial({ 
+        const breathGeometry = getGeometry('sphere', 0.8, 12, 12);
+        const breathMaterial = getMaterial('basic', { 
             color: crystalGreen, 
             transparent: true, 
             opacity: 0.5 

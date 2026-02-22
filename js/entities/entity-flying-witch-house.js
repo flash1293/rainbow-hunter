@@ -19,7 +19,7 @@
         
         // === MAGICAL CLOUD BASE ===
         // Multiple cloud puffs supporting the house
-        const cloudMaterial = new THREE.MeshLambertMaterial({ 
+        const cloudMaterial = getMaterial('lambert', { 
             color: cloudColor,
             transparent: true,
             opacity: 0.85
@@ -53,7 +53,7 @@
         const houseDepth = 3.5;
         
         const houseGeometry = new THREE.BoxGeometry(houseWidth, houseHeight, houseDepth);
-        const houseMaterial = new THREE.MeshLambertMaterial({ color: woodColor });
+        const houseMaterial = getMaterial('lambert', { color: woodColor });
         const house = new THREE.Mesh(houseGeometry, houseMaterial);
         house.position.y = houseHeight / 2;
         house.castShadow = true;
@@ -62,7 +62,7 @@
         // Wooden planks texture (horizontal lines)
         for (let i = 0; i < 5; i++) {
             const plankGeometry = new THREE.BoxGeometry(houseWidth + 0.05, 0.08, houseDepth + 0.05);
-            const plankMaterial = new THREE.MeshLambertMaterial({ color: 0x4A3728 });
+            const plankMaterial = getMaterial('lambert', { color: 0x4A3728 });
             const plank = new THREE.Mesh(plankGeometry, plankMaterial);
             plank.position.y = 0.5 + i * 0.6;
             group.add(plank);
@@ -70,8 +70,8 @@
         
         // === POINTED WITCH ROOF ===
         // Classic crooked witch cottage roof
-        const roofGeometry = new THREE.ConeGeometry(3.5, 3, 4);
-        const roofMaterial = new THREE.MeshLambertMaterial({ color: roofColor });
+        const roofGeometry = getGeometry('cone', 3.5, 3, 4);
+        const roofMaterial = getMaterial('lambert', { color: roofColor });
         const roof = new THREE.Mesh(roofGeometry, roofMaterial);
         roof.position.y = houseHeight + 1.5;
         roof.rotation.y = Math.PI / 4; // Rotate to align with house
@@ -80,14 +80,14 @@
         
         // Roof overhang details
         const overhangGeometry = new THREE.BoxGeometry(houseWidth + 1, 0.15, houseDepth + 1);
-        const overhangMaterial = new THREE.MeshLambertMaterial({ color: roofColor });
+        const overhangMaterial = getMaterial('lambert', { color: roofColor });
         const overhang = new THREE.Mesh(overhangGeometry, overhangMaterial);
         overhang.position.y = houseHeight + 0.1;
         group.add(overhang);
         
         // === CROOKED CHIMNEY ===
-        const chimneyGeometry = new THREE.BoxGeometry(0.6, 1.5, 0.6);
-        const chimneyMaterial = new THREE.MeshLambertMaterial({ color: chimneyColor });
+        const chimneyGeometry = getGeometry('box', 0.6, 1.5, 0.6);
+        const chimneyMaterial = getMaterial('lambert', { color: chimneyColor });
         const chimney = new THREE.Mesh(chimneyGeometry, chimneyMaterial);
         chimney.position.set(1.2, houseHeight + 0.8, 0.8);
         chimney.rotation.z = 0.15; // Crooked
@@ -97,7 +97,7 @@
         // Chimney smoke (magical purple)
         for (let i = 0; i < 5; i++) {
             const smokeGeometry = new THREE.SphereGeometry(0.2 + i * 0.08, 8, 8);
-            const smokeMaterial = new THREE.MeshBasicMaterial({ 
+            const smokeMaterial = getMaterial('basic', { 
                 color: magicColor,
                 transparent: true,
                 opacity: 0.6 - i * 0.1
@@ -108,7 +108,7 @@
         }
         
         // === GLOWING WINDOWS ===
-        const windowMaterial = new THREE.MeshBasicMaterial({ 
+        const windowMaterial = getMaterial('basic', { 
             color: windowGlow,
             transparent: true,
             opacity: 0.9
@@ -117,14 +117,14 @@
         // Front windows (2)
         [-0.8, 0.8].forEach(x => {
             // Window frame
-            const frameGeometry = new THREE.BoxGeometry(0.8, 0.8, 0.1);
-            const frameMaterial = new THREE.MeshLambertMaterial({ color: 0x2D1B1B });
+            const frameGeometry = getGeometry('box', 0.8, 0.8, 0.1);
+            const frameMaterial = getMaterial('lambert', { color: 0x2D1B1B });
             const frame = new THREE.Mesh(frameGeometry, frameMaterial);
             frame.position.set(x, 1.8, houseDepth / 2 + 0.05);
             group.add(frame);
             
             // Window glow
-            const windowGeometry = new THREE.PlaneGeometry(0.6, 0.6);
+            const windowGeometry = getGeometry('plane', 0.6, 0.6);
             const window = new THREE.Mesh(windowGeometry, windowMaterial);
             window.position.set(x, 1.8, houseDepth / 2 + 0.08);
             group.add(window);
@@ -132,7 +132,7 @@
         
         // Side windows
         [-1, 1].forEach(side => {
-            const windowGeometry = new THREE.PlaneGeometry(0.5, 0.5);
+            const windowGeometry = getGeometry('plane', 0.5, 0.5);
             const window = new THREE.Mesh(windowGeometry, windowMaterial);
             window.position.set(side * (houseWidth / 2 + 0.05), 1.8, 0);
             window.rotation.y = side * Math.PI / 2;
@@ -140,15 +140,15 @@
         });
         
         // === DOOR ===
-        const doorGeometry = new THREE.BoxGeometry(0.8, 1.4, 0.15);
-        const doorMaterial = new THREE.MeshLambertMaterial({ color: 0x2D1B1B });
+        const doorGeometry = getGeometry('box', 0.8, 1.4, 0.15);
+        const doorMaterial = getMaterial('lambert', { color: 0x2D1B1B });
         const door = new THREE.Mesh(doorGeometry, doorMaterial);
         door.position.set(0, 0.7, houseDepth / 2 + 0.08);
         group.add(door);
         
         // Door handle
-        const handleGeometry = new THREE.SphereGeometry(0.08, 8, 8);
-        const handleMaterial = new THREE.MeshLambertMaterial({ color: 0xB8860B });
+        const handleGeometry = getGeometry('sphere', 0.08, 8, 8);
+        const handleMaterial = getMaterial('lambert', { color: 0xB8860B });
         const handle = new THREE.Mesh(handleGeometry, handleMaterial);
         handle.position.set(0.25, 0.7, houseDepth / 2 + 0.18);
         group.add(handle);
@@ -156,8 +156,8 @@
         // === WITCHY DECORATIONS ===
         // Hanging herbs/brooms under roof
         for (let i = 0; i < 3; i++) {
-            const herbGeometry = new THREE.CylinderGeometry(0.05, 0.15, 0.6, 6);
-            const herbMaterial = new THREE.MeshLambertMaterial({ color: 0x4A5D23 });
+            const herbGeometry = getGeometry('cylinder', 0.05, 0.15, 0.6, 6);
+            const herbMaterial = getMaterial('lambert', { color: 0x4A5D23 });
             const herb = new THREE.Mesh(herbGeometry, herbMaterial);
             herb.position.set(-1 + i, houseHeight - 0.3, houseDepth / 2 + 0.3);
             herb.rotation.x = 0.2;
@@ -166,15 +166,15 @@
         
         // Cauldron on porch
         const cauldronGeometry = new THREE.SphereGeometry(0.4, 12, 10, 0, Math.PI * 2, 0, Math.PI / 2);
-        const cauldronMaterial = new THREE.MeshLambertMaterial({ color: 0x2F2F2F });
+        const cauldronMaterial = getMaterial('lambert', { color: 0x2F2F2F });
         const cauldron = new THREE.Mesh(cauldronGeometry, cauldronMaterial);
         cauldron.position.set(-1.5, -0.1, houseDepth / 2 + 0.8);
         cauldron.rotation.x = Math.PI;
         group.add(cauldron);
         
         // Bubbling green potion
-        const potionGeometry = new THREE.CircleGeometry(0.35, 12);
-        const potionMaterial = new THREE.MeshBasicMaterial({ 
+        const potionGeometry = getGeometry('circle', 0.35, 12);
+        const potionMaterial = getMaterial('basic', { 
             color: 0x00FF44,
             transparent: true,
             opacity: 0.8
@@ -187,11 +187,11 @@
         // === MAGICAL AURA ===
         // Swirling magical particles around the house
         for (let i = 0; i < 15; i++) {
-            const particleGeometry = new THREE.SphereGeometry(0.08, 6, 6);
-            const particleMaterial = new THREE.MeshBasicMaterial({ 
+            const particleGeometry = getGeometry('sphere', 0.08, 6, 6);
+            const particleMaterial = getMaterial('basic', { 
                 color: i % 2 === 0 ? magicColor : windowGlow,
                 transparent: true,
-                opacity: 0.5 + Math.random() * 0.3
+                opacity: 0.5 + (i % 6) * 0.05
             });
             const particle = new THREE.Mesh(particleGeometry, particleMaterial);
             const angle = (i / 15) * Math.PI * 2;

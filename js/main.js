@@ -306,6 +306,14 @@ window.switchLevel = switchLevel;
 
 function initGame() {
     G = {}; // Reset game state
+    
+    // Clear material and geometry caches to free GPU memory on level transitions
+    if (typeof clearMaterialCache === 'function') {
+        clearMaterialCache();
+    }
+    if (typeof clearGeometryCache === 'function') {
+        clearGeometryCache();
+    }
 
     // Create AbortController for managing event listeners
     currentEventAbortController = new AbortController();
@@ -570,7 +578,7 @@ function initGame() {
                 
                 // Main server tower body
                 const towerGeometry = new THREE.BoxGeometry(towerWidth, towerHeight, towerDepth);
-                const towerMaterial = new THREE.MeshPhongMaterial({
+                const towerMaterial = getMaterial('phong', {
                     color: 0x050510,
                     emissive: 0x001122,
                     emissiveIntensity: 0.4,
@@ -588,7 +596,7 @@ function initGame() {
                     const stripColor = [0x00FFFF, 0xFF00FF, 0x00FF00, 0xFFFF00][i % 4];
                     
                     const stripGeometry = new THREE.BoxGeometry(0.4, towerHeight * 0.85, 0.6);
-                    const stripMaterial = new THREE.MeshBasicMaterial({ 
+                    const stripMaterial = getMaterial('basic', { 
                         color: stripColor,
                         transparent: true,
                         opacity: 0.9
@@ -602,7 +610,7 @@ function initGame() {
                 for (let h = 5; h < towerHeight; h += 8) {
                     const bandGeometry = new THREE.BoxGeometry(towerWidth * 0.95, 0.5, 0.3);
                     const bandColor = Math.random() > 0.5 ? 0x00FFFF : 0xFF00FF;
-                    const bandMaterial = new THREE.MeshBasicMaterial({
+                    const bandMaterial = getMaterial('basic', {
                         color: bandColor,
                         transparent: true,
                         opacity: 0.6
@@ -616,9 +624,9 @@ function initGame() {
                 const numLights = Math.max(6, Math.floor(towerWidth / 3));
                 for (let i = 0; i < numLights; i++) {
                     const lightX = mtn.x - towerWidth/2 + (i + 0.5) * (towerWidth / numLights);
-                    const lightGeometry = new THREE.SphereGeometry(0.4, 8, 8);
+                    const lightGeometry = getGeometry('sphere', 0.4, 8, 8);
                     const lightColor = [0xFF0000, 0x00FF00, 0x0000FF, 0xFFFF00][Math.floor(Math.random() * 4)];
-                    const lightMaterial = new THREE.MeshBasicMaterial({ 
+                    const lightMaterial = getMaterial('basic', { 
                         color: lightColor,
                         transparent: true,
                         opacity: 0.95
@@ -629,8 +637,8 @@ function initGame() {
                 }
                 
                 // Glowing antenna/spire on top
-                const spireGeometry = new THREE.CylinderGeometry(0.2, 0.5, 6, 8);
-                const spireMaterial = new THREE.MeshBasicMaterial({
+                const spireGeometry = getGeometry('cylinder', 0.2, 0.5, 6, 8);
+                const spireMaterial = getMaterial('basic', {
                     color: 0x00FFFF,
                     transparent: true,
                     opacity: 0.8
@@ -640,8 +648,8 @@ function initGame() {
                 G.scene.add(spire);
                 
                 // Antenna light beacon
-                const beaconGeometry = new THREE.SphereGeometry(0.8, 16, 16);
-                const beaconMaterial = new THREE.MeshBasicMaterial({
+                const beaconGeometry = getGeometry('sphere', 0.8, 16, 16);
+                const beaconMaterial = getMaterial('basic', {
                     color: 0xFF00FF,
                     transparent: true,
                     opacity: 0.9
@@ -653,7 +661,7 @@ function initGame() {
                 // Regular mountain cone for other themes
                 const mountainGeometry = new THREE.ConeGeometry(radius, height, 8, 4);
                 let mountainColor = G.ruinsTheme ? 0x7A8B6A : 0x6B7B5B;  // Green-gray default
-                const mountainMaterial = new THREE.MeshLambertMaterial({
+                const mountainMaterial = getMaterial('lambert', {
                     color: mountainColor,
                     emissive: 0x000000,
                     emissiveIntensity: 0
@@ -667,7 +675,7 @@ function initGame() {
                 // Snow cap on top (if tall enough)
                 if (height > 25) {
                     const capGeometry = new THREE.ConeGeometry(radius * 0.35, height * 0.25, 8);
-                    const capMaterial = new THREE.MeshLambertMaterial({
+                    const capMaterial = getMaterial('lambert', {
                         color: G.ruinsTheme ? 0xE8E4DC : 0xFFFFFF
                     });
                     const cap = new THREE.Mesh(capGeometry, capMaterial);
@@ -678,7 +686,7 @@ function initGame() {
                 // Add some trees/greenery at base
                 for (let i = 0; i < 3; i++) {
                     const treeGeometry = new THREE.ConeGeometry(2 + Math.random() * 2, 6 + Math.random() * 4, 6);
-                    const treeMaterial = new THREE.MeshLambertMaterial({
+                    const treeMaterial = getMaterial('lambert', {
                         color: 0x3A6B2A
                     });
                     const tree = new THREE.Mesh(treeGeometry, treeMaterial);
@@ -708,7 +716,7 @@ function initGame() {
 
             // Base cone
             const baseGeometry = new THREE.ConeGeometry(cliffRadius, cliffHeight * 0.6, 8, 4);
-            const baseMaterial = new THREE.MeshLambertMaterial({
+            const baseMaterial = getMaterial('lambert', {
                 color: G.waterTheme ? 0x4a4a5a : 0x6b5b4f
             });
             const base = new THREE.Mesh(baseGeometry, baseMaterial);
@@ -717,7 +725,7 @@ function initGame() {
 
             // Middle section
             const midGeometry = new THREE.ConeGeometry(cliffRadius * 0.7, cliffHeight * 0.4, 8, 3);
-            const midMaterial = new THREE.MeshLambertMaterial({
+            const midMaterial = getMaterial('lambert', {
                 color: G.waterTheme ? 0x5a5a6a : 0x7b6b5f
             });
             const mid = new THREE.Mesh(midGeometry, midMaterial);
@@ -726,7 +734,7 @@ function initGame() {
 
             // Top spire
             const topGeometry = new THREE.ConeGeometry(cliffRadius * 0.4, cliffHeight * 0.3, 6, 2);
-            const topMaterial = new THREE.MeshLambertMaterial({
+            const topMaterial = getMaterial('lambert', {
                 color: G.waterTheme ? 0x6a6a7a : 0x8b7b6f
             });
             const top = new THREE.Mesh(topGeometry, topMaterial);
@@ -736,7 +744,7 @@ function initGame() {
             // Rocky outcrops
             for (let i = 0; i < 6; i++) {
                 const rockGeometry = new THREE.DodecahedronGeometry(cliffRadius * 0.3, 0);
-                const rockMaterial = new THREE.MeshLambertMaterial({
+                const rockMaterial = getMaterial('lambert', {
                     color: G.waterTheme ? 0x3a3a4a : 0x5b4b3f
                 });
                 const rock = new THREE.Mesh(rockGeometry, rockMaterial);

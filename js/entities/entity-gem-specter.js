@@ -14,8 +14,8 @@
         const darkCore = 0x3a2a5a;          // Inner darkness
 
         // Large crystal shell encasing the specter
-        const shellGeometry = new THREE.OctahedronGeometry(0.8, 0);
-        const shellMaterial = new THREE.MeshLambertMaterial({ 
+        const shellGeometry = getGeometry('octahedron', 0.8, 0);
+        const shellMaterial = getMaterial('lambert', { 
             color: crystalPurple,
             emissive: crystalPurple,
             emissiveIntensity: 0.2,
@@ -30,8 +30,8 @@
         group.add(shell);
 
         // Inner crystal core
-        const coreGeometry = new THREE.OctahedronGeometry(0.45, 0);
-        const coreMaterial = new THREE.MeshLambertMaterial({ 
+        const coreGeometry = getGeometry('octahedron', 0.45, 0);
+        const coreMaterial = getMaterial('lambert', { 
             color: darkCore,
             emissive: crystalBlue,
             emissiveIntensity: 0.3,
@@ -46,8 +46,8 @@
         group.add(core);
 
         // Ghostly face/head inside crystal
-        const faceGeometry = new THREE.SphereGeometry(0.3, 16, 16);
-        const faceMaterial = new THREE.MeshLambertMaterial({ 
+        const faceGeometry = getGeometry('sphere', 0.3, 16, 16);
+        const faceMaterial = getMaterial('lambert', { 
             color: spectralWhite,
             emissive: crystalBlue,
             emissiveIntensity: 0.4,
@@ -61,10 +61,10 @@
         group.add(face);
 
         // Eerie glowing eyes
-        const eyeMaterial = new THREE.MeshBasicMaterial({ 
+        const eyeMaterial = getMaterial('basic', { 
             color: crystalPink
         });
-        const eyeGeometry = new THREE.SphereGeometry(0.08, 12, 12);
+        const eyeGeometry = getGeometry('sphere', 0.08, 12, 12);
         [-0.1, 0.1].forEach(x => {
             const eye = new THREE.Mesh(eyeGeometry, eyeMaterial);
             eye.position.set(x, 1.5, 0.25);
@@ -73,8 +73,8 @@
         });
 
         // Ghostly mouth (dark void)
-        const mouthGeometry = new THREE.SphereGeometry(0.06, 8, 8);
-        const mouthMaterial = new THREE.MeshBasicMaterial({ 
+        const mouthGeometry = getGeometry('sphere', 0.06, 8, 8);
+        const mouthMaterial = getMaterial('basic', { 
             color: 0x220022
         });
         const mouth = new THREE.Mesh(mouthGeometry, mouthMaterial);
@@ -83,8 +83,8 @@
         group.add(mouth);
 
         // Crystal spikes protruding from shell
-        const spikeGeometry = new THREE.ConeGeometry(0.1, 0.5, 5);
-        const spikeMaterial = new THREE.MeshLambertMaterial({ 
+        const spikeGeometry = getGeometry('cone', 0.1, 0.5, 5);
+        const spikeMaterial = getMaterial('lambert', { 
             color: crystalPink,
             emissive: crystalPink,
             emissiveIntensity: 0.25
@@ -106,8 +106,8 @@
         });
 
         // Smaller crystal accents
-        const accentGeometry = new THREE.ConeGeometry(0.06, 0.3, 4);
-        const accentMaterial = new THREE.MeshLambertMaterial({ 
+        const accentGeometry = getGeometry('cone', 0.06, 0.3, 4);
+        const accentMaterial = getMaterial('lambert', { 
             color: crystalBlue,
             emissive: crystalBlue,
             emissiveIntensity: 0.35
@@ -127,8 +127,8 @@
         });
 
         // Floating crystal shard projectiles around specter
-        const shardGeometry = new THREE.OctahedronGeometry(0.12, 0);
-        const shardMaterial = new THREE.MeshLambertMaterial({ 
+        const shardGeometry = getGeometry('octahedron', 0.12, 0);
+        const shardMaterial = getMaterial('lambert', { 
             color: crystalPink,
             emissive: crystalPink,
             emissiveIntensity: 0.4
@@ -147,8 +147,8 @@
         });
 
         // Ethereal wispy trails below
-        const wispGeometry = new THREE.ConeGeometry(0.25, 0.6, 8);
-        const wispMaterial = new THREE.MeshLambertMaterial({ 
+        const wispGeometry = getGeometry('cone', 0.25, 0.6, 8);
+        const wispMaterial = getMaterial('lambert', { 
             color: spectralWhite,
             emissive: crystalBlue,
             emissiveIntensity: 0.2,
@@ -169,8 +169,8 @@
         });
 
         // Inner glow aura
-        const glowGeometry = new THREE.SphereGeometry(0.6, 12, 12);
-        const glowMaterial = new THREE.MeshBasicMaterial({ 
+        const glowGeometry = getGeometry('sphere', 0.6, 12, 12);
+        const glowMaterial = getMaterial('basic', { 
             color: crystalBlue, 
             transparent: true, 
             opacity: 0.15 

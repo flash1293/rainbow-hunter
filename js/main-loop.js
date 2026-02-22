@@ -327,6 +327,11 @@ function initLoop() {
                 }
             });
         }
+        
+        // Reset infinite world chunks (removes all generated chunks)
+        if (typeof resetChunks === 'function') {
+            resetChunks();
+        }
     }
 
     // HUD
@@ -1463,9 +1468,19 @@ function initLoop() {
             if (!gameDead && !mathExerciseActive) {
                 updatePlayer();
                 
+                // Update infinite world chunks (generates terrain as player explores)
+                if (typeof updateChunks === 'function') {
+                    updateChunks(G.playerGroup.position.x, G.playerGroup.position.z);
+                }
+                
                 // Native splitscreen: Update player 2 movement
                 if (isNativeSplitscreen) {
                     updatePlayer2();
+                    
+                    // Update chunks for player 2 as well
+                    if (typeof updateChunks === 'function' && G.player2Group) {
+                        updateChunks(G.player2Group.position.x, G.player2Group.position.z);
+                    }
                 }
                 
                 // Camera shake when close to giant (runs every frame)
@@ -1684,7 +1699,6 @@ function initLoop() {
                     updateGuardianArrows();
                     updateMummyTornados();
                     updateLavaTrails();
-                    checkAndSpawnWildTornados();
                     updateBirds();
                     updateBombs();
                     updatePirateShips();

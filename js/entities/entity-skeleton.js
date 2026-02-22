@@ -19,9 +19,19 @@
         const boneColor = 0xE8E8D0;
         const darkBone = 0xC8C8B0;
         
+        // Use cached materials
+        const boneMaterial = getMaterial('lambert', { color: boneColor });
+        const darkBoneMaterial = getMaterial('lambert', { color: darkBone });
+        const socketMaterial = getMaterial('basic', { color: 0x1a0a0a });
+        const eyeGlowMaterial = getMaterial('basic', { color: 0x44FF44, transparent: true, opacity: 0.9 });
+        const ribcageMaterial = getMaterial('lambert', { color: boneColor, side: THREE.DoubleSide });
+        const bowMaterial = getMaterial('lambert', { color: 0x4a3728 });
+        const stringMaterial = getMaterial('basic', { color: 0xccccaa });
+        const quiverMaterial = getMaterial('lambert', { color: 0x3a2a1a });
+        const arrowMaterial = getMaterial('basic', { color: 0x5a4a3a });
+        
         // Skull
-        const skullGeometry = new THREE.SphereGeometry(0.35, 12, 12);
-        const boneMaterial = new THREE.MeshLambertMaterial({ color: boneColor });
+        const skullGeometry = getGeometry('sphere', 0.35, 12, 12);
         const skull = new THREE.Mesh(skullGeometry, boneMaterial);
         skull.position.y = 1.9;
         skull.scale.y = 0.9;
@@ -29,14 +39,13 @@
         skeletonGrp.add(skull);
         
         // Jaw
-        const jawGeometry = new THREE.BoxGeometry(0.25, 0.1, 0.2);
+        const jawGeometry = getGeometry('box', 0.25, 0.1, 0.2);
         const jaw = new THREE.Mesh(jawGeometry, boneMaterial);
         jaw.position.set(0, 1.68, 0.1);
         skeletonGrp.add(jaw);
         
         // Eye sockets (dark holes)
-        const socketGeometry = new THREE.SphereGeometry(0.08, 8, 8);
-        const socketMaterial = new THREE.MeshBasicMaterial({ color: 0x1a0a0a });
+        const socketGeometry = getGeometry('sphere', 0.08, 8, 8);
         const socket1 = new THREE.Mesh(socketGeometry, socketMaterial);
         socket1.position.set(-0.1, 1.92, 0.28);
         skeletonGrp.add(socket1);
@@ -46,12 +55,7 @@
         skeletonGrp.add(socket2);
         
         // Glowing eyes inside sockets
-        const eyeGlowGeometry = new THREE.SphereGeometry(0.04, 8, 8);
-        const eyeGlowMaterial = new THREE.MeshBasicMaterial({ 
-            color: 0x44FF44,
-            transparent: true,
-            opacity: 0.9
-        });
+        const eyeGlowGeometry = getGeometry('sphere', 0.04, 8, 8);
         const eyeGlow1 = new THREE.Mesh(eyeGlowGeometry, eyeGlowMaterial);
         eyeGlow1.position.set(-0.1, 1.92, 0.3);
         skeletonGrp.add(eyeGlow1);
@@ -61,31 +65,26 @@
         skeletonGrp.add(eyeGlow2);
         
         // Ribcage
-        const ribcageGeometry = new THREE.CylinderGeometry(0.25, 0.2, 0.6, 8, 1, true);
-        const ribcageMaterial = new THREE.MeshLambertMaterial({ 
-            color: boneColor,
-            side: THREE.DoubleSide
-        });
+        const ribcageGeometry = getGeometry('cylinder', 0.25, 0.2, 0.6, 8, 1, true);
         const ribcage = new THREE.Mesh(ribcageGeometry, ribcageMaterial);
         ribcage.position.y = 1.3;
         ribcage.castShadow = true;
         skeletonGrp.add(ribcage);
         
         // Spine
-        const spineGeometry = new THREE.CylinderGeometry(0.05, 0.05, 0.9, 6);
+        const spineGeometry = getGeometry('cylinder', 0.05, 0.05, 0.9, 6);
         const spine = new THREE.Mesh(spineGeometry, boneMaterial);
         spine.position.set(0, 1.1, -0.1);
         skeletonGrp.add(spine);
         
         // Pelvis
-        const pelvisGeometry = new THREE.BoxGeometry(0.35, 0.15, 0.2);
+        const pelvisGeometry = getGeometry('box', 0.35, 0.15, 0.2);
         const pelvis = new THREE.Mesh(pelvisGeometry, boneMaterial);
         pelvis.position.y = 0.7;
         skeletonGrp.add(pelvis);
         
         // Arms (bones)
-        const armBoneGeometry = new THREE.CylinderGeometry(0.04, 0.03, 0.5, 6);
-        const darkBoneMaterial = new THREE.MeshLambertMaterial({ color: darkBone });
+        const armBoneGeometry = getGeometry('cylinder', 0.04, 0.03, 0.5, 6);
         
         // Left upper arm
         const leftUpperArm = new THREE.Mesh(armBoneGeometry, darkBoneMaterial);
@@ -114,7 +113,7 @@
         skeletonGrp.add(rightForearm);
         
         // Legs
-        const legBoneGeometry = new THREE.CylinderGeometry(0.05, 0.04, 0.65, 6);
+        const legBoneGeometry = getGeometry('cylinder', 0.05, 0.04, 0.65, 6);
         
         const leftThigh = new THREE.Mesh(legBoneGeometry, boneMaterial);
         leftThigh.position.set(-0.12, 0.35, 0);
@@ -133,8 +132,7 @@
         skeletonGrp.add(rightShin);
         
         // Bow
-        const bowGeometry = new THREE.TorusGeometry(0.35, 0.025, 8, 16, Math.PI);
-        const bowMaterial = new THREE.MeshLambertMaterial({ color: 0x4a3728 });
+        const bowGeometry = getGeometry('torus', 0.35, 0.025, 8, 16, Math.PI);
         const bow = new THREE.Mesh(bowGeometry, bowMaterial);
         bow.position.set(0.65, 1.2, 0.3);
         bow.rotation.y = Math.PI / 2;
@@ -142,24 +140,21 @@
         skeletonGrp.add(bow);
         
         // Bowstring
-        const stringGeometry = new THREE.CylinderGeometry(0.008, 0.008, 0.7, 4);
-        const stringMaterial = new THREE.MeshBasicMaterial({ color: 0xccccaa });
+        const stringGeometry = getGeometry('cylinder', 0.008, 0.008, 0.7, 4);
         const bowstring = new THREE.Mesh(stringGeometry, stringMaterial);
         bowstring.position.set(0.65, 1.2, 0.3);
         bowstring.rotation.x = Math.PI / 2;
         skeletonGrp.add(bowstring);
         
         // Quiver on back
-        const quiverGeometry = new THREE.CylinderGeometry(0.08, 0.06, 0.5, 8);
-        const quiverMaterial = new THREE.MeshLambertMaterial({ color: 0x3a2a1a });
+        const quiverGeometry = getGeometry('cylinder', 0.08, 0.06, 0.5, 8);
         const quiver = new THREE.Mesh(quiverGeometry, quiverMaterial);
         quiver.position.set(0.1, 1.25, -0.25);
         quiver.rotation.x = 0.2;
         skeletonGrp.add(quiver);
         
         // Arrows in quiver
-        const arrowGeometry = new THREE.CylinderGeometry(0.01, 0.01, 0.4, 4);
-        const arrowMaterial = new THREE.MeshBasicMaterial({ color: 0x5a4a3a });
+        const arrowGeometry = getGeometry('cylinder', 0.01, 0.01, 0.4, 4);
         for (let i = 0; i < 3; i++) {
             const arrow = new THREE.Mesh(arrowGeometry, arrowMaterial);
             arrow.position.set(0.08 + i * 0.04, 1.45, -0.25);

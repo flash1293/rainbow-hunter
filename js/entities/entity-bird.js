@@ -16,19 +16,19 @@
             // Bat body - small and furry
             const bodyGeometry = new THREE.SphereGeometry(0.35, 12, 12);
             bodyGeometry.scale(1, 1, 1.3);
-            const bodyMaterial = new THREE.MeshLambertMaterial({ color: batColor });
+            const bodyMaterial = getMaterial('lambert', { color: batColor });
             const body = new THREE.Mesh(bodyGeometry, bodyMaterial);
             body.castShadow = true;
             birdGroup.add(body);
 
             // Bat head
-            const headGeometry = new THREE.SphereGeometry(0.2, 10, 10);
+            const headGeometry = getGeometry('sphere', 0.2, 10, 10);
             const head = new THREE.Mesh(headGeometry, bodyMaterial);
             head.position.set(0, 0.1, -0.35);
             birdGroup.add(head);
 
             // Pointy ears
-            const earGeometry = new THREE.ConeGeometry(0.08, 0.2, 4);
+            const earGeometry = getGeometry('cone', 0.08, 0.2, 4);
             const ear1 = new THREE.Mesh(earGeometry, bodyMaterial);
             ear1.position.set(-0.1, 0.25, -0.35);
             ear1.rotation.z = -0.2;
@@ -40,8 +40,8 @@
             birdGroup.add(ear2);
 
             // Glowing red eyes
-            const eyeGeometry = new THREE.SphereGeometry(0.04, 8, 8);
-            const eyeMaterial = new THREE.MeshBasicMaterial({
+            const eyeGeometry = getGeometry('sphere', 0.04, 8, 8);
+            const eyeMaterial = getMaterial('basic', {
                 color: 0xFF0000,
                 transparent: true,
                 opacity: 0.9
@@ -65,7 +65,7 @@
             wingShape.lineTo(0, 0);
 
             const wingGeometry = new THREE.ShapeGeometry(wingShape);
-            const wingMaterial = new THREE.MeshLambertMaterial({
+            const wingMaterial = getMaterial('lambert', {
                 color: batWingColor,
                 side: THREE.DoubleSide,
                 transparent: true,
@@ -93,8 +93,8 @@
             const glowColor = Math.random() > 0.5 ? 0x00FFFF : 0xFF00FF;
             
             // Main body - flat hexagonal disk
-            const bodyGeometry = new THREE.CylinderGeometry(0.4, 0.4, 0.15, 6);
-            const bodyMaterial = new THREE.MeshPhongMaterial({ 
+            const bodyGeometry = getGeometry('cylinder', 0.4, 0.4, 0.15, 6);
+            const bodyMaterial = getMaterial('phong', { 
                 color: droneColor,
                 emissive: 0x001122,
                 emissiveIntensity: 0.3,
@@ -105,8 +105,8 @@
             birdGroup.add(body);
             
             // Central eye/sensor (glowing)
-            const eyeGeometry = new THREE.SphereGeometry(0.15, 12, 12);
-            const eyeMaterial = new THREE.MeshBasicMaterial({ 
+            const eyeGeometry = getGeometry('sphere', 0.15, 12, 12);
+            const eyeMaterial = getMaterial('basic', { 
                 color: 0xFF0000,
                 transparent: true,
                 opacity: 0.9
@@ -116,8 +116,8 @@
             birdGroup.add(eye);
             
             // Rotating propeller arms (4 arms)
-            const armGeometry = new THREE.BoxGeometry(0.8, 0.03, 0.08);
-            const armMaterial = new THREE.MeshPhongMaterial({ 
+            const armGeometry = getGeometry('box', 0.8, 0.03, 0.08);
+            const armMaterial = getMaterial('phong', { 
                 color: 0x222233,
                 shininess: 60
             });
@@ -132,8 +132,8 @@
             birdGroup.add(arm2);
             
             // Propeller discs at arm ends (glowing)
-            const propGeometry = new THREE.CylinderGeometry(0.12, 0.12, 0.02, 12);
-            const propMaterial = new THREE.MeshBasicMaterial({ 
+            const propGeometry = getGeometry('cylinder', 0.12, 0.12, 0.02, 12);
+            const propMaterial = getMaterial('basic', { 
                 color: glowColor,
                 transparent: true,
                 opacity: 0.7
@@ -147,10 +147,10 @@
             });
             
             // Blinking status lights
-            const lightGeometry = new THREE.SphereGeometry(0.04, 8, 8);
+            const lightGeometry = getGeometry('sphere', 0.04, 8, 8);
             const lightColors = [0x00FF00, 0xFF0000, 0x00FFFF];
             for (let i = 0; i < 3; i++) {
-                const lightMaterial = new THREE.MeshBasicMaterial({ 
+                const lightMaterial = getMaterial('basic', { 
                     color: lightColors[i],
                     transparent: true,
                     opacity: 0.9
@@ -162,8 +162,8 @@
             }
             
             // Data stream trail (wireframe cone pointing down)
-            const trailGeometry = new THREE.ConeGeometry(0.15, 0.4, 8);
-            const trailMaterial = new THREE.MeshBasicMaterial({ 
+            const trailGeometry = getGeometry('cone', 0.15, 0.4, 8);
+            const trailMaterial = getMaterial('basic', { 
                 color: glowColor,
                 wireframe: true,
                 transparent: true,
@@ -186,7 +186,7 @@
             // Small round body
             const bodyGeometry = new THREE.SphereGeometry(0.25, 10, 10);
             bodyGeometry.scale(1, 1, 1.5);
-            const bodyMaterial = new THREE.MeshPhongMaterial({
+            const bodyMaterial = getMaterial('phong', {
                 color: butterflyColor,
                 shininess: 80
             });
@@ -195,8 +195,8 @@
             birdGroup.add(body);
 
             // Butterfly wings
-            const wingGeometry = new THREE.CircleGeometry(0.6, 16);
-            const wingMaterial = new THREE.MeshPhongMaterial({
+            const wingGeometry = getGeometry('circle', 0.6, 16);
+            const wingMaterial = getMaterial('phong', {
                 color: butterflyColor,
                 side: THREE.DoubleSide,
                 transparent: true,
@@ -217,8 +217,8 @@
             birdGroup.add(rightWing);
 
             // Sparkle on wings
-            const sparkleGeometry = new THREE.SphereGeometry(0.05, 8, 8);
-            const sparkleMaterial = new THREE.MeshBasicMaterial({ color: 0xFFFFFF });
+            const sparkleGeometry = getGeometry('sphere', 0.05, 8, 8);
+            const sparkleMaterial = getMaterial('basic', { color: 0xFFFFFF });
             for (let i = 0; i < 4; i++) {
                 const sparkle = new THREE.Mesh(sparkleGeometry, sparkleMaterial);
                 sparkle.position.set(
@@ -237,22 +237,22 @@
             const wingColors = [0xFF69B4, 0x9370DB, 0x00CED1, 0xFFD700];
 
             // Fuzzy body
-            const bodyGeometry = new THREE.CylinderGeometry(0.15, 0.18, 0.7, 8);
-            const bodyMaterial = new THREE.MeshLambertMaterial({ color: bodyColor });
+            const bodyGeometry = getGeometry('cylinder', 0.15, 0.18, 0.7, 8);
+            const bodyMaterial = getMaterial('lambert', { color: bodyColor });
             const body = new THREE.Mesh(bodyGeometry, bodyMaterial);
             body.rotation.x = Math.PI / 6;
             body.castShadow = true;
             birdGroup.add(body);
 
             // Head
-            const headGeometry = new THREE.SphereGeometry(0.15, 10, 10);
+            const headGeometry = getGeometry('sphere', 0.15, 10, 10);
             const head = new THREE.Mesh(headGeometry, bodyMaterial);
             head.position.set(0, 0.5, 0.1);
             birdGroup.add(head);
 
             // Compound eyes
-            const eyeGeometry = new THREE.SphereGeometry(0.07, 8, 8);
-            const eyeMaterial = new THREE.MeshBasicMaterial({ color: 0x000000 });
+            const eyeGeometry = getGeometry('sphere', 0.07, 8, 8);
+            const eyeMaterial = getMaterial('basic', { color: 0x000000 });
             [-0.08, 0.08].forEach(x => {
                 const eye = new THREE.Mesh(eyeGeometry, eyeMaterial);
                 eye.position.set(x, 0.55, 0.2);
@@ -260,8 +260,8 @@
             });
 
             // Curly antennae
-            const antennaGeometry = new THREE.CylinderGeometry(0.015, 0.015, 0.35, 6);
-            const antennaMaterial = new THREE.MeshLambertMaterial({ color: 0x333333 });
+            const antennaGeometry = getGeometry('cylinder', 0.015, 0.015, 0.35, 6);
+            const antennaMaterial = getMaterial('lambert', { color: 0x333333 });
             [-0.06, 0.06].forEach((x, i) => {
                 const antenna = new THREE.Mesh(antennaGeometry, antennaMaterial);
                 antenna.position.set(x, 0.75, 0.05);
@@ -269,21 +269,21 @@
                 birdGroup.add(antenna);
                 
                 // Antenna tip
-                const tipGeometry = new THREE.SphereGeometry(0.04, 6, 6);
+                const tipGeometry = getGeometry('sphere', 0.04, 6, 6);
                 const tip = new THREE.Mesh(tipGeometry, antennaMaterial);
                 tip.position.set(x * 2.5, 0.9, 0.05);
                 birdGroup.add(tip);
             });
 
             // Large ornate wings (upper pair)
-            const wingGeometry = new THREE.CircleGeometry(0.8, 16, 0, Math.PI);
-            const leftWingMaterial = new THREE.MeshBasicMaterial({ 
+            const wingGeometry = getGeometry('circle', 0.8, 16, 0, Math.PI);
+            const leftWingMaterial = getMaterial('basic', { 
                 color: 0xFF69B4, 
                 transparent: true, 
                 opacity: 0.7, 
                 side: THREE.DoubleSide 
             });
-            const rightWingMaterial = new THREE.MeshBasicMaterial({ 
+            const rightWingMaterial = getMaterial('basic', { 
                 color: 0x9370DB, 
                 transparent: true, 
                 opacity: 0.7, 
@@ -304,14 +304,14 @@
             birdGroup.add(rightWing);
 
             // Lower wings (smaller)
-            const lowerWingGeometry = new THREE.CircleGeometry(0.45, 12);
-            const lowerLeftMaterial = new THREE.MeshBasicMaterial({ 
+            const lowerWingGeometry = getGeometry('circle', 0.45, 12);
+            const lowerLeftMaterial = getMaterial('basic', { 
                 color: 0x00CED1, 
                 transparent: true, 
                 opacity: 0.6, 
                 side: THREE.DoubleSide 
             });
-            const lowerRightMaterial = new THREE.MeshBasicMaterial({ 
+            const lowerRightMaterial = getMaterial('basic', { 
                 color: 0xFFD700, 
                 transparent: true, 
                 opacity: 0.6, 
@@ -329,8 +329,8 @@
             birdGroup.add(lowerRightWing);
 
             // Wing spots (white dots)
-            const spotGeometry = new THREE.CircleGeometry(0.08, 8);
-            const spotMaterial = new THREE.MeshBasicMaterial({ color: 0xFFFFFF, side: THREE.DoubleSide });
+            const spotGeometry = getGeometry('circle', 0.08, 8);
+            const spotMaterial = getMaterial('basic', { color: 0xFFFFFF, side: THREE.DoubleSide });
             [[0.45, 0.3, 0.01], [-0.45, 0.3, 0.01], [0.25, 0, 0.01], [-0.25, 0, 0.01]].forEach(pos => {
                 const spot = new THREE.Mesh(spotGeometry, spotMaterial);
                 spot.position.set(...pos);
@@ -339,8 +339,8 @@
 
             // Pollen trail
             for (let i = 0; i < 4; i++) {
-                const pollenGeometry = new THREE.SphereGeometry(0.04, 6, 6);
-                const pollenMaterial = new THREE.MeshBasicMaterial({ color: 0xFFFF00, transparent: true, opacity: 0.6 });
+                const pollenGeometry = getGeometry('sphere', 0.04, 6, 6);
+                const pollenMaterial = getMaterial('basic', { color: 0xFFFF00, transparent: true, opacity: 0.6 });
                 const pollen = new THREE.Mesh(pollenGeometry, pollenMaterial);
                 pollen.position.set(
                     (Math.random() - 0.5) * 0.3,
@@ -356,15 +356,15 @@
         } else {
             // Standard bird
             // Bird body
-            const bodyGeometry = new THREE.SphereGeometry(0.4, 8, 8);
-            const bodyMaterial = new THREE.MeshLambertMaterial({ color: 0x4a3a2a });
+            const bodyGeometry = getGeometry('sphere', 0.4, 8, 8);
+            const bodyMaterial = getMaterial('lambert', { color: 0x4a3a2a });
             const body = new THREE.Mesh(bodyGeometry, bodyMaterial);
             body.castShadow = true;
             birdGroup.add(body);
             
             // Wings
-            const wingGeometry = new THREE.BoxGeometry(1.2, 0.1, 0.4);
-            const wingMaterial = new THREE.MeshLambertMaterial({ color: 0x3a2a1a });
+            const wingGeometry = getGeometry('box', 1.2, 0.1, 0.4);
+            const wingMaterial = getMaterial('lambert', { color: 0x3a2a1a });
             const leftWing = new THREE.Mesh(wingGeometry, wingMaterial);
             leftWing.position.set(-0.6, 0, 0);
             leftWing.castShadow = true;
@@ -376,8 +376,8 @@
             birdGroup.add(rightWing);
             
             // Beak
-            const beakGeometry = new THREE.ConeGeometry(0.15, 0.3, 6);
-            const beakMaterial = new THREE.MeshLambertMaterial({ color: 0xFFA500 });
+            const beakGeometry = getGeometry('cone', 0.15, 0.3, 6);
+            const beakMaterial = getMaterial('lambert', { color: 0xFFA500 });
             const beak = new THREE.Mesh(beakGeometry, beakMaterial);
             beak.rotation.z = -Math.PI / 2;
             beak.position.set(0, 0, -0.4);
