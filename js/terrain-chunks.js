@@ -34,26 +34,28 @@
     // with the main game. This avoids duplicate WebGL shader compilation when
     // chunks introduce materials identical to ones the level already uses.
 
+    // Actual content bounds of the original level (computed in initChunks).
+    // Used by isInOriginalLevel() to avoid spawning duplicate content.
+    let _contentMinX = -100, _contentMaxX = 100;
+    let _contentMinZ = -100, _contentMaxZ = 100;
+
     /**
-     * Initialize chunks based on the current level's bounds
-     * Marks all chunks that are FULLY covered by the original level ground as "existing"
-     * so the chunk system won't try to regenerate them.
-     * Border chunks (partially covered) are left unmarked so they generate normally
-     * and fill the gap between the level ground edge and the chunk boundary.
+     * Initialize chunks based on the current level's content bounds.
+     * Marks chunks that are fully inside the content area as "existing"
+     * so the chunk system won't regenerate them.
+     * Chunks outside the content area (even if inside the 600x600 ground)
+     * are left unmarked so they generate content to fill the "dead zone".
      */
     function initChunks() {
         if (chunksInitialized) return;
         chunksInitialized = true;
         
-        // The original level ground plane is always 600x600 centered at origin = ±300
-        const GROUND_HALF = 300;
+        // Calculate actual content bounds from mountains/hills.
+        // Mountains define the level boundary walls. Content lives inside them.
+        // Defaults are conservative (±100) — just the central spawn area.
+        let minX = -100, maxX = 100, minZ = -100, maxZ = 100;
         
-        // Calculate level content bounds from mountains/walls configuration
-        // These may extend beyond the ground plane
-        let minX = -GROUND_HALF, maxX = GROUND_HALF;
-        let minZ = -GROUND_HALF, maxZ = GROUND_HALF;
-        
-        if (G.levelConfig && G.levelConfig.mountains) {
+        if (G.levelConfig && G.levelConfig.mountains && G.levelConfig.mountains.length > 0) {
             G.levelConfig.mountains.forEach(mtn => {
                 const halfWidth = (mtn.width || 50) / 2;
                 minX = Math.min(minX, mtn.x - halfWidth);
@@ -74,16 +76,21 @@
             });
         }
         
-        console.log(`[Chunks] initChunks() - level bounds: x=[${minX}, ${maxX}], z=[${minZ}, ${maxZ}]`);
+        // Store content bounds for isInOriginalLevel().
+        // Inset by 15 units so chunk content can approach but not overlap original content.
+        _contentMinX = minX + 15;
+        _contentMaxX = maxX - 15;
+        _contentMinZ = minZ + 15;
+        _contentMaxZ = maxZ - 15;
         
-        // Only pre-mark chunks whose ENTIRE area is within the level bounds.
-        // Border chunks (partially outside) will be generated normally,
-        // creating ground that fills the gap between the original ground edge
-        // and the chunk boundary. Slight overlap with original ground is harmless.
+        console.log(`[Chunks] initChunks() - content bounds: x=[${minX}, ${maxX}], z=[${minZ}, ${maxZ}]`);
+        console.log(`[Chunks] initChunks() - exclusion zone: x=[${_contentMinX}, ${_contentMaxX}], z=[${_contentMinZ}, ${_contentMaxZ}]`);
+        
+        // Pre-mark chunks whose ENTIRE area is within the content bounds.
+        // Border chunks (partially outside) generate normally to fill the dead zone.
         let preMarked = 0;
         for (let x = Math.floor(minX / CHUNK_SIZE) * CHUNK_SIZE; x <= maxX; x += CHUNK_SIZE) {
             for (let z = Math.floor(minZ / CHUNK_SIZE) * CHUNK_SIZE; z <= maxZ; z += CHUNK_SIZE) {
-                // Only mark if the chunk is fully inside the level bounds
                 if (x >= minX && x + CHUNK_SIZE <= maxX &&
                     z >= minZ && z + CHUNK_SIZE <= maxZ) {
                     generatedChunks.add(getChunkKey(x, z));
@@ -129,11 +136,12 @@
     }
 
     /**
-     * Check if a position is within the original level's ground area (600x600 centered at origin).
-     * Used to avoid spawning duplicate content in border chunks that overlap the original level.
+     * Check if a position is within the original level's content area.
+     * Uses actual content bounds (computed from mountains/hills in initChunks)
+     * to avoid spawning duplicate content where the original level has content.
      */
     function isInOriginalLevel(x, z) {
-        return x > -280 && x < 280 && z > -280 && z < 280;
+        return x > _contentMinX && x < _contentMaxX && z > _contentMinZ && z < _contentMaxZ;
     }
 
     /**
@@ -1814,6 +1822,9 @@
         isProcessingQueue = false;
         chunksInitialized = false;
         chunkShadersWarmed = false;
+        // Reset content bounds (will be recalculated on next initChunks)
+        _contentMinX = -100; _contentMaxX = 100;
+        _contentMinZ = -100; _contentMaxZ = 100;
         // Clear cached chunk ground textures (theme may change on next level)
         for (const key in _chunkGroundTextures) {
             if (_chunkGroundTextures[key] && _chunkGroundTextures[key].dispose) {
