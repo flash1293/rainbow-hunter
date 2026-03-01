@@ -2450,6 +2450,402 @@ function generateHelmetTexture(THREE, baseColor) {
     return texture;
 }
 
+// Generate overgrown ancient stone wall texture for the labyrinth (512×512)
+function generateLabyrinthStoneTexture(THREE) {
+    const canvas = document.createElement('canvas');
+    canvas.width = 512;
+    canvas.height = 512;
+    const ctx = canvas.getContext('2d');
+    const W = 512;
+
+    // --- Base stone fill with warm/cool temperature gradient ---
+    const baseGrad = ctx.createLinearGradient(0, 0, W, W);
+    baseGrad.addColorStop(0, '#42513C');   // cooler grey-green top-left
+    baseGrad.addColorStop(0.5, '#3E4E3A'); // neutral mid
+    baseGrad.addColorStop(1, '#4A4F38');   // warmer olive bottom-right
+    ctx.fillStyle = baseGrad;
+    ctx.fillRect(0, 0, W, W);
+
+    // --- Fine stone-grain noise over entire surface ---
+    for (let i = 0; i < 14000; i++) {
+        const nx = Math.random() * W;
+        const ny = Math.random() * W;
+        const v = 52 + Math.random() * 40;
+        ctx.fillStyle = `rgba(${v|0},${(v + 8)|0},${(v - 4)|0},0.12)`;
+        ctx.fillRect(nx, ny, 1 + Math.random() * 2, 1 + Math.random() * 2);
+    }
+
+    // --- Irregular stone block masonry ---
+    // Use two alternating row heights for variety
+    const rowHeights = [26, 34, 28, 38, 24, 32, 30];
+    const baseBlockW = 48;
+    let by = 0;
+    let rowIdx = 0;
+    const blockRects = [];  // store for later edge highlights
+    while (by < W + 40) {
+        const rowH = rowHeights[rowIdx % rowHeights.length];
+        const stagger = (rowIdx % 2) * (baseBlockW * 0.5) + (rowIdx % 3) * 6;
+        let bx = -baseBlockW + stagger;
+        while (bx < W + baseBlockW) {
+            const bw = baseBlockW + (Math.random() - 0.5) * 16; // vary width
+            const mortar = 2.5;
+            // Stone color — mix grey, green and occasional warm brown
+            const warm = Math.random() < 0.15;  // 15% of blocks get warm tint
+            const shade = 0.72 + Math.random() * 0.38;
+            let r, g, b;
+            if (warm) {
+                r = Math.floor(72 * shade); g = Math.floor(62 * shade); b = Math.floor(48 * shade);
+            } else {
+                r = Math.floor(58 * shade); g = Math.floor(74 * shade); b = Math.floor(55 * shade);
+            }
+            const x0 = bx + mortar;
+            const y0 = by + mortar;
+            const w0 = bw - mortar * 2;
+            const h0 = rowH - mortar * 2;
+            ctx.fillStyle = `rgb(${r},${g},${b})`;
+            ctx.fillRect(x0, y0, w0, h0);
+            blockRects.push({ x: x0, y: y0, w: w0, h: h0, r, g, b });
+
+            // Per-block grain speckles
+            for (let n = 0; n < 14; n++) {
+                const px = x0 + Math.random() * w0;
+                const py = y0 + Math.random() * h0;
+                const ns = (Math.random() - 0.5) * 26;
+                ctx.fillStyle = `rgb(${Math.max(0,Math.min(255,r+ns))|0},${Math.max(0,Math.min(255,g+ns))|0},${Math.max(0,Math.min(255,b+ns))|0})`;
+                ctx.fillRect(px, py, 2 + Math.random() * 2, 1.5 + Math.random());
+            }
+
+            // Erosion pits — tiny dark spots
+            for (let n = 0; n < 3; n++) {
+                if (Math.random() < 0.4) {
+                    const px = x0 + 4 + Math.random() * (w0 - 8);
+                    const py = y0 + 4 + Math.random() * (h0 - 8);
+                    ctx.fillStyle = 'rgba(20,25,18,0.35)';
+                    ctx.beginPath();
+                    ctx.ellipse(px, py, 1 + Math.random() * 2.5, 1 + Math.random() * 1.5, Math.random() * Math.PI, 0, Math.PI * 2);
+                    ctx.fill();
+                }
+            }
+
+            bx += bw;
+        }
+        by += rowH;
+        rowIdx++;
+    }
+
+    // --- Block edge highlights and shadows (chisel effect) ---
+    for (const br of blockRects) {
+        // Top + left highlight
+        ctx.strokeStyle = 'rgba(180,190,170,0.12)';
+        ctx.lineWidth = 1;
+        ctx.beginPath();
+        ctx.moveTo(br.x, br.y + br.h);
+        ctx.lineTo(br.x, br.y);
+        ctx.lineTo(br.x + br.w, br.y);
+        ctx.stroke();
+        // Bottom + right shadow
+        ctx.strokeStyle = 'rgba(15,18,12,0.2)';
+        ctx.beginPath();
+        ctx.moveTo(br.x + br.w, br.y);
+        ctx.lineTo(br.x + br.w, br.y + br.h);
+        ctx.lineTo(br.x, br.y + br.h);
+        ctx.stroke();
+    }
+
+    // --- Mortar lines — dark grooves ---
+    ctx.strokeStyle = 'rgba(22, 28, 18, 0.55)';
+    ctx.lineWidth = 1.5;
+    by = 0; rowIdx = 0;
+    while (by < W + 40) {
+        const rowH = rowHeights[rowIdx % rowHeights.length];
+        ctx.beginPath(); ctx.moveTo(0, by); ctx.lineTo(W, by); ctx.stroke();
+        by += rowH; rowIdx++;
+    }
+
+    // --- Deep cracks (branching, irregular) ---
+    ctx.lineWidth = 1.8;
+    for (let i = 0; i < 16; i++) {
+        ctx.strokeStyle = `rgba(16,20,14,${0.5 + Math.random() * 0.3})`;
+        ctx.beginPath();
+        let cx = Math.random() * W;
+        let cy = Math.random() * W;
+        ctx.moveTo(cx, cy);
+        const segs = 3 + Math.floor(Math.random() * 5);
+        for (let s = 0; s < segs; s++) {
+            cx += (Math.random() - 0.5) * 35;
+            cy += Math.random() * 22;
+            ctx.lineTo(cx, cy);
+            // Occasional branch
+            if (Math.random() < 0.3) {
+                ctx.stroke();
+                ctx.beginPath();
+                ctx.moveTo(cx, cy);
+                let bx2 = cx + (Math.random() - 0.5) * 20;
+                let by2 = cy + Math.random() * 14;
+                ctx.lineTo(bx2, by2);
+                ctx.stroke();
+                ctx.beginPath();
+                ctx.moveTo(cx, cy);
+            }
+        }
+        ctx.stroke();
+    }
+
+    // --- Heavy moss patches (varied greens + yellow lichen) ---
+    const mossShades = [
+        [50, 90, 40], [60, 115, 45], [45, 80, 35],
+        [70, 125, 55], [55, 100, 40], [80, 110, 30]  // yellowish lichen
+    ];
+    for (let i = 0; i < 50; i++) {
+        const mx = Math.random() * W;
+        const my = Math.random() * W;
+        const mr = 12 + Math.random() * 45;
+        const ms = mossShades[Math.floor(Math.random() * mossShades.length)];
+        const gradient = ctx.createRadialGradient(mx, my, 0, mx, my, mr);
+        gradient.addColorStop(0, `rgba(${ms[0]},${ms[1]},${ms[2]},0.5)`);
+        gradient.addColorStop(0.5, `rgba(${ms[0]},${ms[1]},${ms[2]},0.22)`);
+        gradient.addColorStop(1, `rgba(${ms[0]},${ms[1]},${ms[2]},0)`);
+        ctx.fillStyle = gradient;
+        ctx.fillRect(mx - mr, my - mr, mr * 2, mr * 2);
+    }
+
+    // --- Yellowish-orange lichen splotches ---
+    for (let i = 0; i < 15; i++) {
+        const lx = Math.random() * W;
+        const ly = Math.random() * W;
+        const lr = 5 + Math.random() * 12;
+        const gradient = ctx.createRadialGradient(lx, ly, 0, lx, ly, lr);
+        gradient.addColorStop(0, 'rgba(140,120,40,0.35)');
+        gradient.addColorStop(0.7, 'rgba(120,100,30,0.12)');
+        gradient.addColorStop(1, 'rgba(120,100,30,0)');
+        ctx.fillStyle = gradient;
+        ctx.fillRect(lx - lr, ly - lr, lr * 2, lr * 2);
+    }
+
+    // --- Bright moss/lichen speckles ---
+    for (let i = 0; i < 350; i++) {
+        const sx = Math.random() * W;
+        const sy = Math.random() * W;
+        const sc = mossShades[Math.floor(Math.random() * mossShades.length)];
+        ctx.fillStyle = `rgb(${sc[0] + 35},${sc[1] + 35},${sc[2] + 18})`;
+        ctx.fillRect(sx, sy, 1.5 + Math.random(), 1.5 + Math.random());
+    }
+
+    // --- Vine tendrils with bezier curves ---
+    for (let i = 0; i < 8; i++) {
+        ctx.strokeStyle = `rgba(32,60,25,${0.35 + Math.random() * 0.25})`;
+        ctx.lineWidth = 1.5 + Math.random() * 1.5;
+        ctx.beginPath();
+        let vx = Math.random() * W;
+        let vy = Math.random() * W * 0.25;
+        ctx.moveTo(vx, vy);
+        for (let s = 0; s < 10; s++) {
+            const cpx = vx + (Math.random() - 0.5) * 30;
+            const cpy = vy + 6 + Math.random() * 14;
+            vx += (Math.random() - 0.5) * 18;
+            vy += 10 + Math.random() * 14;
+            ctx.quadraticCurveTo(cpx, cpy, vx, vy);
+        }
+        ctx.stroke();
+
+        // Tiny leaves sprouting off vines
+        const leafClr = mossShades[Math.floor(Math.random() * mossShades.length)];
+        ctx.fillStyle = `rgba(${leafClr[0] + 20},${leafClr[1] + 20},${leafClr[2] + 10},0.45)`;
+        for (let l = 0; l < 6; l++) {
+            const lx2 = vx + (Math.random() - 0.5) * 30;
+            const ly2 = vy - Math.random() * 60;
+            ctx.beginPath();
+            ctx.ellipse(lx2, ly2, 3 + Math.random() * 4, 1.5 + Math.random() * 2.5, Math.random() * Math.PI, 0, Math.PI * 2);
+            ctx.fill();
+        }
+    }
+
+    // --- Carved rune-like symbols (faint ancient markings) ---
+    ctx.strokeStyle = 'rgba(28,34,24,0.18)';
+    ctx.lineWidth = 1.2;
+    for (let i = 0; i < 5; i++) {
+        const rx = 40 + Math.random() * (W - 80);
+        const ry = 40 + Math.random() * (W - 80);
+        const rs = 6 + Math.random() * 10;
+        ctx.beginPath();
+        // Simple geometric rune shapes
+        const type = Math.floor(Math.random() * 4);
+        if (type === 0) { // cross
+            ctx.moveTo(rx - rs, ry); ctx.lineTo(rx + rs, ry);
+            ctx.moveTo(rx, ry - rs); ctx.lineTo(rx, ry + rs);
+        } else if (type === 1) { // diamond
+            ctx.moveTo(rx, ry - rs); ctx.lineTo(rx + rs, ry);
+            ctx.lineTo(rx, ry + rs); ctx.lineTo(rx - rs, ry); ctx.closePath();
+        } else if (type === 2) { // zigzag
+            ctx.moveTo(rx - rs, ry - rs * 0.5);
+            ctx.lineTo(rx, ry + rs * 0.5);
+            ctx.lineTo(rx + rs, ry - rs * 0.5);
+        } else { // circle with line
+            ctx.arc(rx, ry, rs * 0.7, 0, Math.PI * 2);
+            ctx.moveTo(rx, ry - rs); ctx.lineTo(rx, ry + rs);
+        }
+        ctx.stroke();
+    }
+
+    // --- Tiny flower dots ---
+    const flowerClrs = ['rgba(255,105,180,0.45)', 'rgba(255,215,0,0.4)', 'rgba(200,160,255,0.35)', 'rgba(255,160,100,0.35)'];
+    for (let i = 0; i < 14; i++) {
+        ctx.fillStyle = flowerClrs[Math.floor(Math.random() * flowerClrs.length)];
+        ctx.beginPath();
+        ctx.arc(Math.random() * W, Math.random() * W, 1.5 + Math.random() * 2, 0, Math.PI * 2);
+        ctx.fill();
+    }
+
+    // --- Water stain drip streaks (dark vertical blotches, bottom half) ---
+    for (let i = 0; i < 12; i++) {
+        const wx = Math.random() * W;
+        const wy = W * (0.45 + Math.random() * 0.55);
+        const wh = 25 + Math.random() * 55;
+        const ww = 3 + Math.random() * 6;
+        const gradient = ctx.createLinearGradient(wx, wy - wh, wx, wy);
+        gradient.addColorStop(0, 'rgba(28, 32, 25, 0)');
+        gradient.addColorStop(0.6, 'rgba(28, 32, 25, 0.12)');
+        gradient.addColorStop(1, 'rgba(28, 32, 25, 0.3)');
+        ctx.fillStyle = gradient;
+        ctx.fillRect(wx - ww / 2, wy - wh, ww, wh);
+    }
+
+    // --- Subtle overall vignette (darker edges) ---
+    const vignette = ctx.createRadialGradient(W / 2, W / 2, W * 0.25, W / 2, W / 2, W * 0.7);
+    vignette.addColorStop(0, 'rgba(0,0,0,0)');
+    vignette.addColorStop(1, 'rgba(0,0,0,0.08)');
+    ctx.fillStyle = vignette;
+    ctx.fillRect(0, 0, W, W);
+
+    const texture = new THREE.CanvasTexture(canvas);
+    texture.wrapS = THREE.RepeatWrapping;
+    texture.wrapT = THREE.RepeatWrapping;
+    texture.repeat.set(1, 1);
+    return texture;
+}
+
+// Generate mossy stone floor texture for the labyrinth ground (512×512)
+function generateLabyrinthGroundTexture(THREE) {
+    const canvas = document.createElement('canvas');
+    canvas.width = 512;
+    canvas.height = 512;
+    const ctx = canvas.getContext('2d');
+    const W = 512;
+
+    // Base — dark earthy grey-green (matches wall palette)
+    ctx.fillStyle = '#3A4A36';
+    ctx.fillRect(0, 0, W, W);
+
+    // Subtle warm-to-cool temperature shift
+    const tempGrad = ctx.createLinearGradient(0, 0, W, W);
+    tempGrad.addColorStop(0, 'rgba(60,50,35,0.12)');
+    tempGrad.addColorStop(1, 'rgba(35,50,45,0.12)');
+    ctx.fillStyle = tempGrad;
+    ctx.fillRect(0, 0, W, W);
+
+    // Large irregular stone pavers
+    const paverCenters = [];
+    for (let i = 0; i < 80; i++) {
+        paverCenters.push({ x: Math.random() * W, y: Math.random() * W });
+    }
+    // Voronoi-like pavers via filled circles (approximate)
+    for (const pc of paverCenters) {
+        const pr = 18 + Math.random() * 28;
+        const shade = 0.7 + Math.random() * 0.4;
+        const r = Math.floor(52 * shade);
+        const g = Math.floor(62 * shade);
+        const b = Math.floor(50 * shade);
+        ctx.fillStyle = `rgb(${r},${g},${b})`;
+        ctx.beginPath();
+        // Slightly irregular shape via ellipse with random rotation
+        ctx.ellipse(pc.x, pc.y, pr, pr * (0.7 + Math.random() * 0.6),
+                    Math.random() * Math.PI, 0, Math.PI * 2);
+        ctx.fill();
+    }
+
+    // Dirt/gravel fill in gaps (coarse noise)
+    for (let i = 0; i < 10000; i++) {
+        const dx = Math.random() * W;
+        const dy = Math.random() * W;
+        const shade = 40 + Math.random() * 35;
+        ctx.fillStyle = `rgba(${shade + 10|0},${shade + 5|0},${shade - 5|0},0.15)`;
+        ctx.fillRect(dx, dy, 1 + Math.random() * 2, 1 + Math.random() * 2);
+    }
+
+    // Dark crevice lines between pavers
+    ctx.strokeStyle = 'rgba(18,22,16,0.3)';
+    ctx.lineWidth = 1;
+    for (let i = 0; i < 60; i++) {
+        ctx.beginPath();
+        let lx = Math.random() * W;
+        let ly = Math.random() * W;
+        ctx.moveTo(lx, ly);
+        for (let s = 0; s < 3; s++) {
+            lx += (Math.random() - 0.5) * 40;
+            ly += (Math.random() - 0.5) * 40;
+            ctx.lineTo(lx, ly);
+        }
+        ctx.stroke();
+    }
+
+    // Scattered pebbles
+    for (let i = 0; i < 120; i++) {
+        const px = Math.random() * W;
+        const py = Math.random() * W;
+        const pr = 1 + Math.random() * 3;
+        const shade = 55 + Math.random() * 40;
+        ctx.fillStyle = `rgb(${shade + 8|0},${shade + 5|0},${shade - 3|0})`;
+        ctx.beginPath();
+        ctx.ellipse(px, py, pr, pr * (0.6 + Math.random() * 0.8), Math.random() * Math.PI, 0, Math.PI * 2);
+        ctx.fill();
+    }
+
+    // Moss patches (match wall palette)
+    const mossShades = [
+        [48, 88, 38], [58, 108, 42], [42, 78, 32],
+        [65, 118, 50], [52, 95, 38]
+    ];
+    for (let i = 0; i < 40; i++) {
+        const mx = Math.random() * W;
+        const my = Math.random() * W;
+        const mr = 15 + Math.random() * 50;
+        const ms = mossShades[Math.floor(Math.random() * mossShades.length)];
+        const gradient = ctx.createRadialGradient(mx, my, 0, mx, my, mr);
+        gradient.addColorStop(0, `rgba(${ms[0]},${ms[1]},${ms[2]},0.4)`);
+        gradient.addColorStop(0.6, `rgba(${ms[0]},${ms[1]},${ms[2]},0.15)`);
+        gradient.addColorStop(1, `rgba(${ms[0]},${ms[1]},${ms[2]},0)`);
+        ctx.fillStyle = gradient;
+        ctx.fillRect(mx - mr, my - mr, mr * 2, mr * 2);
+    }
+
+    // Grass tufts growing through cracks
+    for (let i = 0; i < 300; i++) {
+        const gx = Math.random() * W;
+        const gy = Math.random() * W;
+        const ms = mossShades[Math.floor(Math.random() * mossShades.length)];
+        ctx.fillStyle = `rgb(${ms[0] + 30},${ms[1] + 30},${ms[2] + 15})`;
+        ctx.fillRect(gx, gy, 1.5, 1.5);
+    }
+
+    // Small puddle stains (darker wet patches)
+    for (let i = 0; i < 10; i++) {
+        const px2 = Math.random() * W;
+        const py2 = Math.random() * W;
+        const pr2 = 8 + Math.random() * 20;
+        const gradient = ctx.createRadialGradient(px2, py2, 0, px2, py2, pr2);
+        gradient.addColorStop(0, 'rgba(25,30,22,0.22)');
+        gradient.addColorStop(1, 'rgba(25,30,22,0)');
+        ctx.fillStyle = gradient;
+        ctx.fillRect(px2 - pr2, py2 - pr2, pr2 * 2, pr2 * 2);
+    }
+
+    const texture = new THREE.CanvasTexture(canvas);
+    texture.wrapS = THREE.RepeatWrapping;
+    texture.wrapT = THREE.RepeatWrapping;
+    texture.repeat.set(4, 4);
+    return texture;
+}
+
 // Store generated textures to reuse
 let cachedTextures = null;
 
@@ -2511,7 +2907,9 @@ function getTerrainTextures(THREE) {
             wizardRobe: generateWizardRobeTexture(THREE, false),
             wizardRobeIce: generateWizardRobeTexture(THREE, true),
             helmetPink: generateHelmetTexture(THREE, 0xFF69B4),
-            helmetBlue: generateHelmetTexture(THREE, 0x4169E1)
+            helmetBlue: generateHelmetTexture(THREE, 0x4169E1),
+            labyrinthStone: generateLabyrinthStoneTexture(THREE),
+            labyrinthGround: generateLabyrinthGroundTexture(THREE)
         };
     }
     return cachedTextures;
@@ -2552,7 +2950,7 @@ function getTerrainHeight(x, z) {
 }
 
 // Create visual hill meshes
-function createHills(scene, THREE, hillPositions, hillColor, iceTheme, desertTheme, lavaTheme, waterTheme, candyTheme, graveyardTheme, ruinsTheme, computerTheme, christmasTheme, crystalTheme, rapunzelTheme) {
+function createHills(scene, THREE, hillPositions, hillColor, iceTheme, desertTheme, lavaTheme, waterTheme, candyTheme, graveyardTheme, ruinsTheme, computerTheme, christmasTheme, crystalTheme, rapunzelTheme, labyrinthTheme) {
     const textures = getTerrainTextures(THREE);
     const hills = hillPositions || HILLS;
     const color = hillColor || 0x88cc88;
@@ -2802,9 +3200,111 @@ function createHills(scene, THREE, hillPositions, hillColor, iceTheme, desertThe
     });
 }
 
+// =========================================
+// Labyrinth Decoration Manager
+// Spatially chunks decorations into grid cells.
+// Only chunks near a player are visible, boosting frame rate.
+// All decorations for a single wall are assigned to the same chunk
+// (keyed on wall center) so they appear/disappear together.
+// =========================================
+var _labyrinthDecoChunks = [];  // Array of { group, cx, cz }
+var _labyrinthDecoScene = null;
+var _labyrinthDecoTHREE = null;
+const LABY_DECO_CHUNK_SIZE = 40; // World-units per chunk side
+const LABY_DECO_VIEW_DIST = 70;  // Show chunks within this distance of any player
+const LABY_DECO_VIEW_DIST_SQ = LABY_DECO_VIEW_DIST * LABY_DECO_VIEW_DIST;
+const LABY_DECO_MAX_TOGGLES_PER_FRAME = 4; // Amortize: max chunk visibility changes per frame
+
+// Get or create the chunk group for world position (x, z)
+function _getLabyrinthDecoChunk(x, z) {
+    const ci = Math.floor(x / LABY_DECO_CHUNK_SIZE);
+    const cj = Math.floor(z / LABY_DECO_CHUNK_SIZE);
+    const key = ci + ',' + cj;
+    // Linear scan is fine for ~100-200 chunks at init time
+    for (let i = 0; i < _labyrinthDecoChunks.length; i++) {
+        if (_labyrinthDecoChunks[i].key === key) return _labyrinthDecoChunks[i].group;
+    }
+    const group = new _labyrinthDecoTHREE.Group();
+    group.visible = false; // Hidden by default until player approaches
+    // Add to scene immediately — we'll only toggle visible, never add/remove
+    _labyrinthDecoScene.add(group);
+    const entry = {
+        key: key,
+        group: group,
+        cx: (ci + 0.5) * LABY_DECO_CHUNK_SIZE,
+        cz: (cj + 0.5) * LABY_DECO_CHUNK_SIZE,
+        visible: false
+    };
+    _labyrinthDecoChunks.push(entry);
+    return group;
+}
+
+// Current wall center for chunk assignment (set per-wall before building decorations)
+var _labyrinthCurrentWallX = 0;
+var _labyrinthCurrentWallZ = 0;
+
+// Set the wall center for subsequent _addLabyrinthDeco calls.
+// All decorations added after this call will be assigned to the chunk
+// that contains (wallX, wallZ), so a wall's decorations stay together.
+function _setLabyrinthDecoWall(wallX, wallZ) {
+    _labyrinthCurrentWallX = wallX;
+    _labyrinthCurrentWallZ = wallZ;
+}
+
+// Helper: add a mesh to the chunk for the current wall center
+function _addLabyrinthDeco(mesh) {
+    _getLabyrinthDecoChunk(_labyrinthCurrentWallX, _labyrinthCurrentWallZ).add(mesh);
+}
+
+// Called every frame from the game loop to show/hide chunks near players.
+// Amortized: at most LABY_DECO_MAX_TOGGLES_PER_FRAME chunks change per call
+// to avoid frame spikes when many chunks cross the distance threshold at once.
+var _labyrinthDecoScanIdx = 0;
+function updateLabyrinthDecorations(player1X, player1Z, player2X, player2Z) {
+    let togglesRemaining = LABY_DECO_MAX_TOGGLES_PER_FRAME;
+    const len = _labyrinthDecoChunks.length;
+    if (len === 0) return;
+    // Wrap scan index
+    if (_labyrinthDecoScanIdx >= len) _labyrinthDecoScanIdx = 0;
+    // Scan all chunks for proximity but only apply a limited number of changes
+    for (let count = 0; count < len; count++) {
+        const idx = (_labyrinthDecoScanIdx + count) % len;
+        const c = _labyrinthDecoChunks[idx];
+        const dx1 = c.cx - player1X;
+        const dz1 = c.cz - player1Z;
+        let near = (dx1 * dx1 + dz1 * dz1) < LABY_DECO_VIEW_DIST_SQ;
+        if (!near && player2X !== undefined) {
+            const dx2 = c.cx - player2X;
+            const dz2 = c.cz - player2Z;
+            near = (dx2 * dx2 + dz2 * dz2) < LABY_DECO_VIEW_DIST_SQ;
+        }
+        if (near && !c.visible) {
+            c.group.visible = true;
+            c.visible = true;
+            togglesRemaining--;
+        } else if (!near && c.visible) {
+            c.group.visible = false;
+            c.visible = false;
+            togglesRemaining--;
+        }
+        if (togglesRemaining <= 0) {
+            _labyrinthDecoScanIdx = (idx + 1) % len;
+            return;
+        }
+    }
+    _labyrinthDecoScanIdx = 0;
+}
+
 // Create mountains (world boundaries)
-function createMountains(scene, THREE, mountainPositions, candyTheme, graveyardTheme, ruinsTheme, computerTheme, enchantedTheme, easterTheme, christmasTheme, crystalTheme, rapunzelTheme) {
+function createMountains(scene, THREE, mountainPositions, candyTheme, graveyardTheme, ruinsTheme, computerTheme, enchantedTheme, easterTheme, christmasTheme, crystalTheme, rapunzelTheme, labyrinthTheme) {
     const textures = getTerrainTextures(THREE);
+    // Initialize labyrinth decoration chunk system (only once — async chunk
+    // loads also call createMountains, so guard against wiping the array)
+    if (labyrinthTheme && !_labyrinthDecoScene) {
+        _labyrinthDecoScene = scene;
+        _labyrinthDecoTHREE = THREE;
+        _labyrinthDecoChunks = [];
+    }
     mountainPositions.forEach(mtn => {
         // If this mountain has a rotation, use a Group as a proxy scene
         // so all child objects get positioned relative to origin, then
@@ -3648,6 +4148,379 @@ function createMountains(scene, THREE, mountainPositions, candyTheme, graveyardT
                 }
             }
             
+        } else if (labyrinthTheme) {
+            // =========================================
+            // Heavily overgrown ancient labyrinth walls
+            // Walls are barely visible under dense vegetation
+            // Decorations distributed across ALL four faces proportionally
+            // =========================================
+            const wallHeight = mtn.height;
+            const wallWidth = mtn.width;
+            const wallDepth = mtn.depth || Math.min(mtn.width * 0.15, 8);
+            
+            // Pin all subsequent _addLabyrinthDeco calls to this wall's center
+            // so all its decorations land in the same visibility chunk.
+            _setLabyrinthDecoWall(mtn.x, mtn.z);
+            
+            // Probability of placing a side decoration on a Z-normal face vs X-normal face
+            // For a 143×11 wall: zFaceProb=0.93 (most on long Z faces)
+            // For a  11×11 pillar: zFaceProb=0.50 (equal distribution)
+            const zFaceProb = wallWidth / (wallWidth + wallDepth);
+            
+            // Helper: pick a random wall face and return position along it
+            // alongFrac: 0-1 position along the face
+            // perpOffset: outward distance from the face surface
+            function wallSidePos(alongFrac, perpOffset) {
+                const side = Math.random() < 0.5 ? 1 : -1;
+                if (Math.random() < zFaceProb) {
+                    return {
+                        x: mtn.x - wallWidth/2 + alongFrac * wallWidth,
+                        z: mtn.z + side * (wallDepth/2 + perpOffset),
+                        side: side, onZFace: true
+                    };
+                } else {
+                    return {
+                        x: mtn.x + side * (wallWidth/2 + perpOffset),
+                        z: mtn.z - wallDepth/2 + alongFrac * wallDepth,
+                        side: side, onZFace: false
+                    };
+                }
+            }
+            
+            // Main stone wall - dark, mossy, and textured
+            const wallGeometry = new THREE.BoxGeometry(wallWidth, wallHeight, wallDepth);
+            // Scale UV repeats so texture density is consistent regardless of wall size
+            const repeatX = Math.max(1, Math.round(wallWidth / 11));
+            const repeatY = Math.max(1, Math.round(wallHeight / 8));
+            const stoneTexClone = textures.labyrinthStone.clone();
+            stoneTexClone.needsUpdate = true;
+            stoneTexClone.wrapS = THREE.RepeatWrapping;
+            stoneTexClone.wrapT = THREE.RepeatWrapping;
+            stoneTexClone.repeat.set(repeatX, repeatY);
+            const wallColors = [0x3A5B3E, 0x2E4E32, 0x44634A, 0x385838];
+            const wallMaterial = new THREE.MeshLambertMaterial({
+                map: stoneTexClone,
+                color: wallColors[Math.floor(Math.random() * wallColors.length)]
+            });
+            const wall = new THREE.Mesh(wallGeometry, wallMaterial);
+            wall.position.set(mtn.x, wallHeight / 2, mtn.z);
+            wall.castShadow = true;
+            wall.receiveShadow = true;
+            _scene.add(wall);
+            
+            // Thick living green cap on top (overgrown top surface)
+            const capGeometry = new THREE.BoxGeometry(wallWidth + 0.6, 0.7, wallDepth + 0.7);
+            const capMaterial = getMaterial('lambert', { color: 0x3A7B2A });
+            const cap = new THREE.Mesh(capGeometry, capMaterial);
+            cap.position.set(mtn.x, wallHeight + 0.35, mtn.z);
+            _scene.add(cap);
+            
+            // All decorations go into proximity-loaded chunks based on each item's position
+            // Skip dense vegetation for rotated walls (e.g. chunk boundary walls) because
+            // the rotation proxy zeroes mtn.x/z, so decoration positions would all land at
+            // the world origin instead of the actual wall location.
+            if (!hasRotation) {
+            
+            // Dense grass tufts growing on top of wall — cover full top surface
+            const topArea = wallWidth * wallDepth;
+            const tuftsCount = Math.max(2, Math.floor(Math.sqrt(topArea) / 2));
+            for (let i = 0; i < tuftsCount; i++) {
+                const tuftGeometry = new THREE.ConeGeometry(0.2 + Math.random() * 0.25, 0.6 + Math.random() * 0.6, 4);
+                const tuftMaterial = getMaterial('lambert', { 
+                    color: [0x3A7B2A, 0x4A8B3A, 0x2A6B1A, 0x358025, 0x2D7020][Math.floor(Math.random() * 5)]
+                });
+                const tuft = new THREE.Mesh(tuftGeometry, tuftMaterial);
+                tuft.position.set(
+                    mtn.x + (Math.random() - 0.5) * wallWidth,
+                    wallHeight + 0.6 + Math.random() * 0.3,
+                    mtn.z + (Math.random() - 0.5) * wallDepth
+                );
+                tuft.rotation.z = (Math.random() - 0.5) * 0.4;
+                _addLabyrinthDeco(tuft);
+            }
+            
+            // Small bushes / hedge lumps growing on top of wall
+            const bushTopCount = Math.max(1, Math.floor(Math.sqrt(topArea) / 6));
+            for (let i = 0; i < bushTopCount; i++) {
+                const bushGeometry = new THREE.SphereGeometry(0.5 + Math.random() * 0.5, 5, 5);
+                const bushMaterial = getMaterial('lambert', { 
+                    color: [0x2A6B1A, 0x3A7B2A, 0x1E5A10][Math.floor(Math.random() * 3)]
+                });
+                const bush = new THREE.Mesh(bushGeometry, bushMaterial);
+                bush.position.set(
+                    mtn.x + (Math.random() - 0.5) * wallWidth,
+                    wallHeight + 0.5 + Math.random() * 0.3,
+                    mtn.z + (Math.random() - 0.5) * wallDepth
+                );
+                bush.scale.set(1.2 + Math.random() * 0.5, 0.6 + Math.random() * 0.4, 1.0 + Math.random() * 0.3);
+                _addLabyrinthDeco(bush);
+            }
+            
+            // Dense moss bulges covering wall faces — distributed across all 4 faces
+            const mossCount = Math.max(2, Math.floor(wallWidth / 2.5));
+            for (let i = 0; i < mossCount; i++) {
+                const mossGeometry = new THREE.SphereGeometry(0.3 + Math.random() * 0.5, 5, 5);
+                const mossMaterial = getMaterial('lambert', { 
+                    color: [0x4A6B3A, 0x3A5B2A, 0x5A7B4A, 0x3D6B30, 0x2E5420][Math.floor(Math.random() * 5)]
+                });
+                const moss = new THREE.Mesh(mossGeometry, mossMaterial);
+                const fp = wallSidePos(Math.random(), 0.05);
+                moss.position.set(
+                    fp.x,
+                    Math.random() * wallHeight * 0.8 + wallHeight * 0.1,
+                    fp.z
+                );
+                moss.scale.set(1.5 + Math.random() * 0.5, 0.5 + Math.random() * 0.3, 0.8 + Math.random() * 0.3);
+                _addLabyrinthDeco(moss);
+            }
+            
+            // Ivy vines climbing all sides of every wall
+            const totalFaceLen = 2 * wallWidth + 2 * wallDepth;
+            const ivyVineCount = Math.max(1, Math.floor(totalFaceLen / 10));
+            for (let v = 0; v < ivyVineCount; v++) {
+                // Pick a face for this vine
+                const onZFace = Math.random() < zFaceProb;
+                const side = Math.random() < 0.5 ? 1 : -1;
+                const faceLen = onZFace ? wallWidth : wallDepth;
+                const vineAlong = mtn.x - wallWidth/2 + (v + 0.5) * (wallWidth / ivyVineCount); // fallback
+                const vinePosAlong = -faceLen/2 + (Math.random()) * faceLen;
+                const segCount = Math.floor(wallHeight / 0.5);
+                // Main vine stem
+                for (let s = 0; s < segCount; s++) {
+                    const stemGeometry = new THREE.CylinderGeometry(0.03, 0.04, 0.55, 3);
+                    const stemMaterial = getMaterial('lambert', { color: 0x2A4A1A });
+                    const stem = new THREE.Mesh(stemGeometry, stemMaterial);
+                    const meander = Math.sin(s * 0.6) * 0.4;
+                    if (onZFace) {
+                        stem.position.set(
+                            mtn.x + vinePosAlong + meander,
+                            s * 0.5 + 0.25,
+                            mtn.z + side * (wallDepth/2 + 0.06)
+                        );
+                    } else {
+                        stem.position.set(
+                            mtn.x + side * (wallWidth/2 + 0.06),
+                            s * 0.5 + 0.25,
+                            mtn.z + vinePosAlong + meander
+                        );
+                    }
+                    stem.rotation.z = Math.sin(s * 0.6) * 0.3;
+                    _addLabyrinthDeco(stem);
+                    
+                    // Ivy leaves along the vine (every other segment)
+                    if (s % 2 === 0 || Math.random() < 0.6) {
+                        const leafGeometry = new THREE.SphereGeometry(0.1 + Math.random() * 0.12, 3, 3);
+                        const leafMaterial = getMaterial('lambert', { 
+                            color: [0x2A5A1A, 0x3A6B2A, 0x1E4E12, 0x357025][Math.floor(Math.random() * 4)]
+                        });
+                        const leaf = new THREE.Mesh(leafGeometry, leafMaterial);
+                        const leafSide = Math.random() < 0.5 ? -0.2 : 0.2;
+                        if (onZFace) {
+                            leaf.position.set(
+                                mtn.x + vinePosAlong + meander + leafSide,
+                                s * 0.5 + 0.3,
+                                mtn.z + side * (wallDepth/2 + 0.12)
+                            );
+                        } else {
+                            leaf.position.set(
+                                mtn.x + side * (wallWidth/2 + 0.12),
+                                s * 0.5 + 0.3,
+                                mtn.z + vinePosAlong + meander + leafSide
+                            );
+                        }
+                        leaf.scale.set(1.4, 0.5, 1.0);
+                        _addLabyrinthDeco(leaf);
+                    }
+                }
+                // Branching tendrils at the top
+                if (Math.random() < 0.7) {
+                    for (let b = 0; b < 2; b++) {
+                        const tendrilGeometry = new THREE.CylinderGeometry(0.02, 0.01, 0.8, 3);
+                        const tendrilMaterial = getMaterial('lambert', { color: 0x2A4A1A });
+                        const tendril = new THREE.Mesh(tendrilGeometry, tendrilMaterial);
+                        const tOff = b === 0 ? -0.4 : 0.4;
+                        if (onZFace) {
+                            tendril.position.set(
+                                mtn.x + vinePosAlong + tOff,
+                                wallHeight - 0.3,
+                                mtn.z + side * (wallDepth/2 + 0.08)
+                            );
+                        } else {
+                            tendril.position.set(
+                                mtn.x + side * (wallWidth/2 + 0.08),
+                                wallHeight - 0.3,
+                                mtn.z + vinePosAlong + tOff
+                            );
+                        }
+                        tendril.rotation.z = (b === 0 ? 0.5 : -0.5);
+                        _addLabyrinthDeco(tendril);
+                    }
+                }
+            }
+            
+            // Hanging moss drapes from top of wall — all faces
+            const drapesCount = Math.max(1, Math.floor(totalFaceLen / 16));
+            for (let d = 0; d < drapesCount; d++) {
+                const fp = wallSidePos(Math.random(), 0.15);
+                const drapeLength = 1.0 + Math.random() * 2.5;
+                const drapeSegments = Math.floor(drapeLength / 0.3);
+                for (let s = 0; s < drapeSegments; s++) {
+                    const segGeometry = new THREE.SphereGeometry(0.06 + (1 - s / drapeSegments) * 0.06, 3, 3);
+                    const segMaterial = getMaterial('lambert', { 
+                        color: [0x5A8B4A, 0x4A7B3A, 0x6A9B5A][Math.floor(Math.random() * 3)]
+                    });
+                    const seg = new THREE.Mesh(segGeometry, segMaterial);
+                    if (fp.onZFace) {
+                        seg.position.set(
+                            fp.x + Math.sin(s * 0.3) * 0.15,
+                            wallHeight - s * 0.3,
+                            fp.z
+                        );
+                    } else {
+                        seg.position.set(
+                            fp.x,
+                            wallHeight - s * 0.3,
+                            fp.z + Math.sin(s * 0.3) * 0.15
+                        );
+                    }
+                    seg.scale.set(1.5, 1.0, 0.8);
+                    _addLabyrinthDeco(seg);
+                }
+            }
+            
+            // Colorful flowers growing from wall cracks — all faces
+            const flowerColors = [0xFF69B4, 0xFFD700, 0xFF6347, 0x9370DB, 0xFFB6C1, 0xFFA500, 0xE6E600, 0xFF85C2, 0xB266FF];
+            const wallFlowerCount = Math.max(2, Math.floor(wallWidth / 4));
+            for (let i = 0; i < wallFlowerCount; i++) {
+                if (Math.random() < 0.85) {
+                    const flowerColor = flowerColors[Math.floor(Math.random() * flowerColors.length)];
+                    const flowerGeometry = new THREE.SphereGeometry(0.12 + Math.random() * 0.1, 5, 5);
+                    const flowerMaterial = getMaterial('lambert', { color: flowerColor });
+                    const flower = new THREE.Mesh(flowerGeometry, flowerMaterial);
+                    const fp = wallSidePos(Math.random(), 0.15);
+                    flower.position.set(
+                        fp.x,
+                        0.3 + Math.random() * wallHeight * 0.7,
+                        fp.z
+                    );
+                    _addLabyrinthDeco(flower);
+                    // Add flower stem
+                    const stemGeometry = new THREE.CylinderGeometry(0.015, 0.02, 0.3, 3);
+                    const stemMaterial = getMaterial('lambert', { color: 0x2A5A1A });
+                    const stem = new THREE.Mesh(stemGeometry, stemMaterial);
+                    if (fp.onZFace) {
+                        stem.position.set(flower.position.x, flower.position.y - 0.15, flower.position.z - fp.side * 0.03);
+                    } else {
+                        stem.position.set(flower.position.x - fp.side * 0.03, flower.position.y - 0.15, flower.position.z);
+                    }
+                    _addLabyrinthDeco(stem);
+                }
+            }
+            
+            // Flowers on top of wall too — cover full top surface
+            const topFlowerCount = Math.max(1, Math.floor(Math.sqrt(topArea) / 5));
+            for (let i = 0; i < topFlowerCount; i++) {
+                const flowerColor = flowerColors[Math.floor(Math.random() * flowerColors.length)];
+                const stemH = 0.3 + Math.random() * 0.4;
+                // Stem
+                const stemGeometry = new THREE.CylinderGeometry(0.02, 0.025, stemH, 3);
+                const stemMaterial = getMaterial('lambert', { color: 0x2A5A1A });
+                const stem = new THREE.Mesh(stemGeometry, stemMaterial);
+                const fx = mtn.x + (Math.random() - 0.5) * wallWidth;
+                const fz = mtn.z + (Math.random() - 0.5) * wallDepth;
+                stem.position.set(fx, wallHeight + 0.5 + stemH/2, fz);
+                _addLabyrinthDeco(stem);
+                // Bloom
+                const bloomGeometry = new THREE.SphereGeometry(0.1 + Math.random() * 0.08, 5, 5);
+                const bloomMaterial = getMaterial('lambert', { color: flowerColor });
+                const bloom = new THREE.Mesh(bloomGeometry, bloomMaterial);
+                bloom.position.set(fx, wallHeight + 0.5 + stemH + 0.05, fz);
+                _addLabyrinthDeco(bloom);
+            }
+            
+            // Dense ferns at wall base on all sides
+            const fernCount = Math.max(2, Math.floor(wallWidth / 4));
+            for (let i = 0; i < fernCount; i++) {
+                if (Math.random() < 0.8) {
+                    const fernSize = 0.3 + Math.random() * 0.4;
+                    const fernGeometry = new THREE.ConeGeometry(fernSize, fernSize * 2.5, 5);
+                    const fernMaterial = getMaterial('lambert', { 
+                        color: [0x3A7B2A, 0x2A6B1A, 0x4A8B3A, 0x358528][Math.floor(Math.random() * 4)]
+                    });
+                    const fern = new THREE.Mesh(fernGeometry, fernMaterial);
+                    const fp = wallSidePos(Math.random(), 0.3 + Math.random() * 0.4);
+                    fern.position.set(
+                        fp.x,
+                        fernSize * 1.2,
+                        fp.z
+                    );
+                    fern.rotation.z = fp.side * (0.1 + Math.random() * 0.25);
+                    fern.rotation.y = Math.random() * Math.PI;
+                    _addLabyrinthDeco(fern);
+                }
+            }
+            
+            // Root systems at wall base — all faces
+            const rootCount = Math.max(1, Math.floor(wallWidth / 7));
+            for (let i = 0; i < rootCount; i++) {
+                if (Math.random() < 0.65) {
+                    const fp = wallSidePos(Math.random(), 0);
+                    const side = fp.side;
+                    for (let r = 0; r < 2 + Math.floor(Math.random() * 2); r++) {
+                        const rootLen = 0.5 + Math.random() * 1.0;
+                        const rootGeometry = new THREE.CylinderGeometry(0.04, 0.02, rootLen, 3);
+                        const rootMaterial = getMaterial('lambert', { color: [0x4A3A2A, 0x3A2A1A, 0x5A4A3A][Math.floor(Math.random() * 3)] });
+                        const root = new THREE.Mesh(rootGeometry, rootMaterial);
+                        if (fp.onZFace) {
+                            root.position.set(
+                                fp.x + (Math.random() - 0.5) * 0.5,
+                                0.1 + Math.random() * 0.15,
+                                mtn.z + side * (wallDepth/2 + rootLen/3)
+                            );
+                            root.rotation.x = side * (0.8 + Math.random() * 0.5);
+                        } else {
+                            root.position.set(
+                                mtn.x + side * (wallWidth/2 + rootLen/3),
+                                0.1 + Math.random() * 0.15,
+                                fp.z + (Math.random() - 0.5) * 0.5
+                            );
+                            root.rotation.z = -side * (0.8 + Math.random() * 0.5);
+                        }
+                        root.rotation.y = Math.random() * Math.PI;
+                        _addLabyrinthDeco(root);
+                    }
+                }
+            }
+            
+            // Mushroom clusters at wall base (occasional) — all faces
+            if (Math.random() < 0.35) {
+                const mushroomCount = 1 + Math.floor(Math.random() * 3);
+                const fp = wallSidePos(0.25 + Math.random() * 0.5, 0);
+                for (let m = 0; m < mushroomCount; m++) {
+                    const mushroomColors = [0xCD853F, 0xD2691E, 0xA0522D, 0x8B4513, 0xDEB887];
+                    // Stem
+                    const stemGeometry = new THREE.CylinderGeometry(0.04, 0.05, 0.2 + Math.random() * 0.15, 5);
+                    const stemMaterial = getMaterial('lambert', { color: 0xFFFACD });
+                    const stem = new THREE.Mesh(stemGeometry, stemMaterial);
+                    const mNoise = (Math.random() - 0.5) * 0.5;
+                    if (fp.onZFace) {
+                        stem.position.set(fp.x + mNoise, 0.12, mtn.z + fp.side * (wallDepth/2 + 0.3 + Math.random() * 0.3));
+                    } else {
+                        stem.position.set(mtn.x + fp.side * (wallWidth/2 + 0.3 + Math.random() * 0.3), 0.12, fp.z + mNoise);
+                    }
+                    _addLabyrinthDeco(stem);
+                    // Cap
+                    const capGeometry = new THREE.SphereGeometry(0.08 + Math.random() * 0.08, 5, 5);
+                    const capMaterial = getMaterial('lambert', { color: mushroomColors[Math.floor(Math.random() * mushroomColors.length)] });
+                    const mushroomCap = new THREE.Mesh(capGeometry, capMaterial);
+                    mushroomCap.position.set(stem.position.x, 0.25, stem.position.z);
+                    mushroomCap.scale.set(1.5, 0.7, 1.5);
+                    _addLabyrinthDeco(mushroomCap);
+                }
+            }
+            
+            } // end if (!hasRotation) — skip decorations for rotated walls
+            
         } else {
             // Regular mountain (cone shape)
             const mountainGeometry = new THREE.ConeGeometry(mtn.width/2, mtn.height, 6);
@@ -3711,6 +4584,7 @@ function createMountains(scene, THREE, mountainPositions, candyTheme, graveyardT
             scene.add(proxyGroup);
         }
     });
+
 }
 
 // Create computer-themed ground with circuit board pattern and glowing grid lines
@@ -3857,7 +4731,7 @@ function createComputerGround(scene, THREE) {
 }
 
 // Create ground plane
-function createGround(scene, THREE, groundColor, iceTheme, desertTheme, lavaTheme, waterTheme, candyTheme, graveyardTheme, ruinsTheme, computerTheme, christmasTheme, crystalTheme, rapunzelTheme) {
+function createGround(scene, THREE, groundColor, iceTheme, desertTheme, lavaTheme, waterTheme, candyTheme, graveyardTheme, ruinsTheme, computerTheme, christmasTheme, crystalTheme, rapunzelTheme, labyrinthTheme) {
     const textures = getTerrainTextures(THREE);
     const color = groundColor || 0xffffff; // Tint color applied over texture
     let textureToUse;
@@ -3920,6 +4794,8 @@ function createGround(scene, THREE, groundColor, iceTheme, desertTheme, lavaThem
         textureToUse = textures.grassIce;
     } else if (crystalTheme) {
         textureToUse = textures.rock || textures.grass; // Dark cave rock floor
+    } else if (labyrinthTheme) {
+        textureToUse = textures.labyrinthGround; // Mossy stone floor
     } else {
         textureToUse = textures.grass;
     }
@@ -3932,6 +4808,7 @@ function createGround(scene, THREE, groundColor, iceTheme, desertTheme, lavaThem
     else if (ruinsTheme) groundTextureName = 'grass';
     else if (iceTheme || christmasTheme) groundTextureName = 'grassIce';
     else if (crystalTheme) groundTextureName = 'rock';
+    else if (labyrinthTheme) groundTextureName = 'labyrinthGround';
     const groundGeometry = getGeometry('plane', 600, 600, 1, 1);
     groundMaterial = getTexturedMaterial('lambert', { 
         map: textureToUse,
@@ -3941,6 +4818,193 @@ function createGround(scene, THREE, groundColor, iceTheme, desertTheme, lavaThem
     ground.rotation.x = -Math.PI / 2;
     ground.receiveShadow = true;
     scene.add(ground);
+    
+    // Labyrinth ground vegetation - scatter plants, grass clumps, flowers, moss across the ground
+    if (labyrinthTheme) {
+        createLabyrinthGroundVegetation(scene, THREE);
+    }
+}
+
+// Dense ground vegetation for labyrinth theme - uses chunk manager for proximity loading
+function createLabyrinthGroundVegetation(scene, THREE) {
+    // Ensure chunk manager is initialized (may be called after createMountains)
+    if (!_labyrinthDecoScene) {
+        _labyrinthDecoScene = scene;
+        _labyrinthDecoTHREE = THREE;
+    }
+    const extent = 200; // Cover a large area
+    
+    // Helper: add mesh to the correct spatial chunk
+    function addDeco(mesh, x, z) {
+        _getLabyrinthDecoChunk(x, z).add(mesh);
+    }
+    
+    // Tall grass clumps scattered everywhere
+    for (let i = 0; i < 350; i++) {
+        const x = (Math.random() - 0.5) * extent * 2;
+        const z = (Math.random() - 0.5) * extent * 2;
+        const clumpSize = 2 + Math.floor(Math.random() * 4);
+        for (let g = 0; g < clumpSize; g++) {
+            const grassH = 0.3 + Math.random() * 0.5;
+            const grassGeometry = new THREE.ConeGeometry(0.08 + Math.random() * 0.08, grassH, 3);
+            const grassMaterial = getMaterial('lambert', { 
+                color: [0x3A7B2A, 0x4A8B3A, 0x2A6B1A, 0x358025, 0x2D7020, 0x4A9B40][Math.floor(Math.random() * 6)]
+            });
+            const grass = new THREE.Mesh(grassGeometry, grassMaterial);
+            const gx = x + (Math.random() - 0.5) * 1.2;
+            const gz = z + (Math.random() - 0.5) * 1.2;
+            grass.position.set(gx, grassH / 2, gz);
+            grass.rotation.z = (Math.random() - 0.5) * 0.3;
+            grass.rotation.x = (Math.random() - 0.5) * 0.2;
+            addDeco(grass, gx, gz);
+        }
+    }
+    
+    // Wildflower patches on the ground
+    const flowerColors = [0xFF69B4, 0xFFD700, 0xFF6347, 0x9370DB, 0xFFB6C1, 0xFFA500, 0xE6E600, 0xFF85C2, 0xB266FF, 0xFFFFFF, 0xFF4444];
+    for (let i = 0; i < 200; i++) {
+        const px = (Math.random() - 0.5) * extent * 2;
+        const pz = (Math.random() - 0.5) * extent * 2;
+        const patchFlowers = 1 + Math.floor(Math.random() * 4);
+        for (let f = 0; f < patchFlowers; f++) {
+            const stemH = 0.2 + Math.random() * 0.3;
+            const stemGeometry = new THREE.CylinderGeometry(0.015, 0.02, stemH, 3);
+            const stemMaterial = getMaterial('lambert', { color: 0x2A5A1A });
+            const stem = new THREE.Mesh(stemGeometry, stemMaterial);
+            const fx = px + (Math.random() - 0.5) * 1.5;
+            const fz = pz + (Math.random() - 0.5) * 1.5;
+            stem.position.set(fx, stemH / 2, fz);
+            addDeco(stem, fx, fz);
+            const bloomSize = 0.06 + Math.random() * 0.08;
+            const bloomGeometry = new THREE.SphereGeometry(bloomSize, 5, 5);
+            const bloomMaterial = getMaterial('lambert', { 
+                color: flowerColors[Math.floor(Math.random() * flowerColors.length)]
+            });
+            const bloom = new THREE.Mesh(bloomGeometry, bloomMaterial);
+            bloom.position.set(fx, stemH + bloomSize * 0.5, fz);
+            addDeco(bloom, fx, fz);
+        }
+    }
+    
+    // Moss patches on ground (flat green circles)
+    for (let i = 0; i < 120; i++) {
+        const patchSize = 0.5 + Math.random() * 1.5;
+        const mossGeometry = new THREE.CircleGeometry(patchSize, 8);
+        const mossMaterial = getMaterial('lambert', { 
+            color: [0x3A6B2A, 0x4A7B3A, 0x2A5B1A, 0x3D7030][Math.floor(Math.random() * 4)]
+        });
+        const moss = new THREE.Mesh(mossGeometry, mossMaterial);
+        moss.rotation.x = -Math.PI / 2;
+        const mx = (Math.random() - 0.5) * extent * 2;
+        const mz = (Math.random() - 0.5) * extent * 2;
+        moss.position.set(mx, 0.02 + Math.random() * 0.01, mz);
+        addDeco(moss, mx, mz);
+    }
+    
+    // Small ferns scattered on ground
+    for (let i = 0; i < 150; i++) {
+        const fernSize = 0.2 + Math.random() * 0.35;
+        const fernGeometry = new THREE.ConeGeometry(fernSize, fernSize * 2.2, 5);
+        const fernMaterial = getMaterial('lambert', { 
+            color: [0x3A7B2A, 0x2A6B1A, 0x4A8B3A, 0x358528][Math.floor(Math.random() * 4)]
+        });
+        const fern = new THREE.Mesh(fernGeometry, fernMaterial);
+        const fx = (Math.random() - 0.5) * extent * 2;
+        const fz = (Math.random() - 0.5) * extent * 2;
+        fern.position.set(fx, fernSize * 1.0, fz);
+        fern.rotation.z = (Math.random() - 0.5) * 0.3;
+        fern.rotation.y = Math.random() * Math.PI * 2;
+        addDeco(fern, fx, fz);
+    }
+    
+    // Mushroom clusters on the ground
+    for (let i = 0; i < 40; i++) {
+        const mx = (Math.random() - 0.5) * extent * 2;
+        const mz = (Math.random() - 0.5) * extent * 2;
+        const count = 1 + Math.floor(Math.random() * 4);
+        const mushroomCapColors = [0xCD853F, 0xD2691E, 0xA0522D, 0x8B4513, 0xDEB887, 0xB22222, 0xF5DEB3];
+        for (let m = 0; m < count; m++) {
+            const stemH = 0.12 + Math.random() * 0.15;
+            const capR = 0.06 + Math.random() * 0.1;
+            const stemGeometry = new THREE.CylinderGeometry(capR * 0.4, capR * 0.5, stemH, 5);
+            const stemMaterial = getMaterial('lambert', { color: 0xFFFACD });
+            const stem = new THREE.Mesh(stemGeometry, stemMaterial);
+            const smx = mx + (Math.random() - 0.5) * 0.8;
+            const smz = mz + (Math.random() - 0.5) * 0.8;
+            stem.position.set(smx, stemH / 2, smz);
+            addDeco(stem, smx, smz);
+            const capGeometry = new THREE.SphereGeometry(capR, 5, 5);
+            const capMaterial = getMaterial('lambert', { 
+                color: mushroomCapColors[Math.floor(Math.random() * mushroomCapColors.length)]
+            });
+            const cap = new THREE.Mesh(capGeometry, capMaterial);
+            cap.position.set(smx, stemH + capR * 0.3, smz);
+            cap.scale.set(1.5, 0.7, 1.5);
+            addDeco(cap, smx, smz);
+        }
+    }
+    
+    // Small ground cover bushes (low, wide)
+    for (let i = 0; i < 80; i++) {
+        const bushSize = 0.3 + Math.random() * 0.5;
+        const bushGeometry = new THREE.SphereGeometry(bushSize, 5, 5);
+        const bushMaterial = getMaterial('lambert', { 
+            color: [0x2A6B1A, 0x3A7B2A, 0x1E5A10, 0x2D7020][Math.floor(Math.random() * 4)]
+        });
+        const bush = new THREE.Mesh(bushGeometry, bushMaterial);
+        const bx = (Math.random() - 0.5) * extent * 2;
+        const bz = (Math.random() - 0.5) * extent * 2;
+        bush.position.set(bx, bushSize * 0.35, bz);
+        bush.scale.set(1.3 + Math.random() * 0.5, 0.4 + Math.random() * 0.3, 1.3 + Math.random() * 0.5);
+        addDeco(bush, bx, bz);
+    }
+    
+    // Fallen leaves / debris patches
+    const leafColors = [0x8B6914, 0x6B8E23, 0x9ACD32, 0x556B2F, 0x8FBC8F, 0x808000];
+    for (let i = 0; i < 100; i++) {
+        const leafGeometry = new THREE.CircleGeometry(0.08 + Math.random() * 0.08, 4);
+        const leafMaterial = getMaterial('lambert', { 
+            color: leafColors[Math.floor(Math.random() * leafColors.length)]
+        });
+        const leaf = new THREE.Mesh(leafGeometry, leafMaterial);
+        leaf.rotation.x = -Math.PI / 2 + (Math.random() - 0.5) * 0.3;
+        leaf.rotation.z = Math.random() * Math.PI * 2;
+        const lx = (Math.random() - 0.5) * extent * 2;
+        const lz = (Math.random() - 0.5) * extent * 2;
+        leaf.position.set(lx, 0.015 + Math.random() * 0.01, lz);
+        addDeco(leaf, lx, lz);
+    }
+    
+    // Larger decorative plants (like small palms / broad-leaf plants)
+    for (let i = 0; i < 30; i++) {
+        const plantX = (Math.random() - 0.5) * extent * 2;
+        const plantZ = (Math.random() - 0.5) * extent * 2;
+        const stalkH = 0.4 + Math.random() * 0.4;
+        const stalkGeometry = new THREE.CylinderGeometry(0.03, 0.05, stalkH, 4);
+        const stalkMaterial = getMaterial('lambert', { color: 0x2A5A1A });
+        const stalk = new THREE.Mesh(stalkGeometry, stalkMaterial);
+        stalk.position.set(plantX, stalkH / 2, plantZ);
+        addDeco(stalk, plantX, plantZ);
+        const leafCount = 3 + Math.floor(Math.random() * 3);
+        for (let l = 0; l < leafCount; l++) {
+            const angle = (l / leafCount) * Math.PI * 2 + Math.random() * 0.3;
+            const leafLen = 0.3 + Math.random() * 0.3;
+            const broadLeafGeometry = new THREE.ConeGeometry(0.1, leafLen, 3);
+            const broadLeafMaterial = getMaterial('lambert', { 
+                color: [0x2A6B1A, 0x3A7B2A, 0x1E5A10][Math.floor(Math.random() * 3)]
+            });
+            const broadLeaf = new THREE.Mesh(broadLeafGeometry, broadLeafMaterial);
+            broadLeaf.position.set(
+                plantX + Math.cos(angle) * 0.15,
+                stalkH * 0.7,
+                plantZ + Math.sin(angle) * 0.15
+            );
+            broadLeaf.rotation.z = Math.cos(angle) * 0.8;
+            broadLeaf.rotation.x = Math.sin(angle) * 0.8;
+            addDeco(broadLeaf, plantX, plantZ);
+        }
+    }
+
 }
 
 // Create river

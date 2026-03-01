@@ -7,6 +7,56 @@
 (function() {
     'use strict';
 
+    // === Spawn marker PointLight pool ===
+    // Pre-allocate PointLights to avoid shader recompilation when lights are added/removed.
+    // Lights stay in the scene at all times; intensity is set to 0 when idle.
+    const SPAWN_LIGHT_POOL_SIZE = 5;
+    const _spawnLightPool = [];      // available lights
+    const _spawnLightPoolAll = [];   // all lights (for cleanup)
+    let _spawnLightPoolInitialized = false;
+
+    function _ensureSpawnLightPool() {
+        if (_spawnLightPoolInitialized) return;
+        _spawnLightPoolInitialized = true;
+        for (let i = 0; i < SPAWN_LIGHT_POOL_SIZE; i++) {
+            const light = new THREE.PointLight(0xff0000, 0, 20);
+            light.position.set(0, -1000, 0); // park offscreen
+            G.scene.add(light);
+            _spawnLightPool.push(light);
+            _spawnLightPoolAll.push(light);
+        }
+    }
+
+    /**
+     * Acquire a PointLight from the pool, positioned at (x, y, z) with the given intensity.
+     * Returns the light, or null if the pool is exhausted (caller should handle gracefully).
+     */
+    function acquireSpawnLight(x, y, z, intensity) {
+        _ensureSpawnLightPool();
+        if (_spawnLightPool.length === 0) return null;
+        const light = _spawnLightPool.pop();
+        light.position.set(x, y, z);
+        light.intensity = intensity;
+        return light;
+    }
+
+    /**
+     * Release a PointLight back to the pool. Resets intensity and parks it offscreen.
+     */
+    function releaseSpawnLight(light) {
+        if (!light) return;
+        light.intensity = 0;
+        light.position.set(0, -1000, 0);
+        // Only push back if it belongs to our pool and isn't already in it
+        if (_spawnLightPoolAll.indexOf(light) !== -1 && _spawnLightPool.indexOf(light) === -1) {
+            _spawnLightPool.push(light);
+        }
+    }
+
+    // Expose pool helpers globally so multiplayer handler can use them too
+    window.acquireSpawnLight = acquireSpawnLight;
+    window.releaseSpawnLight = releaseSpawnLight;
+
     // Spawn candy drops from dragon death (candy theme only)
     // Uses seeded random for multiplayer sync - both host and client generate same positions
     function spawnDragonCandyDrops(x, y, z) {
@@ -286,7 +336,7 @@
             
             // Pulsate the light - faster and more intense
             const pulse = Math.sin(elapsed * 0.02) * 0.5 + 0.5; // 0-1 pulsation (faster)
-            pending.light.intensity = 3.0 + pulse * 3.0; // 3.0 to 6.0 intensity
+            if (pending.light) pending.light.intensity = 3.0 + pulse * 3.0; // 3.0 to 6.0 intensity
             pending.glow.scale.setScalar(1.5 + pulse * 0.8); // Pulsate glow size larger
             pending.glow.material.opacity = 0.5 + pulse * 0.4;
             if (pending.beam) {
@@ -296,8 +346,8 @@
             
             // After warning period, spawn the zombie
             if (elapsed >= pending.warningDuration) {
-                // Remove warning light and effects
-                G.scene.remove(pending.light);
+                // Return warning light to pool and remove visual effects
+                releaseSpawnLight(pending.light);
                 G.scene.remove(pending.glow);
                 pending.glow.geometry.dispose();
                 pending.glow.material.dispose();
@@ -342,10 +392,8 @@
         const spawnId = Date.now() + '_' + Math.random();
         const terrainHeight = getTerrainHeight(spawnX, spawnZ);
         
-        // Create pulsating red warning light - bright and high for visibility
-        const warningLight = new THREE.PointLight(0xff0000, 4.0, 20);
-        warningLight.position.set(spawnX, terrainHeight + 4, spawnZ);
-        G.scene.add(warningLight);
+        // Acquire a warning light from the pool (avoids shader recompilation)
+        const warningLight = acquireSpawnLight(spawnX, terrainHeight + 4, spawnZ, 4.0);
         
         // Create glowing ground circle effect - larger and brighter
         const glowGeometry = getGeometry('circle', 2.0, 32);

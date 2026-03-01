@@ -364,10 +364,8 @@
             
             const terrainHeight = getTerrainHeight(data.x, data.z);
             
-            // Create pulsating red warning light (same as host) - bright and high
-            const warningLight = new THREE.PointLight(0xff0000, 4.0, 20);
-            warningLight.position.set(data.x, terrainHeight + 4, data.z);
-            G.scene.add(warningLight);
+            // Acquire a warning light from the pool (avoids shader recompilation)
+            const warningLight = acquireSpawnLight(data.x, terrainHeight + 4, data.z, 4.0);
             
             // Create glowing ground circle effect - larger and brighter
             const glowGeometry = getGeometry('circle', 2.0, 32);
@@ -643,12 +641,14 @@
             const canPassMountains = G.waterTheme && G.player.isGliding;
             if (!canPassMountains) {
                 G.levelConfig.mountains.forEach(mtn => {
-                    // For graveyard, ruins, computer, enchanted, easter, christmas, crystal, and rapunzel theme walls, use rectangular (box) collision
-                    if (G.graveyardTheme || G.ruinsTheme || G.computerTheme || G.enchantedTheme || G.easterTheme || G.christmasTheme || G.crystalTheme || G.rapunzelTheme) {
+                    // For graveyard, ruins, computer, enchanted, easter, christmas, crystal, rapunzel, and labyrinth theme walls, use rectangular (box) collision
+                    if (G.graveyardTheme || G.ruinsTheme || G.computerTheme || G.enchantedTheme || G.easterTheme || G.christmasTheme || G.crystalTheme || G.rapunzelTheme || G.labyrinthTheme) {
                         const wallWidth = mtn.width;
                         // Match wall depth to visual rendering for each theme
                         let wallDepth;
-                        if (G.computerTheme) {
+                        if (mtn.depth) {
+                            wallDepth = mtn.depth;
+                        } else if (G.computerTheme) {
                             wallDepth = 2;
                         } else if (G.rapunzelTheme) {
                             wallDepth = Math.min(mtn.width * 0.03, 1.5); // Thin walls

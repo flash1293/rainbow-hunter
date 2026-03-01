@@ -1058,6 +1058,11 @@
                 else if (roll < 0.88) enemyType = 'crystalGiant';
                 else if (roll < 0.96) enemyType = 'giant';
                 else enemyType = 'gemSpecter'; // Not a boss but rare
+            } else if (G.labyrinthTheme) {
+                // Labyrinth backwater: only low-level enemies, NO dragons!
+                if (roll < 0.45) enemyType = 'goblin';
+                else if (roll < 0.80) enemyType = 'guardian';
+                else enemyType = 'goblin';
             } else if (G.rapunzelTheme) {
                 // Rapunzel backwater: dense forest with guardians and giants
                 // Flying witches are special spawners, not regular enemies!
@@ -1096,7 +1101,10 @@
         }
         
         // BOSS SPAWNS - ~30% chance of 1 boss per chunk (rare but dangerous)
-        if (random() < 0.3) {
+        // No bosses in labyrinth theme
+        if (G.labyrinthTheme) {
+            // Skip boss generation entirely for labyrinth
+        } else if (random() < 0.3) {
             const bossX = chunkX + 40 + random() * (CHUNK_SIZE - 80);
             const bossZ = chunkZ + 40 + random() * (CHUNK_SIZE - 80);
             const bossPatrol = 15 + random() * 20;
@@ -1272,7 +1280,7 @@
         // Capture scene children before/after to track objects added by createHills/createMountains
         // (they add directly to scene rather than returning objects)
         let beforeCount = G.scene.children.length;
-        createHills(G.scene, THREE, hillData, G.hillColor, G.iceTheme, G.desertTheme, G.lavaTheme, G.waterTheme, G.candyTheme, G.graveyardTheme, G.ruinsTheme, G.computerTheme, G.christmasTheme, G.crystalTheme, G.rapunzelTheme);
+        createHills(G.scene, THREE, hillData, G.hillColor, G.iceTheme, G.desertTheme, G.lavaTheme, G.waterTheme, G.candyTheme, G.graveyardTheme, G.ruinsTheme, G.computerTheme, G.christmasTheme, G.crystalTheme, G.rapunzelTheme, G.labyrinthTheme);
         for (let i = beforeCount; i < G.scene.children.length; i++) {
             chunkData.hills.push(G.scene.children[i]);
         }
@@ -1281,7 +1289,7 @@
 
         if (mountainData.length > 0) {
             beforeCount = G.scene.children.length;
-            createMountains(G.scene, THREE, mountainData, G.candyTheme, G.graveyardTheme, G.ruinsTheme, G.computerTheme, G.enchantedTheme, G.easterTheme, G.christmasTheme, G.crystalTheme, G.rapunzelTheme);
+            createMountains(G.scene, THREE, mountainData, G.candyTheme, G.graveyardTheme, G.ruinsTheme, G.computerTheme, G.enchantedTheme, G.easterTheme, G.christmasTheme, G.crystalTheme, G.rapunzelTheme, G.labyrinthTheme);
             for (let i = beforeCount; i < G.scene.children.length; i++) {
                 chunkData.mountains.push(G.scene.children[i]);
             }

@@ -43,6 +43,8 @@
             buildCaveCrawler(goblinGrp);
         } else if (G.rapunzelTheme) {
             buildLittlePrincess(goblinGrp);
+        } else if (G.labyrinthTheme) {
+            buildStoneGargoyle(goblinGrp);
         } else {
             buildStandardGoblin(goblinGrp, textures);
         }
@@ -960,6 +962,146 @@
         headCrystal2.position.set(0.1, 2.0, 0.05);
         headCrystal2.rotation.z = -0.2;
         group.add(headCrystal2);
+    }
+    
+    function buildStoneGargoyle(group) {
+        // STONE GARGOYLE - small moss-covered stone creature for labyrinth theme
+        const stoneGrey = 0x707070;          // Main stone color
+        const stoneDark = 0x505050;          // Darker stone accents
+        const mossGreen = 0x4A6B3A;          // Moss patches
+        const eyeGlow = 0xAAFF44;            // Eerie green eye glow
+        const crackColor = 0x3A3A3A;         // Dark cracks
+        
+        // Stone body - rough hewn block
+        const bodyGeometry = getGeometry('box', 0.65, 0.75, 0.45);
+        const bodyMaterial = getMaterial('lambert', { color: stoneGrey });
+        const body = new THREE.Mesh(bodyGeometry, bodyMaterial);
+        body.position.y = 0.78;
+        body.rotation.y = 0.05; // Slightly askew - imperfect stone
+        body.castShadow = true;
+        body.receiveShadow = true;
+        group.add(body);
+        
+        // Stone texture cracks on body
+        const crackGeometry = getGeometry('box', 0.5, 0.03, 0.46);
+        const crackMaterial = getMaterial('lambert', { color: crackColor });
+        const crack1 = new THREE.Mesh(crackGeometry, crackMaterial);
+        crack1.position.set(0.05, 0.9, 0);
+        crack1.rotation.z = 0.2;
+        group.add(crack1);
+        const crack2 = new THREE.Mesh(getGeometry('box', 0.03, 0.4, 0.46), crackMaterial);
+        crack2.position.set(-0.15, 0.7, 0);
+        group.add(crack2);
+        
+        // Moss patch on body
+        const mossGeometry = getGeometry('sphere', 0.2, 5, 5);
+        const mossMaterial = getMaterial('lambert', { color: mossGreen });
+        const moss1 = new THREE.Mesh(mossGeometry, mossMaterial);
+        moss1.position.set(0.2, 1.0, 0.22);
+        moss1.scale.set(1.3, 0.5, 0.6);
+        group.add(moss1);
+        const moss2 = new THREE.Mesh(mossGeometry, mossMaterial);
+        moss2.position.set(-0.25, 0.6, -0.18);
+        moss2.scale.set(0.8, 0.4, 0.5);
+        group.add(moss2);
+        
+        // Gargoyle head - angular stone
+        const headGeometry = getGeometry('box', 0.5, 0.45, 0.4);
+        const headMaterial = getMaterial('lambert', { color: stoneGrey });
+        const head = new THREE.Mesh(headGeometry, headMaterial);
+        head.position.y = 1.4;
+        head.rotation.y = -0.03;
+        head.castShadow = true;
+        group.add(head);
+        
+        // Heavy brow ridge
+        const browGeometry = getGeometry('box', 0.55, 0.1, 0.25);
+        const browMaterial = getMaterial('lambert', { color: stoneDark });
+        const brow = new THREE.Mesh(browGeometry, browMaterial);
+        brow.position.set(0, 1.58, 0.12);
+        group.add(brow);
+        
+        // Glowing eyes (recessed under brow)
+        const eyeMaterial = getMaterial('basic', { color: eyeGlow });
+        const eyeGeometry = getGeometry('sphere', 0.07, 8, 8);
+        [-0.12, 0.12].forEach(x => {
+            const eye = new THREE.Mesh(eyeGeometry, eyeMaterial);
+            eye.position.set(x, 1.45, 0.2);
+            group.add(eye);
+        });
+        
+        // Stubby stone horns
+        const hornGeometry = getGeometry('cone', 0.08, 0.3, 5);
+        const hornMaterial = getMaterial('lambert', { color: stoneDark });
+        [-0.2, 0.2].forEach((x, i) => {
+            const horn = new THREE.Mesh(hornGeometry, hornMaterial);
+            horn.position.set(x, 1.7, -0.05);
+            horn.rotation.z = i === 0 ? 0.4 : -0.4;
+            horn.rotation.x = -0.2;
+            horn.castShadow = true;
+            group.add(horn);
+        });
+        
+        // Wide snarling mouth
+        const mouthGeometry = getGeometry('box', 0.3, 0.06, 0.12);
+        const mouthMaterial = getMaterial('basic', { color: 0x1A1A1A });
+        const mouth = new THREE.Mesh(mouthGeometry, mouthMaterial);
+        mouth.position.set(0, 1.28, 0.2);
+        group.add(mouth);
+        
+        // Stone fangs
+        const fangGeometry = getGeometry('cone', 0.03, 0.08, 4);
+        const fangMaterial = getMaterial('lambert', { color: 0x909090 });
+        [-0.08, 0.08].forEach(x => {
+            const fang = new THREE.Mesh(fangGeometry, fangMaterial);
+            fang.position.set(x, 1.25, 0.22);
+            fang.rotation.x = Math.PI; // Point down
+            group.add(fang);
+        });
+        
+        // Small stubby wings (folded)
+        const wingGeometry = getGeometry('box', 0.08, 0.4, 0.35);
+        const wingMaterial = getMaterial('lambert', { color: stoneDark });
+        [-0.35, 0.35].forEach((x, i) => {
+            const wing = new THREE.Mesh(wingGeometry, wingMaterial);
+            wing.position.set(x, 1.0, -0.2);
+            wing.rotation.z = i === 0 ? 0.25 : -0.25;
+            wing.castShadow = true;
+            group.add(wing);
+            // Wing tip spike
+            const tipGeometry = getGeometry('cone', 0.06, 0.15, 4);
+            const tip = new THREE.Mesh(tipGeometry, wingMaterial);
+            tip.position.set(x * 1.15, 1.2, -0.3);
+            tip.rotation.z = i === 0 ? 0.6 : -0.6;
+            group.add(tip);
+        });
+        
+        // Stubby stone legs
+        const legGeometry = getGeometry('box', 0.18, 0.35, 0.2);
+        const legMaterial = getMaterial('lambert', { color: stoneDark });
+        [-0.15, 0.15].forEach(x => {
+            const leg = new THREE.Mesh(legGeometry, legMaterial);
+            leg.position.set(x, 0.22, 0);
+            leg.castShadow = true;
+            group.add(leg);
+        });
+        
+        // Clawed feet
+        const clawGeometry = getGeometry('cone', 0.04, 0.12, 4);
+        [-0.15, 0.15].forEach(x => {
+            for (let c = -1; c <= 1; c++) {
+                const claw = new THREE.Mesh(clawGeometry, getMaterial('lambert', { color: stoneDark }));
+                claw.position.set(x + c * 0.06, 0.02, 0.12);
+                claw.rotation.x = Math.PI / 2;
+                group.add(claw);
+            }
+        });
+        
+        // Moss on head
+        const headMoss = new THREE.Mesh(getGeometry('sphere', 0.12, 4, 4), mossMaterial);
+        headMoss.position.set(0.15, 1.6, -0.1);
+        headMoss.scale.set(1.2, 0.4, 0.8);
+        group.add(headMoss);
     }
     
     function buildStandardGoblin(group, textures) {

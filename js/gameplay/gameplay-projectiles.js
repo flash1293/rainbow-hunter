@@ -1138,18 +1138,20 @@
             const inGracePeriod = elapsed < graceTime;
             
             // Check collision with mountains (if level has them) - skip during grace period
-            // In crystal theme, ALL fireballs collide with walls (including dragon fireballs)
+            // In crystal/labyrinth theme, ALL fireballs collide with walls (including dragon fireballs)
             // In other themes, wizard fireballs, scythe waves, and dragon fireballs pass through walls
             let hitMountain = false;
-            const skipWallCollision = !G.crystalTheme && (fireball.isWizardFireball || fireball.isScytheWave || fireball.isDragonFireball);
+            const skipWallCollision = !G.crystalTheme && !G.labyrinthTheme && (fireball.isWizardFireball || fireball.isScytheWave || fireball.isDragonFireball);
             if (!inGracePeriod && !skipWallCollision && G.levelConfig.mountains && G.levelConfig.mountains.length > 0) {
                 for (const mtn of G.levelConfig.mountains) {
                     // Use box collision for themed levels with walls
-                    if (G.crystalTheme || G.graveyardTheme || G.easterTheme || G.christmasTheme || G.rapunzelTheme || G.ruinsTheme || G.computerTheme || G.enchantedTheme) {
+                    if (G.crystalTheme || G.graveyardTheme || G.easterTheme || G.christmasTheme || G.rapunzelTheme || G.ruinsTheme || G.computerTheme || G.enchantedTheme || G.labyrinthTheme) {
                         const halfWidth = mtn.width / 2;
                         // Calculate wall depth to match visual rendering
                         let wallDepth;
-                        if (G.rapunzelTheme) {
+                        if (mtn.depth) {
+                            wallDepth = mtn.depth;
+                        } else if (G.rapunzelTheme) {
                             wallDepth = Math.min(mtn.width * 0.03, 1.5); // Thin walls
                         } else {
                             wallDepth = mtn.depth || 8;

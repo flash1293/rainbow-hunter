@@ -371,6 +371,53 @@
                 }
             }
             
+            // Check collision with mountains/walls
+            if (!bulletHit && G.levelConfig.mountains && G.levelConfig.mountains.length > 0) {
+                for (const mtn of G.levelConfig.mountains) {
+                    if (G.crystalTheme || G.graveyardTheme || G.ruinsTheme || G.computerTheme || G.enchantedTheme || G.easterTheme || G.christmasTheme || G.rapunzelTheme || G.labyrinthTheme) {
+                        const halfWidth = mtn.width / 2;
+                        let wallDepth;
+                        if (mtn.depth) {
+                            wallDepth = mtn.depth;
+                        } else if (G.rapunzelTheme) {
+                            wallDepth = Math.min(mtn.width * 0.03, 1.5);
+                        } else {
+                            wallDepth = mtn.depth || 8;
+                        }
+                        const halfDepth = wallDepth / 2;
+                        let dx = bullet.mesh.position.x - mtn.x;
+                        let dz = bullet.mesh.position.z - mtn.z;
+                        if (mtn.rotation) {
+                            const cos = Math.cos(-mtn.rotation);
+                            const sin = Math.sin(-mtn.rotation);
+                            const lx = dx * cos - dz * sin;
+                            const lz = dx * sin + dz * cos;
+                            dx = lx;
+                            dz = lz;
+                        }
+                        const mtnHeight = mtn.height || 25;
+                        if (Math.abs(dx) < halfWidth && Math.abs(dz) < halfDepth && bullet.mesh.position.y < mtnHeight) {
+                            Audio.playBulletImpactSound();
+                            createExplosion(bullet.mesh.position.x, bullet.mesh.position.y, bullet.mesh.position.z);
+                            bulletHit = true;
+                            break;
+                        }
+                    } else {
+                        const distToMtn = Math.sqrt(
+                            (bullet.mesh.position.x - mtn.x) ** 2 +
+                            (bullet.mesh.position.z - mtn.z) ** 2
+                        );
+                        const mtnHeight = mtn.height || 15;
+                        if (distToMtn < mtn.width / 2 && bullet.mesh.position.y < mtnHeight) {
+                            Audio.playBulletImpactSound();
+                            createExplosion(bullet.mesh.position.x, bullet.mesh.position.y, bullet.mesh.position.z);
+                            bulletHit = true;
+                            break;
+                        }
+                    }
+                }
+            }
+            
             if (bulletHit) {
                 G.scene.remove(bullet.mesh);
                 G.bullets.splice(i, 1);

@@ -651,6 +651,22 @@ async function build() {
                         </ul>
                     </div>
                 </div>
+                
+                <div class="level-card level-15">
+                    <div class="level-header">
+                        <span class="level-number">Level 15</span>
+                        <h3 class="level-title">The Labyrinth</h3>
+                        <p class="level-subtitle">Das Labyrinth</p>
+                    </div>
+                    <div class="level-content">
+                        <p>Finde deinen Weg durch ein uraltes, moosbewachsenes Steinlabyrinth! Jedes Mal, wenn du spielst, wird ein neues Labyrinth generiert.</p>
+                        <ul class="feature-list">
+                            <li>Prozedural generiertes Labyrinth – jedes Spiel ist anders!</li>
+                            <li>Uralte Steinmauern mit Moos und Efeu</li>
+                            <li>Feinde lauern in den verwinkelten Gängen</li>
+                        </ul>
+                    </div>
+                </div>
             </div>
         </section>
         

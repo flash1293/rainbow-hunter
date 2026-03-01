@@ -1077,7 +1077,7 @@ function initSetup() {
         
         // Update dragon state
         if (data.dragon) {
-            if (!G.dragon && currentDifficulty === 'hard') {
+            if (!G.dragon && currentDifficulty === 'hard' && !G.levelConfig.noBoss) {
                 // Create dragon/reaper if it doesn't exist yet
                 if (G.graveyardTheme || G.levelConfig.useReaper) {
                     G.dragon = createReaper();
@@ -2661,6 +2661,110 @@ function initSetup() {
             }
             
             treeGroup.rotation.y = Math.random() * Math.PI * 2;
+            
+        } else if (G.labyrinthTheme) {
+            // Overgrown ancient tree - thick mossy trunk with dense leafy canopy, ivy, and ferns
+            const trunkH = 2.5 + Math.random() * 1.5;
+            const trunkGeometry = getGeometry('cylinder', 0.3 + Math.random() * 0.15, 0.5 + Math.random() * 0.15, trunkH, 7);
+            const trunkMaterial = getMaterial('lambert', { color: [0x3A2A1A, 0x4A3A2A, 0x2E2518][Math.floor(Math.random() * 3)] });
+            const trunk = new THREE.Mesh(trunkGeometry, trunkMaterial);
+            trunk.position.y = trunkH / 2;
+            trunk.rotation.z = (Math.random() - 0.5) * 0.15;
+            trunk.castShadow = true;
+            treeGroup.add(trunk);
+            
+            // Thick moss covering trunk
+            for (let m = 0; m < 5 + Math.floor(Math.random() * 4); m++) {
+                const mossGeometry = getGeometry('sphere', 0.15 + Math.random() * 0.15, 4, 4);
+                const mossMaterial = getMaterial('lambert', { 
+                    color: [0x3A6B2A, 0x4A7B3A, 0x2E5A1E][Math.floor(Math.random() * 3)]
+                });
+                const moss = new THREE.Mesh(mossGeometry, mossMaterial);
+                const angle = Math.random() * Math.PI * 2;
+                const h = Math.random() * trunkH * 0.8;
+                moss.position.set(Math.cos(angle) * 0.35, h + 0.3, Math.sin(angle) * 0.35);
+                moss.scale.set(1.3, 0.5, 1.0);
+                treeGroup.add(moss);
+            }
+            
+            // Ivy vine climbing trunk
+            const vineSegs = Math.floor(trunkH / 0.4);
+            for (let s = 0; s < vineSegs; s++) {
+                const leafGeometry = getGeometry('sphere', 0.06 + Math.random() * 0.05, 3, 3);
+                const leafMaterial = getMaterial('lambert', { 
+                    color: [0x2A5A1A, 0x3A6B2A][Math.floor(Math.random() * 2)]
+                });
+                const leaf = new THREE.Mesh(leafGeometry, leafMaterial);
+                const vAngle = s * 0.8;
+                leaf.position.set(Math.cos(vAngle) * 0.4, s * 0.4 + 0.2, Math.sin(vAngle) * 0.4);
+                leaf.scale.set(1.3, 0.5, 1.0);
+                treeGroup.add(leaf);
+            }
+            
+            // Dense foliage canopy (multiple overlapping spheres)
+            for (let f = 0; f < 3 + Math.floor(Math.random() * 2); f++) {
+                const canopySize = 1.0 + Math.random() * 0.8;
+                const canopyGeometry = getGeometry('sphere', canopySize, 6, 6);
+                const canopyMaterial = getMaterial('lambert', { 
+                    color: [0x2A6B1A, 0x3A7B2A, 0x1E5A10, 0x2D7020][Math.floor(Math.random() * 4)]
+                });
+                const canopy = new THREE.Mesh(canopyGeometry, canopyMaterial);
+                canopy.position.set(
+                    (Math.random() - 0.5) * 1.0,
+                    trunkH + 0.3 + Math.random() * 0.5,
+                    (Math.random() - 0.5) * 1.0
+                );
+                canopy.scale.set(1.0, 0.6 + Math.random() * 0.3, 1.0);
+                canopy.castShadow = true;
+                treeGroup.add(canopy);
+            }
+            
+            // Flowers in canopy
+            const canopyFlowerColors = [0xFF69B4, 0xFFD700, 0xFF6347, 0x9370DB, 0xFFFFFF];
+            for (let fl = 0; fl < 2 + Math.floor(Math.random() * 3); fl++) {
+                const flowerGeometry = getGeometry('sphere', 0.08 + Math.random() * 0.06, 4, 4);
+                const flowerMaterial = getMaterial('lambert', { 
+                    color: canopyFlowerColors[Math.floor(Math.random() * canopyFlowerColors.length)]
+                });
+                const flower = new THREE.Mesh(flowerGeometry, flowerMaterial);
+                flower.position.set(
+                    (Math.random() - 0.5) * 2.0,
+                    trunkH + Math.random() * 0.6,
+                    (Math.random() - 0.5) * 2.0
+                );
+                treeGroup.add(flower);
+            }
+            
+            // Root system at base
+            for (let r = 0; r < 3 + Math.floor(Math.random() * 2); r++) {
+                const rootLen = 0.5 + Math.random() * 0.6;
+                const rootGeometry = getGeometry('cylinder', 0.04, 0.1, rootLen, 4);
+                const rootMaterial = getMaterial('lambert', { color: 0x3A2A1A });
+                const root = new THREE.Mesh(rootGeometry, rootMaterial);
+                const rAngle = (r / 5) * Math.PI * 2 + Math.random();
+                root.position.set(
+                    Math.cos(rAngle) * 0.3,
+                    0.1,
+                    Math.sin(rAngle) * 0.3
+                );
+                root.rotation.x = Math.sin(rAngle) * 0.7;
+                root.rotation.z = Math.cos(rAngle) * 0.7;
+                treeGroup.add(root);
+            }
+            
+            // Ferns at base
+            for (let fn = 0; fn < 2 + Math.floor(Math.random() * 2); fn++) {
+                const fernSize = 0.25 + Math.random() * 0.2;
+                const fernGeometry = new THREE.ConeGeometry(fernSize, fernSize * 2.2, 5);
+                const fernMaterial = getMaterial('lambert', { 
+                    color: [0x3A7B2A, 0x2A6B1A, 0x4A8B3A][Math.floor(Math.random() * 3)]
+                });
+                const fern = new THREE.Mesh(fernGeometry, fernMaterial);
+                const fAngle = (fn / 4) * Math.PI * 2 + Math.random();
+                fern.position.set(Math.cos(fAngle) * 0.6, fernSize, Math.sin(fAngle) * 0.6);
+                fern.rotation.z = (Math.random() - 0.5) * 0.3;
+                treeGroup.add(fern);
+            }
             
         } else {
             // Regular tree
@@ -4810,6 +4914,378 @@ function initSetup() {
         G.rocks.push({ mesh: rockMesh, type: 'rock', radius: 0.8 });
     });
     
+    // =========================================
+    // Labyrinth Artifacts - discoverable visual objects
+    // =========================================
+    if (G.labyrinthTheme && G.levelConfig.labyrinthArtifacts) {
+        G.levelConfig.labyrinthArtifacts.forEach(function(art) {
+            const group = new THREE.Group();
+            const type = art.type;
+
+            if (type === 'statue') {
+                // Moss-covered stone guardian statue
+                // Base pedestal
+                const baseGeo = new THREE.BoxGeometry(1.2, 0.4, 1.2);
+                const stoneMat = getMaterial('lambert', { color: 0x5A5A5A });
+                const base = new THREE.Mesh(baseGeo, stoneMat);
+                base.position.y = 0.2;
+                group.add(base);
+                // Torso
+                const torsoGeo = new THREE.CylinderGeometry(0.35, 0.45, 1.8, 6);
+                const torso = new THREE.Mesh(torsoGeo, stoneMat);
+                torso.position.y = 1.3;
+                group.add(torso);
+                // Head
+                const headGeo = new THREE.SphereGeometry(0.3, 6, 6);
+                const head = new THREE.Mesh(headGeo, stoneMat);
+                head.position.y = 2.45;
+                group.add(head);
+                // Arms (broken stumps)
+                for (let side = -1; side <= 1; side += 2) {
+                    const armGeo = new THREE.CylinderGeometry(0.1, 0.15, 0.6, 4);
+                    const arm = new THREE.Mesh(armGeo, stoneMat);
+                    arm.position.set(side * 0.5, 1.5, 0);
+                    arm.rotation.z = side * 0.8;
+                    group.add(arm);
+                }
+                // Shield in one hand
+                const shieldGeo = new THREE.CircleGeometry(0.35, 6);
+                const shieldMat = getMaterial('lambert', { color: 0x4A4A4A });
+                const shield = new THREE.Mesh(shieldGeo, shieldMat);
+                shield.position.set(-0.7, 1.2, 0.15);
+                shield.rotation.y = 0.3;
+                group.add(shield);
+                // Moss patches covering the statue
+                var mossMat = getMaterial('lambert', { color: 0x3A6B2A });
+                for (let m = 0; m < 8; m++) {
+                    const mossGeo = new THREE.SphereGeometry(0.12 + Math.random() * 0.15, 4, 4);
+                    const moss = new THREE.Mesh(mossGeo, mossMat);
+                    moss.position.set(
+                        (Math.random() - 0.5) * 0.7,
+                        0.4 + Math.random() * 1.8,
+                        (Math.random() - 0.5) * 0.7
+                    );
+                    moss.scale.set(1.5, 0.5, 1.2);
+                    group.add(moss);
+                }
+                // Slight weathered lean
+                group.rotation.z = (Math.random() - 0.5) * 0.08;
+
+            } else if (type === 'runestone') {
+                // Tall obelisk with faintly glowing rune carvings
+                const pillarGeo = new THREE.BoxGeometry(0.6, 3.0, 0.6);
+                const pillarMat = getMaterial('lambert', { color: 0x3A3A4A });
+                const pillar = new THREE.Mesh(pillarGeo, pillarMat);
+                pillar.position.y = 1.5;
+                group.add(pillar);
+                // Pointed top
+                const topGeo = new THREE.ConeGeometry(0.45, 0.8, 4);
+                const topMat = getMaterial('lambert', { color: 0x3A3A4A });
+                const top = new THREE.Mesh(topGeo, topMat);
+                top.position.y = 3.4;
+                top.rotation.y = Math.PI / 4;
+                group.add(top);
+                // Glowing rune strips on each face
+                var runeMat = getMaterial('basic', { color: 0x44DDAA, transparent: true, opacity: 0.7 });
+                for (let f = 0; f < 4; f++) {
+                    const runeGeo = new THREE.PlaneGeometry(0.08, 1.8);
+                    const rune = new THREE.Mesh(runeGeo, runeMat);
+                    const angle = (f / 4) * Math.PI * 2;
+                    rune.position.set(Math.sin(angle) * 0.31, 1.5, Math.cos(angle) * 0.31);
+                    rune.rotation.y = angle;
+                    group.add(rune);
+                    // Rune dots
+                    for (let d = 0; d < 3; d++) {
+                        const dotGeo = new THREE.SphereGeometry(0.04, 4, 4);
+                        const dot = new THREE.Mesh(dotGeo, runeMat);
+                        dot.position.set(
+                            Math.sin(angle) * 0.32 + (Math.random() - 0.5) * 0.15,
+                            0.8 + d * 0.7 + (Math.random() - 0.5) * 0.2,
+                            Math.cos(angle) * 0.32 + (Math.random() - 0.5) * 0.15
+                        );
+                        group.add(dot);
+                    }
+                }
+                // Mossy base
+                const mossBaseGeo = new THREE.CylinderGeometry(0.6, 0.7, 0.3, 8);
+                const mossBaseMat = getMaterial('lambert', { color: 0x3A5B2A });
+                const mossBase = new THREE.Mesh(mossBaseGeo, mossBaseMat);
+                mossBase.position.y = 0.15;
+                group.add(mossBase);
+
+            } else if (type === 'fountain') {
+                // Broken stone fountain with faintly glowing pool
+                // Circular base basin
+                const basinGeo = new THREE.CylinderGeometry(1.2, 1.4, 0.5, 12);
+                const basinMat = getMaterial('lambert', { color: 0x6A6A6A });
+                const basin = new THREE.Mesh(basinGeo, basinMat);
+                basin.position.y = 0.25;
+                group.add(basin);
+                // Inner water surface (glowing)
+                const waterGeo = new THREE.CircleGeometry(1.0, 12);
+                const waterMat = getMaterial('basic', { color: 0x22AAAA, transparent: true, opacity: 0.5 });
+                const water = new THREE.Mesh(waterGeo, waterMat);
+                water.rotation.x = -Math.PI / 2;
+                water.position.y = 0.45;
+                group.add(water);
+                // Central broken pillar
+                const pillarGeo2 = new THREE.CylinderGeometry(0.2, 0.25, 1.2, 6);
+                const pillarMat2 = getMaterial('lambert', { color: 0x5A5A5A });
+                const centralPillar = new THREE.Mesh(pillarGeo2, pillarMat2);
+                centralPillar.position.y = 0.85;
+                group.add(centralPillar);
+                // Broken top (jagged)
+                const brokenGeo = new THREE.DodecahedronGeometry(0.25, 0);
+                const broken = new THREE.Mesh(brokenGeo, pillarMat2);
+                broken.position.y = 1.5;
+                broken.scale.set(1, 0.5, 1);
+                group.add(broken);
+                // Moss and vine on basin edge
+                for (let m = 0; m < 6; m++) {
+                    const mAngle = (m / 6) * Math.PI * 2;
+                    const mossGeo = new THREE.SphereGeometry(0.15 + Math.random() * 0.1, 4, 4);
+                    const mMat = getMaterial('lambert', { color: 0x3A6B2A });
+                    const mos = new THREE.Mesh(mossGeo, mMat);
+                    mos.position.set(Math.cos(mAngle) * 1.1, 0.45, Math.sin(mAngle) * 1.1);
+                    mos.scale.set(1.5, 0.6, 1.2);
+                    group.add(mos);
+                }
+
+            } else if (type === 'skeleton') {
+                // Ancient explorer remains with rusted sword
+                // Ribcage (curved cylinders)
+                const boneMat = getMaterial('lambert', { color: 0xD2C8A0 });
+                // Skull
+                const skullGeo = new THREE.SphereGeometry(0.18, 6, 6);
+                const skull = new THREE.Mesh(skullGeo, boneMat);
+                skull.position.set(0.3, 0.18, 0);
+                skull.scale.set(1, 0.85, 0.9);
+                group.add(skull);
+                // Eye sockets (dark)
+                var darkMat = getMaterial('lambert', { color: 0x1A1A1A });
+                for (let e = -1; e <= 1; e += 2) {
+                    const eyeGeo = new THREE.SphereGeometry(0.04, 4, 4);
+                    const eye = new THREE.Mesh(eyeGeo, darkMat);
+                    eye.position.set(0.38, 0.22, e * 0.07);
+                    group.add(eye);
+                }
+                // Spine / ribcage (scattered bones)
+                for (let b = 0; b < 6; b++) {
+                    const boneGeo = new THREE.CylinderGeometry(0.025, 0.02, 0.25 + Math.random() * 0.15, 3);
+                    const bone = new THREE.Mesh(boneGeo, boneMat);
+                    bone.position.set(-0.1 - b * 0.12, 0.06, (Math.random() - 0.5) * 0.3);
+                    bone.rotation.z = (Math.random() - 0.5) * 0.5;
+                    bone.rotation.y = Math.random() * Math.PI;
+                    group.add(bone);
+                }
+                // Rusted sword
+                const bladeGeo = new THREE.BoxGeometry(0.7, 0.04, 0.08);
+                const bladeMat = getMaterial('lambert', { color: 0x8B5A2B });
+                const blade = new THREE.Mesh(bladeGeo, bladeMat);
+                blade.position.set(0.1, 0.04, 0.4);
+                blade.rotation.y = 0.3;
+                group.add(blade);
+                // Sword handle
+                const handleGeo = new THREE.CylinderGeometry(0.03, 0.03, 0.18, 4);
+                const handleMat = getMaterial('lambert', { color: 0x3A2A1A });
+                const handle = new THREE.Mesh(handleGeo, handleMat);
+                handle.position.set(-0.25, 0.06, 0.35);
+                handle.rotation.x = Math.PI / 2;
+                handle.rotation.z = 0.3;
+                group.add(handle);
+                // Tattered cloth
+                const clothGeo = new THREE.PlaneGeometry(0.5, 0.4);
+                const clothMat = getMaterial('lambert', { color: 0x4A3A2A, side: THREE.DoubleSide, transparent: true, opacity: 0.7 });
+                const cloth = new THREE.Mesh(clothGeo, clothMat);
+                cloth.position.set(0, 0.08, 0);
+                cloth.rotation.x = -Math.PI / 2 + 0.1;
+                group.add(cloth);
+
+            } else if (type === 'chest') {
+                // Old weathered treasure chest
+                // Chest body
+                const bodyGeo = new THREE.BoxGeometry(0.8, 0.45, 0.5);
+                const woodMat = getMaterial('lambert', { color: 0x5A3A1A });
+                const body = new THREE.Mesh(bodyGeo, woodMat);
+                body.position.y = 0.225;
+                group.add(body);
+                // Rounded lid
+                const lidGeo = new THREE.CylinderGeometry(0.3, 0.3, 0.82, 8, 1, false, 0, Math.PI);
+                const lid = new THREE.Mesh(lidGeo, woodMat);
+                lid.position.y = 0.45;
+                lid.rotation.z = Math.PI / 2;
+                lid.rotation.y = -0.4; // Slightly open
+                group.add(lid);
+                // Metal bands
+                var metalMat = getMaterial('lambert', { color: 0x6A5A3A });
+                for (let b = -1; b <= 1; b++) {
+                    const bandGeo = new THREE.BoxGeometry(0.06, 0.47, 0.52);
+                    const band = new THREE.Mesh(bandGeo, metalMat);
+                    band.position.set(b * 0.3, 0.235, 0);
+                    group.add(band);
+                }
+                // Lock
+                const lockGeo = new THREE.BoxGeometry(0.1, 0.12, 0.08);
+                const lock = new THREE.Mesh(lockGeo, metalMat);
+                lock.position.set(0, 0.25, 0.27);
+                group.add(lock);
+                // Gold gleam from inside (tiny glowing sphere)
+                const gleamGeo = new THREE.SphereGeometry(0.06, 4, 4);
+                const gleamMat = getMaterial('basic', { color: 0xFFD700, transparent: true, opacity: 0.6 });
+                const gleam = new THREE.Mesh(gleamGeo, gleamMat);
+                gleam.position.set(0.1, 0.35, 0.05);
+                group.add(gleam);
+                // Moss on chest
+                const mGeo = new THREE.SphereGeometry(0.12, 4, 4);
+                const mMat2 = getMaterial('lambert', { color: 0x3A6B2A });
+                const chestMoss = new THREE.Mesh(mGeo, mMat2);
+                chestMoss.position.set(-0.25, 0.4, -0.15);
+                chestMoss.scale.set(1.5, 0.5, 1.2);
+                group.add(chestMoss);
+
+            } else if (type === 'sundial') {
+                // Ancient stone sundial
+                // Pedestal
+                const pedGeo = new THREE.CylinderGeometry(0.3, 0.4, 0.8, 6);
+                const stnMat = getMaterial('lambert', { color: 0x6A6A6A });
+                const pedestal = new THREE.Mesh(pedGeo, stnMat);
+                pedestal.position.y = 0.4;
+                group.add(pedestal);
+                // Flat dial plate
+                const dialGeo = new THREE.CylinderGeometry(0.7, 0.65, 0.08, 16);
+                const dial = new THREE.Mesh(dialGeo, stnMat);
+                dial.position.y = 0.84;
+                group.add(dial);
+                // Gnomon (triangular shadow caster)
+                const gnomonGeo = new THREE.ConeGeometry(0.04, 0.6, 3);
+                const gnomonMat = getMaterial('lambert', { color: 0x4A4A3A });
+                const gnomon = new THREE.Mesh(gnomonGeo, gnomonMat);
+                gnomon.position.y = 1.18;
+                gnomon.rotation.x = 0.3;
+                group.add(gnomon);
+                // Hour markers etched in dial
+                var markerMat = getMaterial('lambert', { color: 0x4A4A4A });
+                for (let h = 0; h < 12; h++) {
+                    const hAngle = (h / 12) * Math.PI * 2;
+                    const markerGeo = new THREE.BoxGeometry(0.04, 0.02, 0.12);
+                    const marker = new THREE.Mesh(markerGeo, markerMat);
+                    marker.position.set(Math.sin(hAngle) * 0.5, 0.89, Math.cos(hAngle) * 0.5);
+                    marker.rotation.y = hAngle;
+                    group.add(marker);
+                }
+                // Moss on edge
+                const mossDGeo = new THREE.SphereGeometry(0.15, 4, 4);
+                const mossDMat = getMaterial('lambert', { color: 0x3A5B2A });
+                const dialMoss = new THREE.Mesh(mossDGeo, mossDMat);
+                dialMoss.position.set(0.5, 0.85, 0.3);
+                dialMoss.scale.set(1.5, 0.4, 1.2);
+                group.add(dialMoss);
+
+            } else if (type === 'orb') {
+                // Mysterious floating glowing orb with particle ring
+                // Main orb (floating above a stone cradle)
+                const cradleGeo = new THREE.CylinderGeometry(0.4, 0.5, 0.3, 6);
+                const cradleMat = getMaterial('lambert', { color: 0x4A4A4A });
+                const cradle = new THREE.Mesh(cradleGeo, cradleMat);
+                cradle.position.y = 0.15;
+                group.add(cradle);
+                // Stone prongs holding the orb
+                for (let p = 0; p < 3; p++) {
+                    const pAngle = (p / 3) * Math.PI * 2;
+                    const prongGeo = new THREE.ConeGeometry(0.06, 0.5, 3);
+                    const prong = new THREE.Mesh(prongGeo, cradleMat);
+                    prong.position.set(Math.cos(pAngle) * 0.3, 0.55, Math.sin(pAngle) * 0.3);
+                    prong.rotation.x = -Math.sin(pAngle) * 0.4;
+                    prong.rotation.z = Math.cos(pAngle) * 0.4;
+                    group.add(prong);
+                }
+                // Glowing orb
+                const orbColors = [0x44EEBB, 0xEE44BB, 0x44BBEE, 0xEEBB44];
+                const orbColor = orbColors[Math.floor(Math.random() * orbColors.length)];
+                const orbGeo = new THREE.SphereGeometry(0.25, 12, 12);
+                const orbMat = getMaterial('basic', { color: orbColor, transparent: true, opacity: 0.8 });
+                const orb = new THREE.Mesh(orbGeo, orbMat);
+                orb.position.y = 0.85;
+                group.add(orb);
+                // Inner glow core
+                const coreGeo = new THREE.SphereGeometry(0.12, 8, 8);
+                const coreMat = getMaterial('basic', { color: 0xFFFFFF, transparent: true, opacity: 0.5 });
+                const core = new THREE.Mesh(coreGeo, coreMat);
+                core.position.y = 0.85;
+                group.add(core);
+                // Orbiting particle ring (small spheres)
+                for (let r = 0; r < 8; r++) {
+                    const rAngle = (r / 8) * Math.PI * 2;
+                    const particleGeo = new THREE.SphereGeometry(0.03, 4, 4);
+                    const particleMat = getMaterial('basic', { color: orbColor, transparent: true, opacity: 0.6 });
+                    const particle = new THREE.Mesh(particleGeo, particleMat);
+                    particle.position.set(
+                        Math.cos(rAngle) * 0.45,
+                        0.85 + Math.sin(rAngle * 2) * 0.1,
+                        Math.sin(rAngle) * 0.45
+                    );
+                    group.add(particle);
+                }
+
+            } else if (type === 'archway') {
+                // Crumbling stone archway - remnant of a grander structure
+                const archMat = getMaterial('lambert', { color: 0x5A5A5A });
+                // Left pillar
+                const lPillarGeo = new THREE.BoxGeometry(0.5, 3.0, 0.5);
+                const lPillar = new THREE.Mesh(lPillarGeo, archMat);
+                lPillar.position.set(-1.2, 1.5, 0);
+                group.add(lPillar);
+                // Right pillar (partially collapsed)
+                const rPillarGeo = new THREE.BoxGeometry(0.5, 2.2, 0.5);
+                const rPillar = new THREE.Mesh(rPillarGeo, archMat);
+                rPillar.position.set(1.2, 1.1, 0);
+                rPillar.rotation.z = 0.08; // Slight lean
+                group.add(rPillar);
+                // Arch top (partially broken)
+                const archGeo = new THREE.BoxGeometry(2.9, 0.4, 0.5);
+                const arch = new THREE.Mesh(archGeo, archMat);
+                arch.position.set(-0.15, 3.1, 0);
+                arch.rotation.z = 0.04;
+                group.add(arch);
+                // Broken rubble at base of right pillar
+                for (let rb = 0; rb < 4; rb++) {
+                    const rubGeo = new THREE.DodecahedronGeometry(0.15 + Math.random() * 0.15, 0);
+                    const rubble = new THREE.Mesh(rubGeo, archMat);
+                    rubble.position.set(
+                        1.2 + (Math.random() - 0.5) * 0.8,
+                        0.1 + Math.random() * 0.15,
+                        (Math.random() - 0.5) * 0.6
+                    );
+                    rubble.rotation.set(Math.random(), Math.random(), Math.random());
+                    group.add(rubble);
+                }
+                // Carved symbol on lintel
+                const symbolGeo = new THREE.RingGeometry(0.15, 0.2, 6);
+                const symbolMat = getMaterial('basic', { color: 0x44AA88, transparent: true, opacity: 0.4, side: THREE.DoubleSide });
+                const symbol = new THREE.Mesh(symbolGeo, symbolMat);
+                symbol.position.set(-0.15, 3.1, 0.26);
+                group.add(symbol);
+                // Heavy ivy and moss
+                var ivyMat = getMaterial('lambert', { color: 0x2A5A1A });
+                for (let iv = 0; iv < 10; iv++) {
+                    const ivyGeo = new THREE.SphereGeometry(0.1 + Math.random() * 0.12, 4, 4);
+                    const ivy = new THREE.Mesh(ivyGeo, ivyMat);
+                    ivy.position.set(
+                        (Math.random() - 0.5) * 2.4,
+                        Math.random() * 3.0,
+                        (Math.random() - 0.5) * 0.6
+                    );
+                    ivy.scale.set(1.4, 0.5, 1.0);
+                    group.add(ivy);
+                }
+            }
+
+            group.position.set(art.x, 0, art.z);
+            group.rotation.y = Math.random() * Math.PI * 2;
+            G.scene.add(group);
+        });
+    }
+
     // Boulders - large rocks for desert level
     G.boulders = [];
     G.boulderPositions = G.levelConfig.boulderPositions || [];

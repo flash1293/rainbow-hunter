@@ -689,16 +689,23 @@ function initLoop() {
         // Other player marker/indicator
         if (multiplayerManager && multiplayerManager.isConnected() && otherPlayerMesh && otherPlayerMesh.visible) {
             // Project other player's 3D position to 2D screen coordinates
+            // Use view-space z to determine behind-camera (immune to far-plane clipping)
             const otherPos = otherPlayerMesh.position.clone();
             otherPos.y += 2; // Slightly above head
+            const viewPos = otherPos.clone().applyMatrix4(G.camera.matrixWorldInverse);
+            const isBehindCamera = viewPos.z > 0; // In view space, camera looks down -z
             otherPos.project(G.camera);
+            
+            // If beyond far plane the NDC values are extrapolated; rescale so the
+            // direction on screen is still correct (just clamp depth to 1).
+            if (!isBehindCamera && otherPos.z > 1) {
+                // Point is in front of camera but past far plane – perspective
+                // divide already happened so x/y are valid directions, keep them.
+            }
             
             // Convert from normalized device coordinates (-1 to 1) to screen pixels
             const screenX = (otherPos.x * 0.5 + 0.5) * G.hudCanvas.width;
             const screenY = (-otherPos.y * 0.5 + 0.5) * G.hudCanvas.height;
-            
-            // Check if behind camera (z > 1 means behind)
-            const isBehindCamera = otherPos.z > 1;
             
             // Check if on screen (with margin)
             const margin = 60;
@@ -789,16 +796,22 @@ function initLoop() {
     // Helper function to draw player marker in splitscreen mode
     function drawSplitscreenPlayerMarker(camera, targetGroup, viewportX, viewportWidth, playerLabel, markerColor) {
         // Project other player's 3D position to 2D screen coordinates
+        // Use view-space z to determine behind-camera (immune to far-plane clipping)
         const targetPos = targetGroup.position.clone();
         targetPos.y += 2; // Slightly above head
+        const viewPos = targetPos.clone().applyMatrix4(camera.matrixWorldInverse);
+        const isBehindCamera = viewPos.z > 0; // In view space, camera looks down -z
         targetPos.project(camera);
+        
+        // If beyond far plane the NDC values are extrapolated; rescale so the
+        // direction on screen is still correct.
+        if (!isBehindCamera && targetPos.z > 1) {
+            // Point is in front of camera but past far plane – x/y direction is valid.
+        }
         
         // Convert from normalized device coordinates (-1 to 1) to viewport pixels
         const screenX = viewportX + (targetPos.x * 0.5 + 0.5) * viewportWidth;
         const screenY = (-targetPos.y * 0.5 + 0.5) * G.hudCanvas.height;
-        
-        // Check if behind camera (z > 1 means behind)
-        const isBehindCamera = targetPos.z > 1;
         
         // Check if on screen (with margin, within this viewport)
         const margin = 50;
@@ -1481,6 +1494,19 @@ function initLoop() {
                     if (typeof updateChunks === 'function' && G.player2Group) {
                         updateChunks(G.player2Group.position.x, G.player2Group.position.z);
                     }
+                }
+                
+                // Update labyrinth decoration visibility (proximity-based LOD)
+                if (G.labyrinthTheme && typeof updateLabyrinthDecorations === 'function') {
+                    let p2x, p2z;
+                    if (isNativeSplitscreen && G.player2Group) {
+                        p2x = G.player2Group.position.x;
+                        p2z = G.player2Group.position.z;
+                    } else if (otherPlayerMesh && otherPlayerMesh.visible) {
+                        p2x = otherPlayerMesh.position.x;
+                        p2z = otherPlayerMesh.position.z;
+                    }
+                    updateLabyrinthDecorations(G.playerGroup.position.x, G.playerGroup.position.z, p2x, p2z);
                 }
                 
                 // Camera shake when close to giant (runs every frame)

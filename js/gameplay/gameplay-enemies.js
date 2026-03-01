@@ -816,11 +816,13 @@
             if (!hitObstacle && G.levelConfig.mountains && G.levelConfig.mountains.length > 0) {
                 for (const mtn of G.levelConfig.mountains) {
                     // Use box collision for themed walls
-                    if (G.crystalTheme || G.graveyardTheme || G.ruinsTheme || G.computerTheme || G.enchantedTheme || G.easterTheme || G.christmasTheme || G.rapunzelTheme) {
+                    if (G.crystalTheme || G.graveyardTheme || G.ruinsTheme || G.computerTheme || G.enchantedTheme || G.easterTheme || G.christmasTheme || G.rapunzelTheme || G.labyrinthTheme) {
                         const wallWidth = mtn.width;
                         // Match wall depth to visual rendering for each theme
                         let wallDepth;
-                        if (G.computerTheme) {
+                        if (mtn.depth) {
+                            wallDepth = mtn.depth;
+                        } else if (G.computerTheme) {
                             wallDepth = 2;
                         } else if (G.rapunzelTheme) {
                             wallDepth = Math.min(mtn.width * 0.03, 1.5); // Thin walls to match visuals

@@ -1353,7 +1353,10 @@ function initEntities() {
     G.fireballs = [];
     
     // Spawn boss - Reaper for graveyard, Unicorn for enchanted, Easter Bunny for easter, Evil Santa for christmas, Dragon for others
-    if (G.graveyardTheme || G.levelConfig.useReaper) {
+    // Skip boss entirely for levels with noBoss flag (e.g., Labyrinth)
+    if (G.levelConfig.noBoss) {
+        // No boss for this level
+    } else if (G.graveyardTheme || G.levelConfig.useReaper) {
         G.dragon = createReaper();
     } else if (G.enchantedTheme || G.levelConfig.useUnicorn) {
         G.dragon = createUnicorn();
@@ -1368,7 +1371,7 @@ function initEntities() {
     if (difficulty === 'hard') {
         
         // Create extra bosses for levels with multiple dragons/reapers/unicorns/bunnies/santas
-        if (G.levelConfig.extraDragons) {
+        if (G.levelConfig.extraDragons && !G.levelConfig.noBoss) {
             G.levelConfig.extraDragons.forEach(pos => {
                 const bossScale = pos.scale || 0.6;
                 const bossHealth = pos.health || 25;

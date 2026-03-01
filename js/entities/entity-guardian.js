@@ -39,6 +39,8 @@
             buildCrystalSentinel(goblinGrp);
         } else if (G.rapunzelTheme) {
             buildRapunzelWitch(goblinGrp);
+        } else if (G.labyrinthTheme) {
+            buildStoneSentinel(goblinGrp);
         } else {
             buildStandardGuardian(goblinGrp, textures);
         }
@@ -1096,6 +1098,163 @@
             arm.rotation.z = x > 0 ? 0.8 : -0.8;
             group.add(arm);
         });
+    }
+    
+    function buildStoneSentinel(group) {
+        // STONE SENTINEL - large mossy stone guardian for labyrinth theme
+        // A towering golem made of ancient weathered stone blocks
+        const stoneLight = 0x808080;         // Light stone
+        const stoneMedium = 0x606060;        // Medium stone
+        const stoneDark = 0x454545;          // Dark stone / cracks
+        const mossGreen = 0x4A6B3A;          // Moss overgrowth
+        const mossBright = 0x5A8B4A;         // Brighter moss
+        const eyeGlow = 0x88FF88;            // Ghostly green glow
+        const runeGlow = 0x66DD66;           // Ancient rune glow
+        
+        // Massive stone torso - main block
+        const torsoGeometry = getGeometry('box', 1.0, 1.1, 0.65);
+        const torsoMaterial = getMaterial('lambert', { color: stoneLight });
+        const torso = new THREE.Mesh(torsoGeometry, torsoMaterial);
+        torso.position.y = 1.15;
+        torso.castShadow = true;
+        torso.receiveShadow = true;
+        group.add(torso);
+        
+        // Stone overlay blocks for rougher appearance
+        const overlayGeometry = getGeometry('box', 0.5, 0.4, 0.68);
+        const overlayMaterial = getMaterial('lambert', { color: stoneMedium });
+        const overlay1 = new THREE.Mesh(overlayGeometry, overlayMaterial);
+        overlay1.position.set(-0.15, 1.35, 0);
+        overlay1.rotation.y = 0.08;
+        group.add(overlay1);
+        const overlay2 = new THREE.Mesh(getGeometry('box', 0.45, 0.35, 0.66), overlayMaterial);
+        overlay2.position.set(0.2, 0.85, 0);
+        overlay2.rotation.y = -0.05;
+        group.add(overlay2);
+        
+        // Deep cracks across torso
+        const crackMaterial = getMaterial('lambert', { color: stoneDark });
+        [[0.6, 0.03, 0.66, 0, 1.3, 0, 0.25], [0.03, 0.5, 0.66, 0.2, 1.0, 0, 0]].forEach(c => {
+            const crack = new THREE.Mesh(getGeometry('box', c[0], c[1], c[2]), crackMaterial);
+            crack.position.set(c[3], c[4], c[5]);
+            crack.rotation.z = c[6];
+            group.add(crack);
+        });
+        
+        // Heavy moss patches on torso
+        const mossMaterial = getMaterial('lambert', { color: mossGreen });
+        const mossBrightMaterial = getMaterial('lambert', { color: mossBright });
+        const mossGeometry = getGeometry('sphere', 0.25, 5, 5);
+        [[0.35, 1.5, 0.3, 1.4, 0.5, 0.8], [-0.3, 0.8, -0.28, 1.0, 0.4, 0.6], [0.1, 1.6, 0.32, 0.8, 0.5, 0.5]].forEach(m => {
+            const moss = new THREE.Mesh(mossGeometry, Math.random() > 0.5 ? mossMaterial : mossBrightMaterial);
+            moss.position.set(m[0], m[1], m[2]);
+            moss.scale.set(m[3], m[4], m[5]);
+            group.add(moss);
+        });
+        
+        // Large angular stone head
+        const headGeometry = getGeometry('box', 0.6, 0.55, 0.5);
+        const headMaterial = getMaterial('lambert', { color: stoneLight });
+        const head = new THREE.Mesh(headGeometry, headMaterial);
+        head.position.y = 2.05;
+        head.castShadow = true;
+        group.add(head);
+        
+        // Flat stone brow / crown
+        const browGeometry = getGeometry('box', 0.7, 0.12, 0.4);
+        const browMaterial = getMaterial('lambert', { color: stoneDark });
+        const brow = new THREE.Mesh(browGeometry, browMaterial);
+        brow.position.set(0, 2.28, 0.08);
+        group.add(brow);
+        
+        // Glowing eyes - set deep in sockets
+        const socketGeometry = getGeometry('box', 0.14, 0.1, 0.12);
+        const socketMaterial = getMaterial('lambert', { color: 0x2A2A2A });
+        const eyeMaterial = getMaterial('basic', { color: eyeGlow });
+        const eyeGeometry = getGeometry('sphere', 0.06, 8, 8);
+        [-0.15, 0.15].forEach(x => {
+            const socket = new THREE.Mesh(socketGeometry, socketMaterial);
+            socket.position.set(x, 2.05, 0.25);
+            group.add(socket);
+            const eye = new THREE.Mesh(eyeGeometry, eyeMaterial);
+            eye.position.set(x, 2.05, 0.28);
+            group.add(eye);
+        });
+        
+        // Mouth slit
+        const mouthGeometry = getGeometry('box', 0.25, 0.04, 0.15);
+        const mouth = new THREE.Mesh(mouthGeometry, getMaterial('basic', { color: 0x1A1A1A }));
+        mouth.position.set(0, 1.88, 0.22);
+        group.add(mouth);
+        
+        // Ancient rune carved in torso (glowing)
+        const runeMaterial = getMaterial('basic', { color: runeGlow, transparent: true, opacity: 0.7 });
+        // Vertical rune stroke
+        const runeV = new THREE.Mesh(getGeometry('box', 0.04, 0.35, 0.02), runeMaterial);
+        runeV.position.set(0, 1.15, 0.34);
+        group.add(runeV);
+        // Horizontal rune strokes
+        const runeH1 = new THREE.Mesh(getGeometry('box', 0.2, 0.04, 0.02), runeMaterial);
+        runeH1.position.set(0, 1.3, 0.34);
+        group.add(runeH1);
+        const runeH2 = new THREE.Mesh(getGeometry('box', 0.16, 0.04, 0.02), runeMaterial);
+        runeH2.position.set(0, 1.05, 0.34);
+        group.add(runeH2);
+        
+        // Massive stone arms
+        const armGeometry = getGeometry('box', 0.28, 0.7, 0.3);
+        const armMaterial = getMaterial('lambert', { color: stoneMedium });
+        [-0.6, 0.6].forEach((x, i) => {
+            const arm = new THREE.Mesh(armGeometry, armMaterial);
+            arm.position.set(x, 0.95, 0);
+            arm.rotation.z = i === 0 ? 0.15 : -0.15;
+            arm.castShadow = true;
+            group.add(arm);
+            // Stone fist
+            const fistGeometry = getGeometry('box', 0.22, 0.22, 0.24);
+            const fist = new THREE.Mesh(fistGeometry, getMaterial('lambert', { color: stoneLight }));
+            fist.position.set(x * 1.08, 0.55, 0.08);
+            fist.castShadow = true;
+            group.add(fist);
+            // Moss on arm
+            const armMoss = new THREE.Mesh(getGeometry('sphere', 0.12, 4, 4), mossMaterial);
+            armMoss.position.set(x * 0.9, 1.2, 0.15);
+            armMoss.scale.set(1.2, 0.5, 0.6);
+            group.add(armMoss);
+        });
+        
+        // Thick stone legs
+        const legGeometry = getGeometry('box', 0.3, 0.5, 0.3);
+        const legMaterial = getMaterial('lambert', { color: stoneMedium });
+        [-0.22, 0.22].forEach(x => {
+            const leg = new THREE.Mesh(legGeometry, legMaterial);
+            leg.position.set(x, 0.3, 0);
+            leg.castShadow = true;
+            group.add(leg);
+        });
+        
+        // Flat stone feet
+        const footGeometry = getGeometry('box', 0.32, 0.1, 0.4);
+        [-0.22, 0.22].forEach(x => {
+            const foot = new THREE.Mesh(footGeometry, getMaterial('lambert', { color: stoneDark }));
+            foot.position.set(x, 0.05, 0.05);
+            group.add(foot);
+        });
+        
+        // Moss growing on head
+        const headMoss = new THREE.Mesh(getGeometry('sphere', 0.18, 5, 5), mossBrightMaterial);
+        headMoss.position.set(-0.2, 2.3, 0);
+        headMoss.scale.set(1.2, 0.5, 0.8);
+        group.add(headMoss);
+        
+        // Small vine hanging from arm
+        const vineMaterial = getMaterial('lambert', { color: 0x3A6B2A });
+        for (let s = 0; s < 4; s++) {
+            const vineGeometry = getGeometry('sphere', 0.03, 3, 3);
+            const vineSeg = new THREE.Mesh(vineGeometry, vineMaterial);
+            vineSeg.position.set(-0.7, 0.7 - s * 0.1, 0.15);
+            group.add(vineSeg);
+        }
     }
     
     function buildStandardGuardian(group, textures) {

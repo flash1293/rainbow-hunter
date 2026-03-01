@@ -575,28 +575,18 @@
         // NOTE: Unlike the original boundary check, player 2 (like player 1) is now
         // only blocked by walls/mountains, not by arbitrary bounds. This matches P1 behavior.
         
-        // Collision with hills and impassable cliffs (when not gliding)
-        if (!G.player2.isGliding || G.player2.glideState !== 'flying') {
+        // Collision checks — structured to match Player 1 behavior:
+        // - Impassable cliffs: ALWAYS block, even when gliding
+        // - Mountains/walls: block unless waterTheme AND gliding
+        // - Rocks, boulders, canyon walls, trees: ALWAYS block
+        // - Hills (water theme), river: skip when gliding
+        {
             const newX = G.player2Group.position.x;
             const newZ = G.player2Group.position.z;
             let collided = false;
+            const isFlying = G.player2.isGliding && G.player2.glideState === 'flying';
             
-            // Check hill collision - ONLY on water theme levels (same as player 1)
-            if (G.waterTheme && G.levelConfig.hills && G.levelConfig.hills.length > 0) {
-                for (const hill of G.levelConfig.hills) {
-                    const dx = newX - hill.x;
-                    const dz = newZ - hill.z;
-                    const dist = Math.sqrt(dx * dx + dz * dz);
-                    
-                    if (dist < hill.radius + 1.0) {
-                        G.player2Group.position.copy(prevPos);
-                        collided = true;
-                        break;
-                    }
-                }
-            }
-            
-            // Check impassable cliffs
+            // Check impassable cliffs - ALWAYS block, even when gliding
             if (!collided) {
                 for (const cliff of G.impassableCliffs || []) {
                     const dx = newX - cliff.x;
@@ -610,15 +600,18 @@
                 }
             }
             
-            // Check mountains/walls
-            if (!collided && G.levelConfig.mountains && G.levelConfig.mountains.length > 0) {
+            // Check mountains/walls - only passable on water theme when gliding (same as P1)
+            const canPassMountains = G.waterTheme && isFlying;
+            if (!collided && !canPassMountains && G.levelConfig.mountains && G.levelConfig.mountains.length > 0) {
                 for (const mtn of G.levelConfig.mountains) {
-                    if (G.graveyardTheme || G.ruinsTheme || G.computerTheme || G.enchantedTheme || G.easterTheme || G.christmasTheme || G.crystalTheme || G.rapunzelTheme) {
-                        // Box collision for graveyard, ruins, computer, enchanted, easter, christmas, crystal, and rapunzel walls
+                    if (G.graveyardTheme || G.ruinsTheme || G.computerTheme || G.enchantedTheme || G.easterTheme || G.christmasTheme || G.crystalTheme || G.rapunzelTheme || G.labyrinthTheme) {
+                        // Box collision for wall-based themes
                         const wallWidth = mtn.width;
                         // Match wall depth to visual rendering for each theme
                         let wallDepth;
-                        if (G.computerTheme) {
+                        if (mtn.depth) {
+                            wallDepth = mtn.depth;
+                        } else if (G.computerTheme) {
                             wallDepth = 2;
                         } else if (G.rapunzelTheme) {
                             wallDepth = Math.min(mtn.width * 0.03, 1.5); // Thin walls
@@ -654,7 +647,7 @@
                 }
             }
             
-            // Check rocks
+            // Check rocks - ALWAYS block
             if (!collided && G.rocks) {
                 for (const rock of G.rocks) {
                     const dist = Math.sqrt((newX - rock.mesh.position.x) ** 2 + (newZ - rock.mesh.position.z) ** 2);
@@ -666,7 +659,7 @@
                 }
             }
             
-            // Check boulders
+            // Check boulders - ALWAYS block
             if (!collided && G.boulders) {
                 for (const boulder of G.boulders) {
                     const dist = Math.sqrt((newX - boulder.mesh.position.x) ** 2 + (newZ - boulder.mesh.position.z) ** 2);
@@ -678,7 +671,7 @@
                 }
             }
             
-            // Check canyon walls
+            // Check canyon walls - ALWAYS block
             if (!collided && G.canyonWalls) {
                 for (const wall of G.canyonWalls) {
                     const cos = Math.cos(-wall.rotation);
@@ -697,7 +690,7 @@
                 }
             }
             
-            // Check trees
+            // Check trees - ALWAYS block
             if (!collided && G.trees) {
                 for (const tree of G.trees) {
                     const dist = Math.sqrt((newX - tree.mesh.position.x) ** 2 + (newZ - tree.mesh.position.z) ** 2);
@@ -709,8 +702,23 @@
                 }
             }
             
+            // Check hill collision - ONLY on water theme levels, skip when gliding (same as P1)
+            if (!collided && !isFlying && G.waterTheme && G.levelConfig.hills && G.levelConfig.hills.length > 0) {
+                for (const hill of G.levelConfig.hills) {
+                    const dx = newX - hill.x;
+                    const dz = newZ - hill.z;
+                    const dist = Math.sqrt(dx * dx + dz * dz);
+                    
+                    if (dist < hill.radius + 1.0) {
+                        G.player2Group.position.copy(prevPos);
+                        collided = true;
+                        break;
+                    }
+                }
+            }
+            
             // River collision (blocks movement if not on bridge and not gliding)
-            if (!collided && G.riverObj && newZ > G.riverObj.minZ && newZ < G.riverObj.maxZ) {
+            if (!collided && !isFlying && G.riverObj && newZ > G.riverObj.minZ && newZ < G.riverObj.maxZ) {
                 const onBridge = G.bridgeRepaired &&
                                 newX > G.bridgeObj.minX && 
                                 newX < G.bridgeObj.maxX &&
