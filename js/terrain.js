@@ -4731,7 +4731,7 @@ function createComputerGround(scene, THREE) {
 }
 
 // Create ground plane
-function createGround(scene, THREE, groundColor, iceTheme, desertTheme, lavaTheme, waterTheme, candyTheme, graveyardTheme, ruinsTheme, computerTheme, christmasTheme, crystalTheme, rapunzelTheme, labyrinthTheme) {
+function createGround(scene, THREE, groundColor, iceTheme, desertTheme, lavaTheme, waterTheme, candyTheme, graveyardTheme, ruinsTheme, computerTheme, christmasTheme, crystalTheme, rapunzelTheme, labyrinthTheme, colorTheme) {
     const textures = getTerrainTextures(THREE);
     const color = groundColor || 0xffffff; // Tint color applied over texture
     let textureToUse;
@@ -4796,6 +4796,17 @@ function createGround(scene, THREE, groundColor, iceTheme, desertTheme, lavaThem
         textureToUse = textures.rock || textures.grass; // Dark cave rock floor
     } else if (labyrinthTheme) {
         textureToUse = textures.labyrinthGround; // Mossy stone floor
+    } else if (colorTheme) {
+        // Color theme: flat gray ground, no texture
+        const groundGeometry = getGeometry('plane', 600, 600, 1, 1);
+        groundMaterial = getMaterial('lambert', { 
+            color: 0x707070  // Medium gray
+        });
+        const ground = new THREE.Mesh(groundGeometry, groundMaterial);
+        ground.rotation.x = -Math.PI / 2;
+        ground.receiveShadow = true;
+        scene.add(ground);
+        return ground;
     } else {
         textureToUse = textures.grass;
     }

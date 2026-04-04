@@ -955,6 +955,15 @@
 
             group.renderOrder = 1;
             return group;
+        } else if (G.colorTheme) {
+            // Color theme: flat gray chunk ground, no texture
+            const geometry = getGeometry('plane', CHUNK_SIZE, CHUNK_SIZE);
+            const material = getMaterial('lambert', { color: 0x707070 });
+            const ground = new THREE.Mesh(geometry, material);
+            ground.rotation.x = -Math.PI / 2;
+            ground.position.set(chunkX + CHUNK_SIZE / 2, -0.01, chunkZ + CHUNK_SIZE / 2);
+            ground.receiveShadow = true;
+            return ground;
         } else if (G.lavaTheme || G.crystalTheme) {
             textureName = 'rock';
         } else if (G.desertTheme) {
@@ -1598,6 +1607,16 @@
         generatingChunks.delete(chunkKey);
         chunkObjects.set(chunkKey, chunkData);
         
+        // Desaturate newly created chunk objects for color theme
+        if (G.colorTheme && typeof desaturateObject === 'function') {
+            if (chunkData.ground) desaturateObject(chunkData.ground);
+            chunkData.hills.forEach(h => desaturateObject(h));
+            chunkData.mountains.forEach(m => desaturateObject(m));
+            chunkData.trees.forEach(t => desaturateObject(t));
+            chunkData.rocks.forEach(r => desaturateObject(r));
+            chunkData.enemies.forEach(e => { if (e && e.mesh) desaturateObject(e.mesh); });
+        }
+
         const elapsed = (performance.now() - startTime).toFixed(1);
         console.log(`[Chunks] generateChunkAsync(${chunkX}, ${chunkZ}) COMPLETED in ${elapsed}ms - ${chunkData.enemies.length} enemies, ${chunkData.trees.length} trees, ${chunkData.rocks.length} rocks, ${chunkData.traps.length} traps. Total chunks: ${generatedChunks.size}, scene objects: ${G.scene.children.length}`);
     }

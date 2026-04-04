@@ -3,6 +3,43 @@
 // Shared game state object - all initGame locals stored here
 let G = {};
 
+// Desaturate a Three.js object (and all children) to grayscale
+// Used for color theme: initial scene + dynamically created chunks
+function desaturateObject(obj) {
+    obj.traverse(function(child) {
+        if (child.isLight && child.color) {
+            const c = child.color;
+            const gray = c.r * 0.299 + c.g * 0.587 + c.b * 0.114;
+            c.setRGB(gray, gray, gray);
+        }
+        if (child.material) {
+            const materials = Array.isArray(child.material) ? child.material : [child.material];
+            const processed = materials.map(mat => {
+                if (!mat._colorCloned) {
+                    mat = mat.clone();
+                    mat._colorCloned = true;
+                }
+                if (mat.color) {
+                    const c = mat.color;
+                    const gray = c.r * 0.299 + c.g * 0.587 + c.b * 0.114;
+                    c.setRGB(gray, gray, gray);
+                }
+                if (mat.emissive) {
+                    const e = mat.emissive;
+                    const egray = e.r * 0.299 + e.g * 0.587 + e.b * 0.114;
+                    e.setRGB(egray, egray, egray);
+                }
+                if (mat.map) {
+                    mat.map = null;
+                    mat.needsUpdate = true;
+                }
+                return mat;
+            });
+            child.material = Array.isArray(child.material) ? processed : processed[0];
+        }
+    });
+}
+
 // Game state
 let difficulty = null;
 let speedMultiplier = 1;
@@ -364,6 +401,9 @@ function initGame() {
     // Check if this is a Labyrinth-themed level
     G.labyrinthTheme = G.levelConfig.labyrinthTheme || false;
     
+    // Check if this is a Color-themed level
+    G.colorTheme = G.levelConfig.colorTheme || false;
+    
     // Crystal gem power-up state
     G.playerSpeedBoost = 1;
     G.playerSpeedBoostEnd = 0;
@@ -559,7 +599,7 @@ function initGame() {
     G.grassColor = G.levelConfig.grassColor || 0x228B22;
 
     // Create terrain (use level-specific ground color and theme)
-    createGround(G.scene, THREE, G.levelConfig.groundColor, G.iceTheme, G.desertTheme, G.lavaTheme, G.waterTheme, G.candyTheme, G.graveyardTheme, G.ruinsTheme, G.computerTheme, G.christmasTheme, G.crystalTheme, G.rapunzelTheme, G.labyrinthTheme);
+    createGround(G.scene, THREE, G.levelConfig.groundColor, G.iceTheme, G.desertTheme, G.lavaTheme, G.waterTheme, G.candyTheme, G.graveyardTheme, G.ruinsTheme, G.computerTheme, G.christmasTheme, G.crystalTheme, G.rapunzelTheme, G.labyrinthTheme, G.colorTheme);
     createHills(G.scene, THREE, G.levelConfig.hills, G.hillColor, G.iceTheme, G.desertTheme, G.lavaTheme, G.waterTheme, G.candyTheme, G.graveyardTheme, G.ruinsTheme, G.computerTheme, G.christmasTheme, G.crystalTheme, G.rapunzelTheme, G.labyrinthTheme);
     
     // Mountains are optional (disabled in desert)
@@ -782,5 +822,27 @@ function initGame() {
     // Initialize game phases from split files
     initSetup();
     initEntities();
+    
+    // ===== DESATURATE ENTIRE SCENE FOR COLOR THEME =====
+    // Must run AFTER all terrain, entities, and player are created
+    if (G.colorTheme) {
+        desaturateObject(G.scene);
+        
+        // Restore paint bucket colors (they should stay vibrant)
+        if (G.paintBuckets) {
+            G.paintBuckets.forEach(bucket => {
+                const meshes = bucket.mesh.children;
+                // [0]=body, [1]=paint inside, [2]=handle, [3]=aura
+                if (meshes[1] && meshes[1].material) {
+                    meshes[1].material.color.set(bucket.color);
+                }
+                if (meshes[3] && meshes[3].material) {
+                    meshes[3].material.color.set(bucket.color);
+                    meshes[3].material.opacity = 0.25;
+                }
+            });
+        }
+    }
+    
     initLoop();
 }

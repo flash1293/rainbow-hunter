@@ -1,5 +1,71 @@
 // main-gameplay.js - Combat, updates, and collisions
 
+    // Helper: Colorize an entity (goblin, dragon, bird, etc.) from grayscale to a vibrant color
+    function colorizeEntity(entity, hexColor) {
+        if (!entity || !entity.mesh || entity.colored) return;
+        entity.colored = true;
+        entity.colorValue = hexColor;
+        G.coloredEnemyCount = (G.coloredEnemyCount || 0) + 1;
+        
+        const targetColor = new THREE.Color(hexColor);
+        entity.mesh.traverse(function(child) {
+            if (child.material) {
+                // Clone material if not already cloned
+                if (!child.material._colorCloned) {
+                    child.material = child.material.clone();
+                    child.material._colorCloned = true;
+                }
+                if (child.material.color) {
+                    // Use grayscale value as brightness multiplier
+                    const gray = child.material.color.r; // Already desaturated to grayscale
+                    const brightness = 0.3 + gray * 0.7;
+                    child.material.color.copy(targetColor).multiplyScalar(brightness);
+                }
+                if (child.material.emissive) {
+                    child.material.emissive.copy(targetColor).multiplyScalar(0.2);
+                    child.material.emissiveIntensity = 0.3;
+                }
+            }
+        });
+        
+        // Create paint splatter particles at entity position
+        if (typeof createExplosion === 'function') {
+            const pos = entity.mesh.position;
+            for (let i = 0; i < 8; i++) {
+                const splatterGeometry = new THREE.SphereGeometry(0.15 + Math.random() * 0.2, 6, 6);
+                const splatterMaterial = new THREE.MeshBasicMaterial({ color: hexColor, transparent: true, opacity: 0.9 });
+                const splatter = new THREE.Mesh(splatterGeometry, splatterMaterial);
+                splatter.position.set(
+                    pos.x + (Math.random() - 0.5) * 3,
+                    pos.y + 1 + Math.random() * 2,
+                    pos.z + (Math.random() - 0.5) * 3
+                );
+                splatter.userData.velocity = new THREE.Vector3(
+                    (Math.random() - 0.5) * 0.15,
+                    0.05 + Math.random() * 0.1,
+                    (Math.random() - 0.5) * 0.15
+                );
+                splatter.userData.life = 1.0;
+                G.scene.add(splatter);
+                // Store for cleanup in color patches array
+                G.colorPatches.push(splatter);
+                // Animate and remove after short time
+                const animateSplat = () => {
+                    splatter.userData.life -= 0.02;
+                    if (splatter.userData.life <= 0) {
+                        G.scene.remove(splatter);
+                        return;
+                    }
+                    splatter.position.add(splatter.userData.velocity);
+                    splatter.userData.velocity.y -= 0.005; // gravity
+                    splatter.material.opacity = splatter.userData.life;
+                    requestAnimationFrame(animateSplat);
+                };
+                requestAnimationFrame(animateSplat);
+            }
+        }
+    }
+
     // Player systems moved to js/gameplay/gameplay-player.js:
     // getNearestPlayerTarget, createFreezeEffect, activateIcePower,
     // updatePlayer, updatePlayer2, checkPlayer2Damage, checkIfOnLava, activateIcePowerForPlayer
@@ -1186,6 +1252,288 @@
                     }
                 }
             });
+        }
+        
+        // ===== PAINT BUCKET COLLECTION & PAINTING (Color Theme) =====
+        if (G.colorTheme) {
+            // Collect paint buckets
+            if (G.paintBuckets) {
+                G.paintBuckets.forEach((bucket, idx) => {
+                    if (!bucket.collected) {
+                        // Animate: bob and pulse aura
+                        bucket.bobPhase += 0.04;
+                        const baseHeight = getTerrainHeight(bucket.x, bucket.z);
+                        bucket.mesh.position.y = baseHeight + Math.sin(bucket.bobPhase) * 0.15;
+                        if (bucket.mesh.aura) {
+                            bucket.mesh.aura.material.opacity = 0.15 + Math.sin(bucket.bobPhase * 2) * 0.1;
+                        }
+                        
+                        const dist = Math.sqrt(
+                            Math.pow(G.playerGroup.position.x - bucket.x, 2) +
+                            Math.pow(G.playerGroup.position.z - bucket.z, 2)
+                        );
+                        if (dist < bucket.radius) {
+                            bucket.collected = true;
+                            bucket.mesh.visible = false;
+                            G.activeColor = bucket.color;
+                            G.paintAmount = 200;
+                            G.lastPaintX = G.playerGroup.position.x;
+                            G.lastPaintZ = G.playerGroup.position.z;
+                            Audio.playCollectSound();
+                            
+                            // Respawn bucket after 20s
+                            setTimeout(() => {
+                                bucket.collected = false;
+                                bucket.mesh.visible = true;
+                            }, 20000);
+                        }
+                        // Player 2 collection (splitscreen)
+                        if (!bucket.collected && isNativeSplitscreen && G.player2Group) {
+                            const dist2 = Math.sqrt(
+                                Math.pow(G.player2Group.position.x - bucket.x, 2) +
+                                Math.pow(G.player2Group.position.z - bucket.z, 2)
+                            );
+                            if (dist2 < bucket.radius) {
+                                bucket.collected = true;
+                                bucket.mesh.visible = false;
+                                G.activeColor2 = bucket.color;
+                                G.paintAmount2 = 200;
+                                G.lastPaintX2 = G.player2Group.position.x;
+                                G.lastPaintZ2 = G.player2Group.position.z;
+                                Audio.playCollectSound();
+                                
+                                setTimeout(() => {
+                                    bucket.collected = false;
+                                    bucket.mesh.visible = true;
+                                }, 20000);
+                            }
+                        }
+                    }
+                });
+            }
+            
+            // Paint the ground as player moves (leave colored trail)
+            if (G.activeColor && G.paintAmount > 0) {
+                const dx = G.playerGroup.position.x - G.lastPaintX;
+                const dz = G.playerGroup.position.z - G.lastPaintZ;
+                const moveDist = Math.sqrt(dx * dx + dz * dz);
+                
+                if (moveDist > 1.0) { // Place patch every ~1 unit of movement
+                    const terrainH = getTerrainHeight(G.playerGroup.position.x, G.playerGroup.position.z);
+                    const baseColor = new THREE.Color(G.activeColor);
+                    
+                    // Main splat - irregular shape using ring with random vertices
+                    const mainSize = 2.0 + Math.random() * 2.0;
+                    const mainGeometry = new THREE.CircleGeometry(mainSize, 8 + Math.floor(Math.random() * 5));
+                    // Wobble vertices for organic splat shape
+                    const posAttr = mainGeometry.attributes.position;
+                    for (let vi = 1; vi < posAttr.count; vi++) {
+                        const wobble = 0.6 + Math.random() * 0.8;
+                        posAttr.setX(vi, posAttr.getX(vi) * wobble);
+                        posAttr.setY(vi, posAttr.getY(vi) * wobble);
+                    }
+                    posAttr.needsUpdate = true;
+                    // Vary the main splat color - shift hue slightly for shade variety
+                    const mainSplatColor = baseColor.clone();
+                    const hsl = {};
+                    mainSplatColor.getHSL(hsl);
+                    hsl.h += (Math.random() - 0.5) * 0.08; // ±4% hue shift
+                    hsl.s = Math.min(1, hsl.s * (0.8 + Math.random() * 0.4));
+                    hsl.l = Math.min(1, hsl.l * (0.7 + Math.random() * 0.6));
+                    mainSplatColor.setHSL(hsl.h, hsl.s, hsl.l);
+                    const mainMaterial = new THREE.MeshBasicMaterial({
+                        color: mainSplatColor,
+                        transparent: true,
+                        opacity: 0.75 + Math.random() * 0.2,
+                        side: THREE.DoubleSide,
+                        depthWrite: false
+                    });
+                    const mainPatch = new THREE.Mesh(mainGeometry, mainMaterial);
+                    mainPatch.rotation.x = -Math.PI / 2;
+                    mainPatch.rotation.z = Math.random() * Math.PI * 2;
+                    mainPatch.position.set(
+                        G.playerGroup.position.x + (Math.random() - 0.5) * 0.5,
+                        terrainH + 0.02,
+                        G.playerGroup.position.z + (Math.random() - 0.5) * 0.5
+                    );
+                    G.scene.add(mainPatch);
+                    G.colorPatches.push(mainPatch);
+                    
+                    // Secondary splatter droplets radiating outward
+                    const numDroplets = 2 + Math.floor(Math.random() * 4);
+                    for (let di = 0; di < numDroplets; di++) {
+                        const dropSize = 0.3 + Math.random() * 0.8;
+                        const dropGeom = new THREE.CircleGeometry(dropSize, 5 + Math.floor(Math.random() * 3));
+                        // Wobble droplets too
+                        const dPosAttr = dropGeom.attributes.position;
+                        for (let dvi = 1; dvi < dPosAttr.count; dvi++) {
+                            const dw = 0.5 + Math.random() * 1.0;
+                            dPosAttr.setX(dvi, dPosAttr.getX(dvi) * dw);
+                            dPosAttr.setY(dvi, dPosAttr.getY(dvi) * dw);
+                        }
+                        dPosAttr.needsUpdate = true;
+                        // Vary droplet color - shift hue, saturation, lightness
+                        const dropColor = baseColor.clone();
+                        const dHsl = {};
+                        dropColor.getHSL(dHsl);
+                        dHsl.h += (Math.random() - 0.5) * 0.12; // ±6% hue shift
+                        dHsl.s = Math.min(1, dHsl.s * (0.6 + Math.random() * 0.6));
+                        dHsl.l = Math.min(1, Math.max(0.1, dHsl.l * (0.5 + Math.random() * 1.0)));
+                        dropColor.setHSL(dHsl.h, dHsl.s, dHsl.l);
+                        const dropMat = new THREE.MeshBasicMaterial({
+                            color: dropColor,
+                            transparent: true,
+                            opacity: 0.5 + Math.random() * 0.4,
+                            side: THREE.DoubleSide,
+                            depthWrite: false
+                        });
+                        const droplet = new THREE.Mesh(dropGeom, dropMat);
+                        droplet.rotation.x = -Math.PI / 2;
+                        droplet.rotation.z = Math.random() * Math.PI * 2;
+                        const angle = Math.random() * Math.PI * 2;
+                        const dist = mainSize * 0.6 + Math.random() * mainSize * 0.8;
+                        droplet.position.set(
+                            mainPatch.position.x + Math.cos(angle) * dist,
+                            terrainH + 0.02,
+                            mainPatch.position.z + Math.sin(angle) * dist
+                        );
+                        G.scene.add(droplet);
+                        G.colorPatches.push(droplet);
+                    }
+                    
+                    G.lastPaintX = G.playerGroup.position.x;
+                    G.lastPaintZ = G.playerGroup.position.z;
+                    G.paintAmount -= 1;
+                    
+                    if (G.paintAmount <= 0) {
+                        G.paintAmount = 0;
+                        G.activeColor = null;
+                    }
+                }
+            }
+            
+            // Player 2 ground painting (splitscreen)
+            if (isNativeSplitscreen && G.player2Group && G.activeColor2 && G.paintAmount2 > 0) {
+                const dx2 = G.player2Group.position.x - G.lastPaintX2;
+                const dz2 = G.player2Group.position.z - G.lastPaintZ2;
+                const moveDist2 = Math.sqrt(dx2 * dx2 + dz2 * dz2);
+                
+                if (moveDist2 > 1.0) {
+                    const terrainH2 = getTerrainHeight(G.player2Group.position.x, G.player2Group.position.z);
+                    const baseColor2 = new THREE.Color(G.activeColor2);
+                    const mainSize2 = 2.0 + Math.random() * 2.0;
+                    const mainGeom2 = new THREE.CircleGeometry(mainSize2, 8 + Math.floor(Math.random() * 5));
+                    const pAttr2 = mainGeom2.attributes.position;
+                    for (let vi = 1; vi < pAttr2.count; vi++) {
+                        const w = 0.6 + Math.random() * 0.8;
+                        pAttr2.setX(vi, pAttr2.getX(vi) * w);
+                        pAttr2.setY(vi, pAttr2.getY(vi) * w);
+                    }
+                    pAttr2.needsUpdate = true;
+                    const splatColor2 = baseColor2.clone();
+                    const hsl2 = {}; splatColor2.getHSL(hsl2);
+                    hsl2.h += (Math.random() - 0.5) * 0.08;
+                    hsl2.s = Math.min(1, hsl2.s * (0.8 + Math.random() * 0.4));
+                    hsl2.l = Math.min(1, hsl2.l * (0.7 + Math.random() * 0.6));
+                    splatColor2.setHSL(hsl2.h, hsl2.s, hsl2.l);
+                    const mat2 = new THREE.MeshBasicMaterial({ color: splatColor2, transparent: true, opacity: 0.75 + Math.random() * 0.2, side: THREE.DoubleSide, depthWrite: false });
+                    const patch2 = new THREE.Mesh(mainGeom2, mat2);
+                    patch2.rotation.x = -Math.PI / 2;
+                    patch2.rotation.z = Math.random() * Math.PI * 2;
+                    patch2.position.set(G.player2Group.position.x + (Math.random() - 0.5) * 0.5, terrainH2 + 0.02, G.player2Group.position.z + (Math.random() - 0.5) * 0.5);
+                    G.scene.add(patch2); G.colorPatches.push(patch2);
+                    
+                    const numDrop2 = 2 + Math.floor(Math.random() * 4);
+                    for (let di = 0; di < numDrop2; di++) {
+                        const ds = 0.3 + Math.random() * 0.8;
+                        const dg = new THREE.CircleGeometry(ds, 5 + Math.floor(Math.random() * 3));
+                        const dp = dg.attributes.position;
+                        for (let dvi = 1; dvi < dp.count; dvi++) { const dw = 0.5 + Math.random(); dp.setX(dvi, dp.getX(dvi) * dw); dp.setY(dvi, dp.getY(dvi) * dw); }
+                        dp.needsUpdate = true;
+                        const dc = baseColor2.clone(); const dh = {}; dc.getHSL(dh);
+                        dh.h += (Math.random() - 0.5) * 0.12; dh.s = Math.min(1, dh.s * (0.6 + Math.random() * 0.6)); dh.l = Math.min(1, Math.max(0.1, dh.l * (0.5 + Math.random())));
+                        dc.setHSL(dh.h, dh.s, dh.l);
+                        const dm = new THREE.MeshBasicMaterial({ color: dc, transparent: true, opacity: 0.5 + Math.random() * 0.4, side: THREE.DoubleSide, depthWrite: false });
+                        const dd = new THREE.Mesh(dg, dm); dd.rotation.x = -Math.PI / 2; dd.rotation.z = Math.random() * Math.PI * 2;
+                        const ang = Math.random() * Math.PI * 2; const dst = mainSize2 * 0.6 + Math.random() * mainSize2 * 0.8;
+                        dd.position.set(patch2.position.x + Math.cos(ang) * dst, terrainH2 + 0.02, patch2.position.z + Math.sin(ang) * dst);
+                        G.scene.add(dd); G.colorPatches.push(dd);
+                    }
+                    
+                    G.lastPaintX2 = G.player2Group.position.x;
+                    G.lastPaintZ2 = G.player2Group.position.z;
+                    G.paintAmount2 -= 1;
+                    if (G.paintAmount2 <= 0) { G.paintAmount2 = 0; G.activeColor2 = null; }
+                }
+            }
+            
+            // Color enemies on contact (player touching them while having paint)
+            if (G.activeColor && G.paintAmount > 0) {
+                G.goblins.forEach(gob => {
+                    if (gob.alive && !gob.colored) {
+                        const dist = G.playerGroup.position.distanceTo(gob.mesh.position);
+                        if (dist < gob.radius + 1.5) {
+                            colorizeEntity(gob, G.activeColor);
+                        }
+                    }
+                });
+                // Color dragons on contact
+                if (G.dragon && G.dragon.alive && !G.dragon.colored) {
+                    const dist = G.playerGroup.position.distanceTo(G.dragon.mesh.position);
+                    if (dist < 10) {
+                        colorizeEntity(G.dragon, G.activeColor);
+                    }
+                }
+                if (G.extraDragons) {
+                    G.extraDragons.forEach(d => {
+                        if (d.alive && !d.colored) {
+                            const dist = G.playerGroup.position.distanceTo(d.mesh.position);
+                            if (dist < 8) {
+                                colorizeEntity(d, G.activeColor);
+                            }
+                        }
+                    });
+                }
+                if (G.birds) {
+                    G.birds.forEach(bird => {
+                        if (!bird.colored) {
+                            const dist = G.playerGroup.position.distanceTo(bird.mesh.position);
+                            if (dist < 5) {
+                                colorizeEntity(bird, G.activeColor);
+                            }
+                        }
+                    });
+                }
+            }
+            // Player 2 contact coloring (splitscreen)
+            if (isNativeSplitscreen && G.player2Group && G.activeColor2 && G.paintAmount2 > 0) {
+                G.goblins.forEach(gob => {
+                    if (gob.alive && !gob.colored) {
+                        const dist = G.player2Group.position.distanceTo(gob.mesh.position);
+                        if (dist < gob.radius + 1.5) colorizeEntity(gob, G.activeColor2);
+                    }
+                });
+                if (G.dragon && G.dragon.alive && !G.dragon.colored) {
+                    const dist = G.player2Group.position.distanceTo(G.dragon.mesh.position);
+                    if (dist < 10) colorizeEntity(G.dragon, G.activeColor2);
+                }
+                if (G.extraDragons) {
+                    G.extraDragons.forEach(d => {
+                        if (d.alive && !d.colored) {
+                            const dist = G.player2Group.position.distanceTo(d.mesh.position);
+                            if (dist < 8) colorizeEntity(d, G.activeColor2);
+                        }
+                    });
+                }
+                if (G.birds) {
+                    G.birds.forEach(bird => {
+                        if (!bird.colored) {
+                            const dist = G.player2Group.position.distanceTo(bird.mesh.position);
+                            if (dist < 5) colorizeEntity(bird, G.activeColor2);
+                        }
+                    });
+                }
+            }
         }
         
         // Christmas Present collection (good presents that give rewards)

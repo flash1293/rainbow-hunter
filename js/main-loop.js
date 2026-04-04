@@ -308,6 +308,23 @@ function initLoop() {
             G.sizePotions.length = 0;
         }
         
+        // Reset color theme state
+        G.activeColor = null;
+        G.paintAmount = 0;
+        G.activeColor2 = null;
+        G.paintAmount2 = 0;
+        G.coloredEnemyCount = 0;
+        if (G.colorPatches) {
+            G.colorPatches.forEach(patch => G.scene.remove(patch));
+            G.colorPatches.length = 0;
+        }
+        if (G.paintBuckets) {
+            G.paintBuckets.forEach(bucket => {
+                bucket.collected = false;
+                bucket.mesh.visible = true;
+            });
+        }
+        
         // Reset Rapunzel tower lift animation
         G.rapunzelTowerLift = null;
         
@@ -462,6 +479,39 @@ function initLoop() {
             const total = G.crystalGems.length;
             const collected = G.crystalGems.filter(g => g.collected).length;
             drawTextWithOutline(G.hudCtx, `Edelsteine: ${collected}/${total}`, 10, nextYPos, '#AA44FF', '#440066');
+            nextYPos += 25;
+        }
+        
+        // Color theme paint display
+        if (G.colorTheme) {
+            // Show active color
+            if (G.activeColor && G.paintAmount > 0) {
+                const colorHex = '#' + new THREE.Color(G.activeColor).getHexString();
+                // Draw color swatch
+                G.hudCtx.fillStyle = colorHex;
+                G.hudCtx.fillRect(10, nextYPos - 15, 20, 20);
+                G.hudCtx.strokeStyle = '#000';
+                G.hudCtx.lineWidth = 2;
+                G.hudCtx.strokeRect(10, nextYPos - 15, 20, 20);
+                // Paint amount bar
+                const barX = 35;
+                const barWidth = 80;
+                const barHeight = 14;
+                G.hudCtx.fillStyle = '#333';
+                G.hudCtx.fillRect(barX, nextYPos - 12, barWidth, barHeight);
+                G.hudCtx.fillStyle = colorHex;
+                G.hudCtx.fillRect(barX, nextYPos - 12, barWidth * (G.paintAmount / 200), barHeight);
+                G.hudCtx.strokeStyle = '#000';
+                G.hudCtx.strokeRect(barX, nextYPos - 12, barWidth, barHeight);
+                drawTextWithOutline(G.hudCtx, `Farbe: ${Math.round(G.paintAmount / 2)}%`, barX + barWidth + 8, nextYPos, colorHex, '#000');
+            } else {
+                drawTextWithOutline(G.hudCtx, '\ud83e\udea3 Farbeimer suchen!', 10, nextYPos, '#999', '#000');
+            }
+            nextYPos += 25;
+            
+            // Colored enemies counter
+            const totalEnemies = G.goblins.length + (G.dragon && G.dragon.alive ? 1 : 0) + G.extraDragons.length + (G.birds ? G.birds.length : 0);
+            drawTextWithOutline(G.hudCtx, `\ud83c\udfa8 Gef\u00e4rbt: ${G.coloredEnemyCount || 0}/${totalEnemies}`, 10, nextYPos, '#FFF', '#000');
             nextYPos += 25;
         }
         
@@ -990,6 +1040,17 @@ function initLoop() {
             const collected = G.christmasPresents.filter(p => p.collected).length;
             const remaining = total - collected;
             drawTextWithOutline(G.hudCtx, `Geschenke: ${remaining}/${total}`, G.hudCanvas.width / 2, bottomY, '#FF0000', '#006400');
+            bottomY += 18;
+        }
+        
+        // Color theme paint status
+        if (G.colorTheme) {
+            if (G.activeColor && G.paintAmount > 0) {
+                const colorHex = '#' + new THREE.Color(G.activeColor).getHexString();
+                drawTextWithOutline(G.hudCtx, `\ud83c\udfa8 Farbe: ${Math.round(G.paintAmount / 2)}% | Gef\u00e4rbt: ${G.coloredEnemyCount || 0}`, G.hudCanvas.width / 2, bottomY, colorHex, '#000');
+            } else {
+                drawTextWithOutline(G.hudCtx, '\ud83e\udea3 Farbeimer suchen!', G.hudCanvas.width / 2, bottomY, '#999', '#000');
+            }
             bottomY += 18;
         }
         

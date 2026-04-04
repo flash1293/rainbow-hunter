@@ -39,12 +39,18 @@
         const isGiantBullet = G.playerGiant;
         const bulletSize = isGiantBullet ? 0.6 : 0.2;
         const bulletGeometry = new THREE.SphereGeometry(bulletSize, 8, 8);
-        const bulletColor = isGiantBullet ? 0xFF4500 : (G.isHost ? 0xFF69B4 : 0x4169E1); // Orange-red for giant, else Pink/Blue
+        // Color theme: bullet takes the active paint color
+        const bulletColor = (G.colorTheme && G.activeColor) ? G.activeColor : (isGiantBullet ? 0xFF4500 : (G.isHost ? 0xFF69B4 : 0x4169E1));
         const bulletMaterial = getMaterial('lambert', { color: bulletColor });
-        const bulletMesh = new THREE.Mesh(bulletGeometry, bulletMaterial);
+        const bulletMesh = new THREE.Mesh(bulletGeometry, bulletMaterial.clone());
         bulletMesh.position.copy(G.playerGroup.position);
         bulletMesh.position.y = isGiantBullet ? 2 : 1;
         bulletMesh.castShadow = true;
+        // Add glow to colored bullets
+        if (G.colorTheme && G.activeColor) {
+            bulletMesh.material.emissive = new THREE.Color(G.activeColor);
+            bulletMesh.material.emissiveIntensity = 0.5;
+        }
         G.scene.add(bulletMesh);
         
         const direction = new THREE.Vector3(
@@ -59,7 +65,8 @@
             radius: bulletSize,
             startPos: { x: G.playerGroup.position.x, z: G.playerGroup.position.z },
             isGiant: isGiantBullet,
-            damage: isGiantBullet ? 3 : 1 // Giant bullets deal 3x damage
+            damage: isGiantBullet ? 3 : 1,
+            paintColor: G.activeColor || null // Store paint color at shoot time
         };
         G.bullets.push(bullet);
         if (!godMode && !G.playerInfiniteAmmo) G.ammo--;
@@ -117,9 +124,13 @@
             const isGiantBullet = G.player2Giant;
             const bulletSize = isGiantBullet ? 0.6 : 0.15;
             const bulletGeometry = new THREE.SphereGeometry(bulletSize, 8, 8);
-            const bulletColor = isGiantBullet ? 0xFF4500 : 0x4488FF; // Orange-red for giant, else blue
+            const bulletColor = (G.colorTheme && G.activeColor2) ? G.activeColor2 : (isGiantBullet ? 0xFF4500 : 0x4488FF);
             const bulletMaterial = getMaterial('lambert', { color: bulletColor });
             const bulletMesh = new THREE.Mesh(bulletGeometry, bulletMaterial);
+            if (G.colorTheme && G.activeColor2) {
+                bulletMesh.material.emissive = new THREE.Color(G.activeColor2);
+                bulletMesh.material.emissiveIntensity = 0.5;
+            }
             
             bulletMesh.position.set(
                 G.player2Group.position.x + Math.sin(G.player2.rotation) * 1.2,
@@ -142,7 +153,9 @@
                 fromPlayer: 2,
                 radius: bulletSize,
                 isGiant: isGiantBullet,
-                damage: isGiantBullet ? 3 : 1 // Giant bullets deal 3x damage
+                damage: isGiantBullet ? 3 : 1, // Giant bullets deal 3x damage
+                paintColor: G.activeColor2 || null,
+                isPlayer2: true
             });
         }
     }
@@ -187,6 +200,10 @@
                         
                         // Only host applies actual damage
                         if (!multiplayerManager || !multiplayerManager.isConnected() || multiplayerManager.isHost) {
+                            // Color theme: colorize enemy on bullet hit
+                            if (G.colorTheme && bullet.paintColor && !gob.colored && typeof colorizeEntity === 'function') {
+                                colorizeEntity(gob, bullet.paintColor);
+                            }
                             // Apply crystal gem damage boost if active
                             const damageBoost = (bullet.isPlayer2 ? G.player2DamageBoost : G.playerDamageBoost) || 1;
                             const damage = (bullet.damage || 1) * damageBoost;
@@ -225,6 +242,10 @@
                     
                     // Only host applies damage
                     if (!multiplayerManager || !multiplayerManager.isConnected() || multiplayerManager.isHost) {
+                        // Color theme: colorize dragon on bullet hit
+                        if (G.colorTheme && bullet.paintColor && !G.dragon.colored && typeof colorizeEntity === 'function') {
+                            colorizeEntity(G.dragon, bullet.paintColor);
+                        }
                         // Apply crystal gem damage boost if active
                         const damageBoost = (bullet.isPlayer2 ? G.player2DamageBoost : G.playerDamageBoost) || 1;
                         const damage = (bullet.damage || 1) * damageBoost;
@@ -286,6 +307,10 @@
                         
                         // Only host applies damage
                         if (!multiplayerManager || !multiplayerManager.isConnected() || multiplayerManager.isHost) {
+                            // Color theme: colorize extra dragon on bullet hit
+                            if (G.colorTheme && bullet.paintColor && !extraDragon.colored && typeof colorizeEntity === 'function') {
+                                colorizeEntity(extraDragon, bullet.paintColor);
+                            }
                             // Apply crystal gem damage boost if active
                             const damageBoost = (bullet.isPlayer2 ? G.player2DamageBoost : G.playerDamageBoost) || 1;
                             const damage = (bullet.damage || 1) * damageBoost;

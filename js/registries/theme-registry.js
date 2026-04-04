@@ -61,7 +61,8 @@ const THEME_REGISTRY = {
             'water': 'waterTheme',
             'candy': 'candyTheme',
             'graveyard': 'graveyardTheme',
-            'ruins': 'ruinsTheme'
+            'ruins': 'ruinsTheme',
+            'color': 'colorTheme'
         };
         return flagMap[themeId] || null;
     },
@@ -99,6 +100,7 @@ function getThemeForLevel(levelConfig) {
     if (levelConfig.ruinsTheme) return THEME_REGISTRY.get('ruins');
     if (levelConfig.enchantedTheme) return THEME_REGISTRY.get('enchanted');
     if (levelConfig.easterTheme) return THEME_REGISTRY.get('easter');
+    if (levelConfig.colorTheme) return THEME_REGISTRY.get('color');
     // Default to forest theme
     return THEME_REGISTRY.get('forest');
 }

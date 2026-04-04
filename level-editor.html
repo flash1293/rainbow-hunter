@@ -1,0 +1,1595 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Eat the Rainbow – Level Editor</title>
+<style>
+* { margin: 0; padding: 0; box-sizing: border-box; }
+body { font-family: 'Segoe UI', system-ui, -apple-system, sans-serif; background: #1a1a2e; color: #e0e0e0; overflow: hidden; height: 100vh; display: flex; flex-direction: column; }
+
+/* ── Toolbar ── */
+#toolbar { display: flex; align-items: center; gap: 10px; padding: 6px 12px; background: #16213e; border-bottom: 1px solid #0f3460; flex-shrink: 0; height: 42px; }
+#toolbar button, #toolbar label { font-size: 13px; }
+#toolbar button { background: #0f3460; color: #e0e0e0; border: 1px solid #1a4080; border-radius: 4px; padding: 4px 12px; cursor: pointer; white-space: nowrap; }
+#toolbar button:hover { background: #1a4080; }
+#toolbar button.primary { background: #e94560; border-color: #e94560; }
+#toolbar button.primary:hover { background: #ff6b81; }
+#toolbar .sep { width: 1px; height: 24px; background: #0f3460; }
+#toolbar label { display: flex; align-items: center; gap: 4px; cursor: pointer; font-size: 12px; white-space: nowrap; }
+#toolbar input[type=checkbox] { accent-color: #e94560; }
+#coords { font-size: 12px; color: #7f8fa6; min-width: 160px; text-align: right; margin-left: auto; font-family: monospace; }
+#zoom-display { font-size: 12px; color: #7f8fa6; font-family: monospace; min-width: 50px; }
+#snap-size { width: 45px; background: #0f3460; color: #e0e0e0; border: 1px solid #1a4080; border-radius: 3px; padding: 2px 4px; font-size: 12px; }
+
+/* ── Main Layout ── */
+#main { display: flex; flex: 1; overflow: hidden; }
+
+/* ── Left Sidebar (Element List) ── */
+#left-sidebar { width: 260px; background: #16213e; border-right: 1px solid #0f3460; overflow-y: auto; flex-shrink: 0; font-size: 12px; }
+#left-sidebar h3 { padding: 8px 10px; font-size: 13px; color: #e94560; border-bottom: 1px solid #0f3460; position: sticky; top: 0; background: #16213e; z-index: 1; }
+.el-group { border-bottom: 1px solid #0f3460; }
+.el-group-header { padding: 5px 10px; cursor: pointer; display: flex; align-items: center; gap: 6px; background: #1a1a3a; user-select: none; font-weight: 600; font-size: 12px; }
+.el-group-header:hover { background: #1e2a4a; }
+.el-group-header .arrow { transition: transform 0.15s; font-size: 10px; }
+.el-group-header .arrow.collapsed { transform: rotate(-90deg); }
+.el-group-header .count { color: #7f8fa6; font-weight: 400; margin-left: auto; }
+.el-group-header .dot { width: 8px; height: 8px; border-radius: 50%; flex-shrink: 0; }
+.el-group-items { display: block; }
+.el-group-items.collapsed { display: none; }
+.el-item { padding: 3px 10px 3px 28px; cursor: pointer; display: flex; align-items: center; gap: 6px; font-size: 11px; font-family: monospace; }
+.el-item:hover { background: #1e2a4a; }
+.el-item.selected { background: #0f3460; color: #fff; }
+.el-item .idx { color: #7f8fa6; min-width: 20px; }
+.el-item .pos { color: #a0a8c0; }
+
+/* ── Canvas Area ── */
+#canvas-wrap { flex: 1; position: relative; overflow: hidden; background: #111; cursor: crosshair; }
+#canvas-wrap canvas { display: block; }
+
+/* ── Right Sidebar (Properties) ── */
+#right-sidebar { width: 280px; background: #16213e; border-left: 1px solid #0f3460; overflow-y: auto; flex-shrink: 0; font-size: 12px; }
+#right-sidebar h3 { padding: 8px 10px; font-size: 13px; color: #e94560; border-bottom: 1px solid #0f3460; position: sticky; top: 0; background: #16213e; z-index: 1; }
+#props-empty { padding: 20px 10px; color: #7f8fa6; text-align: center; }
+#props-content { padding: 8px 10px; }
+#props-content .prop-title { font-weight: 600; font-size: 13px; margin-bottom: 8px; color: #fff; }
+.prop-row { display: flex; align-items: center; gap: 6px; margin-bottom: 5px; }
+.prop-row label { min-width: 80px; color: #a0a8c0; font-size: 11px; }
+.prop-row input[type=number], .prop-row input[type=text], .prop-row select { flex: 1; background: #0f3460; color: #e0e0e0; border: 1px solid #1a4080; border-radius: 3px; padding: 3px 6px; font-size: 12px; font-family: monospace; }
+.prop-row input[type=color] { width: 30px; height: 24px; border: none; background: none; cursor: pointer; }
+#props-content .delete-btn { margin-top: 12px; background: #8b0000; color: #fff; border: 1px solid #a00; border-radius: 4px; padding: 5px 12px; cursor: pointer; width: 100%; font-size: 12px; }
+#props-content .delete-btn:hover { background: #a50000; }
+
+/* ── Add Element Modal ── */
+#add-type-list { display: flex; flex-direction: column; gap: 2px; max-height: 400px; overflow-y: auto; }
+.add-cat-header { font-weight: 600; font-size: 12px; color: #e94560; padding: 6px 0 3px; border-bottom: 1px solid #0f3460; margin-top: 6px; }
+.add-cat-header:first-child { margin-top: 0; }
+.add-type-btn { display: flex; align-items: center; gap: 8px; padding: 5px 10px; border: 1px solid #1a4080; border-radius: 4px; background: #0f3460; color: #e0e0e0; cursor: pointer; font-size: 12px; text-align: left; }
+.add-type-btn:hover { background: #1a4080; border-color: #e94560; }
+.add-type-btn .dot { width: 10px; height: 10px; border-radius: 50%; flex-shrink: 0; }
+.add-type-btn .type-label { flex: 1; }
+
+/* Sidebar add buttons */
+.type-header-row { display: flex; align-items: center; padding: 3px 10px 2px 16px; font-size: 11px; font-weight: 600; }
+.type-header-row .type-name { flex: 1; }
+.type-header-row .add-btn { background: none; border: 1px solid #1a4080; color: #7f8fa6; border-radius: 3px; font-size: 10px; cursor: pointer; padding: 0 4px; line-height: 16px; margin-left: 4px; }
+.type-header-row .add-btn:hover { color: #00ff88; border-color: #00ff88; }
+
+/* ── Modal ── */
+.modal-overlay { display: none; position: fixed; inset: 0; background: rgba(0,0,0,0.7); z-index: 100; align-items: center; justify-content: center; }
+.modal-overlay.active { display: flex; }
+.modal { background: #16213e; border: 1px solid #0f3460; border-radius: 8px; padding: 20px; max-width: 700px; width: 90%; max-height: 80vh; display: flex; flex-direction: column; }
+.modal h2 { margin-bottom: 10px; color: #e94560; font-size: 16px; }
+.modal p { margin-bottom: 8px; font-size: 13px; color: #a0a8c0; }
+.modal textarea { flex: 1; min-height: 300px; background: #0a0a1a; color: #e0e0e0; border: 1px solid #0f3460; border-radius: 4px; padding: 10px; font-family: 'Fira Code', 'Consolas', monospace; font-size: 12px; resize: vertical; }
+.modal .btn-row { margin-top: 10px; display: flex; gap: 8px; justify-content: flex-end; }
+.modal button { background: #0f3460; color: #e0e0e0; border: 1px solid #1a4080; border-radius: 4px; padding: 6px 16px; cursor: pointer; font-size: 13px; }
+.modal button.primary { background: #e94560; border-color: #e94560; }
+.modal button.primary:hover { background: #ff6b81; }
+.modal button:hover { background: #1a4080; }
+.modal .error { color: #e94560; font-size: 12px; margin-top: 6px; min-height: 18px; }
+
+/* Scrollbar */
+::-webkit-scrollbar { width: 6px; }
+::-webkit-scrollbar-track { background: #1a1a2e; }
+::-webkit-scrollbar-thumb { background: #0f3460; border-radius: 3px; }
+</style>
+</head>
+<body>
+
+<!-- Toolbar -->
+<div id="toolbar">
+  <button class="primary" id="btn-load">Load Level</button>
+  <button class="primary" id="btn-export">Export</button>
+  <div class="sep"></div>
+  <button id="btn-add">+ Add</button>
+  <button id="btn-duplicate" title="Duplicate selected (Ctrl+D)">Duplicate</button>
+  <div class="sep"></div>
+  <label><input type="checkbox" id="chk-grid" checked> Grid</label>
+  <label><input type="checkbox" id="chk-labels"> Labels</label>
+  <label>Snap: <input type="number" id="snap-size" value="0" min="0" max="50" step="1"></label>
+  <div class="sep"></div>
+  <button id="btn-zoom-in">+</button>
+  <span id="zoom-display">100%</span>
+  <button id="btn-zoom-out">−</button>
+  <button id="btn-fit">Fit</button>
+  <span id="coords">X: — Z: —</span>
+</div>
+
+<!-- Main layout -->
+<div id="main">
+  <!-- Left sidebar -->
+  <div id="left-sidebar">
+    <h3>Elements</h3>
+    <div id="element-list"></div>
+  </div>
+
+  <!-- Canvas -->
+  <div id="canvas-wrap">
+    <canvas id="editor-canvas"></canvas>
+  </div>
+
+  <!-- Right sidebar -->
+  <div id="right-sidebar">
+    <h3>Properties</h3>
+    <div id="props-empty">Select an element to edit its properties</div>
+    <div id="props-content" style="display:none"></div>
+  </div>
+</div>
+
+<!-- Load Modal -->
+<div class="modal-overlay" id="modal-load">
+  <div class="modal">
+    <h2>Load Level File</h2>
+    <p>Paste the <strong>entire contents</strong> of a level file (e.g. <code>level-11-easter.js</code>). The <code>LEVEL_REGISTRY.register(N, {...})</code> wrapper and comments are handled automatically.</p>
+    <textarea id="load-textarea" spellcheck="false" placeholder='// Level 11 - Easter Meadow
+// Bright spring meadow with Easter decorations
+
+LEVEL_REGISTRY.register(11, {
+    name: "Level 11 - Easter Meadow",
+    theme: "easter",
+    playerStart: { x: 0, z: 180 },
+    ...
+});'></textarea>
+    <div class="error" id="load-error"></div>
+    <div class="btn-row">
+      <button id="btn-load-cancel">Cancel</button>
+      <button class="primary" id="btn-load-ok">Load</button>
+    </div>
+  </div>
+</div>
+
+<!-- Export Modal -->
+<div class="modal-overlay" id="modal-export">
+  <div class="modal">
+    <h2>Export Level File</h2>
+    <p>Copy this and paste it back into the level file, replacing its entire contents.</p>
+    <textarea id="export-textarea" spellcheck="false" readonly></textarea>
+    <div class="btn-row">
+      <button id="btn-export-copy">Copy to Clipboard</button>
+      <button id="btn-export-close">Close</button>
+    </div>
+  </div>
+</div>
+
+<!-- Add Element Modal -->
+<div class="modal-overlay" id="modal-add">
+  <div class="modal" style="max-width: 480px">
+    <h2>Add Element</h2>
+    <p>Choose the element type to add. It will be placed at the current view center.</p>
+    <div id="add-type-list"></div>
+    <div class="btn-row">
+      <button id="btn-add-cancel">Cancel</button>
+    </div>
+  </div>
+</div>
+
+<script>
+// ═══════════════════════════════════════════════════════════════
+// LEVEL EDITOR — Eat the Rainbow
+// ═══════════════════════════════════════════════════════════════
+
+(() => {
+'use strict';
+
+// ── Element Type Definitions ──
+// Each type defines how to read/write/render a category of level elements.
+const ELEMENT_TYPES = {
+  // ─── Singletons (single positioned objects) ───
+  playerStart:     { label: 'Player Start',  color: '#00ff88', shape: 'triangle', size: 8, singleton: true, fields: ['x','z'] },
+  portal:          { label: 'Portal',         color: '#00ccff', shape: 'diamond',  size: 8, singleton: true, fields: ['x','z','destinationLevel'] },
+  dragon:          { label: 'Boss (Dragon)',  color: '#ff0000', shape: 'star',     size: 10, singleton: true, fields: ['x','z','scale'], nullable: true },
+  treasurePosition:{ label: 'Treasure',       color: '#ffd700', shape: 'star',     size: 8, singleton: true, fields: ['x','z'] },
+  rainbow:         { label: 'Rainbow',        color: '#ff69b4', shape: 'diamond',  size: 7, singleton: true, fields: ['x','z'] },
+  worldKite:       { label: 'World Kite',     color: '#ff8c00', shape: 'diamond',  size: 7, singleton: true, fields: ['x','z'], nullable: true },
+  iceBerg:         { label: 'Ice Berg',       color: '#add8e6', shape: 'diamond',  size: 7, singleton: true, fields: ['x','z'], nullable: true },
+
+  // ─── Enemies (tuple arrays) ───
+  goblins:         { label: 'Goblins',        color: '#ff3333', shape: 'circle', size: 4, tuple: true, fields: ['x','z','patrolLeft','patrolRight','speed'], patrol: true },
+  guardians:       { label: 'Guardians',      color: '#ff8800', shape: 'circle', size: 4, tuple: true, fields: ['x','z','patrolLeft','patrolRight','speed'], patrol: true },
+  giants:          { label: 'Giants',         color: '#cc0000', shape: 'square', size: 6, tuple: true, fields: ['x','z','patrolLeft','patrolRight'], patrol: true },
+  wizards:         { label: 'Wizards',        color: '#aa00ff', shape: 'circle', size: 4, tuple: true, fields: ['x','z','patrolLeft','patrolRight','speed'], patrol: true },
+  mummies:         { label: 'Mummies',        color: '#c8a84e', shape: 'circle', size: 4, tuple: true, fields: ['x','z','patrolLeft','patrolRight','speed'], patrol: true },
+  lavaMonsters:    { label: 'Lava Monsters',  color: '#ff4400', shape: 'circle', size: 4, tuple: true, fields: ['x','z','patrolLeft','patrolRight','speed'], patrol: true },
+  skeletons:       { label: 'Skeletons',      color: '#d4d4d4', shape: 'circle', size: 4, tuple: true, fields: ['x','z','patrolLeft','patrolRight','speed'], patrol: true },
+  hardModeGoblins: { label: 'Hard Goblins',   color: '#ff6666', shape: 'circle', size: 4, tuple: true, fields: ['x','z','patrolLeft','patrolRight','speed'], patrol: true },
+  birds:           { label: 'Birds',          color: '#4488ff', shape: 'circle', size: 4, tuple: true, fields: ['centerX','centerZ','radius','speed'], bird: true },
+
+  // ─── Boss extras (object arrays) ───
+  extraDragons:    { label: 'Extra Bosses',   color: '#ff2222', shape: 'star', size: 7, fields: ['x','z','scale','health','useReaper','useEvilSanta','useFlyingWitchHouse','useFlyingWitch','useEasterBunny','useUnicorn'] },
+
+  // ─── Items (object arrays {x, z}) ───
+  ammoPositions:   { label: 'Ammo',           color: '#ffff00', shape: 'square', size: 3 },
+  bombPositions:   { label: 'Bombs',          color: '#ff8800', shape: 'circle', size: 3 },
+  healthPositions: { label: 'Health',         color: '#ff69b4', shape: 'cross',  size: 4 },
+  herzmanPositions:{ label: 'Herzmen',        color: '#00ffcc', shape: 'square', size: 3 },
+  bananaPositions: { label: 'Bananas',        color: '#ffe135', shape: 'circle', size: 3 },
+  materials:       { label: 'Materials',      color: '#c0c0c0', shape: 'square', size: 4, fields: ['x','z','type','color','glowColor'] },
+  trapPositions:   { label: 'Traps',          color: '#8b4513', shape: 'cross',  size: 4 },
+  scarabs:         { label: 'Scarabs',        color: '#daa520', shape: 'diamond', size: 4 },
+
+  // ─── Terrain ───
+  hills:           { label: 'Hills',          color: '#228b22', shape: 'circle', size: 0, fields: ['x','z','radius','height'], useRadius: true, fillAlpha: 0.25 },
+  mountains:       { label: 'Mountains',      color: '#888888', shape: 'rect',   size: 0, fields: ['x','z','width','height','depth','rotation'], useRect: true, fillAlpha: 0.4 },
+  naturalMountains:{ label: 'Nat. Mountains', color: '#aaaaaa', shape: 'circle', size: 0, fields: ['x','z','radius','height'], useRadius: true, fillAlpha: 0.2 },
+  impassableCliffs:{ label: 'Cliffs',         color: '#880000', shape: 'circle', size: 0, fields: ['x','z','radius','height'], useRadius: true, fillAlpha: 0.3 },
+
+  // ─── Decorations ───
+  treePositions:   { label: 'Trees',          color: '#22aa22', shape: 'triangle', size: 4, fields: ['x','z','type'] },
+  rockPositions:   { label: 'Rocks',          color: '#999999', shape: 'square',   size: 3 },
+  fairytaleTrees:  { label: 'Fairytale Trees',color: '#88cc88', shape: 'triangle', size: 5, fields: ['x','z','scale'] },
+
+  // ─── Level-specific terrain ───
+  pyramids:        { label: 'Pyramids',       color: '#daa520', shape: 'triangle', size: 0, fields: ['x','z','size','height'], usePyramid: true, fillAlpha: 0.35 },
+  canyonWalls:     { label: 'Canyon Walls',   color: '#a0522d', shape: 'rect',     size: 0, fields: ['x','z','width','depth','height','rotation'], useCanyon: true, fillAlpha: 0.4 },
+  boulderPositions:{ label: 'Boulders',       color: '#808080', shape: 'circle',   size: 5 },
+  lavaPools:       { label: 'Lava Pools',     color: '#ff4400', shape: 'circle',   size: 0, fields: ['x','z','radius'], useRadius: true, fillAlpha: 0.35 },
+  lavaFlows:       { label: 'Lava Flows',     color: '#ff6600', shape: 'rect',     size: 0, fields: ['x','z','length','direction'], useCanyon: true, fillAlpha: 0.35 },
+  crevices:        { label: 'Crevices',        color: '#553300', shape: 'rect',    size: 0, fields: ['x','z','width','length','rotation'], useCanyon: true, fillAlpha: 0.3 },
+  mistPools:       { label: 'Mist Pools',     color: '#9966cc', shape: 'circle',   size: 0, fields: ['x','z','radius'], useRadius: true, fillAlpha: 0.25 },
+  rubblePiles:     { label: 'Rubble Piles',   color: '#a08060', shape: 'circle',   size: 0, fields: ['x','z','radius'], useRadius: true, fillAlpha: 0.2 },
+  chocolateRiver:  { label: 'Choco River',    color: '#8B4513', shape: 'rect',     size: 0, fields: ['x','z','width','length','rotation'], useCanyon: true, fillAlpha: 0.4 },
+  dataStreams:     { label: 'Data Streams',   color: '#00ffff', shape: 'rect',     size: 0, fields: ['x','z','width','length','rotation','flowDirection','flowStrength'], useCanyon: true, fillAlpha: 0.3 },
+
+  // ─── Level-specific hazards ───
+  thornPatches:    { label: 'Thorn Patches',  color: '#556B2F', shape: 'circle',   size: 0, fields: ['x','z','radius'], useRadius: true, fillAlpha: 0.3 },
+  sleepSpores:     { label: 'Sleep Spores',   color: '#DA70D6', shape: 'circle',   size: 0, fields: ['x','z','radius'], useRadius: true, fillAlpha: 0.2 },
+  firewallGates:   { label: 'Firewall Gates', color: '#ff00ff', shape: 'rect',     size: 0, fields: ['x','z','width','rotation','cycleOffset'], useCanyon: true, fillAlpha: 0.35 },
+  bufferOverflowZones:{ label: 'Buffer Overflows', color: '#ff3366', shape: 'circle', size: 0, fields: ['x','z','minRadius','maxRadius','growthRate','damage'], useRadius: true, fillAlpha: 0.25 },
+  movingTraps:     { label: 'Moving Traps',   color: '#cc6600', shape: 'cross',    size: 5, fields: ['x','z','radius','speed','rangeX','rangeZ'] },
+
+  // ─── Level-specific decorations ───
+  mysteryTowers:   { label: 'Mystery Towers', color: '#9932cc', shape: 'diamond',  size: 6, fields: ['x','z','enemyType'] },
+  labyrinthArtifacts:{ label: 'Artifacts',    color: '#20b2aa', shape: 'diamond',  size: 5, fields: ['x','z','type'] },
+  easterEggs:      { label: 'Easter Eggs',    color: '#ff1493', shape: 'circle',   size: 4 },
+  christmasPresents:{ label: 'Xmas Presents', color: '#ff0000', shape: 'square',   size: 4 },
+  flowerPatches:   { label: 'Flower Patches', color: '#ff69b4', shape: 'circle',   size: 0, fields: ['x','z','radius'], useRadius: true, fillAlpha: 0.2 },
+  easterBaskets:   { label: 'Easter Baskets', color: '#deb887', shape: 'diamond',  size: 5, fields: ['x','z','scale'] },
+  blossomTrees:    { label: 'Blossom Trees',  color: '#ffb6c1', shape: 'triangle', size: 5, fields: ['x','z','scale'] },
+  fairyRings:      { label: 'Fairy Rings',    color: '#E0B0FF', shape: 'circle',   size: 0, fields: ['x','z','radius'], useRadius: true, fillAlpha: 0.2 },
+  giantTrees:      { label: 'Giant Trees',    color: '#2E8B57', shape: 'triangle', size: 6, fields: ['x','z','scale'] },
+  enchantedMushrooms:{ label: 'Ench. Mushrooms', color: '#FF6347', shape: 'circle', size: 5, fields: ['x','z','scale'] },
+  crystalFlowers:  { label: 'Crystal Flowers', color: '#EE82EE', shape: 'diamond', size: 4 },
+  rainbowArcs:     { label: 'Rainbow Arcs',   color: '#FF1493', shape: 'diamond',  size: 5, fields: ['x','z','height'] },
+  christmasTrees:  { label: 'Xmas Trees',     color: '#006400', shape: 'triangle', size: 5, fields: ['x','z','scale'] },
+  crystalFormations:{ label: 'Crystal Forms',  color: '#7B68EE', shape: 'diamond',  size: 5, fields: ['x','z','type','scale','color'] },
+  gemPositions:    { label: 'Gems',            color: '#00CED1', shape: 'diamond',  size: 4, fields: ['x','z','color'] },
+  sizePotionPositions:{ label: 'Size Potions', color: '#32CD32', shape: 'cross',    size: 4 },
+  ovens:           { label: 'Ovens',           color: '#B22222', shape: 'square',   size: 5 },
+  pirateShips:     { label: 'Pirate Ships',   color: '#8B6914', shape: 'square',   size: 7, fields: ['x','z','patrolZ1','patrolZ2','speed'] },
+};
+
+// Categories for the sidebar grouping
+const CATEGORIES = [
+  { label: 'Singletons', keys: ['playerStart','portal','dragon','treasurePosition','rainbow','worldKite','iceBerg'] },
+  { label: 'Enemies',    keys: ['goblins','guardians','giants','wizards','mummies','lavaMonsters','skeletons','hardModeGoblins','birds','extraDragons'] },
+  { label: 'Items',      keys: ['ammoPositions','bombPositions','healthPositions','herzmanPositions','bananaPositions','materials','trapPositions','scarabs','sizePotionPositions','gemPositions'] },
+  { label: 'Terrain',    keys: ['hills','mountains','naturalMountains','impassableCliffs','pyramids','canyonWalls','lavaPools','lavaFlows','crevices','mistPools','rubblePiles','chocolateRiver','dataStreams'] },
+  { label: 'Hazards',    keys: ['thornPatches','sleepSpores','firewallGates','bufferOverflowZones','movingTraps'] },
+  { label: 'Decorations',keys: ['treePositions','rockPositions','fairytaleTrees','boulderPositions','blossomTrees','flowerPatches','easterBaskets','mysteryTowers','labyrinthArtifacts','easterEggs','christmasPresents','fairyRings','giantTrees','enchantedMushrooms','crystalFlowers','rainbowArcs','christmasTrees','crystalFormations','ovens','pirateShips'] },
+];
+
+// ── State ──
+let levelConfig = null;       // The raw config (non-positional fields like name, theme, flags)
+let elements = {};            // { type: [ {fields...}, ... ] } — normalized objects for each element
+let selection = null;         // { type, index } or null
+let multiSelection = [];      // Array of { type, index }
+let levelNumber = null;       // Level number from LEVEL_REGISTRY.register(N, ...)
+let fileHeader = '';          // Leading comments from the file
+
+// View state
+let viewX = 0, viewZ = 0;    // Pan offset in world coords (center of view)
+let zoom = 1;                 // Pixels per world unit
+let canvasW = 800, canvasH = 600;
+
+// Interaction state
+let dragging = false;
+let dragTarget = null;        // { type, index, offsetX, offsetZ }
+let panning = false;
+let panStartMouse = null;
+let panStartView = null;
+let boxSelecting = false;
+let boxStart = null;
+let mouseWorld = { x: 0, z: 0 };
+
+// ── DOM refs ──
+const canvas = document.getElementById('editor-canvas');
+const ctx = canvas.getContext('2d');
+const canvasWrap = document.getElementById('canvas-wrap');
+const coordsEl = document.getElementById('coords');
+const zoomEl = document.getElementById('zoom-display');
+const elListEl = document.getElementById('element-list');
+const propsEmpty = document.getElementById('props-empty');
+const propsContent = document.getElementById('props-content');
+
+// ═══════════════════════════════════════════════════════════════
+// COORDINATE TRANSFORMS
+// ═══════════════════════════════════════════════════════════════
+// World: X right, Z toward negative = north (top of canvas)
+// Canvas: x right, y down
+function worldToCanvas(wx, wz) {
+  return {
+    x: (wx - viewX) * zoom + canvasW / 2,
+    y: (-wz + viewZ) * zoom + canvasH / 2   // negative Z = north = top
+  };
+}
+function canvasToWorld(cx, cy) {
+  return {
+    x: (cx - canvasW / 2) / zoom + viewX,
+    z: -((cy - canvasH / 2) / zoom - viewZ)
+  };
+}
+function worldToCanvasScale(units) { return units * zoom; }
+
+// ═══════════════════════════════════════════════════════════════
+// SNAP
+// ═══════════════════════════════════════════════════════════════
+function getSnapSize() { return parseFloat(document.getElementById('snap-size').value) || 0; }
+function snap(val) {
+  const s = getSnapSize();
+  return s > 0 ? Math.round(val / s) * s : val;
+}
+
+// ═══════════════════════════════════════════════════════════════
+// ELEMENT DATA HELPERS
+// ═══════════════════════════════════════════════════════════════
+
+// Get x/z from a normalized element object
+function getElPos(type, el) {
+  const def = ELEMENT_TYPES[type];
+  if (def && def.bird) return { x: el.centerX, z: el.centerZ };
+  return { x: el.x, z: el.z };
+}
+
+// Set x/z on a normalized element
+function setElPos(type, el, x, z) {
+  const def = ELEMENT_TYPES[type];
+  if (def && def.bird) { el.centerX = x; el.centerZ = z; }
+  else { el.x = x; el.z = z; }
+}
+
+// Convert raw config array element to normalized object
+function rawToObj(type, raw) {
+  const def = ELEMENT_TYPES[type];
+  if (!def) return raw;
+  if (def.tuple && Array.isArray(raw)) {
+    const obj = {};
+    (def.fields || []).forEach((f, i) => { if (i < raw.length) obj[f] = raw[i]; });
+    return obj;
+  }
+  return { ...raw };
+}
+
+// Convert normalized object back to config format
+function objToRaw(type, obj) {
+  const def = ELEMENT_TYPES[type];
+  if (!def) return obj;
+  if (def.tuple) {
+    return (def.fields || []).map(f => obj[f]).filter(v => v !== undefined);
+  }
+  // For object types, include all non-undefined fields
+  const out = {};
+  const fields = def.fields || ['x', 'z'];
+  // Also include any extra fields the object may have
+  const allKeys = new Set([...fields, ...Object.keys(obj)]);
+  for (const k of allKeys) {
+    if (obj[k] !== undefined && obj[k] !== null && obj[k] !== '') out[k] = obj[k];
+  }
+  return out;
+}
+
+// ═══════════════════════════════════════════════════════════════
+// LOAD / PARSE
+// ═══════════════════════════════════════════════════════════════
+
+function loadConfig(text) {
+  let configText = text.trim();
+  levelNumber = null;
+  fileHeader = '';
+
+  // Extract leading comments (lines starting with //)
+  const lines = configText.split('\n');
+  const headerLines = [];
+  let bodyStart = 0;
+  for (let i = 0; i < lines.length; i++) {
+    const trimmed = lines[i].trim();
+    if (trimmed === '' || trimmed.startsWith('//')) {
+      headerLines.push(lines[i]);
+      bodyStart = i + 1;
+    } else {
+      break;
+    }
+  }
+  fileHeader = headerLines.join('\n');
+  configText = lines.slice(bodyStart).join('\n').trim();
+
+  // Detect and unwrap LEVEL_REGISTRY.register(N, {...}) or LEVEL_REGISTRY.register(N, {...});
+  const registerMatch = configText.match(/^LEVEL_REGISTRY\.register\(\s*(\d+)\s*,\s*/);
+  if (registerMatch) {
+    levelNumber = parseInt(registerMatch[1]);
+    // Strip the wrapper: remove "LEVEL_REGISTRY.register(N," from start and ");" from end
+    configText = configText.slice(registerMatch[0].length);
+    // Remove trailing ");" or ")" 
+    configText = configText.replace(/\);?\s*$/, '');
+  }
+
+  // Try to parse the config — it's a JS object literal, not JSON
+  let config;
+  try {
+    config = new Function('return (' + configText + ')')();
+  } catch (e) {
+    throw new Error('Parse error: ' + e.message);
+  }
+  if (typeof config !== 'object' || config === null) throw new Error('Config must be a JS object');
+
+  levelConfig = {};
+  elements = {};
+
+  // Separate positional element arrays from scalar fields
+  for (const [key, val] of Object.entries(config)) {
+    const def = ELEMENT_TYPES[key];
+    if (def) {
+      if (def.singleton) {
+        // Singleton: wrap in array of 1 (or empty if null)
+        if (val !== null && val !== undefined) {
+          elements[key] = [rawToObj(key, val)];
+        }
+      } else if (Array.isArray(val)) {
+        elements[key] = val.map(v => rawToObj(key, v));
+      }
+    } else {
+      // Non-positional config field (name, theme, flags, colors, etc.)
+      levelConfig[key] = val;
+    }
+  }
+
+  selection = null;
+  multiSelection = [];
+  buildSidebar();
+  fitView();
+  render();
+}
+
+// ═══════════════════════════════════════════════════════════════
+// EXPORT
+// ═══════════════════════════════════════════════════════════════
+
+function exportConfig() {
+  const lines = [];
+
+  // Leading comments from original file
+  if (fileHeader) {
+    lines.push(fileHeader);
+    // Ensure blank line between header comments and code
+    if (!fileHeader.endsWith('\n\n') && !fileHeader.endsWith('\n')) lines.push('');
+  }
+
+  // Open LEVEL_REGISTRY.register wrapper
+  const lvlNum = levelNumber !== null ? levelNumber : 1;
+  lines.push('LEVEL_REGISTRY.register(' + lvlNum + ', {');
+
+  // Non-positional fields first
+  const scalarKeys = Object.keys(levelConfig);
+  for (const key of scalarKeys) {
+    lines.push('    ' + key + ': ' + formatValue(levelConfig[key], key) + ',');
+  }
+
+  if (scalarKeys.length > 0) lines.push('');
+
+  // Element arrays
+  for (const cat of CATEGORIES) {
+    let catHasContent = false;
+    for (const key of cat.keys) {
+      if (!elements[key] || elements[key].length === 0) continue;
+      const def = ELEMENT_TYPES[key];
+      if (def.singleton) {
+        const raw = objToRaw(key, elements[key][0]);
+        lines.push('    ' + key + ': ' + formatObj(raw) + ',');
+      } else {
+        const rawArr = elements[key].map(el => objToRaw(key, el));
+        lines.push('    ' + key + ': [');
+        for (const raw of rawArr) {
+          if (def.tuple && Array.isArray(raw)) {
+            lines.push('        [' + raw.map((v, i) => formatValue(v, def.fields?.[i])).join(', ') + '],');
+          } else {
+            lines.push('        ' + formatObj(raw) + ',');
+          }
+        }
+        lines.push('    ],');
+      }
+      catHasContent = true;
+    }
+    if (catHasContent) lines.push('');
+  }
+
+  // Also export singletons that are null in the original config
+  for (const key of Object.keys(ELEMENT_TYPES)) {
+    const def = ELEMENT_TYPES[key];
+    if (def.singleton && def.nullable && !elements[key]) {
+      lines.push('    ' + key + ': null,');
+    }
+  }
+
+  lines.push('});');
+  lines.push('');  // trailing newline
+  return lines.join('\n');
+}
+
+// Keys whose integer values should be formatted as 0xHHHHHH hex
+const HEX_COLOR_KEYS = new Set(['hillColor','treeColor','grassColor','skyColor','groundColor','fogColor','color','glowColor']);
+
+function formatValue(v, key) {
+  if (typeof v === 'number') {
+    if (key && HEX_COLOR_KEYS.has(key) && Number.isInteger(v) && v >= 0 && v <= 0xFFFFFF) {
+      return '0x' + v.toString(16).padStart(6, '0');
+    }
+    return roundNum(v).toString();
+  }
+  if (typeof v === 'string') return JSON.stringify(v);
+  if (typeof v === 'boolean') return v.toString();
+  if (v === null) return 'null';
+  if (v === undefined) return 'undefined';
+  if (Array.isArray(v)) return '[' + v.map(item => formatValue(item)).join(', ') + ']';
+  if (typeof v === 'object') return formatObj(v);
+  return String(v);
+}
+
+function formatObj(obj) {
+  const parts = [];
+  for (const [k, v] of Object.entries(obj)) {
+    parts.push(k + ': ' + formatValue(v, k));
+  }
+  return '{ ' + parts.join(', ') + ' }';
+}
+
+function roundNum(v) {
+  if (Number.isInteger(v)) return v;
+  return Math.round(v * 10) / 10;
+}
+
+// ═══════════════════════════════════════════════════════════════
+// RENDERING
+// ═══════════════════════════════════════════════════════════════
+
+function render() {
+  ctx.clearRect(0, 0, canvasW, canvasH);
+
+  // Background
+  let bgColor = '#2a2a2a';
+  if (levelConfig && levelConfig.groundColor !== undefined) {
+    bgColor = intToCSS(levelConfig.groundColor);
+  }
+
+  // Draw world bounds
+  const tl = worldToCanvas(-300, 300);   // top-left = (-300, +300 Z = north-ish, but +Z is south... wait)
+  // Actually: -300 Z = far north = top of canvas. +300 Z = far south = bottom.
+  const worldTL = worldToCanvas(-300, -300);  // x=-300, z=-300 (north) => top-left
+  const worldBR = worldToCanvas(300, 300);    // x=300, z=300 (south) => bottom-right
+  const worldW = worldBR.x - worldTL.x;
+  const worldH = worldBR.y - worldTL.y;
+
+  // World background
+  ctx.fillStyle = bgColor;
+  ctx.fillRect(worldTL.x, worldTL.y, worldW, worldH);
+  ctx.strokeStyle = '#555';
+  ctx.lineWidth = 1;
+  ctx.strokeRect(worldTL.x, worldTL.y, worldW, worldH);
+
+  // Grid
+  if (document.getElementById('chk-grid').checked) drawGrid();
+
+  // Origin crosshair
+  const origin = worldToCanvas(0, 0);
+  ctx.strokeStyle = 'rgba(255,255,255,0.2)';
+  ctx.lineWidth = 1;
+  ctx.beginPath();
+  ctx.moveTo(origin.x, worldTL.y); ctx.lineTo(origin.x, worldBR.y);
+  ctx.moveTo(worldTL.x, origin.y); ctx.lineTo(worldBR.x, origin.y);
+  ctx.stroke();
+
+  // Direction labels
+  ctx.fillStyle = 'rgba(255,255,255,0.4)';
+  ctx.font = '12px sans-serif';
+  ctx.textAlign = 'center';
+  ctx.fillText('N (−Z / Bosses)', origin.x, worldTL.y - 6);
+  ctx.fillText('S (+Z / Player Start)', origin.x, worldBR.y + 14);
+  ctx.textBaseline = 'middle';
+  ctx.textAlign = 'right';
+  ctx.fillText('W (−X)', worldTL.x - 6, origin.y);
+  ctx.textAlign = 'left';
+  ctx.fillText('E (+X)', worldBR.x + 6, origin.y);
+  ctx.textBaseline = 'alphabetic';
+
+  // Render elements back-to-front: terrain first, then items, then enemies, then singletons
+  const renderOrder = [
+    // Terrain (back)
+    'hills','naturalMountains','impassableCliffs','mountains','pyramids','canyonWalls',
+    'lavaPools','lavaFlows','crevices','mistPools','rubblePiles','chocolateRiver','dataStreams',
+    // Hazards
+    'thornPatches','sleepSpores','firewallGates','bufferOverflowZones','movingTraps',
+    // Decorations
+    'flowerPatches','fairyRings','treePositions','rockPositions','fairytaleTrees','blossomTrees',
+    'boulderPositions','easterBaskets','giantTrees','enchantedMushrooms','crystalFlowers','rainbowArcs',
+    'christmasTrees','crystalFormations','ovens','pirateShips',
+    // Items
+    'trapPositions','ammoPositions','bombPositions','healthPositions','herzmanPositions','bananaPositions',
+    'materials','scarabs','sizePotionPositions','gemPositions',
+    'easterEggs','christmasPresents','labyrinthArtifacts','mysteryTowers',
+    // Enemies
+    'goblins','guardians','giants','wizards','mummies','lavaMonsters','skeletons','hardModeGoblins','birds',
+    // Singletons (front)
+    'extraDragons','dragon','treasurePosition','rainbow','worldKite','iceBerg','portal','playerStart'];
+
+  const showLabels = document.getElementById('chk-labels').checked;
+
+  for (const type of renderOrder) {
+    if (!elements[type]) continue;
+    const def = ELEMENT_TYPES[type];
+    if (!def) continue;
+    elements[type].forEach((el, idx) => {
+      drawElement(type, def, el, idx, showLabels);
+    });
+  }
+
+  // Box selection
+  if (boxSelecting && boxStart) {
+    const cur = worldToCanvas(mouseWorld.x, mouseWorld.z);
+    const bs = worldToCanvas(boxStart.x, boxStart.z);
+    ctx.strokeStyle = 'rgba(0,200,255,0.7)';
+    ctx.lineWidth = 1;
+    ctx.setLineDash([4, 3]);
+    ctx.strokeRect(Math.min(bs.x, cur.x), Math.min(bs.y, cur.y), Math.abs(cur.x - bs.x), Math.abs(cur.y - bs.y));
+    ctx.setLineDash([]);
+  }
+}
+
+function drawGrid() {
+  // Adaptive grid spacing based on zoom
+  let spacing = 10;
+  const pixelsPerUnit = zoom;
+  if (pixelsPerUnit < 1) spacing = 100;
+  else if (pixelsPerUnit < 3) spacing = 50;
+  else if (pixelsPerUnit < 8) spacing = 25;
+  else spacing = 10;
+
+  ctx.strokeStyle = 'rgba(255,255,255,0.06)';
+  ctx.lineWidth = 0.5;
+  ctx.font = '9px monospace';
+  ctx.fillStyle = 'rgba(255,255,255,0.15)';
+
+  // X lines
+  const startX = Math.floor(-300 / spacing) * spacing;
+  for (let wx = startX; wx <= 300; wx += spacing) {
+    const p = worldToCanvas(wx, -300);
+    const p2 = worldToCanvas(wx, 300);
+    ctx.beginPath(); ctx.moveTo(p.x, p.y); ctx.lineTo(p2.x, p2.y); ctx.stroke();
+    if (spacing >= 25 || (spacing >= 10 && zoom > 4)) {
+      ctx.textAlign = 'center';
+      ctx.fillText(wx.toString(), p.x, p2.y + 10);
+    }
+  }
+  // Z lines
+  const startZ = Math.floor(-300 / spacing) * spacing;
+  for (let wz = startZ; wz <= 300; wz += spacing) {
+    const p = worldToCanvas(-300, wz);
+    const p2 = worldToCanvas(300, wz);
+    ctx.beginPath(); ctx.moveTo(p.x, p.y); ctx.lineTo(p2.x, p2.y); ctx.stroke();
+    if (spacing >= 25 || (spacing >= 10 && zoom > 4)) {
+      ctx.textAlign = 'right';
+      ctx.fillText(wz.toString(), p.x - 4, p.y + 3);
+    }
+  }
+}
+
+function drawElement(type, def, el, idx, showLabels) {
+  const pos = getElPos(type, el);
+  const cp = worldToCanvas(pos.x, pos.z);
+  const isSelected = (selection && selection.type === type && selection.index === idx) ||
+                     multiSelection.some(s => s.type === type && s.index === idx);
+
+  // ─── Terrain shapes with area ───
+  if (def.useRadius) {
+    const r = worldToCanvasScale(el.radius || el.maxRadius || 10);
+    ctx.beginPath(); ctx.arc(cp.x, cp.y, r, 0, Math.PI * 2);
+    ctx.fillStyle = hexAlpha(def.color, def.fillAlpha || 0.25);
+    ctx.fill();
+    ctx.strokeStyle = def.color;
+    ctx.lineWidth = isSelected ? 2.5 : 1;
+    ctx.stroke();
+    if (isSelected) drawSelectionRing(cp.x, cp.y, r + 4);
+    if (showLabels) drawLabel(cp.x, cp.y - r - 6, def.label + ' ' + idx);
+    return;
+  }
+
+  if (def.useRect || def.useCanyon) {
+    const w = worldToCanvasScale(el.width || 40);
+    const d = worldToCanvasScale(el.depth || el.length || (def.useCanyon ? el.width : 2) || 2);
+    ctx.save();
+    ctx.translate(cp.x, cp.y);
+    if (el.rotation) ctx.rotate(-el.rotation); // negate because canvas Y is flipped
+    ctx.fillStyle = hexAlpha(def.color, def.fillAlpha || 0.4);
+    ctx.fillRect(-w / 2, -d / 2, w, d);
+    ctx.strokeStyle = def.color;
+    ctx.lineWidth = isSelected ? 2.5 : 1;
+    ctx.strokeRect(-w / 2, -d / 2, w, d);
+    ctx.restore();
+    if (isSelected) drawSelectionRing(cp.x, cp.y, Math.max(w, d) / 2 + 4);
+    if (showLabels) drawLabel(cp.x, cp.y - d / 2 - 6, def.label + ' ' + idx);
+    return;
+  }
+
+  if (def.usePyramid) {
+    const s = worldToCanvasScale(el.size || 20);
+    ctx.beginPath();
+    ctx.moveTo(cp.x, cp.y - s * 0.7);
+    ctx.lineTo(cp.x + s / 2, cp.y + s * 0.35);
+    ctx.lineTo(cp.x - s / 2, cp.y + s * 0.35);
+    ctx.closePath();
+    ctx.fillStyle = hexAlpha(def.color, def.fillAlpha || 0.35);
+    ctx.fill();
+    ctx.strokeStyle = def.color;
+    ctx.lineWidth = isSelected ? 2.5 : 1;
+    ctx.stroke();
+    if (isSelected) drawSelectionRing(cp.x, cp.y, s / 2 + 4);
+    if (showLabels) drawLabel(cp.x, cp.y - s * 0.7 - 6, def.label + ' ' + idx);
+    return;
+  }
+
+  // ─── Patrol lines for enemies ───
+  if (def.patrol && el.patrolLeft !== undefined && el.patrolRight !== undefined) {
+    const pl = worldToCanvas(el.patrolLeft, pos.z);
+    const pr = worldToCanvas(el.patrolRight, pos.z);
+    ctx.strokeStyle = hexAlpha(def.color, 0.4);
+    ctx.lineWidth = 2;
+    ctx.beginPath(); ctx.moveTo(pl.x, pl.y); ctx.lineTo(pr.x, pr.y); ctx.stroke();
+    // Endpoints
+    ctx.fillStyle = hexAlpha(def.color, 0.5);
+    ctx.beginPath(); ctx.arc(pl.x, pl.y, 2, 0, Math.PI * 2); ctx.fill();
+    ctx.beginPath(); ctx.arc(pr.x, pr.y, 2, 0, Math.PI * 2); ctx.fill();
+  }
+
+  // ─── Bird flight radius ───
+  if (def.bird && el.radius !== undefined) {
+    const r = worldToCanvasScale(el.radius);
+    ctx.setLineDash([4, 3]);
+    ctx.strokeStyle = hexAlpha(def.color, 0.35);
+    ctx.lineWidth = 1;
+    ctx.beginPath(); ctx.arc(cp.x, cp.y, r, 0, Math.PI * 2); ctx.stroke();
+    ctx.setLineDash([]);
+  }
+
+  // ─── Standard shape ───
+  const sz = def.size;
+  ctx.fillStyle = def.color;
+  ctx.strokeStyle = '#000';
+  ctx.lineWidth = 0.5;
+
+  switch (def.shape) {
+    case 'circle':
+      ctx.beginPath(); ctx.arc(cp.x, cp.y, sz, 0, Math.PI * 2); ctx.fill(); ctx.stroke();
+      break;
+    case 'square':
+      ctx.fillRect(cp.x - sz, cp.y - sz, sz * 2, sz * 2);
+      ctx.strokeRect(cp.x - sz, cp.y - sz, sz * 2, sz * 2);
+      break;
+    case 'triangle':
+      ctx.beginPath();
+      ctx.moveTo(cp.x, cp.y - sz - 2);
+      ctx.lineTo(cp.x + sz, cp.y + sz);
+      ctx.lineTo(cp.x - sz, cp.y + sz);
+      ctx.closePath(); ctx.fill(); ctx.stroke();
+      break;
+    case 'diamond':
+      ctx.beginPath();
+      ctx.moveTo(cp.x, cp.y - sz); ctx.lineTo(cp.x + sz, cp.y);
+      ctx.lineTo(cp.x, cp.y + sz); ctx.lineTo(cp.x - sz, cp.y);
+      ctx.closePath(); ctx.fill(); ctx.stroke();
+      break;
+    case 'star':
+      drawStar(cp.x, cp.y, sz);
+      break;
+    case 'cross':
+      const t = sz * 0.35;
+      ctx.fillRect(cp.x - t, cp.y - sz, t * 2, sz * 2);
+      ctx.fillRect(cp.x - sz, cp.y - t, sz * 2, t * 2);
+      break;
+  }
+
+  if (isSelected) drawSelectionRing(cp.x, cp.y, sz + 5);
+  if (showLabels) drawLabel(cp.x, cp.y - sz - 8, def.label + (def.singleton ? '' : ' ' + idx));
+}
+
+function drawStar(cx, cy, r) {
+  ctx.beginPath();
+  for (let i = 0; i < 10; i++) {
+    const angle = Math.PI / 2 * 3 + (i * Math.PI / 5);
+    const rad = i % 2 === 0 ? r : r * 0.5;
+    const x = cx + Math.cos(angle) * rad;
+    const y = cy - Math.sin(angle) * rad;
+    if (i === 0) ctx.moveTo(x, y); else ctx.lineTo(x, y);
+  }
+  ctx.closePath(); ctx.fill(); ctx.stroke();
+}
+
+function drawSelectionRing(cx, cy, r) {
+  ctx.strokeStyle = '#00e5ff';
+  ctx.lineWidth = 2;
+  ctx.setLineDash([3, 3]);
+  ctx.beginPath(); ctx.arc(cx, cy, r, 0, Math.PI * 2); ctx.stroke();
+  ctx.setLineDash([]);
+}
+
+function drawLabel(x, y, text) {
+  ctx.font = '10px sans-serif';
+  ctx.textAlign = 'center';
+  ctx.fillStyle = 'rgba(0,0,0,0.6)';
+  const w = ctx.measureText(text).width + 6;
+  ctx.fillRect(x - w / 2, y - 8, w, 12);
+  ctx.fillStyle = '#fff';
+  ctx.fillText(text, x, y);
+}
+
+function hexAlpha(hex, alpha) {
+  // Convert "#rrggbb" to "rgba(r,g,b,a)"
+  const r = parseInt(hex.slice(1, 3), 16);
+  const g = parseInt(hex.slice(3, 5), 16);
+  const b = parseInt(hex.slice(5, 7), 16);
+  return `rgba(${r},${g},${b},${alpha})`;
+}
+
+function intToCSS(v) {
+  return '#' + v.toString(16).padStart(6, '0');
+}
+
+// ═══════════════════════════════════════════════════════════════
+// HIT TESTING
+// ═══════════════════════════════════════════════════════════════
+
+function hitTest(wx, wz) {
+  // Test in reverse render order (topmost first)
+  const order = [
+    // Singletons (topmost)
+    'playerStart','portal','iceBerg','worldKite','rainbow','treasurePosition','dragon',
+    'extraDragons','birds','hardModeGoblins','skeletons','lavaMonsters','mummies','wizards','giants','guardians','goblins',
+    'mysteryTowers','labyrinthArtifacts','christmasPresents','easterEggs','easterBaskets',
+    'gemPositions','sizePotionPositions','scarabs','materials','bananaPositions','herzmanPositions',
+    'healthPositions','bombPositions','ammoPositions','trapPositions',
+    'pirateShips','ovens','crystalFormations','christmasTrees','rainbowArcs','crystalFlowers',
+    'enchantedMushrooms','giantTrees','fairyRings',
+    'boulderPositions','blossomTrees','fairytaleTrees','rockPositions','treePositions',
+    'movingTraps','bufferOverflowZones','firewallGates','sleepSpores','thornPatches',
+    'dataStreams','chocolateRiver','rubblePiles','mistPools','crevices','lavaFlows','lavaPools',
+    'canyonWalls','pyramids','mountains','impassableCliffs','naturalMountains','flowerPatches','hills'];
+
+  for (const type of order) {
+    if (!elements[type]) continue;
+    const def = ELEMENT_TYPES[type];
+    if (!def) continue;
+    for (let i = elements[type].length - 1; i >= 0; i--) {
+      const el = elements[type][i];
+      if (hitTestElement(type, def, el, wx, wz)) return { type, index: i };
+    }
+  }
+  return null;
+}
+
+function hitTestElement(type, def, el, wx, wz) {
+  const pos = getElPos(type, el);
+  const dx = wx - pos.x;
+  const dz = wz - pos.z;
+
+  if (def.useRadius) {
+    const r = el.radius || el.maxRadius || 10;
+    return (dx * dx + dz * dz) <= r * r;
+  }
+  if (def.useRect || def.useCanyon) {
+    const hw = (el.width || 40) / 2;
+    const hd = (el.depth || el.length || (def.useCanyon ? el.width : 2) || 2) / 2;
+    // Simple AABB (ignoring rotation for hit test simplicity)
+    return Math.abs(dx) <= hw && Math.abs(dz) <= hd;
+  }
+  if (def.usePyramid) {
+    const s = (el.size || 20) / 2;
+    return Math.abs(dx) <= s && Math.abs(dz) <= s;
+  }
+
+  // Standard shapes: use pixel-space hit radius
+  const hitR = Math.max(def.size || 4, 5) / zoom + 2;
+  return (dx * dx + dz * dz) <= hitR * hitR;
+}
+
+// ═══════════════════════════════════════════════════════════════
+// SIDEBAR — ELEMENT LIST
+// ═══════════════════════════════════════════════════════════════
+
+function buildSidebar() {
+  elListEl.innerHTML = '';
+  const collapsedState = {}; // remember across rebuilds
+
+  for (const cat of CATEGORIES) {
+    let count = 0;
+    const activeKeys = [];
+    for (const key of cat.keys) {
+      const n = (elements[key] || []).length;
+      if (n > 0) { count += n; activeKeys.push(key); }
+    }
+    if (count === 0) continue;
+
+    const groupEl = document.createElement('div');
+    groupEl.className = 'el-group';
+
+    const header = document.createElement('div');
+    header.className = 'el-group-header';
+    header.innerHTML = `<span class="arrow">▼</span> ${cat.label} <span class="count">${count}</span>`;
+    groupEl.appendChild(header);
+
+    const itemsWrap = document.createElement('div');
+    itemsWrap.className = 'el-group-items';
+
+    for (const key of activeKeys) {
+      const def = ELEMENT_TYPES[key];
+      // Sub-header for the type with add button
+      const typeHeader = document.createElement('div');
+      typeHeader.className = 'type-header-row';
+      typeHeader.style.color = def.color;
+      const typeName = document.createElement('span');
+      typeName.className = 'type-name';
+      typeName.textContent = def.label + ' (' + elements[key].length + ')';
+      typeHeader.appendChild(typeName);
+      if (!def.singleton || !elements[key] || elements[key].length === 0) {
+        const addBtn = document.createElement('button');
+        addBtn.className = 'add-btn';
+        addBtn.textContent = '+';
+        addBtn.title = 'Add ' + def.label;
+        addBtn.addEventListener('click', (e) => { e.stopPropagation(); addElement(key); });
+        typeHeader.appendChild(addBtn);
+      }
+      itemsWrap.appendChild(typeHeader);
+
+      elements[key].forEach((el, idx) => {
+        const pos = getElPos(key, el);
+        const item = document.createElement('div');
+        item.className = 'el-item';
+        item.dataset.type = key;
+        item.dataset.index = idx;
+        item.innerHTML = `<span class="idx">${idx}</span> <span class="pos">(${roundNum(pos.x)}, ${roundNum(pos.z)})</span>`;
+        item.addEventListener('click', (e) => {
+          selectElement(key, idx, e.shiftKey);
+          // Center on element
+          if (!e.shiftKey) {
+            viewX = pos.x;
+            viewZ = pos.z;
+            render();
+          }
+        });
+        itemsWrap.appendChild(item);
+      });
+    }
+
+    groupEl.appendChild(itemsWrap);
+
+    header.addEventListener('click', () => {
+      const arrow = header.querySelector('.arrow');
+      itemsWrap.classList.toggle('collapsed');
+      arrow.classList.toggle('collapsed');
+    });
+
+    elListEl.appendChild(groupEl);
+  }
+}
+
+function updateSidebarSelection() {
+  document.querySelectorAll('.el-item').forEach(item => {
+    const type = item.dataset.type;
+    const idx = parseInt(item.dataset.index);
+    const isSel = (selection && selection.type === type && selection.index === idx) ||
+                  multiSelection.some(s => s.type === type && s.index === idx);
+    item.classList.toggle('selected', isSel);
+  });
+}
+
+// ═══════════════════════════════════════════════════════════════
+// PROPERTIES PANEL
+// ═══════════════════════════════════════════════════════════════
+
+function showProperties() {
+  if (!selection) {
+    propsEmpty.style.display = '';
+    propsContent.style.display = 'none';
+    return;
+  }
+
+  propsEmpty.style.display = 'none';
+  propsContent.style.display = '';
+
+  const { type, index } = selection;
+  const def = ELEMENT_TYPES[type];
+  const el = elements[type][index];
+  if (!def || !el) return;
+
+  const pos = getElPos(type, el);
+  let html = `<div class="prop-title">${def.label}${def.singleton ? '' : ' #' + index}</div>`;
+
+  const fields = def.fields || ['x', 'z'];
+  for (const field of fields) {
+    const val = el[field];
+    if (val === undefined && !['x', 'z', 'centerX', 'centerZ'].includes(field)) continue;
+
+    // Determine input type
+    let inputType = 'number';
+    let step = '1';
+    let inputHtml = '';
+    if (field === 'speed') step = '0.001';
+    else if (field === 'scale') step = '0.1';
+    else if (field === 'fogDensity') step = '0.001';
+
+    if (field === 'type' || field === 'enemyType') {
+      inputType = 'text';
+      inputHtml = `<input type="text" data-field="${field}" value="${val || ''}">`;
+    } else if (typeof val === 'boolean' || field.startsWith('use')) {
+      inputHtml = `<select data-field="${field}"><option value="false"${!val ? ' selected' : ''}>false</option><option value="true"${val ? ' selected' : ''}>true</option></select>`;
+    } else if (field === 'color' || field === 'glowColor') {
+      inputHtml = `<input type="number" data-field="${field}" value="${val || 0}" step="1">`;
+    } else {
+      inputHtml = `<input type="number" data-field="${field}" value="${val !== undefined ? roundNum(val) : ''}" step="${step}">`;
+    }
+
+    html += `<div class="prop-row"><label>${field}</label>${inputHtml}</div>`;
+  }
+
+  html += `<button class="delete-btn" id="btn-delete-el">Delete Element</button>`;
+  propsContent.innerHTML = html;
+
+  // Wire up change handlers
+  propsContent.querySelectorAll('input, select').forEach(input => {
+    const handler = () => {
+      const field = input.dataset.field;
+      let val;
+      if (input.tagName === 'SELECT') val = input.value === 'true';
+      else if (input.type === 'number') val = parseFloat(input.value) || 0;
+      else val = input.value;
+
+      el[field] = val;
+      buildSidebar();
+      updateSidebarSelection();
+      render();
+    };
+    input.addEventListener('change', handler);
+    input.addEventListener('input', handler);
+  });
+
+  document.getElementById('btn-delete-el').addEventListener('click', () => deleteSelected());
+}
+
+// ═══════════════════════════════════════════════════════════════
+// SELECTION
+// ═══════════════════════════════════════════════════════════════
+
+function selectElement(type, index, addToSelection = false) {
+  if (addToSelection) {
+    const existing = multiSelection.findIndex(s => s.type === type && s.index === index);
+    if (existing >= 0) {
+      multiSelection.splice(existing, 1);
+    } else {
+      multiSelection.push({ type, index });
+    }
+    // Set selection to last clicked for properties panel
+    if (multiSelection.length > 0) {
+      selection = multiSelection[multiSelection.length - 1];
+    } else {
+      selection = null;
+    }
+  } else {
+    selection = { type, index };
+    multiSelection = [{ type, index }];
+  }
+  showProperties();
+  updateSidebarSelection();
+  render();
+}
+
+function clearSelection() {
+  selection = null;
+  multiSelection = [];
+  showProperties();
+  updateSidebarSelection();
+  render();
+}
+
+function deleteSelected() {
+  if (multiSelection.length === 0) return;
+
+  // Sort by index descending to avoid index shift issues
+  const byType = {};
+  for (const sel of multiSelection) {
+    if (!byType[sel.type]) byType[sel.type] = [];
+    byType[sel.type].push(sel.index);
+  }
+  for (const type of Object.keys(byType)) {
+    byType[type].sort((a, b) => b - a);
+    for (const idx of byType[type]) {
+      const def = ELEMENT_TYPES[type];
+      if (def && def.singleton) {
+        delete elements[type];
+      } else {
+        elements[type].splice(idx, 1);
+        if (elements[type].length === 0) delete elements[type];
+      }
+    }
+  }
+
+  selection = null;
+  multiSelection = [];
+  showProperties();
+  buildSidebar();
+  render();
+}
+
+// ═══════════════════════════════════════════════════════════════
+// ADD / DUPLICATE ELEMENTS
+// ═══════════════════════════════════════════════════════════════
+
+function createDefaultElement(type) {
+  const def = ELEMENT_TYPES[type];
+  if (!def) return null;
+  const x = snap(viewX);
+  const z = snap(viewZ);
+
+  // Build a default object based on the field definitions
+  const el = {};
+  const fields = def.fields || ['x', 'z'];
+  for (const f of fields) {
+    if (f === 'x') el.x = x;
+    else if (f === 'z') el.z = z;
+    else if (f === 'centerX') el.centerX = x;
+    else if (f === 'centerZ') el.centerZ = z;
+    else if (f === 'patrolLeft') el.patrolLeft = x - 5;
+    else if (f === 'patrolRight') el.patrolRight = x + 5;
+    else if (f === 'speed') el.speed = 0.012;
+    else if (f === 'radius') el.radius = def.bird ? 30 : 10;
+    else if (f === 'height') el.height = def.useRect || def.useCanyon ? 20 : 4;
+    else if (f === 'width') el.width = 40;
+    else if (f === 'depth') el.depth = 40;
+    else if (f === 'rotation') el.rotation = 0;
+    else if (f === 'scale') el.scale = 1.0;
+    else if (f === 'size') el.size = 20;
+    else if (f === 'health') el.health = 50;
+    else if (f === 'destinationLevel') el.destinationLevel = 1;
+    else if (f === 'type' || f === 'enemyType') el[f] = '';
+    else if (f.startsWith('use')) el[f] = false;
+    else if (f === 'color') el.color = 0x888888;
+    else if (f === 'glowColor') el.glowColor = 0xFFFFFF;
+  }
+  return el;
+}
+
+function addElement(type) {
+  const def = ELEMENT_TYPES[type];
+  if (!def) return;
+
+  // For singletons, only allow adding if not already present
+  if (def.singleton) {
+    if (elements[type] && elements[type].length > 0) {
+      // Already exists — select it instead
+      selectElement(type, 0);
+      return;
+    }
+  }
+
+  const el = createDefaultElement(type);
+  if (!el) return;
+
+  if (!elements[type]) elements[type] = [];
+  elements[type].push(el);
+
+  const newIdx = elements[type].length - 1;
+  buildSidebar();
+  selectElement(type, newIdx);
+  render();
+}
+
+function duplicateSelected() {
+  if (multiSelection.length === 0) return;
+
+  const newSelection = [];
+  for (const sel of multiSelection) {
+    const def = ELEMENT_TYPES[sel.type];
+    if (def && def.singleton) continue; // Can't duplicate singletons
+    const original = elements[sel.type][sel.index];
+    const copy = JSON.parse(JSON.stringify(original));
+    // Offset the copy slightly so it's visible
+    const pos = getElPos(sel.type, copy);
+    setElPos(sel.type, copy, pos.x + 5, pos.z + 5);
+    if (def && def.patrol && copy.patrolLeft !== undefined) {
+      copy.patrolLeft += 5;
+      copy.patrolRight += 5;
+    }
+    elements[sel.type].push(copy);
+    newSelection.push({ type: sel.type, index: elements[sel.type].length - 1 });
+  }
+
+  if (newSelection.length > 0) {
+    multiSelection = newSelection;
+    selection = newSelection[newSelection.length - 1];
+    showProperties();
+    buildSidebar();
+    updateSidebarSelection();
+    render();
+  }
+}
+
+function openAddModal() {
+  if (!levelConfig) { alert('Load a level first.'); return; }
+  const list = document.getElementById('add-type-list');
+  list.innerHTML = '';
+
+  for (const cat of CATEGORIES) {
+    const catHeader = document.createElement('div');
+    catHeader.className = 'add-cat-header';
+    catHeader.textContent = cat.label;
+    list.appendChild(catHeader);
+
+    for (const key of cat.keys) {
+      const def = ELEMENT_TYPES[key];
+      if (!def) continue;
+      // For singletons that already exist, show them as disabled/dimmed
+      const exists = def.singleton && elements[key] && elements[key].length > 0;
+
+      const btn = document.createElement('button');
+      btn.className = 'add-type-btn';
+      if (exists) btn.style.opacity = '0.4';
+      btn.innerHTML = `<span class="dot" style="background:${def.color}"></span><span class="type-label">${def.label}</span>${exists ? '<span style="color:#7f8fa6;font-size:10px">(exists)</span>' : ''}`;
+      btn.addEventListener('click', () => {
+        document.getElementById('modal-add').classList.remove('active');
+        addElement(key);
+      });
+      list.appendChild(btn);
+    }
+  }
+
+  document.getElementById('modal-add').classList.add('active');
+}
+
+// ═══════════════════════════════════════════════════════════════
+// VIEW CONTROLS
+// ═══════════════════════════════════════════════════════════════
+
+function fitView() {
+  viewX = 0;
+  viewZ = 0;
+  const scaleX = canvasW / 660;
+  const scaleY = canvasH / 660;
+  zoom = Math.min(scaleX, scaleY);
+  updateZoomDisplay();
+}
+
+function zoomAt(factor, cx, cy) {
+  const before = canvasToWorld(cx, cy);
+  zoom = Math.max(0.3, Math.min(50, zoom * factor));
+  const after = canvasToWorld(cx, cy);
+  viewX += before.x - after.x;
+  viewZ += before.z - after.z;
+  updateZoomDisplay();
+  render();
+}
+
+function updateZoomDisplay() {
+  zoomEl.textContent = Math.round(zoom * 100) + '%';
+}
+
+// ═══════════════════════════════════════════════════════════════
+// CANVAS INTERACTION
+// ═══════════════════════════════════════════════════════════════
+
+function resizeCanvas() {
+  const rect = canvasWrap.getBoundingClientRect();
+  canvasW = rect.width;
+  canvasH = rect.height;
+  canvas.width = canvasW * devicePixelRatio;
+  canvas.height = canvasH * devicePixelRatio;
+  canvas.style.width = canvasW + 'px';
+  canvas.style.height = canvasH + 'px';
+  ctx.setTransform(devicePixelRatio, 0, 0, devicePixelRatio, 0, 0);
+  render();
+}
+
+canvas.addEventListener('wheel', (e) => {
+  e.preventDefault();
+  const factor = e.deltaY < 0 ? 1.12 : 1 / 1.12;
+  const rect = canvas.getBoundingClientRect();
+  zoomAt(factor, e.clientX - rect.left, e.clientY - rect.top);
+}, { passive: false });
+
+canvas.addEventListener('mousedown', (e) => {
+  const rect = canvas.getBoundingClientRect();
+  const cx = e.clientX - rect.left;
+  const cy = e.clientY - rect.top;
+  const world = canvasToWorld(cx, cy);
+
+  // Middle mouse or right click: pan
+  if (e.button === 1 || e.button === 2) {
+    panning = true;
+    panStartMouse = { x: e.clientX, y: e.clientY };
+    panStartView = { x: viewX, z: viewZ };
+    e.preventDefault();
+    return;
+  }
+
+  // Left click
+  if (e.button === 0) {
+    // Alt+click: pan mode
+    if (e.altKey) {
+      panning = true;
+      panStartMouse = { x: e.clientX, y: e.clientY };
+      panStartView = { x: viewX, z: viewZ };
+      return;
+    }
+
+    const hit = hitTest(world.x, world.z);
+    if (hit) {
+      selectElement(hit.type, hit.index, e.shiftKey);
+      // Start drag
+      const el = elements[hit.type][hit.index];
+      const pos = getElPos(hit.type, el);
+      dragging = true;
+      dragTarget = { type: hit.type, index: hit.index, offsetX: pos.x - world.x, offsetZ: pos.z - world.z };
+    } else {
+      if (e.shiftKey) {
+        // Box select start
+        boxSelecting = true;
+        boxStart = { x: world.x, z: world.z };
+      } else {
+        clearSelection();
+        // Start panning on empty space drag
+        panning = true;
+        panStartMouse = { x: e.clientX, y: e.clientY };
+        panStartView = { x: viewX, z: viewZ };
+      }
+    }
+  }
+});
+
+canvas.addEventListener('mousemove', (e) => {
+  const rect = canvas.getBoundingClientRect();
+  const cx = e.clientX - rect.left;
+  const cy = e.clientY - rect.top;
+  mouseWorld = canvasToWorld(cx, cy);
+
+  coordsEl.textContent = `X: ${roundNum(mouseWorld.x)}  Z: ${roundNum(mouseWorld.z)}`;
+
+  if (panning && panStartMouse) {
+    const dx = (e.clientX - panStartMouse.x) / zoom;
+    const dy = (e.clientY - panStartMouse.y) / zoom;
+    viewX = panStartView.x - dx;
+    viewZ = panStartView.z + dy;
+    render();
+    return;
+  }
+
+  if (dragging && dragTarget) {
+    const newX = snap(mouseWorld.x + dragTarget.offsetX);
+    const newZ = snap(mouseWorld.z + dragTarget.offsetZ);
+    const el = elements[dragTarget.type][dragTarget.index];
+    const oldPos = getElPos(dragTarget.type, el);
+    const dx = newX - oldPos.x;
+    const dz = newZ - oldPos.z;
+
+    // Move all selected elements if dragging one of them
+    const isDraggedInSelection = multiSelection.some(s => s.type === dragTarget.type && s.index === dragTarget.index);
+    if (isDraggedInSelection && multiSelection.length > 1) {
+      for (const sel of multiSelection) {
+        const selEl = elements[sel.type][sel.index];
+        const selPos = getElPos(sel.type, selEl);
+        setElPos(sel.type, selEl, selPos.x + dx, selPos.z + dz);
+        // Also move patrol range for enemies
+        const selDef = ELEMENT_TYPES[sel.type];
+        if (selDef && selDef.patrol && selEl.patrolLeft !== undefined) {
+          selEl.patrolLeft += dx;
+          selEl.patrolRight += dx;
+        }
+      }
+    } else {
+      setElPos(dragTarget.type, el, newX, newZ);
+      // Move patrol range with element
+      const def = ELEMENT_TYPES[dragTarget.type];
+      if (def && def.patrol && el.patrolLeft !== undefined) {
+        el.patrolLeft += dx;
+        el.patrolRight += dx;
+      }
+    }
+
+    showProperties();
+    render();
+    return;
+  }
+
+  if (boxSelecting) {
+    render();
+  }
+});
+
+canvas.addEventListener('mouseup', (e) => {
+  if (panning) {
+    panning = false;
+    panStartMouse = null;
+    return;
+  }
+
+  if (dragging) {
+    dragging = false;
+    dragTarget = null;
+    buildSidebar();
+    updateSidebarSelection();
+    return;
+  }
+
+  if (boxSelecting && boxStart) {
+    boxSelecting = false;
+    const end = mouseWorld;
+    const minX = Math.min(boxStart.x, end.x);
+    const maxX = Math.max(boxStart.x, end.x);
+    const minZ = Math.min(boxStart.z, end.z);
+    const maxZ = Math.max(boxStart.z, end.z);
+
+    multiSelection = [];
+    for (const type of Object.keys(elements)) {
+      if (!elements[type]) continue;
+      elements[type].forEach((el, idx) => {
+        const pos = getElPos(type, el);
+        if (pos.x >= minX && pos.x <= maxX && pos.z >= minZ && pos.z <= maxZ) {
+          multiSelection.push({ type, index: idx });
+        }
+      });
+    }
+    if (multiSelection.length > 0) {
+      selection = multiSelection[multiSelection.length - 1];
+    } else {
+      selection = null;
+    }
+    showProperties();
+    updateSidebarSelection();
+    render();
+    boxStart = null;
+  }
+});
+
+canvas.addEventListener('contextmenu', (e) => e.preventDefault());
+
+// Keyboard shortcuts
+document.addEventListener('keydown', (e) => {
+  if (e.target.tagName === 'INPUT' || e.target.tagName === 'TEXTAREA' || e.target.tagName === 'SELECT') return;
+
+  if (e.key === 'Delete' || e.key === 'Backspace') {
+    e.preventDefault();
+    deleteSelected();
+  }
+  if (e.key === 'Escape') {
+    clearSelection();
+  }
+  // Arrow key nudge
+  if (['ArrowUp', 'ArrowDown', 'ArrowLeft', 'ArrowRight'].includes(e.key) && multiSelection.length > 0) {
+    e.preventDefault();
+    const step = e.shiftKey ? 10 : 1;
+    let dx = 0, dz = 0;
+    if (e.key === 'ArrowLeft') dx = -step;
+    if (e.key === 'ArrowRight') dx = step;
+    if (e.key === 'ArrowUp') dz = -step;     // up = north = -Z
+    if (e.key === 'ArrowDown') dz = step;
+    for (const sel of multiSelection) {
+      const el = elements[sel.type][sel.index];
+      const pos = getElPos(sel.type, el);
+      setElPos(sel.type, el, pos.x + dx, pos.z + dz);
+      const def = ELEMENT_TYPES[sel.type];
+      if (def && def.patrol && el.patrolLeft !== undefined) {
+        el.patrolLeft += dx;
+        el.patrolRight += dx;
+      }
+    }
+    showProperties();
+    buildSidebar();
+    updateSidebarSelection();
+    render();
+  }
+  // Ctrl+D: duplicate selected
+  if (e.key === 'd' && (e.ctrlKey || e.metaKey)) {
+    e.preventDefault();
+    duplicateSelected();
+  }
+  // Ctrl+A: select all
+  if (e.key === 'a' && (e.ctrlKey || e.metaKey)) {
+    e.preventDefault();
+    multiSelection = [];
+    for (const type of Object.keys(elements)) {
+      elements[type].forEach((_, idx) => multiSelection.push({ type, index: idx }));
+    }
+    if (multiSelection.length > 0) selection = multiSelection[0];
+    showProperties();
+    updateSidebarSelection();
+    render();
+  }
+});
+
+// ═══════════════════════════════════════════════════════════════
+// TOOLBAR BUTTONS
+// ═══════════════════════════════════════════════════════════════
+
+document.getElementById('btn-add').addEventListener('click', () => openAddModal());
+document.getElementById('btn-duplicate').addEventListener('click', () => duplicateSelected());
+document.getElementById('btn-add-cancel').addEventListener('click', () => {
+  document.getElementById('modal-add').classList.remove('active');
+});
+
+document.getElementById('btn-load').addEventListener('click', () => {
+  document.getElementById('modal-load').classList.add('active');
+  document.getElementById('load-textarea').focus();
+});
+document.getElementById('btn-load-cancel').addEventListener('click', () => {
+  document.getElementById('modal-load').classList.remove('active');
+});
+document.getElementById('btn-load-ok').addEventListener('click', () => {
+  const text = document.getElementById('load-textarea').value.trim();
+  const errEl = document.getElementById('load-error');
+  if (!text) { errEl.textContent = 'Please paste a config object.'; return; }
+  try {
+    loadConfig(text);
+    document.getElementById('modal-load').classList.remove('active');
+    errEl.textContent = '';
+  } catch (e) {
+    errEl.textContent = e.message;
+  }
+});
+
+document.getElementById('btn-export').addEventListener('click', () => {
+  if (!levelConfig) { alert('No level loaded. Load a level first.'); return; }
+  document.getElementById('export-textarea').value = exportConfig();
+  document.getElementById('modal-export').classList.add('active');
+});
+document.getElementById('btn-export-copy').addEventListener('click', () => {
+  const ta = document.getElementById('export-textarea');
+  ta.select();
+  navigator.clipboard.writeText(ta.value);
+});
+document.getElementById('btn-export-close').addEventListener('click', () => {
+  document.getElementById('modal-export').classList.remove('active');
+});
+
+document.getElementById('btn-zoom-in').addEventListener('click', () => zoomAt(1.3, canvasW / 2, canvasH / 2));
+document.getElementById('btn-zoom-out').addEventListener('click', () => zoomAt(1 / 1.3, canvasW / 2, canvasH / 2));
+document.getElementById('btn-fit').addEventListener('click', () => { fitView(); render(); });
+
+document.getElementById('chk-grid').addEventListener('change', render);
+document.getElementById('chk-labels').addEventListener('change', render);
+
+// ═══════════════════════════════════════════════════════════════
+// INIT
+// ═══════════════════════════════════════════════════════════════
+
+window.addEventListener('resize', resizeCanvas);
+resizeCanvas();
+fitView();
+render();
+
+})();
+</script>
+</body>
+</html>

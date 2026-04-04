@@ -104,6 +104,20 @@ function initSetup() {
     G.giantScale = 1.8;            // Scale when giant
     G.giantDuration = 8000;        // How long giant mode lasts (ms)
     
+    // Color/Paint mechanic for color level
+    G.activeColor = null;          // Current paint color (hex) or null
+    G.paintAmount = 0;             // Paint remaining (0-200)
+    G.colorPatches = [];           // Ground color patches placed by player
+    G.coloredEnemyCount = 0;       // Number of enemies colored
+    G.lastPaintX = 0;              // Last position where paint was placed
+    G.lastPaintZ = 0;
+    G.paintBuckets = [];           // Paint bucket collectibles
+    // Player 2 paint state (splitscreen)
+    G.activeColor2 = null;
+    G.paintAmount2 = 0;
+    G.lastPaintX2 = 0;
+    G.lastPaintZ2 = 0;
+    
     // Player 2 shrink/grow (splitscreen)
     G.player2Scale = 1.0;
     G.player2Shrunk = false;
@@ -6512,6 +6526,68 @@ function initSetup() {
         materialGroup.position.set(config.x, terrainHeight, config.z);
         G.scene.add(materialGroup);
         G.materials.push({ mesh: materialGroup, collected: false, radius: 1.5, type: config.type });
+        });
+    }
+
+    // ===== PAINT BUCKETS (Color Theme) =====
+    G.paintBuckets = [];
+    if (G.colorTheme && G.levelConfig.paintBucketPositions) {
+        G.levelConfig.paintBucketPositions.forEach(pos => {
+            const bucketGroup = new THREE.Group();
+            const bucketColor = new THREE.Color(pos.color);
+            
+            // Bucket body (cylinder)
+            const bodyGeometry = getGeometry('cylinder', 0.5, 0.6, 1.0, 12);
+            const bodyMaterial = getMaterial('lambert', { color: 0x888888 });
+            // Clone so we can modify individually
+            const body = new THREE.Mesh(bodyGeometry, bodyMaterial.clone());
+            body.position.y = 0.5;
+            body.castShadow = true;
+            bucketGroup.add(body);
+            
+            // Paint inside (slightly smaller cylinder on top)
+            const paintGeometry = getGeometry('cylinder', 0.45, 0.45, 0.3, 12);
+            const paintMaterial = new THREE.MeshBasicMaterial({ 
+                color: pos.color,
+                transparent: false
+            });
+            const paint = new THREE.Mesh(paintGeometry, paintMaterial);
+            paint.position.y = 0.9;
+            bucketGroup.add(paint);
+            
+            // Bucket handle (torus arc)
+            const handleGeometry = new THREE.TorusGeometry(0.4, 0.04, 8, 12, Math.PI);
+            const handleMaterial = getMaterial('lambert', { color: 0x666666 });
+            const handle = new THREE.Mesh(handleGeometry, handleMaterial);
+            handle.position.y = 1.2;
+            handle.rotation.x = 0;
+            bucketGroup.add(handle);
+            
+            // Glowing aura in the bucket's color
+            const auraGeometry = getGeometry('sphere', 1.0, 8, 8);
+            const auraMaterial = new THREE.MeshBasicMaterial({ 
+                color: pos.color,
+                transparent: true,
+                opacity: 0.25
+            });
+            const aura = new THREE.Mesh(auraGeometry, auraMaterial);
+            aura.position.y = 0.7;
+            bucketGroup.add(aura);
+            bucketGroup.aura = aura;
+            
+            const terrainHeight = getTerrainHeight(pos.x, pos.z);
+            bucketGroup.position.set(pos.x, terrainHeight, pos.z);
+            G.scene.add(bucketGroup);
+            
+            G.paintBuckets.push({
+                mesh: bucketGroup,
+                collected: false,
+                radius: 2.0,
+                x: pos.x,
+                z: pos.z,
+                color: pos.color,
+                bobPhase: Math.random() * Math.PI * 2
+            });
         });
     }
 
