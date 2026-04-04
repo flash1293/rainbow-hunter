@@ -403,6 +403,9 @@ function initGame() {
     
     // Check if this is a Color-themed level
     G.colorTheme = G.levelConfig.colorTheme || false;
+
+    // Check if this is a Horror-themed level
+    G.horrorTheme = G.levelConfig.horrorTheme || false;
     
     // Crystal gem power-up state
     G.playerSpeedBoost = 1;
@@ -481,7 +484,7 @@ function initGame() {
     
     // Determine camera far plane based on fog (closer = better performance)
     // Candy and computer levels get longer view distance
-    const cameraFar = (G.candyTheme || G.computerTheme) ? 150 : (G.scene.fog ? 90 : GAME_CONFIG.CAMERA_FAR);
+    const cameraFar = (G.candyTheme || G.computerTheme) ? 150 : (G.horrorTheme ? 100 : (G.scene.fog ? 90 : GAME_CONFIG.CAMERA_FAR));
     
     // Pre-cache explosion and smoke materials to avoid texture loading glitches
     G.explosionTextureCached = G.iceTheme ? G.skyTextures.explosionIce : G.skyTextures.explosion;
@@ -498,9 +501,10 @@ function initGame() {
         opacity: 0.6,
         depthWrite: false
     });
-    // Pre-cache fog wisp material for graveyard level
+    // Pre-cache fog wisp material for graveyard / horror levels
     G.fogWispBaseMaterial = new THREE.SpriteMaterial({
         map: G.skyTextures.fogWisp,
+        color: G.horrorTheme ? 0x660000 : 0xffffff,
         transparent: true,
         opacity: 0.5,
         depthWrite: false,
@@ -567,13 +571,13 @@ function initGame() {
 
     // Lighting
     // Adjust ambient light for themed levels
-    const ambientIntensity = G.graveyardTheme ? 0.55 : (G.ruinsTheme ? 0.7 : 0.6);
-    const ambientColor = G.graveyardTheme ? 0x9977dd : (G.ruinsTheme ? 0xfffef0 : 0xffffff);
+    const ambientIntensity = G.horrorTheme ? 0.75 : (G.graveyardTheme ? 0.55 : (G.ruinsTheme ? 0.7 : 0.6));
+    const ambientColor = G.horrorTheme ? 0xff8888 : (G.graveyardTheme ? 0x9977dd : (G.ruinsTheme ? 0xfffef0 : 0xffffff));
     G.ambientLight = new THREE.AmbientLight(ambientColor, ambientIntensity);
     G.scene.add(G.ambientLight);
 
-    const directionalColor = G.graveyardTheme ? 0xaa88ee : (G.ruinsTheme ? 0xfff8e0 : 0xffffff);
-    const directionalIntensity = G.graveyardTheme ? 0.6 : (G.ruinsTheme ? 0.9 : 0.8);
+    const directionalColor = G.horrorTheme ? 0xff6666 : (G.graveyardTheme ? 0xaa88ee : (G.ruinsTheme ? 0xfff8e0 : 0xffffff));
+    const directionalIntensity = G.horrorTheme ? 0.85 : (G.graveyardTheme ? 0.6 : (G.ruinsTheme ? 0.9 : 0.8));
     G.directionalLight = new THREE.DirectionalLight(directionalColor, directionalIntensity);
     G.directionalLight.position.set(50, 100, 50);
     G.directionalLight.castShadow = true;

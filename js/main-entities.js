@@ -1116,9 +1116,62 @@ function initEntities() {
         });
     }
 
-    // Nebelschwaden (fog wisps) for graveyard level - atmospheric floating fog sprites
+    // Nebelschwaden (fog wisps) for graveyard / horror levels - atmospheric floating fog sprites
     G.fogWisps = [];
-    if (G.graveyardTheme) {
+    if (G.horrorTheme) {
+        // Dense blood-red ground fog rolling across the horror level
+        const horrorWispPositions = [
+            // Spawn area
+            { x: -20, z: 190 }, { x: 30, z: 175 }, { x: -40, z: 160 },
+            { x: 50, z: 145 }, { x: -15, z: 130 }, { x: 25, z: 115 },
+            { x: 0,  z: 195 }, { x: -60, z: 180 }, { x: 60, z: 165 },
+            { x: 10, z: 185 }, { x: -30, z: 170 }, { x: 45, z: 155 },
+            // Mid section
+            { x: -45, z: 100 }, { x: 35, z: 85 }, { x: -10, z: 70 },
+            { x: 55, z: 55 },  { x: -35, z: 40 }, { x: 20, z: 25 },
+            { x: -50, z: 10 }, { x: 40, z: -5 },  { x: -25, z: -20 },
+            { x: 0,  z: 105 }, { x: -70, z: 90 }, { x: 70, z: 75 },
+            { x: 15, z: 95 },  { x: -60, z: 80 }, { x: 65, z: 65 },
+            { x: -20, z: 50 }, { x: 50, z: 35 },  { x: -65, z: 20 },
+            { x: 30, z: 5 },   { x: -40, z: -10 },{ x: 60, z: -25 },
+            // Near boss
+            { x: 30, z: -35 }, { x: -40, z: -50 }, { x: 15, z: -65 },
+            { x: -30, z: -80 },{ x: 45, z: -95 },  { x: -20, z: -110 },
+            { x: 35, z: -125 },{ x: -45, z: -140 },{ x: 10, z: -155 },
+            { x: -35, z: -170 },{ x: 25, z: -185 },{ x: 0,  z: -40 },
+            { x: -60, z: -55 },{ x: 60, z: -70 },  { x: -5, z: -85 },
+            { x: 50, z: -100 },{ x: -55, z: -115 },{ x: 20, z: -130 },
+            { x: -25, z: -145 },{ x: 55, z: -160 },{ x: -15, z: -175 },
+            // Central path
+            { x: 0, z: 150 }, { x: 0, z: 120 }, { x: 0, z: 90 },
+            { x: 0, z: 60 },  { x: 0, z: 30 },  { x: 0, z: 0 },
+            { x: 0, z: -30 }, { x: 0, z: -60 }, { x: 0, z: -90 },
+            { x: 0, z: -120 },{ x: 0, z: -150 },{ x: 0, z: -180 }
+        ];
+
+        horrorWispPositions.forEach(pos => {
+            const wispMaterial = G.fogWispBaseMaterial.clone();
+            wispMaterial.opacity = 0.45 + Math.random() * 0.30;
+            const wisp = new THREE.Sprite(wispMaterial);
+            const baseY = getTerrainHeight(pos.x, pos.z) + 0.3 + Math.random() * 1.8;
+            const scale = 10 + Math.random() * 14;
+            wisp.scale.set(scale, scale * 0.55, 1);
+            wisp.position.set(pos.x, baseY, pos.z);
+            G.scene.add(wisp);
+            G.fogWisps.push({
+                sprite: wisp,
+                baseX: pos.x,
+                baseY: baseY,
+                baseZ: pos.z,
+                driftSpeed: 0.15 + Math.random() * 0.3,
+                driftRange: 5 + Math.random() * 6,
+                phase: Math.random() * Math.PI * 2,
+                verticalPhase: Math.random() * Math.PI * 2,
+                fadePhase: Math.random() * Math.PI * 2,
+                scale: scale
+            });
+        });
+    } else if (G.graveyardTheme) {
         // Create MANY fog wisps scattered densely across the graveyard
         const wispPositions = [
             // Near spawn area - dense fog
@@ -1184,7 +1237,7 @@ function initEntities() {
                 scale: scale
             });
         });
-    }
+    } // end graveyardTheme wisps
 
     // Create lava flows from rocks
     G.lavaFlows = [];

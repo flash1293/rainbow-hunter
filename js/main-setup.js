@@ -137,6 +137,114 @@ function initSetup() {
     // Get textures for player
     G.playerTextures = getTerrainTextures(THREE);
     
+    // ---- Horror player appearance helper (used for both P1 and the other-player mesh) ----
+    function buildHorrorPlayerAppearance(playerGroup, isFirstPlayer) {
+        // Colour palette: P1 = deep crimson, P2 = rotting dark green
+        const robeCol   = isFirstPlayer ? 0x1a0000 : 0x001a00;
+        const fleshCol  = isFirstPlayer ? 0x3a0808 : 0x0a1a0a;
+        const crownCol  = isFirstPlayer ? 0x880000 : 0x006600;
+        const eyeCol    = 0xff1100;
+        const thornCol  = isFirstPlayer ? 0x220000 : 0x002200;
+        const bloodCol  = isFirstPlayer ? 0xcc0000 : 0x00aa00;
+
+        // Tattered robe body
+        const bodyGeo = getGeometry('cylinder', 0.22, 0.35, 0.65, 7);
+        const bodyMat = getMaterial('lambert', { color: robeCol });
+        const body    = new THREE.Mesh(bodyGeo, bodyMat);
+        body.position.set(0, 1.3, 0.05);
+        body.castShadow = true;
+        playerGroup.add(body);
+
+        // Ragged skirt below body
+        const skirtGeo = new THREE.ConeGeometry(0.42, 0.55, 7);
+        const skirt    = new THREE.Mesh(skirtGeo, bodyMat);
+        skirt.position.set(0, 0.88, 0.05);
+        playerGroup.add(skirt);
+
+        // Monster head – misshapen wide sphere
+        const headGeo = getGeometry('sphere', 0.28, 9, 9);
+        const headMat = getMaterial('lambert', { color: fleshCol });
+        const head    = new THREE.Mesh(headGeo, headMat);
+        head.scale.set(1.12, 0.92, 1);
+        head.position.set(0, 1.85, 0);
+        head.castShadow = true;
+        playerGroup.add(head);
+
+        // 4 glowing eyes
+        const eyeMat = getMaterial('basic', { color: eyeCol });
+        [{ x: -0.1, y: 1.9, z: 0.24 }, { x: 0.1, y: 1.92, z: 0.24 },
+         { x: -0.18, y: 1.83, z: 0.2 }, { x: 0.18, y: 1.8, z: 0.2 }].forEach(ep => {
+            const eg = getGeometry('sphere', 0.045, 5, 5);
+            const ey = new THREE.Mesh(eg, eyeMat);
+            ey.position.set(ep.x, ep.y, ep.z);
+            playerGroup.add(ey);
+        });
+
+        // Small fanged mouth
+        const mGeo  = getGeometry('box', 0.2, 0.07, 0.07);
+        const mMat  = getMaterial('basic', { color: 0x0a0000 });
+        const mth   = new THREE.Mesh(mGeo, mMat);
+        mth.position.set(0, 1.73, 0.26);
+        playerGroup.add(mth);
+        const fMat = getMaterial('lambert', { color: 0xddccaa });
+        [-0.07, -0.02, 0.03, 0.08].forEach(fx => {
+            const fg = getGeometry('cone', 0.02, 0.07, 4);
+            const ft = new THREE.Mesh(fg, fMat);
+            ft.rotation.x = Math.PI;
+            ft.position.set(fx, 1.75, 0.28);
+            playerGroup.add(ft);
+        });
+
+        // Blood / thorn crown replacing helmet
+        const crownBaseMat   = getMaterial('lambert', { color: crownCol });
+        const thornMat       = getMaterial('lambert', { color: thornCol });
+        const bloodDropMat   = getMaterial('basic',   { color: bloodCol, transparent: true, opacity: 0.9 });
+
+        // Crown band
+        const crownRingGeo = new THREE.TorusGeometry(0.28, 0.04, 6, 14);
+        const crownRing    = new THREE.Mesh(crownRingGeo, crownBaseMat);
+        crownRing.position.set(0, 2.05, 0);
+        crownRing.rotation.x = Math.PI / 2;
+        playerGroup.add(crownRing);
+
+        // 7 sharp thorns sticking up from crown
+        for (let i = 0; i < 7; i++) {
+            const angle    = (i / 7) * Math.PI * 2;
+            const thornGeo = getGeometry('cone', 0.025, 0.22, 4);
+            const thorn    = new THREE.Mesh(thornGeo, thornMat);
+            thorn.position.set(
+                Math.cos(angle) * 0.28,
+                2.14,
+                Math.sin(angle) * 0.28
+            );
+            thorn.rotation.z = (Math.random() - 0.5) * 0.25;
+            playerGroup.add(thorn);
+
+            // Blood drip on some thorns
+            if (i % 2 === 0) {
+                const dropGeo = getGeometry('sphere', 0.025, 4, 4);
+                const drop    = new THREE.Mesh(dropGeo, bloodDropMat);
+                drop.position.set(
+                    Math.cos(angle) * 0.27,
+                    2.08,
+                    Math.sin(angle) * 0.27
+                );
+                drop.scale.y = 2.5;
+                playerGroup.add(drop);
+            }
+        }
+
+        // Extra spiky protrusions on shoulders
+        const stubMat = getMaterial('lambert', { color: fleshCol });
+        [-0.3, 0.3].forEach(sx => {
+            const stubGeo = getGeometry('cone', 0.06, 0.2, 5);
+            const stub    = new THREE.Mesh(stubGeo, stubMat);
+            stub.position.set(sx, 1.58, 0);
+            stub.rotation.z = sx > 0 ? -0.5 : 0.5;
+            playerGroup.add(stub);
+        });
+    }
+
     // Create player
     G.playerGroup = new THREE.Group();
 
@@ -240,7 +348,10 @@ function initSetup() {
 
     // Player body - Girl for host, Boy for client
     G.isHost = !multiplayerManager || multiplayerManager.isHost;
-    
+
+    if (G.horrorTheme) {
+        buildHorrorPlayerAppearance(G.playerGroup, G.isHost);
+    } else {
     const bodyGeometry = getGeometry('box', 0.35, 0.6, 0.25);
     const bodyMaterial = new THREE.MeshLambertMaterial({ 
         map: G.isHost ? G.playerTextures.playerClothingPink : G.playerTextures.playerClothingBlue 
@@ -312,6 +423,7 @@ function initSetup() {
     
     helmetGroup.position.set(0, 1.95, 0);
     G.playerGroup.add(helmetGroup);
+    } // end !G.horrorTheme
 
     // Direction indicator
     const coneGeometry = getGeometry('cone', 0.15, 0.4, 8);
@@ -508,6 +620,9 @@ function initSetup() {
         }
 
         // Body (opposite gender color) with texture
+        if (G.horrorTheme) {
+            buildHorrorPlayerAppearance(otherPlayerGroup, otherIsGirl);
+        } else {
         const bodyGeometry = getGeometry('box', 0.35, 0.6, 0.25);
         const bodyMaterial = new THREE.MeshLambertMaterial({ 
             map: otherIsGirl ? G.playerTextures.playerClothingPink : G.playerTextures.playerClothingBlue 
@@ -579,6 +694,7 @@ function initSetup() {
         
         otherHelmetGroup.position.set(0, 1.95, 0);
         otherPlayerGroup.add(otherHelmetGroup);
+        } // end !G.horrorTheme
 
         // Direction indicator
         const coneGeometry = getGeometry('cone', 0.15, 0.4, 8);
@@ -2780,6 +2896,225 @@ function initSetup() {
                 treeGroup.add(fern);
             }
             
+        } else if (G.horrorTheme) {
+            // Horror decorations – 6 variants rolled per position
+            const bladeMat  = getMaterial('lambert', { color: 0x5a5a5a });
+            const bloodMat  = getMaterial('lambert', { color: 0x880000 });
+            const boneMat   = getMaterial('lambert', { color: 0xd4c89a });
+            const darkWood  = getMaterial('lambert', { color: 0x2a1a0a });
+            const eyeSocket = getMaterial('basic',   { color: 0x0a0000 });
+            const stoneMat  = getMaterial('phong',   { color: 0x1a0a0a, shininess: 4 });
+
+            const variant = Math.random();
+
+            if (variant < 0.17) {
+                // ── Sword sticking from the earth ──
+                const blade = new THREE.Mesh(getGeometry('box', 0.09, 2.4, 0.04), bladeMat);
+                blade.position.y = 1.75;
+                blade.rotation.z = (Math.random() - 0.5) * 0.35;
+                blade.castShadow = true;
+                treeGroup.add(blade);
+                const guard = new THREE.Mesh(getGeometry('box', 0.52, 0.09, 0.09), bladeMat);
+                guard.position.y = 0.55;
+                treeGroup.add(guard);
+                const grip = new THREE.Mesh(getGeometry('cylinder', 0.04, 0.04, 0.3, 5), darkWood);
+                grip.position.y = 0.28;
+                treeGroup.add(grip);
+                for (let d = 0; d < 4; d++) {
+                    const dr = new THREE.Mesh(getGeometry('sphere', 0.025, 4, 4), bloodMat);
+                    dr.position.set((Math.random() - 0.5) * 0.08, 1.7 - d * 0.28, 0.05);
+                    dr.scale.y = 2.2;
+                    treeGroup.add(dr);
+                }
+
+            } else if (variant < 0.34) {
+                // ── Skull on a pike ──
+                const pike = new THREE.Mesh(getGeometry('cylinder', 0.045, 0.07, 2.2, 5), darkWood);
+                pike.position.y = 1.1;
+                pike.rotation.z = (Math.random() - 0.5) * 0.18;
+                pike.castShadow = true;
+                treeGroup.add(pike);
+                const skull = new THREE.Mesh(getGeometry('sphere', 0.22, 8, 8), boneMat);
+                skull.scale.y = 0.88;
+                skull.position.y = 2.28;
+                skull.castShadow = true;
+                treeGroup.add(skull);
+                [-1, 1].forEach(ex => {
+                    const ey = new THREE.Mesh(getGeometry('sphere', 0.055, 5, 5), eyeSocket);
+                    ey.position.set(ex * 0.08, 2.32, 0.18);
+                    treeGroup.add(ey);
+                });
+                for (let d = 0; d < 5; d++) {
+                    const dr = new THREE.Mesh(getGeometry('sphere', 0.025, 4, 4), bloodMat);
+                    dr.position.set((Math.random() - 0.5) * 0.3, 2.05 - d * 0.14, 0.2 + Math.random() * 0.05);
+                    dr.scale.y = 2.5;
+                    treeGroup.add(dr);
+                }
+
+            } else if (variant < 0.51) {
+                // ── Ribcage emerging from earth ──
+                // Spine column
+                const spine = new THREE.Mesh(getGeometry('cylinder', 0.07, 0.09, 2.0, 5), boneMat);
+                spine.position.y = 1.0;
+                spine.rotation.z = (Math.random() - 0.5) * 0.25;
+                spine.castShadow = true;
+                treeGroup.add(spine);
+                // Vertebrae bumps along spine
+                for (let v = 0; v < 5; v++) {
+                    const vert = new THREE.Mesh(getGeometry('sphere', 0.1, 5, 5), boneMat);
+                    vert.position.set(0, 0.25 + v * 0.38, 0);
+                    treeGroup.add(vert);
+                }
+                // Arcing ribs on each side
+                for (let r = 0; r < 5; r++) {
+                    const baseY = 0.3 + r * 0.32;
+                    [-1, 1].forEach(side => {
+                        const ribLen = 0.7 - r * 0.06;
+                        const rib = new THREE.Mesh(getGeometry('cylinder', 0.03, 0.05, ribLen, 4), boneMat);
+                        rib.position.set(side * ribLen * 0.48, baseY, 0);
+                        rib.rotation.z = side * (Math.PI / 2 - 0.35 + r * 0.06);
+                        rib.rotation.x = 0.2;
+                        rib.castShadow = true;
+                        treeGroup.add(rib);
+                    });
+                }
+                // Blood pooling at base
+                const bPool = new THREE.Mesh(new THREE.CircleGeometry(0.45, 10), getMaterial('basic', { color: 0x660000, transparent: true, opacity: 0.8, side: THREE.DoubleSide }));
+                bPool.rotation.x = -Math.PI / 2;
+                bPool.position.y = 0.02;
+                treeGroup.add(bPool);
+
+            } else if (variant < 0.67) {
+                // ── Cracked gravestone ──
+                const lean = (Math.random() - 0.5) * 0.22;
+                const slab = new THREE.Mesh(getGeometry('box', 0.55, 1.4, 0.12), stoneMat);
+                slab.position.y = 0.9;
+                slab.rotation.z = lean;
+                slab.castShadow = true;
+                treeGroup.add(slab);
+                // Rounded top arch
+                const arch = new THREE.Mesh(getGeometry('cylinder', 0.278, 0.278, 0.12, 8, 1, false, 0, Math.PI), stoneMat);
+                arch.rotation.x = Math.PI / 2;
+                arch.rotation.z = lean;
+                arch.position.set(0, 1.6, 0);
+                treeGroup.add(arch);
+                // Carved cross
+                const crossV = new THREE.Mesh(getGeometry('box', 0.06, 0.6, 0.14), getMaterial('basic', { color: 0x0a0000 }));
+                crossV.position.set(0, 0.95, 0.01);
+                crossV.rotation.z = lean;
+                treeGroup.add(crossV);
+                const crossH = new THREE.Mesh(getGeometry('box', 0.32, 0.06, 0.14), getMaterial('basic', { color: 0x0a0000 }));
+                crossH.position.set(0, 1.1, 0.01);
+                crossH.rotation.z = lean;
+                treeGroup.add(crossH);
+                // Crack lines (thin dark slabs)
+                for (let c = 0; c < 3; c++) {
+                    const crk = new THREE.Mesh(getGeometry('box', 0.02, 0.35 + c * 0.1, 0.13), getMaterial('basic', { color: 0x050000 }));
+                    crk.position.set(-0.1 + c * 0.12, 0.6 + c * 0.15, 0.01);
+                    crk.rotation.z = lean + (-0.5 + c) * 0.3;
+                    treeGroup.add(crk);
+                }
+                // Scattered bones at base
+                for (let b = 0; b < 3; b++) {
+                    const bn = new THREE.Mesh(getGeometry('cylinder', 0.03, 0.04, 0.3 + b * 0.08, 4), boneMat);
+                    bn.position.set(-0.25 + b * 0.25, 0.05, (Math.random() - 0.5) * 0.25);
+                    bn.rotation.z = Math.random() * Math.PI;
+                    treeGroup.add(bn);
+                }
+
+            } else if (variant < 0.83) {
+                // ── Bone pile (scattered femurs, tibias, loose skulls) ──
+                // Femur bones
+                for (let b = 0; b < 5; b++) {
+                    const len = 0.55 + Math.random() * 0.35;
+                    const femur = new THREE.Mesh(getGeometry('cylinder', 0.04, 0.055, len, 5), boneMat);
+                    femur.position.set((Math.random() - 0.5) * 1.0, 0.06, (Math.random() - 0.5) * 0.9);
+                    femur.rotation.z = (Math.random() - 0.5) * Math.PI;
+                    femur.rotation.x = (Math.random() - 0.5) * 0.4;
+                    femur.castShadow = true;
+                    treeGroup.add(femur);
+                    // Knobby ends
+                    [-1, 1].forEach(end => {
+                        const knob = new THREE.Mesh(getGeometry('sphere', 0.065, 5, 5), boneMat);
+                        knob.position.set(
+                            (Math.random() - 0.5) * 1.0 + end * len * 0.42,
+                            0.06,
+                            (Math.random() - 0.5) * 0.9
+                        );
+                        treeGroup.add(knob);
+                    });
+                }
+                // Skull in the pile
+                const skullCount = 1 + Math.floor(Math.random() * 2);
+                for (let s = 0; s < skullCount; s++) {
+                    const sk = new THREE.Mesh(getGeometry('sphere', 0.18 + Math.random() * 0.06, 8, 8), boneMat);
+                    sk.scale.y = 0.85;
+                    sk.position.set((Math.random() - 0.5) * 0.6, 0.14, (Math.random() - 0.5) * 0.5);
+                    sk.rotation.y = Math.random() * Math.PI * 2;
+                    sk.castShadow = true;
+                    treeGroup.add(sk);
+                    [-1, 1].forEach(ex => {
+                        const ey = new THREE.Mesh(getGeometry('sphere', 0.045, 5, 5), eyeSocket);
+                        ey.position.set(sk.position.x + ex * 0.065, sk.position.y + 0.02, sk.position.z + 0.14);
+                        treeGroup.add(ey);
+                    });
+                }
+
+            } else {
+                // ── Gibbet – hanging post with chained skeleton ──
+                const postH = 3.4 + Math.random() * 0.4;
+                const post = new THREE.Mesh(getGeometry('cylinder', 0.08, 0.10, postH, 6), darkWood);
+                post.position.y = postH / 2;
+                post.castShadow = true;
+                treeGroup.add(post);
+                // Horizontal arm
+                const arm = new THREE.Mesh(getGeometry('cylinder', 0.06, 0.07, 0.9, 5), darkWood);
+                arm.rotation.z = Math.PI / 2;
+                arm.position.set(0.3, postH - 0.1, 0);
+                arm.castShadow = true;
+                treeGroup.add(arm);
+                // Chain links
+                for (let ch = 0; ch < 5; ch++) {
+                    const link = new THREE.Mesh(getGeometry('cylinder', 0.025, 0.025, 0.12, 5), bladeMat);
+                    link.position.set(0.62, postH - 0.22 - ch * 0.14, 0);
+                    link.rotation.x = ch % 2 === 0 ? 0 : Math.PI / 2;
+                    treeGroup.add(link);
+                }
+                const hangY = postH - 1.0;
+                // Skull
+                const hSkull = new THREE.Mesh(getGeometry('sphere', 0.2, 8, 8), boneMat);
+                hSkull.scale.y = 0.88;
+                hSkull.position.set(0.62, hangY, 0);
+                hSkull.castShadow = true;
+                treeGroup.add(hSkull);
+                [-1, 1].forEach(ex => {
+                    const ey = new THREE.Mesh(getGeometry('sphere', 0.05, 5, 5), eyeSocket);
+                    ey.position.set(0.62 + ex * 0.075, hangY - 0.02, 0.16);
+                    treeGroup.add(ey);
+                });
+                // Torso
+                const torso = new THREE.Mesh(getGeometry('cylinder', 0.12, 0.16, 0.65, 6), boneMat);
+                torso.position.set(0.62, hangY - 0.55, 0);
+                torso.castShadow = true;
+                treeGroup.add(torso);
+                // Arms dangling
+                [-1, 1].forEach(side => {
+                    const armB = new THREE.Mesh(getGeometry('cylinder', 0.04, 0.05, 0.5, 4), boneMat);
+                    armB.position.set(0.62 + side * 0.2, hangY - 0.65, 0);
+                    armB.rotation.z = side * (Math.PI / 4 + Math.random() * 0.2);
+                    armB.castShadow = true;
+                    treeGroup.add(armB);
+                });
+                // Legs
+                [-1, 1].forEach(side => {
+                    const leg = new THREE.Mesh(getGeometry('cylinder', 0.04, 0.05, 0.55, 4), boneMat);
+                    leg.position.set(0.62 + side * 0.08, hangY - 1.05, 0);
+                    leg.rotation.z = side * (0.18 + Math.random() * 0.15);
+                    leg.castShadow = true;
+                    treeGroup.add(leg);
+                });
+            }
+
         } else {
             // Regular tree
             const trunkGeometry = getGeometry('cylinder', 0.3, 0.4, 2, 8);
@@ -4897,6 +5232,157 @@ function initSetup() {
             crystalGroup.position.set(pos.x, terrainHeight + 0.8, pos.z);
             G.scene.add(crystalGroup);
             rockMesh = crystalGroup;
+        } else if (G.horrorTheme) {
+            // Horror rock decorations – 4 variants
+            const boneMat2   = getMaterial('lambert', { color: 0xd4c89a });
+            const bloodMat2  = getMaterial('lambert', { color: 0x880000 });
+            const eyeS2      = getMaterial('basic',   { color: 0x0a0000 });
+            const stoneMat2  = getMaterial('phong',   { color: 0x1a0a0a, shininess: 4 });
+
+            const rv = Math.random();
+            const poolGroup = new THREE.Group();
+
+            if (rv < 0.30) {
+                // ── Blood pool with broken blade ──
+                const poolRadius = 0.5 + Math.random() * 0.55;
+                const pool = new THREE.Mesh(new THREE.CircleGeometry(poolRadius, 14),
+                    getMaterial('basic', { color: 0x8b0000, transparent: true, opacity: 0.85, side: THREE.DoubleSide }));
+                pool.rotation.x = -Math.PI / 2;
+                pool.position.y = 0.04;
+                poolGroup.add(pool);
+                const inner = new THREE.Mesh(new THREE.CircleGeometry(poolRadius * 0.55, 10),
+                    getMaterial('basic', { color: 0x440000, transparent: true, opacity: 0.9, side: THREE.DoubleSide }));
+                inner.rotation.x = -Math.PI / 2;
+                inner.position.y = 0.05;
+                poolGroup.add(inner);
+                if (Math.random() > 0.35) {
+                    const bl = new THREE.Mesh(getGeometry('box', 0.07, 0.5, 0.03),
+                        getMaterial('lambert', { color: 0x444444 }));
+                    bl.position.set((Math.random() - 0.5) * 0.2, 0.25, (Math.random() - 0.5) * 0.2);
+                    bl.rotation.z = (Math.random() - 0.5) * 0.6;
+                    bl.castShadow = true;
+                    poolGroup.add(bl);
+                }
+
+            } else if (rv < 0.55) {
+                // ── Skull cluster ──
+                const count = 2 + Math.floor(Math.random() * 3);
+                for (let s = 0; s < count; s++) {
+                    const r = 0.16 + Math.random() * 0.07;
+                    const sk = new THREE.Mesh(getGeometry('sphere', r, 8, 8), boneMat2);
+                    sk.scale.y = 0.85;
+                    const angle = Math.random() * Math.PI * 2;
+                    const dist  = Math.random() * 0.6;
+                    sk.position.set(Math.cos(angle) * dist, r * 0.7, Math.sin(angle) * dist);
+                    sk.rotation.y = Math.random() * Math.PI * 2;
+                    sk.rotation.z = (Math.random() - 0.5) * 0.5;
+                    sk.castShadow = true;
+                    poolGroup.add(sk);
+                    // Eye sockets
+                    [-1, 1].forEach(ex => {
+                        const ey = new THREE.Mesh(getGeometry('sphere', r * 0.25, 5, 5), eyeS2);
+                        ey.position.set(
+                            sk.position.x + ex * r * 0.35,
+                            sk.position.y,
+                            sk.position.z + r * 0.8
+                        );
+                        poolGroup.add(ey);
+                    });
+                    // Blood under each skull
+                    const splat = new THREE.Mesh(new THREE.CircleGeometry(r * 1.4, 8),
+                        getMaterial('basic', { color: 0x550000, transparent: true, opacity: 0.7, side: THREE.DoubleSide }));
+                    splat.rotation.x = -Math.PI / 2;
+                    splat.position.set(sk.position.x, 0.02, sk.position.z);
+                    poolGroup.add(splat);
+                }
+
+            } else if (rv < 0.78) {
+                // ── Giant cracked femur bone ──
+                const boneLen = 1.2 + Math.random() * 0.5;
+                const shaft = new THREE.Mesh(getGeometry('cylinder', 0.1, 0.13, boneLen, 6), boneMat2);
+                shaft.rotation.z = Math.PI / 2 + (Math.random() - 0.5) * 0.5;
+                shaft.rotation.x = (Math.random() - 0.5) * 0.3;
+                shaft.position.y = 0.12;
+                shaft.castShadow = true;
+                poolGroup.add(shaft);
+                // Knobby ends
+                [-1, 1].forEach(end => {
+                    const knob = new THREE.Mesh(getGeometry('sphere', 0.18 + Math.random() * 0.04, 7, 7), boneMat2);
+                    knob.position.set(end * boneLen * 0.48, 0.12, 0);
+                    knob.castShadow = true;
+                    poolGroup.add(knob);
+                });
+                // Crack marks along shaft
+                for (let c = 0; c < 3; c++) {
+                    const crack = new THREE.Mesh(getGeometry('box', 0.01, 0.25, 0.14),
+                        getMaterial('basic', { color: 0x5a4a30 }));
+                    crack.position.set(-0.3 + c * 0.3, 0.2, 0);
+                    crack.rotation.x = Math.random() * 0.6 - 0.3;
+                    poolGroup.add(crack);
+                }
+                // Small blood pool beneath
+                const bsplat = new THREE.Mesh(new THREE.CircleGeometry(0.35, 10),
+                    getMaterial('basic', { color: 0x660000, transparent: true, opacity: 0.65, side: THREE.DoubleSide }));
+                bsplat.rotation.x = -Math.PI / 2;
+                bsplat.position.y = 0.01;
+                poolGroup.add(bsplat);
+
+            } else {
+                // ── Runic sacrificial altar ──
+                // Altar slab
+                const slab = new THREE.Mesh(getGeometry('box', 1.4, 0.22, 0.8), stoneMat2);
+                slab.position.y = 0.3;
+                slab.castShadow = true;
+                poolGroup.add(slab);
+                // Stone legs
+                [[-0.5, -0.36], [0.5, -0.36], [-0.5, 0.36], [0.5, 0.36]].forEach(function(lp) {
+                    const leg = new THREE.Mesh(getGeometry('box', 0.18, 0.3, 0.18), stoneMat2);
+                    leg.position.set(lp[0], 0.15, lp[1]);
+                    poolGroup.add(leg);
+                });
+                // Blood channels carved on top
+                for (let ch = 0; ch < 3; ch++) {
+                    const chan = new THREE.Mesh(getGeometry('box', 1.1, 0.04, 0.04),
+                        getMaterial('basic', { color: 0x660000 }));
+                    chan.position.set(0, 0.42, -0.2 + ch * 0.2);
+                    poolGroup.add(chan);
+                }
+                // Blood drips off edge
+                for (let d = 0; d < 4; d++) {
+                    const drip = new THREE.Mesh(getGeometry('sphere', 0.03, 4, 4), bloodMat2);
+                    drip.scale.y = 2.8;
+                    drip.position.set(-0.55 + d * 0.36, 0.24, 0.38);
+                    poolGroup.add(drip);
+                }
+                // Offering skull on top
+                const oSkull = new THREE.Mesh(getGeometry('sphere', 0.18, 8, 8), boneMat2);
+                oSkull.scale.y = 0.85;
+                oSkull.position.set(0.25, 0.5, 0);
+                oSkull.rotation.z = 0.3;
+                oSkull.castShadow = true;
+                poolGroup.add(oSkull);
+                [-1, 1].forEach(ex => {
+                    const ey = new THREE.Mesh(getGeometry('sphere', 0.045, 5, 5), eyeS2);
+                    ey.position.set(0.25 + ex * 0.065, 0.52, 0.15);
+                    poolGroup.add(ey);
+                });
+                // Rune glyphs etched on slab face
+                for (let r = 0; r < 4; r++) {
+                    const rune = new THREE.Mesh(getGeometry('box', 0.04, 0.18, 0.03),
+                        getMaterial('basic', { color: 0x3b0000 }));
+                    rune.position.set(-0.45 + r * 0.3, 0.31, 0.41);
+                    poolGroup.add(rune);
+                    const runeH = new THREE.Mesh(getGeometry('box', 0.14, 0.03, 0.03),
+                        getMaterial('basic', { color: 0x3b0000 }));
+                    runeH.position.set(-0.45 + r * 0.3, 0.33, 0.41);
+                    poolGroup.add(runeH);
+                }
+            }
+
+            const terrH = getTerrainHeight(pos.x, pos.z);
+            poolGroup.position.set(pos.x, terrH, pos.z);
+            G.scene.add(poolGroup);
+            rockMesh = poolGroup;
         } else {
             const rockGeometry = getGeometry('dodecahedron', 0.6, 0);
             // Theme-appropriate rock colors

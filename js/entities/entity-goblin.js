@@ -45,6 +45,8 @@
             buildLittlePrincess(goblinGrp);
         } else if (G.labyrinthTheme) {
             buildStoneGargoyle(goblinGrp);
+        } else if (G.horrorTheme) {
+            buildHorrorCreature(goblinGrp);
         } else {
             buildStandardGoblin(goblinGrp, textures);
         }
@@ -964,6 +966,99 @@
         group.add(headCrystal2);
     }
     
+    // ---------- Horror Creature ----------
+    function buildHorrorCreature(group) {
+        const fleshDark   = 0x2a0a0a;
+        const eyeRed      = 0xff0000;
+        const eyeYellow   = 0xffaa00;
+        const bloodDark   = 0x880000;
+        const fangWhite   = 0xccbbaa;
+
+        // Misshapen body
+        const bodyGeo  = getGeometry('sphere', 0.38, 8, 7);
+        const bodyMat  = getMaterial('lambert', { color: fleshDark });
+        const body     = new THREE.Mesh(bodyGeo, bodyMat);
+        body.scale.set(1, 0.85, 0.9);
+        body.position.set(0, 0.72, 0);
+        body.castShadow = true;
+        group.add(body);
+
+        // Oversized malformed head
+        const headGeo   = getGeometry('sphere', 0.35, 8, 8);
+        const headMat   = getMaterial('lambert', { color: 0x3a1010 });
+        const head      = new THREE.Mesh(headGeo, headMat);
+        head.scale.set(1.1, 0.95, 1);
+        head.position.set(0, 1.2, 0);
+        head.castShadow = true;
+        group.add(head);
+
+        // 5 scattered eyes – red + one yellow
+        const eyeColors = [eyeRed, eyeRed, eyeRed, eyeRed, eyeYellow];
+        const eyeOffsets = [
+            { x: -0.13, y:  0.08, z: 0.3  },
+            { x:  0.12, y:  0.1,  z: 0.3  },
+            { x:  0.0,  y: -0.05, z: 0.32 },
+            { x: -0.2,  y:  0.0,  z: 0.22 },
+            { x:  0.21, y: -0.1,  z: 0.2  }
+        ];
+        eyeColors.forEach((col, i) => {
+            const eyeGeo = getGeometry('sphere', 0.055, 6, 6);
+            const eyeMat = getMaterial('basic', { color: col });
+            const eye    = new THREE.Mesh(eyeGeo, eyeMat);
+            eye.position.set(
+                eyeOffsets[i].x, 1.2 + eyeOffsets[i].y, eyeOffsets[i].z
+            );
+            group.add(eye);
+        });
+
+        // Wide gaping mouth with cone fangs
+        const mouthGeo = getGeometry('box', 0.3, 0.1, 0.1);
+        const mouthMat = getMaterial('basic', { color: 0x110000 });
+        const mouth    = new THREE.Mesh(mouthGeo, mouthMat);
+        mouth.position.set(0, 1.0, 0.32);
+        group.add(mouth);
+
+        const fangMat = getMaterial('lambert', { color: fangWhite });
+        [-0.1, -0.03, 0.04, 0.11].forEach(fx => {
+            const fangGeo = getGeometry('cone', 0.028, 0.08, 4);
+            const fang    = new THREE.Mesh(fangGeo, fangMat);
+            fang.rotation.x = Math.PI;
+            fang.position.set(fx, 1.03, 0.34);
+            group.add(fang);
+        });
+
+        // 4 thin arms at various heights
+        const armMat = getMaterial('lambert', { color: fleshDark });
+        const armDefs = [
+            { x: -0.38, y: 0.78, rx: 0,    rz:  0.7 },
+            { x:  0.38, y: 0.78, rx: 0,    rz: -0.7 },
+            { x: -0.32, y: 0.58, rx: 0.3,  rz:  0.9 },
+            { x:  0.32, y: 0.58, rx: -0.3, rz: -0.9 }
+        ];
+        armDefs.forEach(d => {
+            const armGeo = getGeometry('cylinder', 0.04, 0.05, 0.35, 5);
+            const arm    = new THREE.Mesh(armGeo, armMat);
+            arm.position.set(d.x, d.y, 0);
+            arm.rotation.x = d.rx;
+            arm.rotation.z = d.rz;
+            group.add(arm);
+        });
+
+        // Blood drips on body
+        const bloodMat = getMaterial('lambert', { color: bloodDark });
+        for (let i = 0; i < 4; i++) {
+            const dropGeo = getGeometry('sphere', 0.03, 4, 4);
+            const drop    = new THREE.Mesh(dropGeo, bloodMat);
+            drop.position.set(
+                (Math.random() - 0.5) * 0.4,
+                0.55 + Math.random() * 0.35,
+                0.35
+            );
+            drop.scale.y = 2.5;
+            group.add(drop);
+        }
+    }
+
     function buildStoneGargoyle(group) {
         // STONE GARGOYLE - small moss-covered stone creature for labyrinth theme
         const stoneGrey = 0x707070;          // Main stone color

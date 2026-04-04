@@ -35,6 +35,8 @@
             buildCrystalGiant(giantGrp);
         } else if (G.rapunzelTheme) {
             buildTowerGiant(giantGrp);
+        } else if (G.horrorTheme) {
+            buildHorrorAbomination(giantGrp);
         } else {
             buildStandardGiant(giantGrp, textures);
         }
@@ -1069,6 +1071,168 @@
         });
     }
     
+    // ---------- Horror Abomination ----------
+    function buildHorrorAbomination(group) {
+        // FLAYED GIANT – tall, skeletal, corrupted humanoid.
+        // Completely different silhouette from the squat blob guardian:
+        // long limbs, exposed ribcage, huge hunched spine, elongated skull.
+        const boneMat   = getMaterial('lambert', { color: 0x8a6040 }); // yellowed bone
+        const fleshMat  = getMaterial('lambert', { color: 0x3a0000 }); // dark flayed flesh
+        const eyeMat    = getMaterial('basic',   { color: 0xff2200 }); // orange-red eye glow
+        const darkMat   = getMaterial('basic',   { color: 0x080000 }); // void black cavities
+
+        // --- Legs: long thin pillars ---
+        [[-0.28, 0], [0.28, 0]].forEach(([lx]) => {
+            const upper = new THREE.Mesh(getGeometry('cylinder', 0.12, 0.16, 1.4, 6), fleshMat);
+            upper.position.set(lx, 0.7, 0);
+            upper.castShadow = true;
+            group.add(upper);
+            // kneecap bone spur
+            const knee = new THREE.Mesh(getGeometry('sphere', 0.14, 6, 5), boneMat);
+            knee.scale.set(1, 0.6, 1);
+            knee.position.set(lx, 1.38, 0.06);
+            group.add(knee);
+            const lower = new THREE.Mesh(getGeometry('cylinder', 0.09, 0.13, 1.2, 6), fleshMat);
+            lower.position.set(lx, 2.0, 0);
+            lower.castShadow = true;
+            group.add(lower);
+            // foot claw
+            const foot = new THREE.Mesh(getGeometry('box', 0.22, 0.1, 0.32), boneMat);
+            foot.position.set(lx, 0.05, 0.06);
+            group.add(foot);
+        });
+
+        // --- Pelvis ---
+        const pelvis = new THREE.Mesh(getGeometry('box', 0.58, 0.22, 0.38), boneMat);
+        pelvis.position.set(0, 2.65, 0);
+        pelvis.castShadow = true;
+        group.add(pelvis);
+
+        // --- Spine: stack of vertebrae ---
+        const vertebraHeights = [2.9, 3.22, 3.54, 3.86, 4.18, 4.50, 4.82];
+        vertebraHeights.forEach((yy, i) => {
+            const v = new THREE.Mesh(getGeometry('box', 0.18 - i * 0.01, 0.18, 0.18), boneMat);
+            v.position.set(0, yy, -0.04);
+            // slight forward hunch
+            v.rotation.x = 0.08 * i;
+            group.add(v);
+            // transverse process spurs on both sides
+            [-1, 1].forEach(side => {
+                const spur = new THREE.Mesh(getGeometry('cylinder', 0.03, 0.05, 0.22, 4), boneMat);
+                spur.rotation.z = side * Math.PI / 2;
+                spur.position.set(side * 0.19, yy, -0.04);
+                group.add(spur);
+            });
+        });
+
+        // --- Exposed ribcage (8 pairs of ribs) ---
+        for (let r = 0; r < 8; r++) {
+            const ry = 2.95 + r * 0.22;
+            const spread = 0.12 + r * 0.055;
+            const curve  = 0.18 + r * 0.04;
+            [-1, 1].forEach(side => {
+                const rib = new THREE.Mesh(getGeometry('cylinder', 0.04, 0.06, spread * 2.2, 5), boneMat);
+                rib.rotation.z = Math.PI / 2;
+                rib.rotation.y = side * 0.25;
+                rib.position.set(side * spread * 0.7, ry, curve * 0.5);
+                group.add(rib);
+                // rib tip
+                const tip = new THREE.Mesh(getGeometry('cone', 0.04, 0.14, 4), boneMat);
+                tip.rotation.z = side * (Math.PI / 2 + 0.3);
+                tip.position.set(side * (spread * 1.4 + 0.06), ry, curve * 0.6);
+                group.add(tip);
+            });
+        }
+
+        // --- Torso flesh (sunken, stretched between ribs) ---
+        const torso = new THREE.Mesh(getGeometry('cylinder', 0.28, 0.38, 1.76, 8), fleshMat);
+        torso.position.set(0, 3.85, 0);
+        torso.castShadow = true;
+        group.add(torso);
+
+        // --- Shoulders (oversized, angular) ---
+        [-0.72, 0.72].forEach(sx => {
+            const shoulder = new THREE.Mesh(getGeometry('sphere', 0.22, 7, 6), boneMat);
+            shoulder.scale.set(1.4, 0.8, 0.9);
+            shoulder.position.set(sx, 4.88, 0);
+            group.add(shoulder);
+        });
+
+        // --- Arms: drastically long, hanging past knees ---
+        [[-0.68, -0.35], [0.68, 0.35]].forEach(([ax, tiltZ]) => {
+            // upper arm
+            const ua = new THREE.Mesh(getGeometry('cylinder', 0.1, 0.15, 1.55, 6), fleshMat);
+            ua.rotation.z = tiltZ;
+            ua.position.set(ax, 4.08, 0);
+            ua.castShadow = true;
+            group.add(ua);
+            // elbow bone
+            const elbow = new THREE.Mesh(getGeometry('sphere', 0.12, 6, 5), boneMat);
+            elbow.position.set(ax * 1.12, 3.25, 0);
+            group.add(elbow);
+            // forearm
+            const fa = new THREE.Mesh(getGeometry('cylinder', 0.07, 0.11, 1.45, 6), fleshMat);
+            fa.rotation.z = tiltZ * 1.3;
+            fa.position.set(ax * 1.22, 2.48, 0);
+            fa.castShadow = true;
+            group.add(fa);
+            // 3 long claw fingers
+            for (let c = 0; c < 3; c++) {
+                const cx = ax * 1.3 + (c - 1) * 0.09;
+                const claw = new THREE.Mesh(getGeometry('cone', 0.04, 0.38, 4), boneMat);
+                claw.rotation.z = tiltZ * 1.6 + (c - 1) * 0.18;
+                claw.position.set(cx, 1.62, 0.04);
+                group.add(claw);
+            }
+        });
+
+        // --- Neck: thin and elongated ---
+        const neck = new THREE.Mesh(getGeometry('cylinder', 0.1, 0.16, 0.52, 6), fleshMat);
+        neck.position.set(0, 5.12, 0);
+        group.add(neck);
+
+        // --- Skull: elongated, wrong proportions ---
+        const skull = new THREE.Mesh(getGeometry('sphere', 0.36, 8, 7), boneMat);
+        skull.scale.set(0.85, 1.35, 0.9); // tall narrow skull
+        skull.position.set(0, 5.68, 0);
+        skull.castShadow = true;
+        group.add(skull);
+
+        // Jaw (unhinged, dropped low)
+        const jaw = new THREE.Mesh(getGeometry('box', 0.42, 0.14, 0.28), boneMat);
+        jaw.position.set(0, 5.22, 0.14);
+        jaw.rotation.x = 0.45; // gaping open
+        group.add(jaw);
+
+        // Two hollow eye sockets
+        [[-0.13, 0], [0.13, 0]].forEach(([ex]) => {
+            const socket = new THREE.Mesh(getGeometry('sphere', 0.1, 6, 5), darkMat);
+            socket.position.set(ex, 5.72, 0.28);
+            group.add(socket);
+            // red glow inside socket
+            const glow = new THREE.Mesh(getGeometry('sphere', 0.06, 5, 4), eyeMat);
+            glow.position.set(ex, 5.72, 0.30);
+            group.add(glow);
+        });
+
+        // Teeth on jaw
+        for (let t = 0; t < 7; t++) {
+            const tooth = new THREE.Mesh(getGeometry('cone', 0.03, 0.1, 4), boneMat);
+            tooth.rotation.x = Math.PI;
+            tooth.position.set(-0.24 + t * 0.08, 5.28, 0.26);
+            group.add(tooth);
+        }
+
+        // Horn spurs on skull top
+        [[-0.12, 6.0, -0.2], [0.12, 6.02, -0.2], [0, 6.05, -0.18]].forEach(([hx, hy, hz]) => {
+            const horn = new THREE.Mesh(getGeometry('cone', 0.05, 0.32, 4), boneMat);
+            horn.position.set(hx, hy, hz);
+            group.add(horn);
+        });
+
+        // No group.scale – geometry is already at giant proportions
+    }
+
     function buildStandardGiant(group, textures) {
         // STANDARD GIANT - ogre-like creature with club
         const giantSkinTexture = textures.giantSkin || null;

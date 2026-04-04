@@ -5021,10 +5021,11 @@ function createLabyrinthGroundVegetation(scene, THREE) {
 // Create river
 function createRiver(scene, THREE) {
     const riverGeometry = getGeometry('plane', 600, 4, 60, 8);
+    const isHorror = typeof G !== 'undefined' && G.horrorTheme;
     const riverMaterial = getMaterial('lambert', { 
-        color: 0x4682B4,
+        color: isHorror ? 0x8B0000 : 0x4682B4,
         transparent: true,
-        opacity: 0.8
+        opacity: isHorror ? 0.9 : 0.8
     });
     const river = new THREE.Mesh(riverGeometry, riverMaterial);
     river.rotation.x = -Math.PI / 2;

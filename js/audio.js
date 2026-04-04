@@ -419,9 +419,83 @@ const Audio = (function() {
         });
     }
 
+    function startHorrorBackgroundMusic() {
+        if (!shouldPlayAudio()) return;
+
+        // Low, dissonant horror ambience using minor 2nds, tritones, and irregular rhythm.
+        // Three simultaneous voices: deep bass drone, mid-range melody, high tremolo wisps.
+
+        const now = audioContext.currentTime;
+
+        // --- Mid-range dissonant melody (irregular, halting) ---
+        // Uses tritone intervals and half-steps for maximum dread
+        const melody = [
+            { freq: 220.0, dur: 0.9,  delay: 0.3  },  // A3
+            { freq: 233.1, dur: 0.4,  delay: 1.3  },  // Bb3 – minor 2nd
+            { freq: 207.7, dur: 1.2,  delay: 1.9  },  // Ab3
+            { freq: 155.6, dur: 0.7,  delay: 3.2  },  // Eb3 – tritone drop
+            { freq: 196.0, dur: 0.3,  delay: 4.2  },  // G3
+            { freq: 185.0, dur: 1.8,  delay: 4.6  },  // F#3 – tritone
+            { freq: 174.6, dur: 0.5,  delay: 6.6  },  // F3
+            { freq: 164.8, dur: 0.4,  delay: 7.3  },  // E3
+            { freq: 155.6, dur: 2.5,  delay: 7.9  },  // Eb3
+            { freq: 146.8, dur: 0.6,  delay: 10.5 },  // D3
+            { freq: 138.6, dur: 1.6,  delay: 11.2 },  // C#3
+            { freq: 130.8, dur: 3.0,  delay: 12.0 },  // C3 – resolve to cold minor
+        ];
+        melody.forEach(note => {
+            const osc = audioContext.createOscillator();
+            const gain = audioContext.createGain();
+            osc.type = 'triangle';
+            osc.frequency.setValueAtTime(note.freq, now + note.delay);
+            gain.gain.setValueAtTime(0.0, now + note.delay);
+            gain.gain.linearRampToValueAtTime(0.06, now + note.delay + 0.08);
+            gain.gain.exponentialRampToValueAtTime(0.001, now + note.delay + note.dur);
+            osc.connect(gain);
+            gain.connect(audioContext.destination);
+            osc.start(now + note.delay);
+            osc.stop(now + note.delay + note.dur + 0.05);
+            backgroundMusicOscillators.push(osc);
+            backgroundMusicGains.push(gain);
+        });
+
+        // --- High-register tremolo wisps (random unsettling squeaks) ---
+        const wisps = [
+            { freq: 880, delay: 1.1 }, { freq: 932, delay: 3.7 },
+            { freq: 1047, delay: 5.5 }, { freq: 830, delay: 7.2 },
+            { freq: 987,  delay: 9.8 }, { freq: 1109, delay: 11.4 },
+        ];
+        wisps.forEach(w => {
+            const osc = audioContext.createOscillator();
+            const gain = audioContext.createGain();
+            osc.type = 'sine';
+            osc.frequency.setValueAtTime(w.freq, now + w.delay);
+            osc.frequency.linearRampToValueAtTime(w.freq * 0.94, now + w.delay + 0.6);
+            gain.gain.setValueAtTime(0.0, now + w.delay);
+            gain.gain.linearRampToValueAtTime(0.025, now + w.delay + 0.05);
+            gain.gain.exponentialRampToValueAtTime(0.001, now + w.delay + 0.7);
+            osc.connect(gain);
+            gain.connect(audioContext.destination);
+            osc.start(now + w.delay);
+            osc.stop(now + w.delay + 0.75);
+            backgroundMusicOscillators.push(osc);
+            backgroundMusicGains.push(gain);
+        });
+
+        // Loop: total duration ~15 s with short silence then repeat
+        const timeout = setTimeout(() => startHorrorBackgroundMusic(), 15200);
+        backgroundMusicTimeouts.push(timeout);
+    }
+
     function startBackgroundMusic() {
         if (!shouldPlayAudio()) return;
-        
+
+        // Horror level gets its own dissonant, scary music
+        if (typeof G !== 'undefined' && G.horrorTheme) {
+            startHorrorBackgroundMusic();
+            return;
+        }
+
         const melody = [
             { freq: 523, duration: 0.3 }, { freq: 587, duration: 0.3 }, { freq: 659, duration: 0.3 },
             { freq: 784, duration: 0.6 }, { freq: 659, duration: 0.3 }, { freq: 587, duration: 0.3 },

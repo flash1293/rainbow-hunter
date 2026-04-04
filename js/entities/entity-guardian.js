@@ -41,6 +41,8 @@
             buildRapunzelWitch(goblinGrp);
         } else if (G.labyrinthTheme) {
             buildStoneSentinel(goblinGrp);
+        } else if (G.horrorTheme) {
+            buildHorrorGuardian(goblinGrp);
         } else {
             buildStandardGuardian(goblinGrp, textures);
         }
@@ -1257,6 +1259,118 @@
         }
     }
     
+    // ---------- Horror Guardian: The Watcher ----------
+    function buildHorrorGuardian(group) {
+        const fleshColor  = 0x4a0a0a;
+        const eyeRed      = 0xff1111;
+        const mouthDark   = 0x0a0000;
+        const tentDark    = 0x330000;
+
+        // Huge bloated torso-sphere
+        const bodyGeo = new THREE.SphereGeometry(0.65, 10, 9);
+        const bodyMat = getMaterial('lambert', { color: fleshColor });
+        const body    = new THREE.Mesh(bodyGeo, bodyMat);
+        body.scale.set(1, 0.88, 0.9);
+        body.position.y = 0.85;
+        body.castShadow = true;
+        group.add(body);
+
+        // Large lumpy head
+        const headGeo = getGeometry('sphere', 0.52, 9, 8);
+        const headMat = getMaterial('lambert', { color: 0x3a0808 });
+        const head    = new THREE.Mesh(headGeo, headMat);
+        head.position.y = 1.75;
+        head.scale.set(1.05, 0.93, 1);
+        head.castShadow = true;
+        group.add(head);
+
+        // 7 glowing red eyes on head + 2 on torso
+        const eyeData = [
+            { x: -0.17, y: 1.85, z: 0.44 },
+            { x:  0.16, y: 1.88, z: 0.44 },
+            { x:  0.0,  y: 1.72, z: 0.48 },
+            { x: -0.28, y: 1.75, z: 0.35 },
+            { x:  0.28, y: 1.72, z: 0.35 },
+            { x: -0.1,  y: 1.98, z: 0.38 },
+            { x:  0.1,  y: 2.0,  z: 0.36 },
+            // on torso
+            { x: -0.35, y: 0.9,  z: 0.55 },
+            { x:  0.35, y: 0.88, z: 0.55 }
+        ];
+        eyeData.forEach(ed => {
+            const eGeo = getGeometry('sphere', 0.07, 6, 6);
+            const eMat = getMaterial('basic', { color: eyeRed });
+            const eye  = new THREE.Mesh(eGeo, eMat);
+            eye.position.set(ed.x, ed.y, ed.z);
+            group.add(eye);
+        });
+
+        // Primary mouth on head – wide grin
+        const mouthGeo = getGeometry('box', 0.4, 0.12, 0.1);
+        const mouthMat = getMaterial('basic', { color: mouthDark });
+        const mouth    = new THREE.Mesh(mouthGeo, mouthMat);
+        mouth.position.set(0, 1.55, 0.46);
+        group.add(mouth);
+
+        // Teeth on head mouth
+        const toothMat = getMaterial('lambert', { color: 0xddccaa });
+        for (let i = 0; i < 6; i++) {
+            const tGeo  = getGeometry('cone', 0.035, 0.1, 4);
+            const tooth = new THREE.Mesh(tGeo, toothMat);
+            tooth.rotation.x = Math.PI;
+            tooth.position.set(-0.175 + i * 0.07, 1.58, 0.48);
+            group.add(tooth);
+        }
+
+        // Belly mouth (second mouth on torso)
+        const bellyMouthGeo = getGeometry('box', 0.3, 0.09, 0.09);
+        const bellyMouth    = new THREE.Mesh(bellyMouthGeo, mouthMat);
+        bellyMouth.position.set(0, 0.72, 0.6);
+        group.add(bellyMouth);
+        [-.1, 0, .1].forEach(tx => {
+            const btGeo = getGeometry('cone', 0.03, 0.09, 4);
+            const bt    = new THREE.Mesh(btGeo, toothMat);
+            bt.rotation.x = Math.PI;
+            bt.position.set(tx, 0.74, 0.62);
+            group.add(bt);
+        });
+
+        // Tentacle arms (6)
+        const tentMat = getMaterial('lambert', { color: tentDark });
+        const tentDefs = [
+            { x: -0.62, y: 1.0,  rx: 0.2,  rz:  0.9 },
+            { x:  0.62, y: 1.0,  rx: -0.2, rz: -0.9 },
+            { x: -0.55, y: 0.65, rx: 0.5,  rz:  1.1 },
+            { x:  0.55, y: 0.65, rx: -0.5, rz: -1.1 },
+            { x: -0.45, y: 1.35, rx: -0.2, rz:  0.75 },
+            { x:  0.45, y: 1.35, rx:  0.2, rz: -0.75 }
+        ];
+        tentDefs.forEach(d => {
+            const tGeo = getGeometry('cylinder', 0.05, 0.09, 0.55, 5);
+            const t    = new THREE.Mesh(tGeo, tentMat);
+            t.position.set(d.x, d.y, 0);
+            t.rotation.x = d.rx;
+            t.rotation.z = d.rz;
+            group.add(t);
+            // tapered tip
+            const tipGeo = getGeometry('cone', 0.04, 0.15, 5);
+            const tip    = new THREE.Mesh(tipGeo, tentMat);
+            tip.rotation.x = d.rz > 0 ? d.rx - 0.5 : d.rx + 0.5;
+            tip.rotation.z = d.rz * 1.15;
+            tip.position.set(d.x + (d.rz > 0 ? -0.22 : 0.22), d.y - 0.18, 0);
+            group.add(tip);
+        });
+
+        // Stubby leg stumps
+        const legMat = getMaterial('lambert', { color: fleshColor });
+        [-0.22, 0.22].forEach(lx => {
+            const lgGeo = getGeometry('cylinder', 0.13, 0.17, 0.4, 5);
+            const leg   = new THREE.Mesh(lgGeo, legMat);
+            leg.position.set(lx, 0.2, 0);
+            group.add(leg);
+        });
+    }
+
     function buildStandardGuardian(group, textures) {
         const bodyGeometry = getGeometry('box', 0.8, 1.0, 0.5);
         const bodyMaterial = getTexturedMaterial('lambert', { map: textures.goblinArmor }, 'goblinArmor');

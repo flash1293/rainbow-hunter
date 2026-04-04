@@ -33,6 +33,8 @@
             buildWalkingEvilSanta(wizardGrp);
         } else if (G.rapunzelTheme) {
             buildCrownWizard(wizardGrp);
+        } else if (G.horrorTheme) {
+            buildHorrorNecromancer(wizardGrp);
         } else {
             buildStandardWizard(wizardGrp, textures);
         }
@@ -907,6 +909,111 @@
         group.add(orb);
     }
     
+    // ---------- Horror Necromancer ----------
+    function buildHorrorNecromancer(group) {
+        const robeColor   = 0x110000;
+        const boneColor   = 0xccbbaa;
+        const eyeGlow     = 0xff2200;
+        const orbColor    = 0x660000;
+
+        // Tattered long robe (box torso + cone skirt)
+        const torsoGeo = getGeometry('cylinder', 0.25, 0.38, 0.85, 7);
+        const robeMat  = getMaterial('lambert', { color: robeColor });
+        const torso    = new THREE.Mesh(torsoGeo, robeMat);
+        torso.position.y = 0.95;
+        torso.castShadow = true;
+        group.add(torso);
+
+        const skirtGeo = new THREE.ConeGeometry(0.55, 0.85, 8);
+        const skirt    = new THREE.Mesh(skirtGeo, robeMat);
+        skirt.position.y = 0.42;
+        skirt.castShadow = true;
+        group.add(skirt);
+
+        // Skull head
+        const skullGeo = getGeometry('sphere', 0.28, 8, 8);
+        const skullMat = getMaterial('lambert', { color: boneColor });
+        const skull    = new THREE.Mesh(skullGeo, skullMat);
+        skull.scale.set(1, 1.1, 0.92);
+        skull.position.y = 1.62;
+        skull.castShadow = true;
+        group.add(skull);
+
+        // Glowing eye sockets
+        const eyeSockMat = getMaterial('basic', { color: eyeGlow });
+        [-0.1, 0.1].forEach(ex => {
+            const eGeo = getGeometry('sphere', 0.07, 6, 6);
+            const eye  = new THREE.Mesh(eGeo, eyeSockMat);
+            eye.position.set(ex, 1.67, 0.23);
+            group.add(eye);
+        });
+
+        // Dark hood draped over skull
+        const hoodGeo = new THREE.SphereGeometry(0.33, 8, 8, 0, Math.PI * 2, 0, Math.PI * 0.62);
+        const hoodMat = getMaterial('lambert', { color: 0x0a0000 });
+        const hood    = new THREE.Mesh(hoodGeo, hoodMat);
+        hood.position.y = 1.66;
+        hood.castShadow = true;
+        group.add(hood);
+
+        // Bony clawed arms
+        const armMat = getMaterial('lambert', { color: boneColor });
+        [-1, 1].forEach(side => {
+            const armGeo = getGeometry('cylinder', 0.04, 0.06, 0.55, 5);
+            const arm    = new THREE.Mesh(armGeo, armMat);
+            arm.position.set(side * 0.32, 1.12, 0.12);
+            arm.rotation.z = side * 0.6;
+            arm.rotation.x = 0.5;
+            group.add(arm);
+            // Claw tip
+            for (let c = 0; c < 3; c++) {
+                const clawGeo = getGeometry('cone', 0.025, 0.1, 4);
+                const claw    = new THREE.Mesh(clawGeo, armMat);
+                const ang     = (c - 1) * 0.3;
+                claw.position.set(
+                    side * 0.5 + Math.cos(ang) * 0.08,
+                    1.0 + Math.sin(ang) * 0.06,
+                    0.35
+                );
+                claw.rotation.x = Math.PI * 0.6;
+                group.add(claw);
+            }
+        });
+
+        // Dark magic staff
+        const staffGeo = getGeometry('cylinder', 0.04, 0.04, 1.4, 5);
+        const staffMat = getMaterial('lambert', { color: 0x1a0000 });
+        const staff    = new THREE.Mesh(staffGeo, staffMat);
+        staff.position.set(0.38, 0.8, 0.1);
+        staff.rotation.z = 0.18;
+        group.add(staff);
+
+        // Skull on staff tip
+        const staffSkullGeo = getGeometry('sphere', 0.12, 7, 7);
+        const staffSkull    = new THREE.Mesh(staffSkullGeo, skullMat);
+        staffSkull.position.set(0.44, 1.54, 0.1);
+        group.add(staffSkull);
+        const sEyeMat = getMaterial('basic', { color: 0xff0000 });
+        [-0.04, 0.04].forEach(ex => {
+            const se = new THREE.Mesh(getGeometry('sphere', 0.025, 5, 5), sEyeMat);
+            se.position.set(0.44 + ex, 1.55, 0.21);
+            group.add(se);
+        });
+
+        // 3 orbiting dark blood orbs
+        const orbMat = getMaterial('basic', { color: orbColor, transparent: true, opacity: 0.85 });
+        [0, 2.1, 4.2].forEach(phase => {
+            const oGeo = getGeometry('sphere', 0.1, 6, 6);
+            const orb  = new THREE.Mesh(oGeo, orbMat);
+            orb.position.set(
+                Math.cos(phase) * 0.55,
+                1.3,
+                Math.sin(phase) * 0.55
+            );
+            group.add(orb);
+        });
+    }
+
     function buildStandardWizard(group, textures) {
         // Use ice theme robe texture if in ice level
         const robeTexture = G.iceTheme ? textures.wizardRobeIce : textures.wizardRobe;

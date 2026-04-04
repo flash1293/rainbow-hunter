@@ -24,6 +24,9 @@
     
     // Track if chunks have been initialized for this level
     let chunksInitialized = false;
+
+    // Track if chunk shaders have been warmed (pre-compiled) to avoid first-frame stutter
+    let chunkShadersWarmed = false;
     
     // Queue for pending chunk generation (to limit concurrent generation)
     const chunkQueue = [];
@@ -605,6 +608,94 @@
                 const foliage = new THREE.Mesh(foliageGeometry, foliageMaterial);
                 foliage.position.y = 3.5 + i * 1.3;
                 treeGroup.add(foliage);
+            }
+        } else if (G.horrorTheme) {
+            // Twisted dead tree — blackened, gnarled, with dangling tendrils
+            const deadBark  = getMaterial('lambert', { color: 0x0e0606 });
+            const boneMat   = getMaterial('lambert', { color: 0x9a8060 });
+            const bloodMat  = getMaterial('basic',   { color: 0x5a0000 });
+
+            // Main trunk – slightly leaning, irregular
+            const trunkH = 3.5 + Math.random() * 1.5;
+            const lean   = (Math.random() - 0.5) * 0.25;
+            const trunk  = new THREE.Mesh(getGeometry('cylinder', 0.18, 0.32, trunkH, 6), deadBark);
+            trunk.position.y = trunkH / 2;
+            trunk.rotation.z = lean;
+            trunk.castShadow = true;
+            treeGroup.add(trunk);
+
+            // 4–6 bare crooked branches
+            const bCount = 4 + Math.floor(Math.random() * 3);
+            for (let i = 0; i < bCount; i++) {
+                const bLen   = 1.0 + Math.random() * 1.2;
+                const branch = new THREE.Mesh(getGeometry('cylinder', 0.03, 0.08, bLen, 4), deadBark);
+                const angle  = ((i / bCount) * Math.PI * 2) + (Math.random() - 0.5) * 0.6;
+                const bY     = trunkH * 0.55 + Math.random() * trunkH * 0.38;
+                branch.position.set(
+                    Math.cos(angle) * 0.25, bY,
+                    Math.sin(angle) * 0.25
+                );
+                branch.rotation.z = lean + Math.cos(angle) * (0.7 + Math.random() * 0.5);
+                branch.rotation.y = angle;
+                branch.castShadow = true;
+                treeGroup.add(branch);
+
+                // Sub-branch
+                const sub = new THREE.Mesh(getGeometry('cylinder', 0.02, 0.04, bLen * 0.55, 4), deadBark);
+                sub.position.set(
+                    branch.position.x + Math.cos(angle) * bLen * 0.4,
+                    bY + bLen * 0.25,
+                    branch.position.z + Math.sin(angle) * bLen * 0.4
+                );
+                sub.rotation.z = branch.rotation.z + (Math.random() - 0.5) * 0.7;
+                sub.rotation.y = angle + (Math.random() - 0.5) * 0.8;
+                treeGroup.add(sub);
+            }
+
+            // Exposed roots clawing out of the ground
+            for (let r = 0; r < 4; r++) {
+                const rAngle = (r / 4) * Math.PI * 2;
+                const root   = new THREE.Mesh(getGeometry('cylinder', 0.04, 0.09, 0.7, 4), deadBark);
+                root.position.set(Math.cos(rAngle) * 0.5, 0.1, Math.sin(rAngle) * 0.5);
+                root.rotation.z = Math.cos(rAngle) * 1.1;
+                root.rotation.x = Math.sin(rAngle) * 0.4;
+                treeGroup.add(root);
+            }
+
+            // Knot-holes / hollow eye-like cavities (dark patches on trunk surface)
+            const knotCount = 1 + Math.floor(Math.random() * 3);
+            for (let k = 0; k < knotCount; k++) {
+                const kAngle = Math.random() * Math.PI * 2;
+                const kH     = trunkH * 0.3 + Math.random() * trunkH * 0.4;
+                const knot   = new THREE.Mesh(getGeometry('sphere', 0.08 + Math.random() * 0.06, 6, 6),
+                    getMaterial('basic', { color: 0x050000 }));
+                knot.position.set(
+                    Math.cos(kAngle) * 0.3 + lean * kH,
+                    kH,
+                    Math.sin(kAngle) * 0.3
+                );
+                treeGroup.add(knot);
+            }
+
+            // Dangling tendril / noose-like vine from a branch tip
+            if (Math.random() > 0.4) {
+                const tendrilLen = 0.8 + Math.random() * 0.8;
+                for (let t = 0; t < 4; t++) {
+                    const td = new THREE.Mesh(getGeometry('cylinder', 0.018, 0.025, tendrilLen / 4, 4), bloodMat);
+                    td.position.set(
+                        lean * trunkH * 0.5 + (Math.random() - 0.5) * 0.3,
+                        trunkH - t * (tendrilLen / 4) - 0.2,
+                        (Math.random() - 0.5) * 0.2
+                    );
+                    td.rotation.z = (Math.random() - 0.5) * 0.25;
+                    treeGroup.add(td);
+                }
+                // Small bone fragment caught at the end
+                if (Math.random() > 0.5) {
+                    const frag = new THREE.Mesh(getGeometry('sphere', 0.07, 5, 5), boneMat);
+                    frag.position.set(lean * trunkH * 0.5, trunkH - tendrilLen - 0.15, 0);
+                    treeGroup.add(frag);
+                }
             }
         } else {
             // Default forest tree
