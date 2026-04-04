@@ -571,13 +571,13 @@ function initGame() {
 
     // Lighting
     // Adjust ambient light for themed levels
-    const ambientIntensity = G.horrorTheme ? 0.75 : (G.graveyardTheme ? 0.55 : (G.ruinsTheme ? 0.7 : 0.6));
-    const ambientColor = G.horrorTheme ? 0xff8888 : (G.graveyardTheme ? 0x9977dd : (G.ruinsTheme ? 0xfffef0 : 0xffffff));
+    const ambientIntensity = G.horrorTheme ? 0.85 : (G.graveyardTheme ? 0.55 : (G.ruinsTheme ? 0.7 : 0.6));
+    const ambientColor = G.horrorTheme ? 0xffaaaa : (G.graveyardTheme ? 0x9977dd : (G.ruinsTheme ? 0xfffef0 : 0xffffff));
     G.ambientLight = new THREE.AmbientLight(ambientColor, ambientIntensity);
     G.scene.add(G.ambientLight);
 
-    const directionalColor = G.horrorTheme ? 0xff6666 : (G.graveyardTheme ? 0xaa88ee : (G.ruinsTheme ? 0xfff8e0 : 0xffffff));
-    const directionalIntensity = G.horrorTheme ? 0.85 : (G.graveyardTheme ? 0.6 : (G.ruinsTheme ? 0.9 : 0.8));
+    const directionalColor = G.horrorTheme ? 0xff8888 : (G.graveyardTheme ? 0xaa88ee : (G.ruinsTheme ? 0xfff8e0 : 0xffffff));
+    const directionalIntensity = G.horrorTheme ? 0.9 : (G.graveyardTheme ? 0.6 : (G.ruinsTheme ? 0.9 : 0.8));
     G.directionalLight = new THREE.DirectionalLight(directionalColor, directionalIntensity);
     G.directionalLight.position.set(50, 100, 50);
     G.directionalLight.castShadow = true;
