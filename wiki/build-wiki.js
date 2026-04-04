@@ -406,7 +406,15 @@ async function build() {
         .level-7 .level-header { background: #4a4a5a; }
         .level-8 .level-header { background: #7a6a5a; }
         .level-9 .level-header { background: #00aaaa; }
-        
+        .level-10 .level-header { background: #228B22; }
+        .level-11 .level-header { background: #ffb6c1; }
+        .level-12 .level-header { background: #c4d4e0; }
+        .level-13 .level-header { background: #8a4a9a; }
+        .level-14 .level-header { background: #7eb5d6; }
+        .level-15 .level-header { background: #6b8f71; }
+        .level-16 .level-header { background: #808080; }
+        .level-17 .level-header { background: #2d0008; }
+
         .feature-list { margin: 20px 0; list-style: none; }
         .feature-list li { padding: 8px 0; display: flex; align-items: center; gap: 10px; }
         .feature-list li::before { content: "▶"; color: var(--accent-gold); font-size: 0.7em; }
@@ -618,7 +626,7 @@ async function build() {
                             <li>Steinerne Drachen bewachen den Schatz</li>
                         </ul>
                     </div>
-                </div>
+                 </div>
                 
                 <div class="level-card level-9">
                     <div class="level-header">
@@ -632,6 +640,40 @@ async function build() {
                             <li>Lag-Events und Systemausfälle stören das Spiel</li>
                             <li>Bugs, Hacker und Überwachungsdrohnen</li>
                             <li>Der Trojaner-Drache als finaler Boss</li>
+                        </ul>
+                    </div>
+                </div>
+                
+                <div class="level-card level-10">
+                    <div class="level-header">
+                        <span class="level-number">Level 10</span>
+                        <h3 class="level-title">The Enchanted Grove</h3>
+                        <p class="level-subtitle">Der Verzauberte Hain</p>
+                    </div>
+                    <div class="level-content">
+                        <p>Betrete einen mystischen Feenhain voller riesiger Bäume und magischer Pilzkreise. Besiege das verderbte Einhorn, das von dunkler Magie korrumpiert wurde.</p>
+                        <ul class="feature-list">
+                            <li>Dichte mystische Bäume und glühende Kristallblumen</li>
+                            <li>Feenringe, Schlafsporen und Dornenpatches</li>
+                            <li>Dunkelfeen schrumpfen Spieler, Größen-Tränke helfen</li>
+                            <li>Riesenschmetterlinge lassen Schlafpollen regnen</li>
+                        </ul>
+                    </div>
+                </div>
+                
+                <div class="level-card level-11">
+                    <div class="level-header">
+                        <span class="level-number">Level 11</span>
+                        <h3 class="level-title">Easter Meadow</h3>
+                        <p class="level-subtitle">Osterwiese</p>
+                    </div>
+                    <div class="level-content">
+                        <p>Eine fröhliche Osterwiese voller bunter Blumen und versteckter Ostereier. Der Riesen-Osterhase bewacht den Schatz.</p>
+                        <ul class="feature-list">
+                            <li>Sammle 8 versteckte Ostereier zum Portal öffnen</li>
+                            <li>Blumenpatches und Osterkörbe dekorieren die Wiese</li>
+                            <li>Ei-Krieger schießen bunte Eier, Ei-Bomber bombardieren</li>
+                            <li>Der Riesen-Osterhase schwebt und schießt Regenbogen-Karotten</li>
                         </ul>
                     </div>
                 </div>
@@ -652,6 +694,40 @@ async function build() {
                     </div>
                 </div>
                 
+                <div class="level-card level-13">
+                    <div class="level-header">
+                        <span class="level-number">Level 13</span>
+                        <h3 class="level-title">Crystal Cove</h3>
+                        <p class="level-subtitle">Kristallhöhlen</p>
+                    </div>
+                    <div class="level-content">
+                        <p>Erkunde eine unterirdische Kristallhöhle voller leuchtender Edelsteine. Sammle verschiedenfarbige Edelsteine für temporäre Power-Ups und besiege den Kristall-Drachen.</p>
+                        <ul class="feature-list">
+                            <li>Dunkle Höhle mit überall glühenden Kristallen</li>
+                            <li>Edelsteine geben Power-Ups ( Rubin: Feuerrate, Saphir: Geschwindigkeit, etc.)</li>
+                            <li>Unendliche Munition beim Diamant-Edelstein!</li>
+                            <li>Kristall-Golems und Edelstein-Geister patrouillieren</li>
+                        </ul>
+                    </div>
+                </div>
+                
+                <div class="level-card level-14">
+                    <div class="level-header">
+                        <span class="level-number">Level 14</span>
+                        <h3 class="level-title">Rapunzel's Tower</h3>
+                        <p class="level-subtitle">Rapunzels Turm</p>
+                    </div>
+                    <div class="level-content">
+                        <p>Ein märchenhafter Wald voller mysteriöser Türme. Finde Rapunzel in einem der Türme, aber Vorsicht – die meisten Türme spawnen Feinde!</p>
+                        <ul class="feature-list">
+                            <li>Märchenhafte Prozellan-Zaunpfade und üppige Wälder</li>
+                            <li>Fliegende Hexenhäuser beschwören Hexen von oben</li>
+                            <li>Rapunzel ist zufällig in einem Turm versteckt</li>
+                            <li>Kronen-Magier und Turm-Riesen bewachen den Weg</li>
+                        </ul>
+                    </div>
+                </div>
+                
                 <div class="level-card level-15">
                     <div class="level-header">
                         <span class="level-number">Level 15</span>
@@ -664,6 +740,40 @@ async function build() {
                             <li>Prozedural generiertes Labyrinth – jedes Spiel ist anders!</li>
                             <li>Uralte Steinmauern mit Moos und Efeu</li>
                             <li>Feinde lauern in den verwinkelten Gängen</li>
+                        </ul>
+                    </div>
+                </div>
+                
+                <div class="level-card level-16">
+                    <div class="level-header">
+                        <span class="level-number">Level 16</span>
+                        <h3 class="level-title">Farbwelt</h3>
+                        <p class="level-subtitle">Color World</p>
+                    </div>
+                    <div class="level-content">
+                        <p>Alles beginnt in Graustufen! Sammle Farbtopf-Eimer, um die Welt zu colorieren. Jeder Topf verleiht eine andere Farbe. Male glückliche Wolken an, um den Schatz zu befreien.</p>
+                        <ul class="feature-list">
+                            <li>Welt startet völlig in Schwarz-Weiß</li>
+                            <li>Farbtopf-Sammler verleihen temporäre Farbeffekte</li>
+                            <li>Male glückliche Wolken, um den Schatz zu aktivieren</li>
+                            <li>Kein Boss! Entspanntes Farbsammeln</li>
+                        </ul>
+                    </div>
+                </div>
+                
+                <div class="level-card level-17">
+                    <div class="level-header">
+                        <span class="level-number">Level 17</span>
+                        <h3 class="level-title">Das Horrorlevel</h3>
+                        <p class="level-subtitle">Horror Level</p>
+                    </div>
+                    <div class="level-content">
+                        <p>Ein düsteres, blutiges Level voller unaussprechlicher Monster und tödlicher Fallen. Überlebe die Alptraum-Landschaft, wenn du kannst.</p>
+                        <ul class="feature-list">
+                            <li>Blutige Atmosphäre mit dichtem roten Nebel</li>
+                            <li>Horror-Kreaturen mit vielen Augen und Zähnen</li>
+                            <li>Schwerter und Totenköpfe dekorieren die Landschaft</li>
+                            <li>Zwei enge Engpässe mit vielen Alarmen</li>
                         </ul>
                     </div>
                 </div>

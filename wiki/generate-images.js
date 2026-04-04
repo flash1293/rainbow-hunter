@@ -61,6 +61,14 @@ async function generateImages() {
     const page = await browser.newPage();
     await page.setViewport({ width: 512, height: 512 });
 
+    // Capture console logs and errors from the page
+    page.on('console', msg => {
+        console.log('PAGE LOG:', msg.type(), msg.text());
+    });
+    page.on('pageerror', err => {
+        console.log('PAGE ERROR:', err.message);
+    });
+
     // Load the renderer page
     const rendererPath = `file://${path.join(WIKI_DIR, 'render-single.html')}`;
     
@@ -74,11 +82,11 @@ async function generateImages() {
             // Navigate to renderer with entity parameter
             await page.goto(`${rendererPath}?entity=${entity.id}`, {
                 waitUntil: 'networkidle0',
-                timeout: 10000
+                timeout: 30000
             });
             
             // Wait for render to complete
-            await page.waitForSelector('#render-complete', { timeout: 5000 });
+            await page.waitForSelector('#render-complete', { timeout: 30000 });
             
             // Get the canvas element and save as PNG
             const canvas = await page.$('canvas');

@@ -4,9 +4,9 @@
     {
       "id": "goblin",
       "name": "Goblin",
-      "description": "Einfacher Bodengegner, der das Gelände patrouilliert. Stürmt auf Spieler zu, wenn sie in Reichweite sind. Erscheint in Wald- und Eis-Leveln.",
+      "description": "Einfacher Bodengegner, der das Gelände patrouilliert. Stürmt auf Spieler zu, wenn sie in Reichweite sind. Erscheint in Wald-, Eis- und Farbwelt-Leveln.",
       "tags": ["Boden", "Nahkampf"],
-      "levels": [1, 2],
+      "levels": [1, 2, 16],
       "health": 3,
       "damage": 1
     },
@@ -42,7 +42,7 @@
       "name": "Wächter-Goblin",
       "description": "Größere, stärkere Goblin-Variante mit verbesserter Rüstung und leuchtend orangefarbenen Augen. Bewacht wichtige Bereiche und schießt Pfeile auf Spieler.",
       "tags": ["Elite", "Fernkampf"],
-      "levels": [1, 2],
+      "levels": [1, 2, 16],
       "health": 5,
       "damage": 1
     },
@@ -69,7 +69,7 @@
       "name": "Riese",
       "description": "Massiver Gegner mit Rüstungsplatten, Hörnern, Armen und Fäusten. Langsam aber mächtig mit großer Schadensreichweite.",
       "tags": ["Boss", "Schwer"],
-      "levels": [1, 4],
+      "levels": [1, 4, 16],
       "health": 20,
       "damage": 2
     },
@@ -78,7 +78,7 @@
       "name": "Zauberer",
       "description": "Gewandeter Magier mit leuchtendem Stab-Orb und Spitzhut. Wirft magische Feuerbälle auf Spieler. Eis-Version erscheint in der Eiswüste, Feuer-Version in Wäldern.",
       "tags": ["Magie", "Fernkampf"],
-      "levels": [1, 2],
+      "levels": [1, 2, 16],
       "health": 7,
       "damage": 1
     },
@@ -612,6 +612,69 @@
       "levels": [13],
       "health": 60,
       "damage": 2
+    },
+    {
+      "id": "horror-dragon",
+      "name": "Horror-Drache",
+      "description": "Ein massiver Albtraum-Drache aus blutrotem Fleisch mit zuckenden Membranflügeln, Dutzenden glühender Augen und einem gähnenden Schlund. Sein Anblick allein löst pure Angst aus.",
+      "tags": ["Horror", "Boss", "Fliegend", "Feuerball"],
+      "levels": [17],
+      "health": 70,
+      "damage": 3
+    },
+    {
+      "id": "stone-gargoyle",
+      "name": "Stein-Gargoyle",
+      "description": "Ein kleiner, moosbewachsener Steingargoyle für das Labyrinth. Moosige Haut, leuchtende grüne Augen und steinerne Flügel.",
+      "tags": ["Labyrinth", "Nahkampf"],
+      "levels": [15],
+      "health": 3,
+      "damage": 1
+    },
+    {
+      "id": "stone-sentinel",
+      "name": "Stein-Wächter",
+      "description": "Ein massiver Steinwächter für das Labyrinth. Bewacht die Gänge und schießt steinerne Projektile auf Eindringlinge.",
+      "tags": ["Labyrinth", "Elite", "Fernkampf"],
+      "levels": [15],
+      "health": 5,
+      "damage": 1
+    },
+    {
+      "id": "horror-creature",
+      "name": "Horror-Kreatur",
+      "description": "Eine monströse Kreatur mit vielen Augen und Zähnen, direkt aus deinen Alpträumen. Ihre verformten Körper sind von Blut getränkt.",
+      "tags": ["Horror", "Nahkampf"],
+      "levels": [17],
+      "health": 3,
+      "damage": 1
+    },
+    {
+      "id": "horror-guardian",
+      "name": "Horror-Wächter",
+      "description": "Ein schwebender Albtraum-Wächter mit tentakelartigen Armen und hungrigen Augen. Beschwört finstere Magie.",
+      "tags": ["Horror", "Elite", "Fernkampf", "Schwebend"],
+      "levels": [17],
+      "health": 5,
+      "damage": 1
+    },
+    {
+      "id": "horror-abomination",
+      "name": "Horror-Abomination",
+      "description": "Eine riesige, entstellte Kreatur mit übertrieben langen Armen und freigelegten Rippen. Ihre schaurigen Augen durchbohren die Dunkelheit.",
+      "tags": ["Horror", "Boss", "Schwer"],
+      "levels": [17],
+      "health": 20,
+      "damage": 2
+    },
+    {
+      "id": "horror-necromancer",
+      "name": "Horror-Nekromant",
+      "description": "Ein Nekromant mit Totenkopf und zerlumptem schwarzen Umhang. Wirft Flüche und beschwört Knochen-Totengräber.",
+      "tags": ["Horror", "Magie", "Fernkampf"],
+      "levels": [17],
+      "health": 7,
+      "damage": 1
     }
   ],
   "items": [
