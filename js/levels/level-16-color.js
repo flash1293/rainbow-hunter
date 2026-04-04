@@ -32,11 +32,9 @@ LEVEL_REGISTRY.register(16, {
     treasurePosition: { x: 0, z: -180 },
     rainbow: { x: 0, z: -175 },
 
-    // Boss dragon (grayscale)
-    dragon: { x: 0, z: -140 },
-    extraDragons: [
-        { x: -60, z: -80, scale: 0.6, health: 25 }
-    ],
+    // Boss dragon (grayscale) - removed for easier cloud hunting
+    dragon: null,
+    extraDragons: [],
 
     // World Kite
     worldKite: { x: 5, z: 170 },
@@ -123,6 +121,30 @@ LEVEL_REGISTRY.register(16, {
         { x: -30, z: -160, color: 0x0066FF },  { x: 30, z: -155, color: 0x00CC00 },
         { x: 0, z: -170, color: 0xFFFFFF },    { x: -50, z: -165, color: 0xFF00FF },
         { x: 50, z: -170, color: 0x00CCCC },    { x: -90, z: -155, color: 0xFF4400 },
+    ],
+
+    // Happy cloud positions - clouds that need to be painted to unlock treasure
+    happyCloudPositions: [
+        { x: -60, z: 120 },
+        { x: 40, z: 100 },
+        { x: -30, z: 50 },
+        { x: 50, z: 30 },
+        { x: 0, z: -20 },
+        { x: -70, z: -60 },
+        { x: 60, z: -90 },
+        { x: -20, z: -130 },
+    ],
+
+    // Happy cloud positions - clouds that need to be painted to unlock treasure
+    happyCloudPositions: [
+        { x: -60, z: 120 },
+        { x: 40, z: 100 },
+        { x: -30, z: 50 },
+        { x: 50, z: 30 },
+        { x: 0, z: -20 },
+        { x: -70, z: -60 },
+        { x: 60, z: -90 },
+        { x: -20, z: -130 },
     ],
 
     // Goblins - standard patrols (all will appear grayscale)
@@ -214,11 +236,30 @@ LEVEL_REGISTRY.register(16, {
     ],
 
     healthPositions: [
+        // Spawn area
         { x: 0, z: 140 },
+        { x: -60, z: 165 },
+        { x: 60, z: 155 },
+        // Upper mid area
         { x: -60, z: 40 },
+        { x: 0, z: 90 },
+        { x: 60, z: 95 },
+        // Center area
+        { x: -70, z: 65 },
+        { x: 70, z: 55 },
+        { x: 0, z: 70 },
+        // Lower mid area
         { x: 60, z: -20 },
+        { x: -50, z: 15 },
+        { x: 0, z: -5 },
+        // Lower area
         { x: 0, z: -100 },
+        { x: -60, z: -75 },
+        { x: 60, z: -85 },
+        // Boss/treasure approach
         { x: -50, z: -150 },
+        { x: 50, z: -145 },
+        { x: 0, z: -165 },
     ],
 
     bombPositions: [

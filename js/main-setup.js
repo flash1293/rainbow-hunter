@@ -80,6 +80,31 @@ function initSetup() {
             }
         });
     }
+
+    // Update happy clouds - random movement at ground height
+    function updateHappyClouds() {
+        if (!G.happyClouds || !G.happyClouds.length) return;
+        G.happyClouds.forEach(function(cloud) {
+            // Random wandering movement
+            cloud.moveAngle += (Math.random() - 0.5) * 0.05;
+            var targetX = cloud.initialX + Math.cos(cloud.moveAngle) * cloud.moveRadius;
+            var targetZ = cloud.initialZ + Math.sin(cloud.moveAngle) * cloud.moveRadius;
+            
+            cloud.mesh.position.x += (targetX - cloud.mesh.position.x) * 0.01;
+            cloud.mesh.position.z += (targetZ - cloud.mesh.position.z) * 0.01;
+            
+            // Bob up and down
+            cloud.bobPhase += cloud.bobSpeed * 0.02;
+            cloud.mesh.position.y = cloud.initialY + Math.sin(cloud.bobPhase) * 1.5;
+            
+            // Face always looks toward player
+            if (G.playerGroup) {
+                var dx = G.playerGroup.position.x - cloud.mesh.position.x;
+                var dz = G.playerGroup.position.z - cloud.mesh.position.z;
+                cloud.mesh.rotation.y = Math.atan2(dx, dz);
+            }
+        });
+    }
    
     // Game state variables
     G.bridgeRepaired = false;
@@ -6735,7 +6760,8 @@ function initSetup() {
         const sphereGeometry = getGeometry('sphere', 0.3, 16, 16);
         const heartMaterial = getMaterial('lambert', { 
             color: 0xFF0000,
-            emissive: 0xFF0000
+            emissive: 0xFF0000,
+            emissiveIntensity: 0.5
         });
         
         const leftSphere = new THREE.Mesh(sphereGeometry, heartMaterial);
@@ -6757,12 +6783,12 @@ function initSetup() {
         bottom.castShadow = true;
         heartGroup.add(bottom);
         
-        // Glow effect
-        const glowGeometry = getGeometry('sphere', 0.5, 8, 8);
+        // Glow effect - brighter
+        const glowGeometry = getGeometry('sphere', 0.6, 8, 8);
         const glowMaterial = getMaterial('basic', { 
-            color: 0xFF6666, 
+            color: 0xFF4444, 
             transparent: true, 
-            opacity: 0.3 
+            opacity: 0.5 
         });
         const glow = new THREE.Mesh(glowGeometry, glowMaterial);
         glow.position.y = 0.4;
@@ -7077,6 +7103,148 @@ function initSetup() {
         });
     }
 
+    // ===== HAPPY CLOUDS (Color Theme) =====
+    G.happyClouds = [];
+    if (G.colorTheme && G.levelConfig.happyCloudPositions) {
+        function createHappyCloudFace(isHappy) {
+            const faceGroup = new THREE.Group();
+            const faceColor = isHappy ? 0xFFD700 : 0xCCCCCC;
+            const featureColor = 0x000000;
+
+            // Face disc - bigger and brighter
+            const faceGeo = getGeometry('cylinder', 2.5, 2.5, 0.2, 16);
+            const faceMat = getMaterial('lambert', { 
+                color: faceColor,
+                emissive: faceColor,
+                emissiveIntensity: 0.3
+            });
+            const face = new THREE.Mesh(faceGeo, faceMat);
+            face.rotation.x = Math.PI / 2;
+            faceGroup.add(face);
+
+            // Eyes - bigger
+            const eyeGeo = getGeometry('sphere', 0.45, 8, 8);
+            const eyeMat = getMaterial('basic', { color: featureColor });
+            const leftEye = new THREE.Mesh(eyeGeo, eyeMat);
+            leftEye.position.set(-0.8, 0.6, 0.15);
+            faceGroup.add(leftEye);
+            const rightEye = new THREE.Mesh(eyeGeo, eyeMat);
+            rightEye.position.set(0.8, 0.6, 0.15);
+            faceGroup.add(rightEye);
+
+            if (isHappy) {
+                // Happy mouth - arc of bigger spheres
+                const mouthMat = getMaterial('basic', { color: featureColor });
+                var mouthPositions = [
+                    { x: -1.0, y: -0.6, s: 0.28 },
+                    { x: -0.7, y: -1.0, s: 0.3 },
+                    { x: -0.35, y: -1.25, s: 0.32 },
+                    { x: 0, y: -1.35, s: 0.33 },
+                    { x: 0.35, y: -1.25, s: 0.32 },
+                    { x: 0.7, y: -1.0, s: 0.3 },
+                    { x: 1.0, y: -0.6, s: 0.28 },
+                ];
+                mouthPositions.forEach(function(mp) {
+                    var segGeo = getGeometry('sphere', mp.s, 6, 6);
+                    var seg = new THREE.Mesh(segGeo, mouthMat);
+                    seg.position.set(mp.x, mp.y, 0.15);
+                    faceGroup.add(seg);
+                });
+            } else {
+                // Sad mouth - inverted arc, bigger
+                const mouthMat = getMaterial('basic', { color: featureColor });
+                var mouthPositions = [
+                    { x: -1.0, y: -1.1, s: 0.28 },
+                    { x: -0.7, y: -0.75, s: 0.3 },
+                    { x: -0.35, y: -0.55, s: 0.32 },
+                    { x: 0, y: -0.5, s: 0.33 },
+                    { x: 0.35, y: -0.55, s: 0.32 },
+                    { x: 0.7, y: -0.75, s: 0.3 },
+                    { x: 1.0, y: -1.1, s: 0.28 },
+                ];
+                mouthPositions.forEach(function(mp) {
+                    var segGeo = getGeometry('sphere', mp.s, 6, 6);
+                    var seg = new THREE.Mesh(segGeo, mouthMat);
+                    seg.position.set(mp.x, mp.y, 0.15);
+                    faceGroup.add(seg);
+                });
+
+                // Sad eyebrows - bigger
+                const browGeo = getGeometry('box', 0.8, 0.15, 0.12);
+                const browMat = getMaterial('basic', { color: featureColor });
+                const leftBrow = new THREE.Mesh(browGeo, browMat);
+                leftBrow.position.set(-0.8, 1.3, 0.15);
+                leftBrow.rotation.z = 0.35;
+                faceGroup.add(leftBrow);
+                const rightBrow = new THREE.Mesh(browGeo, browMat);
+                rightBrow.position.set(0.8, 1.3, 0.15);
+                rightBrow.rotation.z = -0.35;
+                faceGroup.add(rightBrow);
+            }
+
+            return faceGroup;
+        }
+
+        G.levelConfig.happyCloudPositions.forEach(function(pos, idx) {
+            const cloudGroup = new THREE.Group();
+
+            // Cloud body
+            const cloudMat = getMaterial('lambert', {
+                color: 0xCCCCCC,
+                transparent: true,
+                opacity: 0.9
+            });
+
+            const numPuffs = 6 + Math.floor(Math.random() * 4);
+            for (var i = 0; i < numPuffs; i++) {
+                const puffSize = 2 + Math.random() * 3;
+                const puffGeo = new THREE.SphereGeometry(puffSize, 8, 8);
+                const puff = new THREE.Mesh(puffGeo, cloudMat);
+                puff.position.set(
+                    (Math.random() - 0.5) * 8,
+                    (Math.random() - 0.5) * 2,
+                    (Math.random() - 0.5) * 4
+                );
+                const s = 0.7 + Math.random() * 0.6;
+                puff.scale.set(s, s * 0.6, s);
+                cloudGroup.add(puff);
+            }
+
+            // Face plate on front of cloud - sticks out more
+            const sadFace = createHappyCloudFace(false);
+            sadFace.position.set(0, 0, 5.5);
+            sadFace.visible = true;
+            cloudGroup.add(sadFace);
+
+            const happyFace = createHappyCloudFace(true);
+            happyFace.position.set(0, 0, 5.5);
+            happyFace.visible = false;
+            cloudGroup.add(happyFace);
+
+            const terrainH = getTerrainHeight(pos.x, pos.z);
+            const cloudY = terrainH + 2.5 + Math.random() * 2;
+            cloudGroup.position.set(pos.x, cloudY, pos.z);
+
+            G.scene.add(cloudGroup);
+
+            G.happyClouds.push({
+                mesh: cloudGroup,
+                sadFace: sadFace,
+                happyFace: happyFace,
+                happy: false,
+                radius: 5,
+                initialX: pos.x,
+                initialZ: pos.z,
+                initialY: cloudY,
+                moveAngle: Math.random() * Math.PI * 2,
+                moveSpeed: 0.02 + Math.random() * 0.03,
+                moveRadius: 20 + Math.random() * 25,
+                bobPhase: Math.random() * Math.PI * 2,
+                bobSpeed: 1.5 + Math.random() * 1.0,
+            });
+        });
+    }
+
     // ===== NATIVE SPLITSCREEN SETUP =====
     if (isNativeSplitscreen) {
         // Create player 2 mesh (boy character) - similar to createOtherPlayerMesh but with direct control
@@ -7174,6 +7342,9 @@ function initSetup() {
                 player2Group.add(handlebar);
             }
 
+            if (G.horrorTheme) {
+                buildHorrorPlayerAppearance(player2Group, false);
+            } else {
             // Player body - Boy (blue)
             const bodyGeometry = getGeometry('box', 0.35, 0.6, 0.25);
             const bodyMaterial = new THREE.MeshLambertMaterial({ 
@@ -7225,6 +7396,7 @@ function initSetup() {
             
             helmetGroup.position.set(0, 1.95, 0);
             player2Group.add(helmetGroup);
+            }
 
             // Direction indicator
             const coneGeometry = getGeometry('cone', 0.15, 0.4, 8);
@@ -7396,6 +7568,7 @@ function initSetup() {
 
     // Export functions needed by other files
     window.updateClouds = updateClouds;
+    window.updateHappyClouds = updateHappyClouds;
     window.updateGamepad = updateGamepad;
     window.updateGamepad2 = isNativeSplitscreen ? updateGamepad2 : () => {};
 }

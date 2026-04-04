@@ -325,6 +325,44 @@ function initLoop() {
             });
         }
         
+        // Reset happy clouds (color theme)
+        if (G.happyClouds) {
+            G.happyClouds.forEach(cloud => {
+                cloud.happy = false;
+                cloud.sadFace.visible = true;
+                cloud.happyFace.visible = false;
+                cloud.moveAngle = Math.random() * Math.PI * 2;
+                cloud.mesh.position.set(cloud.initialX, cloud.initialY, cloud.initialZ);
+                
+                // Reset cloud material to gray
+                cloud.mesh.traverse(function(child) {
+                    if (child.material && child.material.color && child.material._colorCloned) {
+                        child.material.color.set(0xCCCCCC);
+                        child.material.opacity = 0.9;
+                    }
+                });
+            });
+        }
+        
+        // Reset happy clouds (color theme)
+        if (G.happyClouds) {
+            G.happyClouds.forEach(cloud => {
+                cloud.happy = false;
+                cloud.sadFace.visible = true;
+                cloud.happyFace.visible = false;
+                cloud.moveAngle = Math.random() * Math.PI * 2;
+                cloud.mesh.position.set(cloud.initialX, cloud.initialY, cloud.initialZ);
+                
+                // Reset cloud material to gray
+                cloud.mesh.traverse(function(child) {
+                    if (child.material && child.material.color && child.material._colorCloned) {
+                        child.material.color.set(0xCCCCCC);
+                        child.material.opacity = 0.9;
+                    }
+                });
+            });
+        }
+        
         // Reset Rapunzel tower lift animation
         G.rapunzelTowerLift = null;
         
@@ -513,6 +551,15 @@ function initLoop() {
             const totalEnemies = G.goblins.length + (G.dragon && G.dragon.alive ? 1 : 0) + G.extraDragons.length + (G.birds ? G.birds.length : 0);
             drawTextWithOutline(G.hudCtx, `\ud83c\udfa8 Gef\u00e4rbt: ${G.coloredEnemyCount || 0}/${totalEnemies}`, 10, nextYPos, '#FFF', '#000');
             nextYPos += 25;
+            
+            // Happy clouds counter
+            if (G.happyClouds && G.happyClouds.length > 0) {
+                const happyCount = G.happyClouds.filter(c => c.happy).length;
+                const totalClouds = G.happyClouds.length;
+                const cloudIcon = happyCount >= totalClouds ? '\u2601\uFE0F\u2728' : '\u2601\uFE0F\u2764\uFE0F';
+                drawTextWithOutline(G.hudCtx, `${cloudIcon} Wolken: ${happyCount}/${totalClouds}`, 10, nextYPos, '#FFD700', '#000');
+                nextYPos += 25;
+            }
         }
         
         // Active power-up indicators (show for all levels when buffs are active)
@@ -1052,6 +1099,24 @@ function initLoop() {
                 drawTextWithOutline(G.hudCtx, '\ud83e\udea3 Farbeimer suchen!', G.hudCanvas.width / 2, bottomY, '#999', '#000');
             }
             bottomY += 18;
+            
+            // Happy clouds counter (color theme)
+            if (G.happyClouds && G.happyClouds.length > 0) {
+                const happyCount = G.happyClouds.filter(c => c.happy).length;
+                const totalClouds = G.happyClouds.length;
+                const cloudIcon = happyCount >= totalClouds ? '\u2601\uFE0F\u2728' : '\u2601\uFE0F\u2764\uFE0F';
+                drawTextWithOutline(G.hudCtx, `${cloudIcon} Wolken: ${happyCount}/${totalClouds}`, G.hudCanvas.width / 2, bottomY, '#FFD700', '#000');
+                bottomY += 18;
+            }
+            
+            // Happy clouds counter (color theme)
+            if (G.happyClouds && G.happyClouds.length > 0) {
+                const happyCount = G.happyClouds.filter(c => c.happy).length;
+                const totalClouds = G.happyClouds.length;
+                const cloudIcon = happyCount >= totalClouds ? '\u2601\uFE0F\u2728' : '\u2601\uFE0F\u2764\uFE0F';
+                drawTextWithOutline(G.hudCtx, `${cloudIcon} Wolken: ${happyCount}/${totalClouds}`, G.hudCanvas.width / 2, bottomY, '#FFD700', '#000');
+                bottomY += 18;
+            }
         }
         
         // Bridge status
@@ -1319,6 +1384,9 @@ function initLoop() {
         
         // Animate clouds (visual only)
         updateClouds();
+        
+        // Animate happy clouds (color theme)
+        updateHappyClouds();
         
         // Animate health pickups (visual only)
         G.healthPickups.forEach(pickup => {
@@ -1933,3 +2001,4 @@ function initLoop() {
     // Export functions needed by other files
     window.resetGame = resetGame;
 }
+

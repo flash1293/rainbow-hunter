@@ -358,6 +358,150 @@
                 }
             }
             
+            // Check collision with happy clouds (color theme)
+            if (!bulletHit && G.happyClouds && G.colorTheme) {
+                for (let j = 0; j < G.happyClouds.length; j++) {
+                    const cloud = G.happyClouds[j];
+                    if (cloud.happy) continue;
+                    
+                    const dist = bullet.mesh.position.distanceTo(cloud.mesh.position);
+                    if (dist < cloud.radius + bullet.radius) {
+                        // Only colorize if player has paint
+                        if (bullet.paintColor) {
+                            cloud.happy = true;
+                            cloud.sadFace.visible = false;
+                            cloud.happyFace.visible = true;
+                            
+                            // Change cloud material color to vibrant
+                            const targetColor = new THREE.Color(bullet.paintColor);
+                            cloud.mesh.traverse(function(child) {
+                                if (child.material && child.material.color) {
+                                    if (!child.material._colorCloned) {
+                                        child.material = child.material.clone();
+                                        child.material._colorCloned = true;
+                                    }
+                                    const gray = child.material.color.r;
+                                    const brightness = 0.4 + gray * 0.6;
+                                    child.material.color.copy(targetColor).multiplyScalar(brightness);
+                                    child.material.opacity = 0.95;
+                                }
+                            });
+                            
+                            // Paint splatter effect
+                            const pos = cloud.mesh.position;
+                            for (let k = 0; k < 12; k++) {
+                                const splatGeo = new THREE.SphereGeometry(0.2 + Math.random() * 0.3, 6, 6);
+                                const splatMat = new THREE.MeshBasicMaterial({ color: bullet.paintColor, transparent: true, opacity: 0.9 });
+                                const splat = new THREE.Mesh(splatGeo, splatMat);
+                                splat.position.set(
+                                    pos.x + (Math.random() - 0.5) * 4,
+                                    pos.y + (Math.random() - 0.5) * 3,
+                                    pos.z + (Math.random() - 0.5) * 4
+                                );
+                                splat.userData.velocity = new THREE.Vector3(
+                                    (Math.random() - 0.5) * 0.2,
+                                    0.05 + Math.random() * 0.15,
+                                    (Math.random() - 0.5) * 0.2
+                                );
+                                splat.userData.life = 1.0;
+                                G.scene.add(splat);
+                                G.colorPatches.push(splat);
+                                const animateSplat = () => {
+                                    splat.userData.life -= 0.02;
+                                    if (splat.userData.life <= 0) {
+                                        G.scene.remove(splat);
+                                        return;
+                                    }
+                                    splat.position.add(splat.userData.velocity);
+                                    splat.userData.velocity.y -= 0.005;
+                                    splat.material.opacity = splat.userData.life;
+                                    requestAnimationFrame(animateSplat);
+                                };
+                                requestAnimationFrame(animateSplat);
+                            }
+                            
+                            Audio.playCollectSound();
+                        }
+                        
+                        createExplosion(bullet.mesh.position.x, bullet.mesh.position.y, bullet.mesh.position.z);
+                        bulletHit = true;
+                        break;
+                    }
+                }
+            }
+            
+            // Check collision with happy clouds (color theme)
+            if (!bulletHit && G.happyClouds && G.colorTheme) {
+                for (let j = 0; j < G.happyClouds.length; j++) {
+                    const cloud = G.happyClouds[j];
+                    if (cloud.happy) continue;
+                    
+                    const dist = bullet.mesh.position.distanceTo(cloud.mesh.position);
+                    if (dist < cloud.radius + bullet.radius) {
+                        // Only colorize if player has paint
+                        if (bullet.paintColor) {
+                            cloud.happy = true;
+                            cloud.sadFace.visible = false;
+                            cloud.happyFace.visible = true;
+                            
+                            // Change cloud material color to vibrant
+                            const targetColor = new THREE.Color(bullet.paintColor);
+                            cloud.mesh.traverse(function(child) {
+                                if (child.material && child.material.color) {
+                                    if (!child.material._colorCloned) {
+                                        child.material = child.material.clone();
+                                        child.material._colorCloned = true;
+                                    }
+                                    const gray = child.material.color.r;
+                                    const brightness = 0.4 + gray * 0.6;
+                                    child.material.color.copy(targetColor).multiplyScalar(brightness);
+                                    child.material.opacity = 0.95;
+                                }
+                            });
+                            
+                            // Paint splatter effect
+                            const pos = cloud.mesh.position;
+                            for (let k = 0; k < 12; k++) {
+                                const splatGeo = new THREE.SphereGeometry(0.2 + Math.random() * 0.3, 6, 6);
+                                const splatMat = new THREE.MeshBasicMaterial({ color: bullet.paintColor, transparent: true, opacity: 0.9 });
+                                const splat = new THREE.Mesh(splatGeo, splatMat);
+                                splat.position.set(
+                                    pos.x + (Math.random() - 0.5) * 4,
+                                    pos.y + (Math.random() - 0.5) * 3,
+                                    pos.z + (Math.random() - 0.5) * 4
+                                );
+                                splat.userData.velocity = new THREE.Vector3(
+                                    (Math.random() - 0.5) * 0.2,
+                                    0.05 + Math.random() * 0.15,
+                                    (Math.random() - 0.5) * 0.2
+                                );
+                                splat.userData.life = 1.0;
+                                G.scene.add(splat);
+                                G.colorPatches.push(splat);
+                                const animateSplat = () => {
+                                    splat.userData.life -= 0.02;
+                                    if (splat.userData.life <= 0) {
+                                        G.scene.remove(splat);
+                                        return;
+                                    }
+                                    splat.position.add(splat.userData.velocity);
+                                    splat.userData.velocity.y -= 0.005;
+                                    splat.material.opacity = splat.userData.life;
+                                    requestAnimationFrame(animateSplat);
+                                };
+                                requestAnimationFrame(animateSplat);
+                            }
+                            
+                            Audio.playCollectSound();
+                        }
+                        
+                        createExplosion(bullet.mesh.position.x, bullet.mesh.position.y, bullet.mesh.position.z);
+                        bulletHit = true;
+                        break;
+                    }
+                }
+            }
+            
             // Check collision with trees (visual feedback on both)
             if (!bulletHit) {
                 for (let j = 0; j < G.trees.length; j++) {

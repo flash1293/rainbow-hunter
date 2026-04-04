@@ -2185,6 +2185,10 @@
                 const candyRequired = G.candyTheme && G.totalCandy > 0;
                 const allCandyCollected = !candyRequired || (G.candyCollected >= G.totalCandy);
                 
+                // Check if happy clouds are required and all made happy (color theme)
+                const happyCloudsRequired = G.colorTheme && G.happyClouds && G.happyClouds.length > 0;
+                const allHappyCloudsHappy = !happyCloudsRequired || G.happyClouds.every(c => c.happy);
+                
                 if (scarabsRequired && !allScarabsCollected) {
                     // Can't collect treasure yet - need more scarabs
                     // Only show message occasionally to avoid spam
@@ -2199,6 +2203,15 @@
                         G.treasure.lastWarningTime = Date.now();
                         const remaining = G.totalCandy - G.candyCollected;
                         console.log(`Sammle noch ${remaining} Süßigkeit${remaining > 1 ? 'en' : ''} um den Schatz freizuschalten!`);
+                    }
+                } else if (happyCloudsRequired && !allHappyCloudsHappy) {
+                    // Can't collect treasure yet - need to make all clouds happy
+                    if (!G.treasure.lastWarningTime || Date.now() - G.treasure.lastWarningTime > 2000) {
+                        G.treasure.lastWarningTime = Date.now();
+                        const happyCount = G.happyClouds.filter(c => c.happy).length;
+                        const totalClouds = G.happyClouds.length;
+                        const remaining = totalClouds - happyCount;
+                        console.log(`Mach noch ${remaining} Wolke${remaining > 1 ? 'n' : ''} glücklich um den Schatz freizuschalten!`);
                     }
                 } else {
                     // Only host decides win state
@@ -2223,11 +2236,15 @@
                     const allScarabsCollected = G.scarabsCollected >= G.totalScarabs;
                     const candyRequired = G.candyTheme && G.totalCandy > 0;
                     const allCandyCollected = !candyRequired || (G.candyCollected >= G.totalCandy);
+                    const happyCloudsRequired = G.colorTheme && G.happyClouds && G.happyClouds.length > 0;
+                    const allHappyCloudsHappy = !happyCloudsRequired || G.happyClouds.every(c => c.happy);
                     
                     if (!scarabsRequired || allScarabsCollected) {
                         if (!candyRequired || allCandyCollected) {
-                            gameWon = true;
-                            Audio.playWinSound();
+                            if (!happyCloudsRequired || allHappyCloudsHappy) {
+                                gameWon = true;
+                                Audio.playWinSound();
+                            }
                         }
                     }
                 }
