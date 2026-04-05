@@ -1100,16 +1100,7 @@ function initLoop() {
             }
             bottomY += 18;
             
-            // Happy clouds counter (color theme)
-            if (G.happyClouds && G.happyClouds.length > 0) {
-                const happyCount = G.happyClouds.filter(c => c.happy).length;
-                const totalClouds = G.happyClouds.length;
-                const cloudIcon = happyCount >= totalClouds ? '\u2601\uFE0F\u2728' : '\u2601\uFE0F\u2764\uFE0F';
-                drawTextWithOutline(G.hudCtx, `${cloudIcon} Wolken: ${happyCount}/${totalClouds}`, G.hudCanvas.width / 2, bottomY, '#FFD700', '#000');
-                bottomY += 18;
-            }
-            
-            // Happy clouds counter (color theme)
+             // Happy clouds counter (color theme)
             if (G.happyClouds && G.happyClouds.length > 0) {
                 const happyCount = G.happyClouds.filter(c => c.happy).length;
                 const totalClouds = G.happyClouds.length;
