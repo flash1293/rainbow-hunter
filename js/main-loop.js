@@ -1852,6 +1852,11 @@ function initLoop() {
                     updateHerzmen();
                     updateHeartBombs();
                     
+                    // Update giant eye (horror level)
+                    if (G.giantEyes && G.giantEyes.length > 0) {
+                        ENTITY_REGISTRY.updateAll('giant-eye', G.giantEyes);
+                    }
+                    
                     // Computer level systems (lag, firewall gates, buffer overflow zones, data streams)
                     if (G.computerTheme && typeof updateComputerSystems === 'function') {
                         updateComputerSystems();

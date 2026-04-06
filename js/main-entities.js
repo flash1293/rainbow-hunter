@@ -927,6 +927,23 @@ function initEntities() {
         });
     }
     
+    // Giant floating eye (for horror level)
+    G.giantEyes = [];
+    if (G.horrorTheme && G.levelConfig.giantEye) {
+        const eyeConfig = G.levelConfig.giantEye;
+        const eye = createGiantEye(
+            { x: eyeConfig.x, z: eyeConfig.z, y: eyeConfig.y },
+            {
+                radius: eyeConfig.radius || 10,
+                floatRange: eyeConfig.floatRange || 15,
+                eyeColor: eyeConfig.eyeColor || 0xff0000,
+                irisColor: eyeConfig.irisColor || 0xffff00,
+                pupilColor: eyeConfig.pupilColor || 0x000000
+            }
+        );
+        G.giantEyes.push(eye);
+    }
+    
     // Level 2 unique elements (ice crystals and frozen lakes)
     G.iceCrystals = [];
     G.frozenLakes = [];

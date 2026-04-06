@@ -27,10 +27,23 @@ LEVEL_REGISTRY.register(17, {
         targetLevel: 1
     },
 
-    // ---- Dragon boss ----
+    // ---- Dragons & Special Entities ----
     dragon: {
         x: 0, z: -200,
         health: 10
+    },
+
+    // Giant floating eye in the sky (always watches the player)
+    giantEye: {
+        x: 0,
+        z: 0,
+        y: 12,           // Higher up in the sky
+        radius: 6,       // Smaller - better fit for the view
+        orbitRadius: 60, // Much farther away
+        orbitSpeed: 0.00045, // Same speed
+        eyeColor: 0xff0000,    // Blood red
+        irisColor: 0xffff00,   // Yellow iris
+        pupilColor: 0x000000
     },
 
     extraDragons: [
