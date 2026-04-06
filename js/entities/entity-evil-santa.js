@@ -232,15 +232,12 @@
         // Apply scale
         group.scale.set(scale, scale, scale);
 
-        // Position
+         // Position
         const santaX = posConfig.x;
         const santaZ = posConfig.z;
-        const santaY = posConfig.y !== undefined ? posConfig.y : getTerrainHeight(santaX, santaZ) + 3; // Flying height (low enough to see)
+        const santaY = posConfig.y !== undefined ? posConfig.y : getTerrainHeight(santaX, santaZ) + (posConfig.walking ? 0 : 3); // Flying height (low enough to see), or ground level for walking
         group.position.set(santaX, santaY, santaZ);
-        
-        // Add to scene
-        G.scene.add(group);
-
+         
         // Return object with proper structure for game systems
         return {
             mesh: group,
@@ -255,17 +252,19 @@
             patrolBack: santaZ + 20,
             direction: 1,
             lastFireTime: Date.now(),
-            fireInterval: scale < 1 ? 2000 : 1500,
+            fireInterval: scale < 1 ? 4000 : 3000,
             phase: 1,
             attackCooldown: 0,
             breathColor: 0xFF0000, // Red projectiles
             frozen: false,
             frozenUntil: 0,
             isEvilSanta: true,
+            isWalking: posConfig.walking || false,
             homeX: santaX,
             homeZ: santaZ,
             chaseRange: 40,
-            flyingHeight: santaY // Track flying height
+            flyingHeight: santaY, // Track flying height
+            hoverPhase: 0
         };
     }
 

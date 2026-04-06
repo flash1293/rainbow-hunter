@@ -113,18 +113,20 @@
                 return;
             }
             
-            // Evil Santa flying animation
+            // Evil Santa flying animation (skip for walking variant)
             if (d.isEvilSanta) {
-                // Sledge hovering animation
-                d.hoverPhase = (d.hoverPhase || 0) + 0.025;
-                const hoverOffset = Math.sin(d.hoverPhase) * 1.5;
-                const baseY = d.flyingHeight !== undefined ? d.flyingHeight : 8;
-                d.mesh.position.y = baseY + hoverOffset;
-                
-                // Subtle rocking of sledge
-                d.mesh.rotation.z = Math.sin(d.hoverPhase * 0.7) * 0.05;
-                d.mesh.rotation.x = Math.sin(d.hoverPhase * 0.5) * 0.03;
-                
+                if (!d.isWalking) {
+                    // Sledge hovering animation for flying Evil Santa
+                    d.hoverPhase = (d.hoverPhase || 0) + 0.025;
+                    const hoverOffset = Math.sin(d.hoverPhase) * 1.5;
+                    const baseY = d.flyingHeight !== undefined ? d.flyingHeight : 8;
+                    d.mesh.position.y = baseY + hoverOffset;
+                    
+                    // Subtle rocking of sledge
+                    d.mesh.rotation.z = Math.sin(d.hoverPhase * 0.7) * 0.05;
+                    d.mesh.rotation.x = Math.sin(d.hoverPhase * 0.5) * 0.03;
+                }
+                // Return early to skip dragon wing/tail animations
                 return;
             }
             
@@ -366,6 +368,39 @@
                 // Very slow rotation toward movement direction
                 const targetRot = moveDir;
                 d.mesh.rotation.y += (targetRot - d.mesh.rotation.y) * 0.01;
+            } else if (d.isWalking) {
+                // Walking Evil Santa - ground-based patrol and chase like goblins
+                const distToTarget = Math.sqrt(
+                    Math.pow(targetPlayer.position.x - d.mesh.position.x, 2) +
+                    Math.pow(targetPlayer.position.z - d.mesh.position.z, 2)
+                );
+                
+                if (distToTarget < (d.chaseRange || 40)) {
+                    // Chase the player
+                    const chaseSpeed = d.speed;
+                    const dirToPlayer = new THREE.Vector3(
+                        targetPlayer.position.x - d.mesh.position.x,
+                        0,
+                        targetPlayer.position.z - d.mesh.position.z
+                    ).normalize();
+                    
+                    d.mesh.position.x += dirToPlayer.x * chaseSpeed;
+                    d.mesh.position.z += dirToPlayer.z * chaseSpeed;
+                    d.mesh.rotation.y = Math.atan2(dirToPlayer.x, dirToPlayer.z);
+                } else {
+                    // Patrol back and forth
+                    d.mesh.position.x += d.speed * d.direction;
+                    
+                    if (d.mesh.position.x <= d.patrolLeft) {
+                        d.direction = 1;
+                    } else if (d.mesh.position.x >= d.patrolRight) {
+                        d.direction = -1;
+                    }
+                }
+                
+                // Stay on ground
+                const terrainY = getTerrainHeight(d.mesh.position.x, d.mesh.position.z);
+                d.mesh.position.y += (terrainY - d.mesh.position.y) * 0.1;
             } else if (d.isReaper || d.isUnicorn || d.isEasterBunny || d.isEvilSanta || d.isFlyingWitch) {
                 // Reaper/Unicorn/Easter Bunny/Evil Santa chases if player is within chase range
                 const chaseRange = d.chaseRange || 50;

@@ -279,10 +279,18 @@ function initEntities() {
         G.goblins.push(createGoblin(pos[0], pos[1], pos[2], pos[3], pos[4]));
     }
     
-    // Create guardian goblins from level config (both difficulties)
-    G.levelConfig.guardians.forEach(guardian => {
-        G.goblins.push(createGuardianGoblin(guardian[0], guardian[1], guardian[2], guardian[3], guardian[4]));
-    });
+     // Create guardian goblins from level config (both difficulties)
+     G.levelConfig.guardians.forEach(guardian => {
+         G.goblins.push(createGuardianGoblin(guardian[0], guardian[1], guardian[2], guardian[3], guardian[4]));
+     });
+     
+    // Create walking Evil Santas (ground-based spawns from main area)
+    if (G.levelConfig.walkingEvilSantas && typeof createEvilSanta === 'function') {
+        G.levelConfig.walkingEvilSantas.forEach(santaConfig => {
+            const santa = createEvilSanta(santaConfig, santaConfig.scale || 1, santaConfig.health || 70);
+            G.extraDragons.push(santa);
+        });
+    }
     
     // Create skeleton warriors from level config (graveyard level)
     if (G.levelConfig.skeletons) {

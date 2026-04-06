@@ -48,6 +48,15 @@ LEVEL_REGISTRY.register(12, {
         { x: 55, z: -115, scale: 0.5, health: 25, useEvilSanta: true }
     ],
     
+    // Walking Evil Santas - spawn from main game area and chase on ground
+    walkingEvilSantas: [
+        { x: -40, z: -30, scale: 0.8, health: 40, walking: true },
+        { x: 35, z: -70, scale: 0.8, health: 40, walking: true },
+        { x: -60, z: -110, scale: 0.8, health: 40, walking: true },
+        { x: 50, z: -150, scale: 0.8, health: 40, walking: true },
+        { x: -30, z: 40, scale: 0.8, health: 40, walking: true }
+    ],
+    
     // World Kite position - near entrance
     worldKite: { x: 5, z: 175 },
 
