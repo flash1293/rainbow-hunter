@@ -7207,6 +7207,7 @@ function initSetup() {
                 );
                 const s = 0.7 + Math.random() * 0.6;
                 puff.scale.set(s, s * 0.6, s);
+                puff.userData.isHappyCloudPuff = true;
                 cloudGroup.add(puff);
             }
 

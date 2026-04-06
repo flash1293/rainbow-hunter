@@ -18,6 +18,97 @@
 (function() {
     'use strict';
 
+    // Generate a procedural polygon-speckled canvas texture for colored clouds
+    function createSpeckledTexture(baseColorHex, seed) {
+        const size = 128;
+        const canvas = document.createElement('canvas');
+        canvas.width = size;
+        canvas.height = size;
+        const ctx = canvas.getContext('2d');
+        
+        // Seeded random
+        let s = seed || Math.random() * 10000;
+        const random = () => {
+            s = (s * 9301 + 49297) % 233280;
+            return s / 233280;
+        };
+        
+        // Base color in HSL
+        const baseColor = new THREE.Color(baseColorHex);
+        const baseHSL = {};
+        baseColor.getHSL(baseHSL);
+        
+        // Fill background with moderate variation
+        const bgLight = baseHSL.l * (0.7 + random() * 0.3);
+        ctx.fillStyle = `hsl(${baseHSL.h * 360}, ${baseHSL.s * 100}%, ${bgLight * 100}%)`;
+        ctx.fillRect(0, 0, size, size);
+        
+        // Draw larger polygon speckles (triangles, quads, pentagons)
+        const numPoly = 15 + Math.floor(random() * 20);
+        for (let i = 0; i < numPoly; i++) {
+            const cx = random() * size;
+            const cy = random() * size;
+            const baseRadius = 4 + random() * 10;
+            
+            // Color variation
+            const hueShift = (random() - 0.5) * 0.08;
+            const sat = Math.max(0.2, baseHSL.s * (0.7 + random() * 0.5));
+            const light = baseHSL.l * (0.3 + random() * 0.8);
+            
+            // Random polygon (3-6 sides)
+            const numSides = 3 + Math.floor(random() * 4);
+            ctx.beginPath();
+            for (let j = 0; j < numSides; j++) {
+                const angle = (j / numSides) * Math.PI * 2 + (random() - 0.5) * 0.5;
+                const r = baseRadius * (0.5 + random() * 0.7);
+                const x = cx + Math.cos(angle) * r;
+                const y = cy + Math.sin(angle) * r;
+                if (j === 0) ctx.moveTo(x, y);
+                else ctx.lineTo(x, y);
+            }
+            ctx.closePath();
+            
+            // Fill with gradient for soft edge
+            const gradient = ctx.createRadialGradient(cx, cy, 0, cx, cy, baseRadius);
+            gradient.addColorStop(0, `hsla(${(baseHSL.h + hueShift) * 360}, ${sat * 100}%, ${light * 100}%, 0.8)`);
+            gradient.addColorStop(0.6, `hsla(${(baseHSL.h + hueShift) * 360}, ${sat * 90}%, ${light * 100}%, 0.4)`);
+            gradient.addColorStop(1, `hsla(${(baseHSL.h + hueShift) * 360}, ${sat * 80}%, ${light * 100}%, 0)`);
+            
+            ctx.fillStyle = gradient;
+            ctx.fill();
+        }
+        
+        // Add tiny polygon speckles (mostly triangles) for fine detail
+        const numTiny = 200 + Math.floor(random() * 200);
+        for (let i = 0; i < numTiny; i++) {
+            const cx = random() * size;
+            const cy = random() * size;
+            const sizePx = 0.8 + random() * 1.5;
+            const light = baseHSL.l * (0.2 + random() * 1.0);
+            const alpha = 0.3 + random() * 0.7;
+            
+            // Tiny triangle
+            ctx.fillStyle = `hsla(${baseHSL.h * 360}, ${baseHSL.s * 100}%, ${light * 100}%, ${alpha})`;
+            ctx.beginPath();
+            for (let j = 0; j < 3; j++) {
+                const angle = (j / 3) * Math.PI * 2 + random() * 0.4;
+                const x = cx + Math.cos(angle) * sizePx;
+                const y = cy + Math.sin(angle) * sizePx;
+                if (j === 0) ctx.moveTo(x, y);
+                else ctx.lineTo(x, y);
+            }
+            ctx.closePath();
+            ctx.fill();
+        }
+        
+        const texture = new THREE.CanvasTexture(canvas);
+        texture.magFilter = THREE.LinearFilter;
+        texture.minFilter = THREE.LinearFilter;
+        texture.wrapS = THREE.RepeatWrapping;
+        texture.wrapT = THREE.RepeatWrapping;
+        return texture;
+    }
+
     // Shoot bullet from player
     function shootBullet() {
         if (gameWon) return;
@@ -372,18 +463,35 @@
                             cloud.sadFace.visible = false;
                             cloud.happyFace.visible = true;
                             
-                            // Change cloud material color to vibrant
-                            const targetColor = new THREE.Color(bullet.paintColor);
+                            // Color cloud: puffs get paint color with variation, speckles get varied shades
+                            const baseColor = new THREE.Color(bullet.paintColor);
                             cloud.mesh.traverse(function(child) {
-                                if (child.material && child.material.color) {
-                                    if (!child.material._colorCloned) {
-                                        child.material = child.material.clone();
-                                        child.material._colorCloned = true;
+                                if (!child.isMesh) return;
+                                
+                                // Clone material once to avoid affecting other clouds
+                                if (child.material && !child.material._colorCloned) {
+                                    child.material = child.material.clone();
+                                    child.material._colorCloned = true;
+                                }
+                                
+                                if (child.userData && child.userData.isHappyCloudPuff) {
+                                    // Apply speckled texture to puff
+                                    const seed = Math.random() * 10000 + (Number(child.id) || Math.random() * 1000);
+                                    const tex = createSpeckledTexture(bullet.paintColor, seed);
+                                    child.material.map = tex;
+                                    child.material.color.setRGB(1, 1, 1);
+                                    child.material.needsUpdate = true;
+                                } else if (child.material && child.material.color) {
+                                    // Color face parts and any other meshes with paint color
+                                    const hsl = {};
+                                    baseColor.getHSL(hsl);
+                                    const hue = hsl.h + (Math.random() - 0.5) * 0.03;
+                                    const sat = Math.max(0.4, hsl.s * (0.9 + Math.random() * 0.2));
+                                    const light = hsl.l * (0.85 + Math.random() * 0.3);
+                                    child.material.color.setHSL(hue, sat, light);
+                                    if (child.material.transparent) {
+                                        child.material.opacity = 0.95;
                                     }
-                                    const gray = child.material.color.r;
-                                    const brightness = 0.4 + gray * 0.6;
-                                    child.material.color.copy(targetColor).multiplyScalar(brightness);
-                                    child.material.opacity = 0.95;
                                 }
                             });
                             
@@ -444,18 +552,35 @@
                             cloud.sadFace.visible = false;
                             cloud.happyFace.visible = true;
                             
-                            // Change cloud material color to vibrant
-                            const targetColor = new THREE.Color(bullet.paintColor);
+                            // Color cloud: puffs get paint color with variation, speckles get varied shades
+                            const baseColor = new THREE.Color(bullet.paintColor);
                             cloud.mesh.traverse(function(child) {
-                                if (child.material && child.material.color) {
-                                    if (!child.material._colorCloned) {
-                                        child.material = child.material.clone();
-                                        child.material._colorCloned = true;
+                                if (!child.isMesh) return;
+                                
+                                // Clone material once to avoid affecting other clouds
+                                if (child.material && !child.material._colorCloned) {
+                                    child.material = child.material.clone();
+                                    child.material._colorCloned = true;
+                                }
+                                
+                                if (child.userData && child.userData.isHappyCloudPuff) {
+                                    // Apply speckled texture to puff
+                                    const seed = Math.random() * 10000 + (Number(child.id) || Math.random() * 1000);
+                                    const tex = createSpeckledTexture(bullet.paintColor, seed);
+                                    child.material.map = tex;
+                                    child.material.color.setRGB(1, 1, 1);
+                                    child.material.needsUpdate = true;
+                                } else if (child.material && child.material.color) {
+                                    // Color face parts and any other meshes with paint color
+                                    const hsl = {};
+                                    baseColor.getHSL(hsl);
+                                    const hue = hsl.h + (Math.random() - 0.5) * 0.03;
+                                    const sat = Math.max(0.4, hsl.s * (0.9 + Math.random() * 0.2));
+                                    const light = hsl.l * (0.85 + Math.random() * 0.3);
+                                    child.material.color.setHSL(hue, sat, light);
+                                    if (child.material.transparent) {
+                                        child.material.opacity = 0.95;
                                     }
-                                    const gray = child.material.color.r;
-                                    const brightness = 0.4 + gray * 0.6;
-                                    child.material.color.copy(targetColor).multiplyScalar(brightness);
-                                    child.material.opacity = 0.95;
                                 }
                             });
                             
