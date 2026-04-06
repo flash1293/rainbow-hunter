@@ -13,7 +13,9 @@ A 3D bicycle adventure game built with Three.js where you navigate terrain, coll
 
 👉 **[One player](https://raw.githack.com/flash1293/rainbow-hunter/main/index.html)** 👈
 
-👉 **[Splitscreen](https://raw.githack.com/flash1293/rainbow-hunter/main/splitscreen.html)** 👈
+👉 **[Splitscreen (2 players)](https://raw.githack.com/flash1293/rainbow-hunter/main/index.html?splitscreen=native)** 👈
+
+👉 **[In-Game Wiki](https://raw.githack.com/flash1293/rainbow-hunter/main/wiki/index.html)** 👈
 
 No installation, no setup needed!
 
