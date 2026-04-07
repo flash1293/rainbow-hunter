@@ -334,13 +334,18 @@ function initLoop() {
                 cloud.moveAngle = Math.random() * Math.PI * 2;
                 cloud.mesh.position.set(cloud.initialX, cloud.initialY, cloud.initialZ);
                 
-                // Reset cloud material to gray
-                cloud.mesh.traverse(function(child) {
-                    if (child.material && child.material.color && child.material._colorCloned) {
-                        child.material.color.set(0xCCCCCC);
-                        child.material.opacity = 0.9;
-                    }
-                });
+                 // Reset cloud material to gray
+                 cloud.mesh.traverse(function(child) {
+                     if (child.material && child.material.color && child.material._colorCloned) {
+                         child.material.color.set(0xCCCCCC);
+                         child.material.opacity = 0.9;
+                         // Clear any texture added during coloring
+                         if (child.material.map) {
+                             child.material.map = null;
+                         }
+                         child.material.needsUpdate = true;
+                     }
+                 });
             });
         }
         
@@ -353,13 +358,18 @@ function initLoop() {
                 cloud.moveAngle = Math.random() * Math.PI * 2;
                 cloud.mesh.position.set(cloud.initialX, cloud.initialY, cloud.initialZ);
                 
-                // Reset cloud material to gray
-                cloud.mesh.traverse(function(child) {
-                    if (child.material && child.material.color && child.material._colorCloned) {
-                        child.material.color.set(0xCCCCCC);
-                        child.material.opacity = 0.9;
-                    }
-                });
+                 // Reset cloud material to gray
+                 cloud.mesh.traverse(function(child) {
+                     if (child.material && child.material.color && child.material._colorCloned) {
+                         child.material.color.set(0xCCCCCC);
+                         child.material.opacity = 0.9;
+                         // Clear any texture added during coloring
+                         if (child.material.map) {
+                             child.material.map = null;
+                         }
+                         child.material.needsUpdate = true;
+                     }
+                 });
             });
         }
         
